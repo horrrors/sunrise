@@ -148,7 +148,64 @@ function renderToday(){
 }
 
 function renderAll(){ renderDaySelect(); renderToday(); renderDashboard(); }
-function renderDashboard(){ /* added in Task 14 */ }
+
+function bar(pct){ return `<div class="bar"><i style="width:${pct}%"></i></div>`; }
+const TRACK_LABEL = { dsa:'Алгоритмы', js:'JavaScript', ts:'TypeScript', node:'Node.js',
+  sysdesign:'System Design', patterns:'Паттерны', distsys:'Распределённые', db:'Базы данных', cs:'CS-фундамент' };
+
+function renderDashboard(){
+  const overall = L.overallProgress(C, state);
+  const streak = L.computeStreak(state, todayStr());
+  const byPhase = L.progressByPhase(C, state);
+  const byTrack = L.progressByTrack(C, state);
+  const due = L.getDueReviews(state, todayStr());
+
+  const phaseRows = [1,2,3].map(p => {
+    const x = byPhase[p] || {done:0,total:0,pct:0};
+    const title = C.phases.find(ph=>ph.id===p).title;
+    return `<div class="row"><span>Фаза ${p}: ${esc(title)}</span><span class="pill">${x.done}/${x.total}</span></div>${bar(x.pct)}`;
+  }).join('');
+
+  const trackRows = Object.keys(TRACK_LABEL).filter(k=>byTrack[k]).map(k => {
+    const x = byTrack[k];
+    return `<div class="row"><span>${TRACK_LABEL[k]}</span><span class="pill">${x.pct}%</span></div>${bar(x.pct)}`;
+  }).join('');
+
+  document.getElementById('dashboard').innerHTML = `
+    <div class="card"><h2>Общий прогресс</h2>
+      <div class="row"><span>Пройдено дней</span><span class="pill">${overall.done}/${overall.total}</span></div>
+      ${bar(overall.pct)}<p class="muted" style="margin-top:8px">${overall.pct}% за 13 недель</p></div>
+    <div class="card"><h2>Серия</h2><div class="streak">🔥 ${streak}</div>
+      <p class="muted">дней подряд</p></div>
+    <div class="card"><h2>Фазы</h2>${phaseRows}</div>
+    <div class="card"><h2>Треки</h2>${trackRows || '<p class="muted">—</p>'}</div>
+    <div class="card"><h2>К повтору сегодня</h2>
+      ${due.length ? '<p class="due">'+esc(due.join('\n')).replace(/\n/g,'<br>')+'</p>' : '<p class="muted">Пусто — чисто 👌</p>'}</div>
+  `;
+}
+
+document.getElementById('exportBtn').onclick = () => {
+  const blob = new Blob([L.serializeState(state)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'progress.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+document.getElementById('importBtn').onclick = () => document.getElementById('importFile').click();
+document.getElementById('importFile').onchange = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const res = L.parseImported(String(reader.result));
+    if (!res.ok){ alert('Импорт не удался: ' + res.error + '\nТекущий прогресс не изменён.'); return; }
+    state = res.state; saveState(); currentDayId = defaultDayId(); renderAll();
+    alert('Прогресс импортирован.');
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+};
 renderAll();
 </script>
 </body>
