@@ -77,10 +77,45 @@ function computeStreak(state, today) {
   return streak;
 }
 
+function _bump(acc, key, complete) {
+  const a = acc[key] || (acc[key] = { done: 0, total: 0, pct: 0 });
+  a.total++;
+  if (complete) a.done++;
+}
+function _finalize(acc) {
+  for (const k in acc) acc[k].pct = acc[k].total ? Math.round((acc[k].done / acc[k].total) * 100) : 0;
+  return acc;
+}
+function progressByTrack(curriculum, state) {
+  const acc = {};
+  for (const day of allDays(curriculum)) {
+    if (day.track === 'rest') continue;
+    _bump(acc, day.track, isDayComplete(curriculum, state, day.id));
+  }
+  return _finalize(acc);
+}
+function progressByPhase(curriculum, state) {
+  const acc = {};
+  for (const day of allDays(curriculum)) {
+    if (day.track === 'rest') continue;
+    _bump(acc, phaseOfWeek(day.week), isDayComplete(curriculum, state, day.id));
+  }
+  return _finalize(acc);
+}
+function overallProgress(curriculum, state) {
+  let done = 0, total = 0;
+  for (const day of allDays(curriculum)) {
+    if (day.track === 'rest') continue;
+    total++;
+    if (isDayComplete(curriculum, state, day.id)) done++;
+  }
+  return { done, total, pct: total ? Math.round((done / total) * 100) : 0 };
+}
+
 const RoadmapLogic = {
   addDays, diffDays, phaseOfWeek, createInitialState,
   allDays, getDay, setTaskDone, setReflection, isDayComplete,
-  computeStreak,
+  computeStreak, progressByTrack, progressByPhase, overallProgress,
 };
 
 if (typeof module !== 'undefined' && module.exports) module.exports = RoadmapLogic;

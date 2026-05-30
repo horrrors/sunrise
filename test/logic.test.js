@@ -105,3 +105,40 @@ test('computeStreak: a gap breaks the run', () => {
   const s = withDates(['2026-05-26', '2026-05-29', '2026-05-30']);
   assert.equal(L.computeStreak(s, '2026-05-30'), 2);
 });
+
+const CURR2 = {
+  phases: [{ id: 1, title: 'P1', weeks: [1] }, { id: 2, title: 'P2', weeks: [5] }],
+  weeks: [
+    { num: 1, phase: 1, theme: 'x', days: [
+      { id: 'w1d1', week: 1, dow: 1, track: 'dsa', title: '', warmup: 'w', tasks: [{ id: 't1', text: '' }], reflectPrompt: '', resources: [] },
+      { id: 'w1d2', week: 1, dow: 2, track: 'js', title: '', warmup: 'w', tasks: [{ id: 't1', text: '' }], reflectPrompt: '', resources: [] },
+      { id: 'w1d7', week: 1, dow: 7, track: 'rest', title: '', warmup: null, tasks: [], reflectPrompt: '', resources: [] },
+    ] },
+    { num: 5, phase: 2, theme: 'y', days: [
+      { id: 'w5d1', week: 5, dow: 1, track: 'dsa', title: '', warmup: 'w', tasks: [{ id: 't1', text: '' }], reflectPrompt: '', resources: [] },
+    ] },
+  ],
+};
+
+test('progressByTrack excludes rest and computes pct', () => {
+  let s = L.createInitialState();
+  s = L.setTaskDone(s, 'w1d1', 't1', true, '2026-05-30');
+  const p = L.progressByTrack(CURR2, s);
+  assert.deepEqual(p.dsa, { done: 1, total: 2, pct: 50 });
+  assert.deepEqual(p.js, { done: 0, total: 1, pct: 0 });
+  assert.equal(p.rest, undefined);
+});
+
+test('progressByPhase groups by phase', () => {
+  let s = L.createInitialState();
+  s = L.setTaskDone(s, 'w1d1', 't1', true, '2026-05-30');
+  const p = L.progressByPhase(CURR2, s);
+  assert.deepEqual(p[1], { done: 1, total: 2, pct: 50 });
+  assert.deepEqual(p[2], { done: 0, total: 1, pct: 0 });
+});
+
+test('overallProgress totals non-rest days', () => {
+  let s = L.createInitialState();
+  s = L.setTaskDone(s, 'w1d1', 't1', true, '2026-05-30');
+  assert.deepEqual(L.overallProgress(CURR2, s), { done: 1, total: 3, pct: 33 });
+});
