@@ -1,5 +1,8 @@
 'use strict';
 
+// UMD wrapper: keep Curriculum out of the global scope (avoids collisions with the
+// browser inline script). Exposes module.exports (Node) / window.Curriculum (browser).
+(function (root) {
 // Generated curriculum data. Edit days/tasks here freely.
 const Curriculum = {
   "phases": [
@@ -3024,4 +3027,5 @@ const Curriculum = {
 };
 
 if (typeof module !== 'undefined' && module.exports) module.exports = Curriculum;
-if (typeof window !== 'undefined') window.Curriculum = Curriculum;
+if (root) root.Curriculum = Curriculum;
+})(typeof window !== 'undefined' ? window : undefined);

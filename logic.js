@@ -1,5 +1,9 @@
 'use strict';
 
+// UMD wrapper: keeps all internals out of the global scope (browser classic-script
+// scripts share one global lexical scope, so leaking these names collides with
+// index.html's inline script). Exposes only module.exports (Node) / window.RoadmapLogic (browser).
+(function (root) {
 function _ms(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number);
   return Date.UTC(y, m - 1, d);
@@ -163,4 +167,5 @@ const RoadmapLogic = {
 };
 
 if (typeof module !== 'undefined' && module.exports) module.exports = RoadmapLogic;
-if (typeof window !== 'undefined') window.RoadmapLogic = RoadmapLogic;
+if (root) root.RoadmapLogic = RoadmapLogic;
+})(typeof window !== 'undefined' ? window : undefined);
