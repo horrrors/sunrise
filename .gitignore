@@ -1,0 +1,5 @@
+# personal progress export — not version-controlled by default
+progress.json
+*.local.json
+node_modules/
+.DS_Store

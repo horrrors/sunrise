@@ -1,0 +1,9 @@
+{
+  "name": "dev-roadmap",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Personal dev-growth roadmap tracker",
+  "scripts": {
+    "test": "node --test"
+  }
+}
