@@ -26,3 +26,52 @@ test('phaseOfWeek maps weeks to phases', () => {
   assert.equal(L.phaseOfWeek(10), 3);
   assert.equal(L.phaseOfWeek(13), 3);
 });
+
+const CURR = {
+  phases: [{ id: 1, title: 'P1', weeks: [1] }],
+  weeks: [{ num: 1, phase: 1, theme: 'x', days: [
+    { id: 'w1d1', week: 1, dow: 1, track: 'dsa', title: 'A', warmup: 'w', tasks: [{ id: 't1', text: 'a' }, { id: 't2', text: 'b' }], reflectPrompt: '', resources: [] },
+    { id: 'w1d7', week: 1, dow: 7, track: 'rest', title: 'Rest', warmup: null, tasks: [], reflectPrompt: '', resources: [] },
+  ] }],
+};
+
+test('setTaskDone toggles a task and stamps completedAt on first activity', () => {
+  let s = L.createInitialState();
+  s = L.setTaskDone(s, 'w1d1', 't1', true, '2026-05-30');
+  assert.equal(s.days['w1d1'].tasks['t1'], true);
+  assert.equal(s.days['w1d1'].completedAt, '2026-05-30');
+});
+
+test('setTaskDone clearing all tasks resets completedAt to null', () => {
+  let s = L.createInitialState();
+  s = L.setTaskDone(s, 'w1d1', 't1', true, '2026-05-30');
+  s = L.setTaskDone(s, 'w1d1', 't1', false, '2026-05-31');
+  assert.equal(s.days['w1d1'].completedAt, null);
+});
+
+test('setTaskDone is immutable (does not mutate prior state)', () => {
+  const s0 = L.createInitialState();
+  const s1 = L.setTaskDone(s0, 'w1d1', 't1', true, '2026-05-30');
+  assert.deepEqual(s0.days, {});
+  assert.notEqual(s0, s1);
+});
+
+test('setReflection stores text', () => {
+  let s = L.createInitialState();
+  s = L.setReflection(s, 'w1d1', 'learned closures');
+  assert.equal(s.days['w1d1'].reflection, 'learned closures');
+});
+
+test('isDayComplete true only when all tasks done', () => {
+  let s = L.createInitialState();
+  assert.equal(L.isDayComplete(CURR, s, 'w1d1'), false);
+  s = L.setTaskDone(s, 'w1d1', 't1', true, '2026-05-30');
+  assert.equal(L.isDayComplete(CURR, s, 'w1d1'), false);
+  s = L.setTaskDone(s, 'w1d1', 't2', true, '2026-05-30');
+  assert.equal(L.isDayComplete(CURR, s, 'w1d1'), true);
+});
+
+test('getDay finds a day or returns null', () => {
+  assert.equal(L.getDay(CURR, 'w1d1').track, 'dsa');
+  assert.equal(L.getDay(CURR, 'nope'), null);
+});
