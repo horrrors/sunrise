@@ -136,11 +136,30 @@ function completeReview(state, itemId, today) {
   return { ...state, reviews };
 }
 
+function serializeState(state) {
+  return JSON.stringify(state, null, 2);
+}
+function parseImported(jsonString) {
+  let data;
+  try {
+    data = JSON.parse(jsonString);
+  } catch (e) {
+    return { ok: false, error: 'Invalid JSON' };
+  }
+  if (!data || typeof data !== 'object') return { ok: false, error: 'Not an object' };
+  if (data.version !== 1) return { ok: false, error: 'Unsupported version' };
+  if (typeof data.days !== 'object' || data.days === null || Array.isArray(data.days))
+    return { ok: false, error: 'Missing days' };
+  if (!Array.isArray(data.reviews)) return { ok: false, error: 'Missing reviews' };
+  return { ok: true, state: { version: 1, days: data.days, reviews: data.reviews } };
+}
+
 const RoadmapLogic = {
   addDays, diffDays, phaseOfWeek, createInitialState,
   allDays, getDay, setTaskDone, setReflection, isDayComplete,
   computeStreak, progressByTrack, progressByPhase, overallProgress,
   REVIEW_INTERVALS, scheduleReview, getDueReviews, completeReview,
+  serializeState, parseImported,
 };
 
 if (typeof module !== 'undefined' && module.exports) module.exports = RoadmapLogic;

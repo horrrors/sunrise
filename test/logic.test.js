@@ -170,3 +170,26 @@ test('stage caps at last interval', () => {
   for (let i = 0; i < 10; i++) s = L.completeReview(s, 'dp', '2026-01-01');
   assert.equal(s.reviews[0].stage, L.REVIEW_INTERVALS.length - 1);
 });
+
+test('serializeState produces pretty JSON round-trippable by parseImported', () => {
+  let s = L.createInitialState();
+  s = L.setTaskDone(s, 'w1d1', 't1', true, '2026-05-30');
+  const json = L.serializeState(s);
+  const res = L.parseImported(json);
+  assert.equal(res.ok, true);
+  assert.deepEqual(res.state, s);
+});
+
+test('parseImported rejects invalid JSON', () => {
+  assert.deepEqual(L.parseImported('{not json'), { ok: false, error: 'Invalid JSON' });
+});
+
+test('parseImported rejects wrong version', () => {
+  const r = L.parseImported(JSON.stringify({ version: 99, days: {}, reviews: [] }));
+  assert.equal(r.ok, false);
+});
+
+test('parseImported rejects missing days/reviews', () => {
+  assert.equal(L.parseImported(JSON.stringify({ version: 1, reviews: [] })).ok, false);
+  assert.equal(L.parseImported(JSON.stringify({ version: 1, days: {} })).ok, false);
+});
