@@ -75,3 +75,33 @@ test('getDay finds a day or returns null', () => {
   assert.equal(L.getDay(CURR, 'w1d1').track, 'dsa');
   assert.equal(L.getDay(CURR, 'nope'), null);
 });
+
+function withDates(dates) {
+  let s = L.createInitialState();
+  dates.forEach((d, i) => { s = L.setTaskDone(s, 'd' + i, 't', true, d); });
+  return s;
+}
+
+test('computeStreak: 0 when no activity', () => {
+  assert.equal(L.computeStreak(L.createInitialState(), '2026-05-30'), 0);
+});
+
+test('computeStreak: counts consecutive days ending today', () => {
+  const s = withDates(['2026-05-28', '2026-05-29', '2026-05-30']);
+  assert.equal(L.computeStreak(s, '2026-05-30'), 3);
+});
+
+test('computeStreak: still counts if last active day was yesterday', () => {
+  const s = withDates(['2026-05-28', '2026-05-29']);
+  assert.equal(L.computeStreak(s, '2026-05-30'), 2);
+});
+
+test('computeStreak: 0 if last active day older than yesterday', () => {
+  const s = withDates(['2026-05-27']);
+  assert.equal(L.computeStreak(s, '2026-05-30'), 0);
+});
+
+test('computeStreak: a gap breaks the run', () => {
+  const s = withDates(['2026-05-26', '2026-05-29', '2026-05-30']);
+  assert.equal(L.computeStreak(s, '2026-05-30'), 2);
+});

@@ -54,9 +54,33 @@ function isDayComplete(curriculum, state, dayId) {
   return day.tasks.every((t) => st.tasks[t.id]);
 }
 
+function _activeDates(state) {
+  const set = new Set();
+  for (const id in state.days) {
+    const c = state.days[id].completedAt;
+    if (c) set.add(c);
+  }
+  return set;
+}
+function computeStreak(state, today) {
+  const set = _activeDates(state);
+  if (set.size === 0) return 0;
+  let cursor;
+  if (set.has(today)) cursor = today;
+  else if (set.has(addDays(today, -1))) cursor = addDays(today, -1);
+  else return 0;
+  let streak = 0;
+  while (set.has(cursor)) {
+    streak++;
+    cursor = addDays(cursor, -1);
+  }
+  return streak;
+}
+
 const RoadmapLogic = {
   addDays, diffDays, phaseOfWeek, createInitialState,
   allDays, getDay, setTaskDone, setReflection, isDayComplete,
+  computeStreak,
 };
 
 if (typeof module !== 'undefined' && module.exports) module.exports = RoadmapLogic;
