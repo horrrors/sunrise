@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SUNRISE // tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --paper:#f5f1e6;
+    --paper-2:#efe9d8;
+    --ink:#14110d;
+    --cobalt:#2b4cf0;
+    --orange:#ff5436;
+    --yellow:#ffd23f;
+    --green:#1faa6e;
+    --violet:#8b5cf6;
+    --cyan:#3bb7d6;
+    --pink:#ff7eb6;
+    --line:#14110d;
+    --shadow:#14110d;
+
+    --display:"Archivo Black","Bricolage Grotesque","Space Grotesk",system-ui,sans-serif;
+    --bric:"Bricolage Grotesque","Archivo Black",system-ui,sans-serif;
+    --sans:"Space Grotesk","Helvetica Neue",system-ui,sans-serif;
+    --mono:"Space Mono","SFMono-Regular",ui-monospace,Menlo,monospace;
+
+    --bw:3px;            /* border weight */
+    --off:6px;           /* offset shadow */
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; min-height:100vh; color:var(--ink);
+    font-family:var(--sans); font-size:15px; line-height:1.5;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    background:var(--paper);
+    background-image:
+      radial-gradient(var(--ink) 1px, transparent 1.4px);
+    background-size:22px 22px;
+    background-position:0 0;
+  }
+  /* riso halftone wash + grain overlay */
+  body::before{
+    content:""; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.5;
+    background:
+      radial-gradient(420px 320px at 12% -4%, rgba(255,84,54,.22), transparent 60%),
+      radial-gradient(520px 380px at 96% 2%, rgba(43,76,240,.18), transparent 62%),
+      radial-gradient(460px 360px at 82% 100%, rgba(255,210,63,.28), transparent 60%);
+    mix-blend-mode:multiply;
+  }
+  body::after{
+    content:""; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.06; mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    position:sticky; top:0; z-index:30;
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    padding:16px 26px;
+    background:var(--yellow);
+    border-bottom:var(--bw) solid var(--ink);
+    box-shadow:0 var(--off) 0 0 rgba(20,17,13,.16);
+  }
+  .brand{display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+  .brand-mark{
+    display:grid; place-items:center; width:46px; height:46px; flex:0 0 auto;
+    background:var(--orange); color:var(--paper);
+    border:var(--bw) solid var(--ink); border-radius:50%;
+    font:700 22px/1 var(--mono);
+    box-shadow:3px 3px 0 0 var(--ink);
+    transform:rotate(-6deg);
+  }
+  .brand-mark span{transform:rotate(6deg)}
+  .brand-name{
+    font-family:var(--display); font-size:30px; line-height:.9; letter-spacing:-.01em;
+    color:var(--ink); text-transform:uppercase;
+    text-shadow:3px 3px 0 var(--cobalt);
+  }
+  .brand-sub{
+    font:700 10px/1 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--ink);
+    background:var(--paper); border:var(--bw) solid var(--ink); border-radius:999px;
+    padding:6px 11px; box-shadow:3px 3px 0 0 var(--ink); align-self:center;
+    transform:rotate(2deg);
+  }
+  .toolbar{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+  .field{
+    display:flex; align-items:center; gap:8px; font:700 11px var(--mono);
+    letter-spacing:.08em; text-transform:uppercase; color:var(--ink);
+  }
+  .field .tag{
+    display:grid; place-items:center; width:30px; height:30px; flex:0 0 auto;
+    background:var(--ink); color:var(--paper); border-radius:8px; font-size:13px;
+  }
+  select{
+    font-family:var(--sans); font-weight:600; font-size:13px; color:var(--ink);
+    background:var(--paper); border:var(--bw) solid var(--ink); border-radius:10px;
+    padding:9px 12px; outline:none; cursor:pointer; max-width:300px;
+    box-shadow:3px 3px 0 0 var(--ink); transition:transform .1s, box-shadow .1s;
+  }
+  select:hover{transform:translate(-1px,-1px); box-shadow:4px 4px 0 0 var(--ink)}
+  select:focus{box-shadow:3px 3px 0 0 var(--cobalt)}
+
+  .btn{
+    font-family:var(--display); font-size:12px; letter-spacing:.04em; text-transform:uppercase;
+    cursor:pointer; color:var(--ink);
+    border:var(--bw) solid var(--ink); border-radius:10px; padding:11px 16px;
+    background:var(--paper); box-shadow:4px 4px 0 0 var(--ink);
+    transition:transform .08s ease, box-shadow .08s ease, background .15s;
+  }
+  .btn:hover{transform:translate(-2px,-2px); box-shadow:6px 6px 0 0 var(--ink)}
+  .btn:active{transform:translate(2px,2px); box-shadow:1px 1px 0 0 var(--ink)}
+  .btn.ghost:hover{background:var(--cobalt); color:var(--paper)}
+  .btn.gold{background:var(--orange); color:var(--paper)}
+  .btn.gold:hover{background:var(--ink); color:var(--yellow)}
+
+  /* ---------- layout ---------- */
+  .wrap{position:relative; z-index:1; max-width:1160px; margin:0 auto; padding:34px 26px 80px}
+
+  .section-head{
+    display:flex; align-items:center; gap:14px; margin:0 0 18px;
+  }
+  .section-head h2{
+    margin:0; font-family:var(--display); text-transform:uppercase; font-size:15px; letter-spacing:.05em;
+    background:var(--ink); color:var(--paper); padding:7px 13px; border:var(--bw) solid var(--ink);
+    border-radius:8px; box-shadow:4px 4px 0 0 var(--orange); transform:rotate(-1.5deg);
+  }
+  .section-head .rule{flex:1; height:var(--bw); background:var(--ink); border-radius:2px}
+
+  .dash{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px}
+
+  /* ---------- cards (sticker/badge) ---------- */
+  .card{
+    position:relative; border-radius:14px; padding:20px;
+    background:var(--paper); color:var(--ink);
+    border:var(--bw) solid var(--ink);
+    box-shadow:var(--off) var(--off) 0 0 var(--shadow);
+    transition:transform .12s ease, box-shadow .12s ease;
+    animation:pop .4s both;
+  }
+  .card:hover{transform:translate(-2px,-2px); box-shadow:8px 8px 0 0 var(--shadow)}
+  .card:nth-child(odd){transform:rotate(-.7deg)}
+  .card:nth-child(even){transform:rotate(.7deg)}
+  .card:nth-child(odd):hover,
+  .card:nth-child(even):hover{transform:translate(-2px,-2px) rotate(0deg)}
+
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px; margin-bottom:14px;
+    font:700 11px var(--mono); letter-spacing:.1em; text-transform:uppercase; color:var(--ink);
+    background:var(--accent,var(--yellow)); border:var(--bw) solid var(--ink);
+    padding:5px 10px; border-radius:7px; box-shadow:2px 2px 0 0 var(--ink);
+  }
+  .eyebrow .kanji{font-family:var(--display); font-size:13px}
+  .stat-sub{font:600 12px var(--sans); color:var(--ink); opacity:.7; margin-top:6px}
+
+  /* big number / ring as a stamp */
+  .ring{
+    --p:0; width:128px; height:128px; border-radius:50%; display:grid; place-items:center;
+    position:relative; margin:6px auto 2px;
+    background:
+      conic-gradient(var(--accent,var(--cobalt)) calc(var(--p)*3.6deg), var(--paper-2) 0);
+    border:var(--bw) solid var(--ink);
+    box-shadow:4px 4px 0 0 var(--ink);
+  }
+  .ring::before{content:""; position:absolute; inset:11px; border-radius:50%;
+    background:var(--paper); border:var(--bw) solid var(--ink)}
+  .ring b{position:relative; font:400 30px/1 var(--display); color:var(--ink); text-align:center}
+  .ring small{position:relative; display:block; text-align:center; color:var(--ink); opacity:.7;
+    font:700 10px var(--mono); letter-spacing:.08em; margin-top:3px}
+
+  .flame{font-size:30px; line-height:1; filter:saturate(1.2)}
+  .streak-num{font:400 64px/.85 var(--display); color:var(--orange);
+    text-shadow:4px 4px 0 var(--ink); margin:8px 0 4px}
+
+  /* progress rows / bars */
+  .prow{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:14px 0 6px;
+    font:600 13px var(--sans)}
+  .prow .lbl{display:flex; align-items:center; gap:8px; color:var(--ink)}
+  .prow .lbl i{width:13px; height:13px; border-radius:3px; background:var(--accent,var(--cobalt));
+    border:2px solid var(--ink); flex:0 0 auto}
+  .prow .val{font:700 11px var(--mono); color:var(--ink);
+    background:var(--paper-2); border:2px solid var(--ink); border-radius:5px; padding:1px 7px}
+  .bar{height:16px; border-radius:5px; background:var(--paper-2);
+    border:var(--bw) solid var(--ink); overflow:hidden; box-shadow:2px 2px 0 0 rgba(20,17,13,.18)}
+  .bar>i{display:block; height:100%;
+    background:var(--accent,var(--cobalt));
+    background-image:repeating-linear-gradient(45deg,
+      rgba(255,255,255,.28) 0 6px, transparent 6px 12px);
+    transition:width .5s cubic-bezier(.22,1,.36,1)}
+
+  .due-list{font:600 13px/1.5 var(--mono); color:var(--ink)}
+  .due-list .tk{display:inline-block; background:var(--yellow); border:2px solid var(--ink);
+    border-radius:6px; padding:3px 8px; margin:4px 4px 0 0; box-shadow:2px 2px 0 0 var(--ink)}
+  .due-empty{font:600 13px var(--sans); color:var(--ink); opacity:.6}
+
+  /* ---------- today ---------- */
+  .today{
+    position:relative; display:flex; gap:0; border-radius:16px; overflow:hidden;
+    background:var(--paper);
+    border:var(--bw) solid var(--ink);
+    box-shadow:8px 8px 0 0 var(--shadow);
+    animation:pop .45s .05s both;
+  }
+  .today-side{
+    flex:0 0 64px; display:flex; align-items:center; justify-content:center;
+    background:var(--accent,var(--cobalt));
+    border-right:var(--bw) solid var(--ink);
+  }
+  .today-side .vert{
+    writing-mode:vertical-rl; text-orientation:mixed;
+    font-family:var(--display); font-size:14px; letter-spacing:.28em; text-transform:uppercase;
+    color:var(--paper); text-shadow:2px 2px 0 var(--ink);
+  }
+  .today-main{padding:28px 30px 30px; flex:1; min-width:0}
+
+  .trackpill{
+    display:inline-flex; align-items:center; gap:9px; padding:7px 14px; border-radius:999px;
+    font:700 12px var(--mono); letter-spacing:.06em; text-transform:uppercase;
+    color:var(--paper); background:var(--accent,var(--cobalt));
+    border:var(--bw) solid var(--ink); box-shadow:3px 3px 0 0 var(--ink);
+    transform:rotate(-1.5deg);
+  }
+  .trackpill .k{font-family:var(--display); font-size:14px}
+  .today-title{
+    font-family:var(--bric); font-weight:800; font-size:clamp(28px,4vw,46px); line-height:1.04;
+    margin:18px 0 16px; color:var(--ink); letter-spacing:-.01em;
+  }
+  .warm{
+    display:flex; align-items:flex-start; gap:10px; flex-wrap:wrap; margin-bottom:22px;
+    padding:13px 16px; border-radius:11px; font:600 14px var(--sans); color:var(--ink);
+    background:var(--yellow); border:var(--bw) solid var(--ink); box-shadow:4px 4px 0 0 var(--ink);
+  }
+  .warm .warm-i{font-family:var(--display); font-size:14px}
+  .warm .muted{font:700 10px var(--mono); letter-spacing:.1em; text-transform:uppercase;
+    background:var(--ink); color:var(--yellow); padding:3px 8px; border-radius:5px; align-self:center}
+
+  /* tasks as stamp/marquee checkboxes */
+  .tasks{display:flex; flex-direction:column; gap:12px}
+  .task{
+    position:relative; display:flex; gap:15px; align-items:flex-start; padding:14px 16px;
+    border-radius:11px; cursor:pointer; user-select:none;
+    background:var(--paper); border:var(--bw) solid var(--ink);
+    box-shadow:4px 4px 0 0 var(--ink);
+    transition:transform .1s ease, box-shadow .1s ease, background .15s;
+    animation:pop .4s both;
+  }
+  .task:hover{transform:translate(-2px,-2px); box-shadow:6px 6px 0 0 var(--ink); background:var(--paper-2)}
+  .task input{position:absolute; opacity:0; width:0; height:0}
+  .task .box{
+    flex:0 0 30px; width:30px; height:30px; margin-top:1px; border-radius:7px;
+    background:var(--paper); border:var(--bw) solid var(--ink);
+    display:grid; place-items:center; box-shadow:2px 2px 0 0 var(--ink);
+    transition:.15s;
+  }
+  .task .box::after{content:"✓"; font-family:var(--display); font-size:17px; color:var(--paper);
+    opacity:0; transform:scale(.4) rotate(-12deg); transition:.15s}
+  .task.done{background:var(--accent,var(--cobalt))}
+  .task.done .box{background:var(--orange); box-shadow:2px 2px 0 0 var(--ink)}
+  .task.done .box::after{opacity:1; transform:scale(1) rotate(-8deg)}
+  .task-text{font:600 15px/1.45 var(--sans); color:var(--ink)}
+  .task.done .task-text{color:var(--paper); text-decoration:line-through; text-decoration-thickness:3px}
+
+  /* reflection */
+  .reflect-block{margin-top:24px}
+  .reflect-label{display:flex; align-items:center; gap:9px; margin-bottom:10px;
+    font:700 13px var(--sans); color:var(--ink)}
+  .reflect-label .kanji{font-family:var(--display); font-size:13px; color:var(--paper);
+    background:var(--cobalt); border:2px solid var(--ink); border-radius:6px; padding:3px 7px}
+  textarea{
+    width:100%; min-height:88px; resize:vertical;
+    font:500 15px/1.5 var(--sans); color:var(--ink);
+    background:var(--paper); border:var(--bw) solid var(--ink); border-radius:11px;
+    padding:14px 16px; outline:none; box-shadow:4px 4px 0 0 var(--ink); transition:box-shadow .12s;
+  }
+  textarea:focus{box-shadow:4px 4px 0 0 var(--cobalt)}
+  textarea::placeholder{color:var(--ink); opacity:.4}
+
+  .res-row{display:flex; flex-wrap:wrap; gap:10px; margin-top:20px}
+  .chip{
+    font:600 12px var(--sans); color:var(--ink); padding:7px 12px; border-radius:8px;
+    background:var(--paper-2); border:var(--bw) solid var(--ink); box-shadow:2px 2px 0 0 var(--ink);
+  }
+  .chip b{font-family:var(--mono); font-weight:700; color:var(--cobalt)}
+  #markReview{margin-top:22px}
+
+  .rest-due{margin-top:16px; font:600 15px var(--sans); color:var(--ink)}
+  .rest-due b{background:var(--yellow); border:2px solid var(--ink); border-radius:6px;
+    padding:2px 8px; box-shadow:2px 2px 0 0 var(--ink)}
+
+  /* footer */
+  .foot{position:relative; z-index:1; text-align:center; padding:6px 0 40px; max-width:1160px; margin:0 auto}
+  .foot span{display:inline-block; font:700 11px var(--mono); letter-spacing:.14em; text-transform:uppercase;
+    color:var(--ink); background:var(--paper); border:var(--bw) solid var(--ink); border-radius:999px;
+    padding:8px 16px; box-shadow:4px 4px 0 0 var(--ink); transform:rotate(-1deg)}
+
+  ::selection{background:var(--yellow); color:var(--ink)}
+  ::-webkit-scrollbar{width:14px; height:14px}
+  ::-webkit-scrollbar-track{background:var(--paper-2)}
+  ::-webkit-scrollbar-thumb{background:var(--ink); border:3px solid var(--paper-2)}
+
+  @keyframes pop{from{opacity:0; transform:translateY(12px) scale(.98)} to{opacity:1}}
+
+  @media (max-width:640px){
+    .today{flex-direction:column}
+    .today-side{flex-basis:auto; height:46px; border-right:0; border-bottom:var(--bw) solid var(--ink)}
+    .today-side .vert{writing-mode:horizontal-tb}
+    .today-main{padding:22px}
+    .topbar{padding:14px 16px}
+    .wrap{padding:24px 16px 60px}
+    .brand-name{font-size:24px}
+    .card:nth-child(odd),.card:nth-child(even){transform:none}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark"><span>☀</span></span>
+    <span class="brand-name">SUNRISE</span>
+    <span class="brand-sub" id="phaseLabel"></span>
+  </div>
+  <div class="toolbar">
+    <label class="field"><span class="tag">日</span><select id="daySelect"></select></label>
+    <button class="btn ghost" id="exportBtn">Экспорт</button>
+    <button class="btn ghost" id="importBtn">Импорт</button>
+    <input type="file" id="importFile" accept="application/json" hidden />
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="section-head"><h2>Сводка</h2><span class="rule"></span></div>
+  <section class="dash" id="dashboard"></section>
+  <div class="section-head" style="margin-top:38px"><h2>Сегодня</h2><span class="rule"></span></div>
+  <section class="today-wrap"><article class="today" id="todayCard"></article></section>
+</main>
+<div class="foot"><span>継続は力なり · постоянство — это сила</span></div>
+
+<script src="curriculum.js"></script>
+<script src="logic.js"></script>
+<script>
+const L = window.RoadmapLogic, C = window.Curriculum;
+const KEY = 'devRoadmapState.v1';
+const allDays = L.allDays(C);
+
+const TRACKS = {
+  dsa:       { label:'Алгоритмы',     kanji:'算', color:'var(--orange)' },
+  js:        { label:'JavaScript',    kanji:'走', color:'var(--yellow)' },
+  ts:        { label:'TypeScript',    kanji:'型', color:'var(--cobalt)' },
+  node:      { label:'Node.js',       kanji:'動', color:'var(--green)' },
+  sysdesign: { label:'System Design', kanji:'設', color:'var(--violet)' },
+  patterns:  { label:'Паттерны',      kanji:'匠', color:'var(--pink)' },
+  distsys:   { label:'Распределённые',kanji:'分', color:'var(--cyan)' },
+  db:        { label:'Базы данных',   kanji:'庫', color:'var(--green)' },
+  cs:        { label:'CS-фундамент',  kanji:'基', color:'var(--orange)' },
+  rest:      { label:'Отдых',         kanji:'休', color:'var(--cobalt)' },
+};
+const trackMeta = (t) => TRACKS[t] || { label:t, kanji:'•', color:'var(--cobalt)' };
+
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function loadState(){
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return L.createInitialState();
+    const res = L.parseImported(raw);
+    return res.ok ? res.state : L.createInitialState();
+  } catch(e){ return L.createInitialState(); }
+}
+function saveState(){
+  try { localStorage.setItem(KEY, L.serializeState(state)); } catch(e){}
+}
+
+let state = loadState();
+
+function defaultDayId(){
+  const firstOpen = allDays.find(d => d.track!=='rest' && !L.isDayComplete(C, state, d.id));
+  return (firstOpen || allDays[allDays.length-1]).id;
+}
+let currentDayId = defaultDayId();
+
+function dowName(dow){ return ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'][dow-1]; }
+
+function renderDaySelect(){
+  const sel = document.getElementById('daySelect');
+  sel.innerHTML = allDays.map(d =>
+    `<option value="${d.id}" ${d.id===currentDayId?'selected':''}>Нед ${d.week} · ${dowName(d.dow)} · ${esc(trackMeta(d.track).label)}</option>`
+  ).join('');
+  sel.onchange = () => { currentDayId = sel.value; renderAll(); };
+}
+
+function renderToday(){
+  const d = L.getDay(C, currentDayId);
+  const el = document.getElementById('todayCard');
+  const m = trackMeta(d.track);
+  el.style.setProperty('--accent', m.color);
+  document.getElementById('phaseLabel').textContent = `フェーズ ${L.phaseOfWeek(d.week)} · 第${d.week}週`;
+
+  if (d.track === 'rest'){
+    const due = L.getDueReviews(state, todayStr());
+    el.style.setProperty('--accent', 'var(--cobalt)');
+    el.innerHTML = `
+      <div class="today-side"><span class="vert">休 · REST</span></div>
+      <div class="today-main">
+        <span class="trackpill"><span class="k">休</span> ${esc(m.label)}</span>
+        <h2 class="today-title">${esc(d.title)}</h2>
+        <p class="warm"><span class="warm-i">☾</span> <span class="muted">сегодня</span> ${esc(d.reflectPrompt)}</p>
+        <div class="rest-due">${due.length ? 'К повтору сегодня — <b>'+esc(due.join(' · '))+'</b>' : 'Повторов на сегодня нет. Отдых заслужен 🌙'}</div>
+      </div>`;
+    return;
+  }
+
+  const st = state.days[currentDayId] || { tasks:{}, reflection:'' };
+  el.innerHTML = `
+    <div class="today-side"><span class="vert">今日 · TODAY</span></div>
+    <div class="today-main">
+      <span class="trackpill"><span class="k">${m.kanji}</span> ${esc(m.label)}</span>
+      <h2 class="today-title">${esc(d.title)}</h2>
+      <div class="warm"><span class="warm-i">✦</span> <span class="muted">Разминка</span> ${esc(d.warmup)}</div>
+      <div class="tasks" id="taskList"></div>
+      <div class="reflect-block">
+        <label class="reflect-label" for="reflect"><span class="kanji">省</span> Рефлексия — ${esc(d.reflectPrompt)}</label>
+        <textarea id="reflect" placeholder="Короткая заметка...">${esc(st.reflection||'')}</textarea>
+      </div>
+      ${d.resources.length ? '<div class="res-row">'+d.resources.map(r=>`<span class="chip"><b>${esc(r.label)}</b> ${esc(r.note)}</span>`).join('')+'</div>' : ''}
+      ${d.track==='dsa' ? '<button class="btn gold" id="markReview">＋ Запланировать повтор паттерна недели</button>' : ''}
+    </div>`;
+
+  const list = document.getElementById('taskList');
+  list.innerHTML = d.tasks.map((t,i) => {
+    const done = !!(st.tasks && st.tasks[t.id]);
+    return `<label class="task ${done?'done':''}" style="animation-delay:${i*55}ms">
+      <input type="checkbox" id="cb_${t.id}" ${done?'checked':''}/>
+      <span class="box"></span><span class="task-text">${esc(t.text)}</span></label>`;
+  }).join('');
+  d.tasks.forEach(t => {
+    document.getElementById('cb_'+t.id).onchange = (e) => {
+      state = L.setTaskDone(state, currentDayId, t.id, e.target.checked, todayStr());
+      saveState(); renderAll();
+    };
+  });
+  document.getElementById('reflect').oninput = (e) => {
+    state = L.setReflection(state, currentDayId, e.target.value); saveState();
+  };
+  if (d.track==='dsa'){
+    document.getElementById('markReview').onclick = () => {
+      const item = `w${d.week}-${d.title}`;
+      state = L.scheduleReview(state, item, todayStr()); saveState(); renderAll();
+    };
+  }
+}
+
+function renderAll(){ renderDaySelect(); renderToday(); renderDashboard(); }
+
+function bar(pct){ return `<div class="bar"><i style="width:${pct}%"></i></div>`; }
+
+function renderDashboard(){
+  const overall = L.overallProgress(C, state);
+  const streak = L.computeStreak(state, todayStr());
+  const byPhase = L.progressByPhase(C, state);
+  const byTrack = L.progressByTrack(C, state);
+  const due = L.getDueReviews(state, todayStr());
+
+  const phaseRows = [1,2,3].map((p) => {
+    const x = byPhase[p] || {done:0,total:0,pct:0};
+    return `<div class="prow"><span class="lbl"><i></i>Фаза ${p}</span><span class="val">${x.done}/${x.total}</span></div>${bar(x.pct)}`;
+  }).join('');
+
+  const trackRows = Object.keys(TRACKS).filter(k => k!=='rest' && byTrack[k]).map(k => {
+    const x = byTrack[k];
+    return `<div class="prow"><span class="lbl"><i style="background:${TRACKS[k].color}"></i>${esc(TRACKS[k].label)}</span><span class="val">${x.pct}%</span></div>
+      <div class="bar"><i style="width:${x.pct}%;background:${TRACKS[k].color}"></i></div>`;
+  }).join('');
+
+  document.getElementById('dashboard').innerHTML = `
+    <div class="card" style="--accent:var(--cobalt);animation-delay:0ms">
+      <div class="eyebrow"><span class="kanji">進</span> Progress · 進捗</div>
+      <div class="ring" style="--p:${overall.pct}"><div><b>${overall.pct}%</b><small>${overall.done}/${overall.total}</small></div></div>
+      <div class="stat-sub" style="text-align:center;margin-top:14px">пройдено дней из 91</div>
+    </div>
+    <div class="card" style="--accent:var(--orange);animation-delay:60ms">
+      <div class="eyebrow"><span class="kanji">続</span> Streak · 連続</div>
+      <div class="flame">🔥</div>
+      <div class="streak-num">${streak}</div>
+      <div class="stat-sub">${streak===1?'день':(streak>=2&&streak<=4?'дня':'дней')} подряд</div>
+    </div>
+    <div class="card" style="--accent:var(--yellow);animation-delay:120ms">
+      <div class="eyebrow"><span class="kanji">段</span> Phases · 段階</div>
+      ${phaseRows}
+    </div>
+    <div class="card" style="--accent:var(--cyan);animation-delay:180ms">
+      <div class="eyebrow"><span class="kanji">領</span> Tracks · 領域</div>
+      ${trackRows || '<div class="due-empty">ещё нет данных</div>'}
+    </div>
+    <div class="card" style="--accent:var(--pink);animation-delay:240ms">
+      <div class="eyebrow"><span class="kanji">復</span> Review · 復習</div>
+      ${due.length ? '<div class="due-list">'+due.map(x=>'<span class="tk">'+esc(x)+'</span>').join('')+'</div>' : '<div class="due-empty">Пусто — чисто 👌</div>'}
+    </div>
+  `;
+}
+
+document.getElementById('exportBtn').onclick = () => {
+  const blob = new Blob([L.serializeState(state)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'progress.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+document.getElementById('importBtn').onclick = () => document.getElementById('importFile').click();
+document.getElementById('importFile').onchange = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const res = L.parseImported(String(reader.result));
+    if (!res.ok){ alert('Импорт не удался: ' + res.error + '\nТекущий прогресс не изменён.'); return; }
+    state = res.state; saveState(); currentDayId = defaultDayId(); renderAll();
+    alert('Прогресс импортирован.');
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+};
+renderAll();
+</script>
+</body>
+</html>

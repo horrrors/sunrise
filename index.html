@@ -3,210 +3,97 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Dev Roadmap</title>
+<title>Sunrise · выбор темы</title>
 <style>
   :root{
-    --bg:#0f1115; --panel:#171a21; --panel2:#1f242e; --line:#2a3140;
-    --text:#e6e9ef; --muted:#9aa4b2; --accent:#6ea8fe; --ok:#3fb950; --warn:#d29922;
-    --radius:12px; font-synthesis:none;
+    --bg:#0b0c12; --ink:#eaedf7; --dim:#9aa3c4; --faint:#646c93; --line:rgba(255,255,255,.09);
+    --sans:"Avenir Next","Segoe UI",system-ui,sans-serif;
+    --serif:"Hoefler Text",Didot,"Times New Roman",serif;
+    --mono:ui-monospace,"SFMono-Regular",Menlo,monospace;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);
-    font:15px/1.5 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif}
-  header{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;
-    align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
-  h1{font-size:18px;margin:0;letter-spacing:.2px}
-  .wrap{max-width:1080px;margin:0 auto;padding:24px}
-  .grid{display:grid;gap:16px}
-  .cards{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
-  .card h2{font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:0 0 12px}
-  .bar{height:8px;background:var(--panel2);border-radius:999px;overflow:hidden}
-  .bar>i{display:block;height:100%;background:var(--accent)}
-  .row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0}
-  .pill{font-size:12px;color:var(--muted)}
-  .streak{font-size:34px;font-weight:700}
-  .today{margin-top:8px}
-  .task{display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid var(--line);
-    border-radius:10px;margin-bottom:8px;background:var(--panel2)}
-  .task input{margin-top:3px;width:18px;height:18px;accent-color:var(--accent)}
-  .task.done label{text-decoration:line-through;color:var(--muted)}
-  textarea{width:100%;min-height:70px;background:var(--panel2);color:var(--text);
-    border:1px solid var(--line);border-radius:10px;padding:10px;resize:vertical;font:inherit}
-  button{background:var(--accent);color:#0b1020;border:0;border-radius:10px;padding:9px 14px;
-    font-weight:600;cursor:pointer}
-  button.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
-  select{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px}
-  .due{color:var(--warn)}
-  .muted{color:var(--muted)}
-  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-  .res{color:var(--accent)}
-  .track-tag{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--accent)}
+  body{
+    margin:0; min-height:100vh; color:var(--ink); font-family:var(--sans); line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    background:
+      radial-gradient(900px 500px at 50% -8%, rgba(120,150,255,.10), transparent 60%),
+      radial-gradient(700px 420px at 88% 4%, rgba(255,95,210,.07), transparent 60%),
+      linear-gradient(180deg,#0a0b11,#0d0e16 60%,#10111b);
+    background-attachment:fixed;
+  }
+  .wrap{max-width:1100px; margin:0 auto; padding:64px 28px 80px}
+  .eyebrow{font:600 11px var(--mono); letter-spacing:.34em; text-transform:uppercase; color:var(--faint)}
+  h1{font-family:var(--serif); font-weight:600; font-size:clamp(34px,6vw,60px); line-height:1.04; margin:14px 0 10px; letter-spacing:.01em}
+  h1 .g{background:linear-gradient(92deg,#fff,#2ee6a6 50%,#ffcf6b); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent}
+  .lede{color:var(--dim); max-width:640px; font-size:16px}
+  .lede b{color:var(--ink)}
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:20px; margin-top:44px}
+  .theme{
+    display:block; text-decoration:none; color:inherit; border-radius:18px; overflow:hidden;
+    border:1px solid var(--line); background:rgba(255,255,255,.025);
+    box-shadow:0 20px 50px -30px #000; transition:transform .18s, box-shadow .25s, border-color .25s;
+    animation:rise .6s both;
+  }
+  .theme:hover{transform:translateY(-4px); border-color:rgba(255,255,255,.22);
+    box-shadow:0 34px 70px -34px #000, 0 0 40px -22px var(--c1)}
+  .swatch{height:104px; position:relative; display:flex; align-items:flex-end; padding:14px;
+    background:linear-gradient(120deg,var(--c1),var(--c2) 55%,var(--c3))}
+  .swatch .k{font-family:var(--serif); font-size:34px; color:rgba(255,255,255,.92); text-shadow:0 2px 14px rgba(0,0,0,.4); line-height:1}
+  .swatch .tag{position:absolute; top:12px; right:13px; font:600 10px var(--mono); letter-spacing:.14em;
+    text-transform:uppercase; color:rgba(255,255,255,.85); background:rgba(0,0,0,.28); padding:5px 9px; border-radius:99px; backdrop-filter:blur(4px)}
+  .body{padding:18px 18px 20px}
+  .body h2{margin:0 0 6px; font-size:18px; font-weight:600}
+  .body p{margin:0 0 14px; color:var(--dim); font-size:13.5px; min-height:38px}
+  .open{font:600 12px var(--mono); letter-spacing:.08em; color:var(--ink); display:inline-flex; align-items:center; gap:7px}
+  .open .arr{transition:transform .2s}
+  .theme:hover .open .arr{transform:translateX(4px)}
+  .foot{margin-top:46px; color:var(--faint); font:600 11px var(--mono); letter-spacing:.06em; line-height:1.9}
+  .foot b{color:var(--dim)}
+  @keyframes rise{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-<header>
-  <h1>🚀 Dev Roadmap <span class="pill" id="phaseLabel"></span></h1>
-  <div class="toolbar">
-    <label class="pill">День: <select id="daySelect"></select></label>
-    <button class="ghost" id="exportBtn">Экспорт</button>
-    <button class="ghost" id="importBtn">Импорт</button>
-    <input type="file" id="importFile" accept="application/json" hidden />
-  </div>
-</header>
 <div class="wrap">
-  <div class="grid cards" id="dashboard"></div>
-  <div class="card today" id="todayCard"></div>
+  <div class="eyebrow">日の出 · Sunrise · dev growth tracker</div>
+  <h1>Пять <span class="g">дизайнов</span>.<br>Один прогресс.</h1>
+  <p class="lede">Каждая тема — самостоятельный трекер с одной и той же программой и данными. Прогресс <b>общий</b> (localStorage + <span style="font-family:var(--mono)">progress.json</span>), так что можно свободно переключаться между темами. Выбери вкус:</p>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="foot">
+    общий прогресс · 13 недель / 91 день · экспортируй <b>progress.json</b> для бэкапа<br>
+    логика и данные общие — это только визуальные слои
+  </div>
 </div>
 
-<script src="curriculum.js"></script>
-<script src="logic.js"></script>
 <script>
-const L = window.RoadmapLogic, C = window.Curriculum;
-const KEY = 'devRoadmapState.v1';
-const allDays = L.allDays(C);
-
-function todayStr(){ return new Date().toISOString().slice(0,10); }
-
-function loadState(){
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return L.createInitialState();
-    const res = L.parseImported(raw);
-    return res.ok ? res.state : L.createInitialState();
-  } catch(e){ return L.createInitialState(); }
-}
-function saveState(){
-  try { localStorage.setItem(KEY, L.serializeState(state)); } catch(e){}
-}
-
-let state = loadState();
-
-function defaultDayId(){
-  const firstOpen = allDays.find(d => d.track!=='rest' && !L.isDayComplete(C, state, d.id));
-  return (firstOpen || allDays[allDays.length-1]).id;
-}
-let currentDayId = defaultDayId();
-
-function dowName(dow){ return ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'][dow-1]; }
-function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-
-function renderDaySelect(){
-  const sel = document.getElementById('daySelect');
-  sel.innerHTML = allDays.map(d =>
-    `<option value="${d.id}" ${d.id===currentDayId?'selected':''}>Нед ${d.week} · ${dowName(d.dow)} · ${d.track}</option>`
-  ).join('');
-  sel.onchange = () => { currentDayId = sel.value; renderAll(); };
-}
-
-function renderToday(){
-  const d = L.getDay(C, currentDayId);
-  const el = document.getElementById('todayCard');
-  document.getElementById('phaseLabel').textContent =
-    `· Фаза ${L.phaseOfWeek(d.week)} · Неделя ${d.week}`;
-  if (d.track === 'rest'){
-    const due = L.getDueReviews(state, todayStr());
-    el.innerHTML = `<span class="track-tag">rest</span><h2>${esc(d.title)}</h2>
-      <p class="muted">${esc(d.reflectPrompt)}</p>
-      <p>${due.length ? 'К повтору сегодня: <b class="due">'+esc(due.join(', '))+'</b>' : 'Повторов на сегодня нет.'}</p>`;
-    return;
-  }
-  const st = state.days[currentDayId] || { tasks:{}, reflection:'' };
-  el.innerHTML = `
-    <span class="track-tag">${esc(d.track)}</span>
-    <h2 style="text-transform:none;font-size:18px;color:var(--text)">${esc(d.title)}</h2>
-    <p class="muted">🔥 Разминка: ${esc(d.warmup)}</p>
-    <div id="taskList"></div>
-    <p class="muted" style="margin:14px 0 6px">Рефлексия: ${esc(d.reflectPrompt)}</p>
-    <textarea id="reflect" placeholder="Короткая заметка...">${esc(st.reflection||'')}</textarea>
-    ${d.resources.length ? '<p class="muted" style="margin-top:10px">Ресурсы: '+
-      d.resources.map(r=>`<span class="res">${esc(r.label)}</span> — ${esc(r.note)}`).join(' · ')+'</p>' : ''}
-    ${d.track==='dsa' ? `<p style="margin-top:10px"><button id="markReview">Запланировать повтор паттерна недели</button></p>`:''}
-  `;
-  const list = document.getElementById('taskList');
-  list.innerHTML = d.tasks.map(t => {
-    const done = !!(st.tasks && st.tasks[t.id]);
-    return `<div class="task ${done?'done':''}">
-      <input type="checkbox" id="cb_${t.id}" ${done?'checked':''}/>
-      <label for="cb_${t.id}">${esc(t.text)}</label></div>`;
-  }).join('');
-  d.tasks.forEach(t => {
-    document.getElementById('cb_'+t.id).onchange = (e) => {
-      state = L.setTaskDone(state, currentDayId, t.id, e.target.checked, todayStr());
-      saveState(); renderAll();
-    };
-  });
-  document.getElementById('reflect').oninput = (e) => {
-    state = L.setReflection(state, currentDayId, e.target.value); saveState();
-  };
-  if (d.track==='dsa'){
-    document.getElementById('markReview').onclick = () => {
-      const item = `w${d.week}-${d.title}`;
-      state = L.scheduleReview(state, item, todayStr()); saveState(); renderAll();
-    };
-  }
-}
-
-function renderAll(){ renderDaySelect(); renderToday(); renderDashboard(); }
-
-function bar(pct){ return `<div class="bar"><i style="width:${pct}%"></i></div>`; }
-const TRACK_LABEL = { dsa:'Алгоритмы', js:'JavaScript', ts:'TypeScript', node:'Node.js',
-  sysdesign:'System Design', patterns:'Паттерны', distsys:'Распределённые', db:'Базы данных', cs:'CS-фундамент' };
-
-function renderDashboard(){
-  const overall = L.overallProgress(C, state);
-  const streak = L.computeStreak(state, todayStr());
-  const byPhase = L.progressByPhase(C, state);
-  const byTrack = L.progressByTrack(C, state);
-  const due = L.getDueReviews(state, todayStr());
-
-  const phaseRows = [1,2,3].map(p => {
-    const x = byPhase[p] || {done:0,total:0,pct:0};
-    const title = C.phases.find(ph=>ph.id===p).title;
-    return `<div class="row"><span>Фаза ${p}: ${esc(title)}</span><span class="pill">${x.done}/${x.total}</span></div>${bar(x.pct)}`;
-  }).join('');
-
-  const trackRows = Object.keys(TRACK_LABEL).filter(k=>byTrack[k]).map(k => {
-    const x = byTrack[k];
-    return `<div class="row"><span>${TRACK_LABEL[k]}</span><span class="pill">${x.pct}%</span></div>${bar(x.pct)}`;
-  }).join('');
-
-  document.getElementById('dashboard').innerHTML = `
-    <div class="card"><h2>Общий прогресс</h2>
-      <div class="row"><span>Пройдено дней</span><span class="pill">${overall.done}/${overall.total}</span></div>
-      ${bar(overall.pct)}<p class="muted" style="margin-top:8px">${overall.pct}% за 13 недель</p></div>
-    <div class="card"><h2>Серия</h2><div class="streak">🔥 ${streak}</div>
-      <p class="muted">дней подряд</p></div>
-    <div class="card"><h2>Фазы</h2>${phaseRows}</div>
-    <div class="card"><h2>Треки</h2>${trackRows || '<p class="muted">—</p>'}</div>
-    <div class="card"><h2>К повтору сегодня</h2>
-      ${due.length ? '<p class="due">'+esc(due.join('\n')).replace(/\n/g,'<br>')+'</p>' : '<p class="muted">Пусто — чисто 👌</p>'}</div>
-  `;
-}
-
-document.getElementById('exportBtn').onclick = () => {
-  const blob = new Blob([L.serializeState(state)], { type:'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'progress.json';
-  a.click();
-  URL.revokeObjectURL(a.href);
-};
-document.getElementById('importBtn').onclick = () => document.getElementById('importFile').click();
-document.getElementById('importFile').onchange = (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    const res = L.parseImported(String(reader.result));
-    if (!res.ok){ alert('Импорт не удался: ' + res.error + '\nТекущий прогресс не изменён.'); return; }
-    state = res.state; saveState(); currentDayId = defaultDayId(); renderAll();
-    alert('Прогресс импортирован.');
-  };
-  reader.readAsText(file);
-  e.target.value = '';
-};
-renderAll();
+const THEMES = [
+  { file:'theme-neon.html', name:'Neon Cyberpunk', k:'ネオ', tag:'neon',
+    desc:'Синтвейв-HUD: near-black, неон cyan × magenta, glow, CRT-сетка. Как твоя VSCode-тема.',
+    c:['#00eaff','#a26bff','#ff2bd6'] },
+  { file:'theme-japanese.html', name:'Japanese · 和', k:'和', tag:'washi',
+    desc:'Традиционная Япония: васи-бумага, минтё, печать-ханко, «ma». Спокойно и дорого. Без неона.',
+    c:['#1b3a5b','#8a9a5b','#d8492b'] },
+  { file:'theme-emerald-gold.html', name:'Emerald & Gold', k:'宝', tag:'deco',
+    desc:'Ар-деко люкс: глубокий изумруд, золотой лайнворк, лучи-веер, высококонтрастный serif.',
+    c:['#0a201a','#0fae7a','#d4af37'] },
+  { file:'theme-dashboard.html', name:'Colorful Dashboard', k:'◑', tag:'modern',
+    desc:'Светлый современный дашборд: фуксия + мультиколор, кольца прогресса, мягкие тени, бодро.',
+    c:['#e6399b','#7c5cff','#16c0a0'] },
+  { file:'theme-bonus.html', name:'Neo-Brutalist Riso', k:'★', tag:'bonus',
+    desc:'Мой бонус: рисограф-поп на крафте, толстые обводки, жёсткие тени, крупный гротеск. Смело и весело.',
+    c:['#2b4cf0','#ff5436','#ffd23f'] },
+];
+document.getElementById('grid').innerHTML = THEMES.map((t,i) => `
+  <a class="theme" href="${t.file}" style="--c1:${t.c[0]};--c2:${t.c[1]};--c3:${t.c[2]};animation-delay:${i*70}ms">
+    <div class="swatch"><span class="k">${t.k}</span><span class="tag">${t.tag}</span></div>
+    <div class="body">
+      <h2>${t.name}</h2>
+      <p>${t.desc}</p>
+      <span class="open">Открыть <span class="arr">→</span></span>
+    </div>
+  </a>`).join('');
 </script>
 </body>
 </html>
