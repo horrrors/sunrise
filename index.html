@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dev Roadmap</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1f242e; --line:#2a3140;
+    --text:#e6e9ef; --muted:#9aa4b2; --accent:#6ea8fe; --ok:#3fb950; --warn:#d29922;
+    --radius:12px; font-synthesis:none;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.5 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif}
+  header{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;
+    align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  h1{font-size:18px;margin:0;letter-spacing:.2px}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px}
+  .grid{display:grid;gap:16px}
+  .cards{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .card h2{font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:0 0 12px}
+  .bar{height:8px;background:var(--panel2);border-radius:999px;overflow:hidden}
+  .bar>i{display:block;height:100%;background:var(--accent)}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0}
+  .pill{font-size:12px;color:var(--muted)}
+  .streak{font-size:34px;font-weight:700}
+  .today{margin-top:8px}
+  .task{display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid var(--line);
+    border-radius:10px;margin-bottom:8px;background:var(--panel2)}
+  .task input{margin-top:3px;width:18px;height:18px;accent-color:var(--accent)}
+  .task.done label{text-decoration:line-through;color:var(--muted)}
+  textarea{width:100%;min-height:70px;background:var(--panel2);color:var(--text);
+    border:1px solid var(--line);border-radius:10px;padding:10px;resize:vertical;font:inherit}
+  button{background:var(--accent);color:#0b1020;border:0;border-radius:10px;padding:9px 14px;
+    font-weight:600;cursor:pointer}
+  button.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+  select{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px}
+  .due{color:var(--warn)}
+  .muted{color:var(--muted)}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .res{color:var(--accent)}
+  .track-tag{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--accent)}
+</style>
+</head>
+<body>
+<header>
+  <h1>🚀 Dev Roadmap <span class="pill" id="phaseLabel"></span></h1>
+  <div class="toolbar">
+    <label class="pill">День: <select id="daySelect"></select></label>
+    <button class="ghost" id="exportBtn">Экспорт</button>
+    <button class="ghost" id="importBtn">Импорт</button>
+    <input type="file" id="importFile" accept="application/json" hidden />
+  </div>
+</header>
+<div class="wrap">
+  <div class="grid cards" id="dashboard"></div>
+  <div class="card today" id="todayCard"></div>
+</div>
+
+<script src="curriculum.js"></script>
+<script src="logic.js"></script>
+<script>
+const L = window.RoadmapLogic, C = window.Curriculum;
+const KEY = 'devRoadmapState.v1';
+const allDays = L.allDays(C);
+
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+function loadState(){
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return L.createInitialState();
+    const res = L.parseImported(raw);
+    return res.ok ? res.state : L.createInitialState();
+  } catch(e){ return L.createInitialState(); }
+}
+function saveState(){
+  try { localStorage.setItem(KEY, L.serializeState(state)); } catch(e){}
+}
+
+let state = loadState();
+
+function defaultDayId(){
+  const firstOpen = allDays.find(d => d.track!=='rest' && !L.isDayComplete(C, state, d.id));
+  return (firstOpen || allDays[allDays.length-1]).id;
+}
+let currentDayId = defaultDayId();
+
+function dowName(dow){ return ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'][dow-1]; }
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function renderDaySelect(){
+  const sel = document.getElementById('daySelect');
+  sel.innerHTML = allDays.map(d =>
+    `<option value="${d.id}" ${d.id===currentDayId?'selected':''}>Нед ${d.week} · ${dowName(d.dow)} · ${d.track}</option>`
+  ).join('');
+  sel.onchange = () => { currentDayId = sel.value; renderAll(); };
+}
+
+function renderToday(){
+  const d = L.getDay(C, currentDayId);
+  const el = document.getElementById('todayCard');
+  document.getElementById('phaseLabel').textContent =
+    `· Фаза ${L.phaseOfWeek(d.week)} · Неделя ${d.week}`;
+  if (d.track === 'rest'){
+    const due = L.getDueReviews(state, todayStr());
+    el.innerHTML = `<span class="track-tag">rest</span><h2>${esc(d.title)}</h2>
+      <p class="muted">${esc(d.reflectPrompt)}</p>
+      <p>${due.length ? 'К повтору сегодня: <b class="due">'+esc(due.join(', '))+'</b>' : 'Повторов на сегодня нет.'}</p>`;
+    return;
+  }
+  const st = state.days[currentDayId] || { tasks:{}, reflection:'' };
+  el.innerHTML = `
+    <span class="track-tag">${esc(d.track)}</span>
+    <h2 style="text-transform:none;font-size:18px;color:var(--text)">${esc(d.title)}</h2>
+    <p class="muted">🔥 Разминка: ${esc(d.warmup)}</p>
+    <div id="taskList"></div>
+    <p class="muted" style="margin:14px 0 6px">Рефлексия: ${esc(d.reflectPrompt)}</p>
+    <textarea id="reflect" placeholder="Короткая заметка...">${esc(st.reflection||'')}</textarea>
+    ${d.resources.length ? '<p class="muted" style="margin-top:10px">Ресурсы: '+
+      d.resources.map(r=>`<span class="res">${esc(r.label)}</span> — ${esc(r.note)}`).join(' · ')+'</p>' : ''}
+    ${d.track==='dsa' ? `<p style="margin-top:10px"><button id="markReview">Запланировать повтор паттерна недели</button></p>`:''}
+  `;
+  const list = document.getElementById('taskList');
+  list.innerHTML = d.tasks.map(t => {
+    const done = !!(st.tasks && st.tasks[t.id]);
+    return `<div class="task ${done?'done':''}">
+      <input type="checkbox" id="cb_${t.id}" ${done?'checked':''}/>
+      <label for="cb_${t.id}">${esc(t.text)}</label></div>`;
+  }).join('');
+  d.tasks.forEach(t => {
+    document.getElementById('cb_'+t.id).onchange = (e) => {
+      state = L.setTaskDone(state, currentDayId, t.id, e.target.checked, todayStr());
+      saveState(); renderAll();
+    };
+  });
+  document.getElementById('reflect').oninput = (e) => {
+    state = L.setReflection(state, currentDayId, e.target.value); saveState();
+  };
+  if (d.track==='dsa'){
+    document.getElementById('markReview').onclick = () => {
+      const item = `w${d.week}-${d.title}`;
+      state = L.scheduleReview(state, item, todayStr()); saveState(); renderAll();
+    };
+  }
+}
+
+function renderAll(){ renderDaySelect(); renderToday(); renderDashboard(); }
+function renderDashboard(){ /* added in Task 14 */ }
+renderAll();
+</script>
+</body>
+</html>
