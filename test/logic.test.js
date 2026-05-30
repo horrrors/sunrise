@@ -142,3 +142,31 @@ test('overallProgress totals non-rest days', () => {
   s = L.setTaskDone(s, 'w1d1', 't1', true, '2026-05-30');
   assert.deepEqual(L.overallProgress(CURR2, s), { done: 1, total: 3, pct: 33 });
 });
+
+test('scheduleReview adds a stage-0 entry, dedups by itemId', () => {
+  let s = L.createInitialState();
+  s = L.scheduleReview(s, 'two-pointers', '2026-05-30');
+  s = L.scheduleReview(s, 'two-pointers', '2026-05-31');
+  assert.equal(s.reviews.length, 1);
+  assert.deepEqual(s.reviews[0], { itemId: 'two-pointers', lastDate: '2026-05-31', stage: 0 });
+});
+
+test('getDueReviews returns items whose interval elapsed (stage 0 = 1 day)', () => {
+  let s = L.scheduleReview(L.createInitialState(), 'bfs', '2026-05-30');
+  assert.deepEqual(L.getDueReviews(s, '2026-05-30'), []);
+  assert.deepEqual(L.getDueReviews(s, '2026-05-31'), ['bfs']);
+});
+
+test('completeReview advances stage and pushes next due out (1->3 days)', () => {
+  let s = L.scheduleReview(L.createInitialState(), 'bfs', '2026-05-30');
+  s = L.completeReview(s, 'bfs', '2026-05-31');
+  assert.equal(s.reviews[0].stage, 1);
+  assert.deepEqual(L.getDueReviews(s, '2026-06-02'), []);
+  assert.deepEqual(L.getDueReviews(s, '2026-06-03'), ['bfs']);
+});
+
+test('stage caps at last interval', () => {
+  let s = L.scheduleReview(L.createInitialState(), 'dp', '2026-01-01');
+  for (let i = 0; i < 10; i++) s = L.completeReview(s, 'dp', '2026-01-01');
+  assert.equal(s.reviews[0].stage, L.REVIEW_INTERVALS.length - 1);
+});

@@ -112,10 +112,35 @@ function overallProgress(curriculum, state) {
   return { done, total, pct: total ? Math.round((done / total) * 100) : 0 };
 }
 
+const REVIEW_INTERVALS = [1, 3, 7, 16]; // days between reviews by stage
+
+function scheduleReview(state, itemId, today) {
+  const reviews = state.reviews.filter((r) => r.itemId !== itemId);
+  reviews.push({ itemId, lastDate: today, stage: 0 });
+  return { ...state, reviews };
+}
+function getDueReviews(state, today) {
+  return state.reviews
+    .filter((r) => {
+      const interval = REVIEW_INTERVALS[Math.min(r.stage, REVIEW_INTERVALS.length - 1)];
+      return diffDays(r.lastDate, today) >= interval;
+    })
+    .map((r) => r.itemId);
+}
+function completeReview(state, itemId, today) {
+  const reviews = state.reviews.map((r) =>
+    r.itemId === itemId
+      ? { ...r, lastDate: today, stage: Math.min(r.stage + 1, REVIEW_INTERVALS.length - 1) }
+      : r
+  );
+  return { ...state, reviews };
+}
+
 const RoadmapLogic = {
   addDays, diffDays, phaseOfWeek, createInitialState,
   allDays, getDay, setTaskDone, setReflection, isDayComplete,
   computeStreak, progressByTrack, progressByPhase, overallProgress,
+  REVIEW_INTERVALS, scheduleReview, getDueReviews, completeReview,
 };
 
 if (typeof module !== 'undefined' && module.exports) module.exports = RoadmapLogic;
