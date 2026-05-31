@@ -377,6 +377,133 @@
 
   @keyframes rise{from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:translateY(0)}}
 
+  /* ---------- dopamine: reward section ---------- */
+  .dash-fx{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+  .fx-card{display:flex; flex-direction:column}
+
+  /* chain calendar: 91 brutal neon cells */
+  .chain{
+    display:grid; grid-template-columns:repeat(13, 1fr); gap:5px;
+    margin:4px 0 14px;
+  }
+  .chain .cell{
+    aspect-ratio:1/1; width:100%;
+    background:#141414; border:2px solid var(--line);
+    transition:transform .1s ease, box-shadow .15s, background .15s, border-color .15s;
+  }
+  .chain .cell.rest{ background:#0c0c0c; border-color:#101010; opacity:.55 }
+  .chain .cell.done{
+    background:var(--lime); border-color:var(--lime);
+    box-shadow:0 0 9px -1px var(--lime), inset 0 0 6px rgba(0,0,0,.25);
+  }
+  .chain .cell.done.rest{ background:var(--electric); border-color:var(--electric); opacity:1;
+    box-shadow:0 0 9px -1px var(--electric) }
+  .chain .cell.today{
+    border-color:var(--magenta);
+    box-shadow:0 0 0 2px var(--magenta), 0 0 14px -1px var(--magenta);
+    animation:cellPulse 1.6s ease-in-out infinite;
+  }
+  .chain .cell.done.today{ background:var(--lime);
+    box-shadow:0 0 0 2px var(--magenta), 0 0 16px -1px var(--magenta) }
+  .chain .cell:hover{ transform:translateY(-2px) }
+  @keyframes cellPulse{0%,100%{box-shadow:0 0 0 2px var(--magenta),0 0 14px -1px var(--magenta)}50%{box-shadow:0 0 0 2px var(--magenta),0 0 22px 1px var(--magenta)}}
+  .chain-legend{
+    display:flex; flex-wrap:wrap; gap:14px; margin-top:auto;
+    font:700 10px var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--smoke);
+  }
+  .chain-legend span{display:inline-flex; align-items:center; gap:6px}
+  .chain-legend .lg{width:11px; height:11px; flex:0 0 auto; background:#141414; border:2px solid var(--line)}
+  .chain-legend .lg.done{background:var(--lime); border-color:var(--lime); box-shadow:0 0 7px var(--lime)}
+  .chain-legend .lg.today{border-color:var(--magenta); box-shadow:0 0 7px var(--magenta)}
+  .chain-legend .lg.rest{background:#0c0c0c; border-color:#101010; opacity:.55}
+
+  /* trophies widget */
+  .trophies{display:flex; flex-direction:column; gap:16px; flex:1}
+  .trophy-count{
+    font:400 64px/.82 var(--display); color:var(--magenta); letter-spacing:.02em;
+    text-shadow:0 0 22px rgba(255,0,168,.6), 4px 4px 0 var(--black);
+  }
+  .trophy-row{display:flex; flex-wrap:wrap; gap:10px; margin-top:auto}
+  .trophy-row .badge{
+    width:46px; height:46px; display:grid; place-items:center; font-size:24px; line-height:1;
+    background:#0a0a0a; border:var(--bw) solid var(--line);
+    transition:transform .1s ease, box-shadow .15s, border-color .15s, background .15s;
+  }
+  .trophy-row .badge.off{ filter:grayscale(1) brightness(.5); opacity:.45 }
+  .trophy-row .badge.on{
+    border-color:var(--lime); background:#0e0f08;
+    box-shadow:0 0 0 2px var(--black), 0 0 16px -2px var(--lime);
+  }
+  .trophy-row .badge.on:hover{ transform:translate(-2px,-2px); box-shadow:0 0 0 2px var(--black), 4px 4px 0 0 var(--lime) }
+
+  /* comeback banner */
+  .comeback{
+    margin:0 0 20px; padding:14px 18px;
+    font:700 14px var(--syne); color:var(--chalk); letter-spacing:.01em;
+    background:#0c0c0c; border:var(--bw) solid var(--line);
+    border-left:var(--bw2) solid var(--magenta);
+    box-shadow:0 0 22px -8px var(--magenta);
+    animation:rise .4s both;
+  }
+  .comeback b{font-family:var(--mono); color:var(--magenta)}
+
+  /* celebrate: flash + confetti burst */
+  .fx-flash{
+    position:fixed; inset:0; z-index:60; pointer-events:none;
+    background:radial-gradient(60vw 60vh at 50% 42%, rgba(198,255,0,.22), transparent 60%);
+    mix-blend-mode:screen; animation:fxFlash .5s ease-out forwards;
+  }
+  @keyframes fxFlash{0%{opacity:0}18%{opacity:1}100%{opacity:0}}
+  .fx-layer{
+    position:fixed; left:50%; top:44%; z-index:61; width:0; height:0; pointer-events:none;
+  }
+  .fx-bit{
+    position:absolute; left:0; top:0; display:block; border-radius:1px;
+    transform:translate(0,0) rotate(0deg); opacity:1;
+    animation:fxBurst var(--dur,1s) cubic-bezier(.15,.7,.3,1) forwards;
+  }
+  @keyframes fxBurst{
+    0%{ transform:translate(0,0) rotate(0deg) scale(1); opacity:1 }
+    12%{ opacity:1 }
+    100%{ transform:translate(var(--dx,0), calc(var(--dy,0) + 260px)) rotate(var(--rot,360deg)) scale(.85); opacity:0 }
+  }
+
+  /* neon toasts */
+  .fx-toasts{
+    position:fixed; right:24px; bottom:24px; z-index:70;
+    display:flex; flex-direction:column; gap:12px; max-width:340px; pointer-events:none;
+  }
+  .fx-toast{
+    display:flex; align-items:stretch; gap:0; overflow:hidden;
+    background:var(--void); color:var(--chalk);
+    border:var(--bw) solid var(--lime);
+    box-shadow:0 0 30px -6px var(--lime), 7px 7px 0 0 var(--black);
+    animation:fxToastIn .36s cubic-bezier(.22,1,.36,1) both;
+  }
+  .fx-toast.surprise{ border-color:var(--cyan); box-shadow:0 0 30px -6px var(--cyan), 7px 7px 0 0 var(--black) }
+  .fx-toast.out{ animation:fxToastOut .34s ease-in forwards }
+  @keyframes fxToastIn{from{opacity:0; transform:translateX(40px) translateY(8px)} to{opacity:1; transform:none}}
+  @keyframes fxToastOut{from{opacity:1; transform:none} to{opacity:0; transform:translateX(40px)}}
+  .fx-toast .fx-kanji{
+    flex:0 0 auto; display:grid; place-items:center; width:52px;
+    font-family:var(--display); font-weight:400; font-size:30px; line-height:1; color:var(--black);
+    background:var(--lime); border-right:var(--bw) solid var(--black);
+  }
+  .fx-toast.surprise .fx-kanji{ background:var(--cyan) }
+  .fx-toast .fx-body{display:flex; flex-direction:column; gap:6px; padding:13px 16px; min-width:0}
+  .fx-toast .fx-eyebrow{
+    font:700 10px var(--mono); letter-spacing:.16em; text-transform:uppercase; color:var(--lime);
+  }
+  .fx-toast.surprise .fx-eyebrow{ color:var(--cyan) }
+  .fx-toast .fx-icons{display:flex; gap:8px; font-size:26px; line-height:1}
+  .fx-toast .fx-icons .fx-badge{filter:drop-shadow(0 0 8px rgba(198,255,0,.6))}
+  .fx-toast .fx-msg{font:700 13.5px/1.4 var(--syne); color:var(--chalk)}
+  @media (max-width:640px){
+    .fx-toasts{right:12px; left:12px; bottom:12px; max-width:none}
+    .chain{grid-template-columns:repeat(13, 1fr); gap:4px}
+    .trophy-count{font-size:52px}
+  }
+
   @media (max-width:640px){
     .today{flex-direction:column}
     .today-side{flex-basis:auto; height:48px; border-right:0; border-bottom:var(--bw2) solid var(--black)}
@@ -420,7 +547,26 @@
 <main class="wrap">
   <div class="section-head"><h2>Сводка</h2><span class="num">// STATS</span><span class="rule"></span></div>
   <section class="dash" id="dashboard"></section>
+  <div class="section-head" style="margin-top:46px"><h2>Награды</h2><span class="num">// LOOT</span><span class="rule"></span></div>
+  <section class="dash dash-fx">
+    <div class="card fx-card" style="--accent:var(--lime);animation-delay:0ms">
+      <div class="eyebrow"><span class="kanji">鎖</span> Цепочка · 91 日</div>
+      <div class="chain" id="chainCal"></div>
+      <div class="chain-legend">
+        <span><i class="lg done"></i>закрыто</span>
+        <span><i class="lg today"></i>сегодня</span>
+        <span><i class="lg rest"></i>отдых</span>
+        <span><i class="lg"></i>впереди</span>
+      </div>
+    </div>
+    <div class="card fx-card" style="--accent:var(--magenta);animation-delay:60ms">
+      <div class="eyebrow"><span class="kanji">章</span> Трофеи · 勲章</div>
+      <div class="trophies" id="trophies"></div>
+    </div>
+  </section>
+
   <div class="section-head" style="margin-top:46px"><h2>Сегодня</h2><span class="num">// FOCUS</span><span class="rule"></span></div>
+  <div id="comeback" class="comeback" style="display:none"></div>
   <div class="day-rail">
     <button class="day-nav day-prev" id="prevDay" type="button" aria-label="Предыдущий день">‹</button>
     <section class="today-wrap"><article class="today" id="todayCard"></article></section>
@@ -539,7 +685,9 @@ function renderToday(){
   }).join('');
   d.tasks.forEach(t => {
     document.getElementById('cb_'+t.id).onchange = (e) => {
-      state = L.setTaskDone(state, currentDayId, t.id, e.target.checked, todayStr());
+      const wasComplete = L.isDayComplete(C, state, currentDayId);
+      state = L.setTaskDone(C, state, currentDayId, t.id, e.target.checked, todayStr(), new Date().getHours());
+      if (!wasComplete && L.isDayComplete(C, state, currentDayId)) onDayCompleted();
       saveState(); renderAll();
     };
   });
@@ -564,7 +712,116 @@ function syncDayNav(){
   if (cta) cta.onclick = function(){ goToDay(1); };
 }
 
-function renderAll(){ renderDaySelect(); renderToday(); renderDashboard(); }
+/* ===================== дофаминовые фичи ===================== */
+function completedCount(){ return Object.keys(state.days).filter(function(id){return state.days[id].completedAt;}).length; }
+function onDayCompleted(){
+  celebrate();
+  var res = L.syncBadges(C, state, todayStr());
+  state = res.state;
+  if (res.unlocked.length) showBadgeToast(res.unlocked);
+  if (Math.random() < 0.12){
+    var msg = L.SURPRISES[Math.floor(Math.random()*L.SURPRISES.length)];
+    state.lastSurprise = { text: msg, at: todayStr() };
+    showSurprise(msg);
+  }
+}
+function renderChain(){
+  var host = document.getElementById('chainCal'); if(!host) return;
+  host.innerHTML = allDays.map(function(d){
+    var cls='cell';
+    if(d.track==='rest') cls+=' rest';
+    if(L.isDayComplete(C, state, d.id)) cls+=' done';
+    if(d.id===currentDayId) cls+=' today';
+    return '<span class="'+cls+'" title="'+esc('Нед '+d.week+' · '+dowName(d.dow))+'"></span>';
+  }).join('');
+}
+function renderTrophies(){
+  var host = document.getElementById('trophies'); if(!host) return;
+  var all = L.evaluateBadges(C, state, todayStr());
+  var got = all.filter(function(b){return b.unlocked;});
+  host.innerHTML = '<div class="trophy-count">'+got.length+'/'+all.length+'</div>' +
+    '<div class="trophy-row">' + all.map(function(b){
+      return '<span class="badge '+(b.unlocked?'on':'off')+'" title="'+esc(b.title+' — '+b.desc)+'">'+b.icon+'</span>';
+    }).join('') + '</div>';
+}
+function renderComeback(){
+  var cb = document.getElementById('comeback'); if(!cb) return;
+  var unlocked = L.evaluateBadges(C, state, todayStr()).find(function(b){return b.id==='comeback';}).unlocked;
+  if (unlocked && L.computeStreak(state, todayStr()) <= 2){
+    cb.style.display=''; cb.innerHTML = '🩹 С возвращением — всего пройдено <b>'+completedCount()+'</b> дней. Продолжаем.';
+  } else { cb.style.display='none'; }
+}
+
+/* ---- визуал в эстетике темы: конфетти + неон-тосты ---- */
+function celebrate(){
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches){
+    var fl = document.createElement('div'); fl.className='fx-flash'; document.body.appendChild(fl);
+    setTimeout(function(){ fl.remove(); }, 360);
+    return;
+  }
+  var flash = document.createElement('div'); flash.className='fx-flash';
+  document.body.appendChild(flash);
+  setTimeout(function(){ flash.remove(); }, 520);
+
+  var layer = document.createElement('div'); layer.className='fx-layer';
+  var colors = ['var(--lime)','var(--magenta)','var(--cyan)','var(--acid-org)','var(--electric)'];
+  for (var i=0;i<46;i++){
+    var p = document.createElement('i'); p.className='fx-bit';
+    var c = colors[i % colors.length];
+    var ang = Math.random()*Math.PI*2;
+    var dist = 120 + Math.random()*260;
+    var dx = Math.cos(ang)*dist;
+    var dy = Math.sin(ang)*dist - 120;
+    var rot = (Math.random()*720-360)+'deg';
+    var dur = (0.7 + Math.random()*0.7);
+    var sz = 7 + Math.random()*9;
+    p.style.setProperty('--dx', dx.toFixed(0)+'px');
+    p.style.setProperty('--dy', dy.toFixed(0)+'px');
+    p.style.setProperty('--rot', rot);
+    p.style.setProperty('--dur', dur.toFixed(2)+'s');
+    p.style.width = sz.toFixed(0)+'px'; p.style.height = (sz*0.42).toFixed(0)+'px';
+    p.style.background = c; p.style.boxShadow = '0 0 10px '+c;
+    p.style.animationDelay = (Math.random()*0.12).toFixed(2)+'s';
+    layer.appendChild(p);
+  }
+  document.body.appendChild(layer);
+  setTimeout(function(){ layer.remove(); }, 1700);
+}
+function _toastHost(){
+  var h = document.getElementById('fxToasts');
+  if (!h){ h = document.createElement('div'); h.id='fxToasts'; h.className='fx-toasts'; document.body.appendChild(h); }
+  return h;
+}
+function _spawnToast(html, kind, ttl){
+  var host = _toastHost();
+  var el = document.createElement('div');
+  el.className = 'fx-toast '+(kind||'');
+  el.innerHTML = html;
+  host.appendChild(el);
+  setTimeout(function(){ el.classList.add('out'); setTimeout(function(){ el.remove(); }, 360); }, ttl||3500);
+}
+function showBadgeToast(ids){
+  var all = L.evaluateBadges(C, state, todayStr());
+  var icons = (ids||[]).map(function(id){
+    var b = all.find(function(x){return x.id===id;});
+    return b ? '<span class="fx-badge">'+b.icon+'</span>' : '';
+  }).join('');
+  _spawnToast(
+    '<span class="fx-kanji">章</span>'+
+    '<span class="fx-body"><span class="fx-eyebrow">Новый трофей!</span>'+
+    '<span class="fx-icons">'+icons+'</span></span>',
+    'trophy', 3500);
+}
+function showSurprise(text){
+  _spawnToast(
+    '<span class="fx-kanji">運</span>'+
+    '<span class="fx-body"><span class="fx-eyebrow">Сюрприз</span>'+
+    '<span class="fx-msg">'+esc(text)+'</span></span>',
+    'surprise', 4200);
+}
+/* ============================================================ */
+
+function renderAll(){ renderDaySelect(); renderToday(); renderDashboard(); renderChain(); renderTrophies(); renderComeback(); }
 
 function bar(pct){ return `<div class="bar"><i style="width:${pct}%"></i></div>`; }
 

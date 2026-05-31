@@ -484,6 +484,144 @@
     .day-nav{width:38px; height:38px; font-size:22px}
     .next-day-cta{padding:12px 20px; font-size:11px; letter-spacing:.16em}
   }
+  /* ====== dopamine: chain calendar ====== */
+  .dash-dopa{margin-top:24px}
+  .chain-card .chain-cal{
+    display:grid; grid-template-columns:repeat(13, 1fr); gap:5px; margin:6px 0 4px;
+  }
+  .chain-cal .cell{
+    aspect-ratio:1/1; border-radius:4px;
+    background:rgba(143,137,124,.20);
+    border:1px solid rgba(143,137,124,.30);
+    box-shadow:var(--inset-shadow), inset 0 -1px 2px rgba(143,137,124,.25);
+    transition:transform .14s ease, box-shadow .18s ease, background .25s;
+  }
+  .chain-cal .cell:hover{transform:translateY(-1px); box-shadow:0 4px 10px -6px rgba(43,42,38,.5)}
+  .chain-cal .cell.rest{
+    background:linear-gradient(160deg, rgba(91,58,38,.16), rgba(91,58,38,.07));
+    border-color:rgba(91,58,38,.30);
+  }
+  .chain-cal .cell.done{
+    background:linear-gradient(160deg, var(--em-sheen), var(--em-deep));
+    border-color:rgba(236,211,154,.45);
+    box-shadow:inset 0 1px 1px rgba(255,255,255,.18), 0 3px 8px -5px rgba(14,59,46,.7);
+  }
+  .chain-cal .cell.rest.done{
+    background:linear-gradient(160deg, var(--walnut-mid), var(--walnut-dark));
+    border-color:rgba(236,211,154,.4);
+  }
+  .chain-cal .cell.today{
+    border-color:var(--brass);
+    box-shadow:0 0 0 2px rgba(200,164,92,.5), inset 0 1px 1px rgba(255,255,255,.3);
+  }
+  .chain-cal .cell.today.done{
+    box-shadow:0 0 0 2px rgba(236,211,154,.85), inset 0 1px 1px rgba(255,255,255,.25);
+  }
+  .chain-legend{
+    display:flex; flex-wrap:wrap; gap:14px; margin-top:14px;
+    font:500 10px var(--sans); letter-spacing:.12em; text-transform:uppercase; color:var(--ink-dim);
+  }
+  .chain-legend span{display:inline-flex; align-items:center; gap:6px}
+  .chain-legend .lg{width:11px; height:11px; border-radius:3px; flex:0 0 auto;
+    border:1px solid rgba(143,137,124,.35); box-shadow:var(--inset-shadow)}
+  .chain-legend .lg-done{background:linear-gradient(160deg,var(--em-sheen),var(--em-deep)); border-color:rgba(236,211,154,.45)}
+  .chain-legend .lg-today{background:rgba(255,255,255,.6); border-color:var(--brass); box-shadow:0 0 0 2px rgba(200,164,92,.4)}
+  .chain-legend .lg-rest{background:linear-gradient(160deg, rgba(91,58,38,.20), rgba(91,58,38,.08)); border-color:rgba(91,58,38,.3)}
+  .chain-legend .lg-open{background:rgba(143,137,124,.20)}
+
+  /* ====== dopamine: trophies ====== */
+  .trophies{display:flex; flex-direction:column; gap:14px}
+  .trophy-count{
+    font:500 44px/1 var(--serif); color:var(--em-deep);
+    text-shadow:0 2px 0 rgba(255,255,255,.5);
+  }
+  .trophy-count::after{content:" трофеев"; font:500 11px var(--sans); letter-spacing:.18em;
+    text-transform:uppercase; color:var(--ink-dim); text-shadow:none; margin-left:8px}
+  .trophy-row{display:flex; flex-wrap:wrap; gap:9px}
+  .trophy-row .badge{
+    display:grid; place-items:center; width:40px; height:40px; border-radius:11px;
+    font-size:20px; line-height:1; flex:0 0 auto; cursor:default;
+    transition:transform .14s ease, box-shadow .18s ease;
+  }
+  .trophy-row .badge.on{
+    background:linear-gradient(160deg, var(--marble-0), var(--marble-3));
+    border:1px solid var(--brass-base);
+    box-shadow:var(--inset-shadow), inset 0 -2px 4px rgba(143,137,124,.3), 0 4px 12px -7px rgba(122,90,43,.7);
+  }
+  .trophy-row .badge.on:hover{transform:translateY(-2px) rotate(-3deg);
+    box-shadow:var(--inset-shadow), 0 9px 20px -10px rgba(122,90,43,.85)}
+  .trophy-row .badge.off{
+    background:rgba(143,137,124,.16);
+    border:1px solid rgba(143,137,124,.3);
+    box-shadow:inset 0 1px 2px rgba(143,137,124,.4);
+    filter:grayscale(1) opacity(.4);
+  }
+
+  /* ====== dopamine: comeback banner ====== */
+  .comeback{
+    margin:0 0 22px;
+    font:400 14.5px var(--sans); color:var(--ink);
+    padding:14px 20px; border-radius:12px;
+    background:linear-gradient(180deg, rgba(231,224,210,.55), rgba(239,233,221,.4));
+    border:1px solid rgba(143,137,124,.3); border-left:3px solid var(--brass-base);
+    box-shadow:var(--inset-shadow), var(--soft-shadow);
+    animation:rise .45s both;
+  }
+  .comeback b{font-family:var(--display); font-weight:600; font-style:italic; color:var(--em-deep)}
+
+  /* ====== dopamine: confetti burst ====== */
+  .dopa-confetti{position:fixed; inset:0; z-index:60; pointer-events:none; overflow:hidden}
+  .dopa-confetti i{
+    position:absolute; top:-8%; display:block;
+    box-shadow:0 1px 2px rgba(43,42,38,.35);
+    opacity:0; will-change:transform, opacity;
+    animation-name:dopaFall; animation-timing-function:cubic-bezier(.25,.6,.4,1); animation-fill-mode:both;
+  }
+  @keyframes dopaFall{
+    0%{opacity:0; transform:translate3d(0,-10vh,0) rotate(0)}
+    12%{opacity:1}
+    100%{opacity:0; transform:translate3d(var(--drift,0), 112vh, 0) rotate(var(--rot,360deg))}
+  }
+
+  /* ====== dopamine: toasts ====== */
+  .dopa-toasts{
+    position:fixed; right:26px; bottom:26px; z-index:70;
+    display:flex; flex-direction:column; gap:12px; max-width:340px; pointer-events:none;
+  }
+  .dopa-toast{
+    display:flex; align-items:center; gap:14px; padding:14px 18px;
+    border-radius:14px; color:var(--cream);
+    background:linear-gradient(160deg, var(--em-mid), var(--em-deep));
+    border:1px solid rgba(236,211,154,.45);
+    box-shadow:0 18px 40px -18px rgba(14,59,46,.9), inset 0 1px 0 rgba(255,255,255,.14);
+    opacity:0; transform:translateY(14px) scale(.96);
+    transition:opacity .42s ease, transform .42s cubic-bezier(.22,1,.36,1);
+  }
+  .dopa-toast::before{
+    content:""; position:absolute; left:16px; right:16px; top:0; height:2px;
+    background:linear-gradient(90deg, transparent, var(--brass-base) 14%, var(--brass-hi) 50%, var(--brass-base) 86%, transparent);
+  }
+  .dopa-toast{position:relative; overflow:hidden}
+  .dopa-toast.in{opacity:1; transform:translateY(0) scale(1)}
+  .dopa-toast .dopa-ico{
+    display:grid; place-items:center; min-width:42px; height:42px; flex:0 0 auto;
+    border-radius:11px; font-size:21px; line-height:1;
+    background:radial-gradient(circle at 34% 30%, var(--brass-hi), var(--brass) 50%, var(--brass-base) 100%);
+    box-shadow:inset 0 1px 1px rgba(255,255,255,.7), inset 0 -2px 4px rgba(122,90,43,.5);
+    color:var(--em-deep);
+  }
+  .dopa-toast .dopa-body{display:flex; flex-direction:column; gap:2px; min-width:0}
+  .dopa-toast .dopa-kicker{
+    font:500 9px var(--sans); letter-spacing:.28em; text-transform:uppercase; color:var(--brass-hi);
+  }
+  .dopa-toast .dopa-text{font:400 14.5px/1.4 var(--display); font-style:italic; color:var(--cream)}
+  .dopa-toast.surprise{background:linear-gradient(160deg, var(--walnut-mid), var(--walnut-dark))}
+
+  @media (max-width:640px){
+    .chain-card .chain-cal{grid-template-columns:repeat(13, 1fr); gap:4px}
+    .dopa-toasts{right:14px; left:14px; bottom:14px; max-width:none}
+  }
+
   @media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important}}
 </style>
 </head>
@@ -513,11 +651,29 @@
   </div>
   <section class="dash" id="dashboard"></section>
 
+  <section class="dash dash-dopa">
+    <div class="card chain-card" style="--accent:#1f5c46;animation-delay:0ms">
+      <div class="eyebrow"><span class="kanji">鎖</span> Chain · 連鎖</div>
+      <div class="chain-cal" id="chainCal"></div>
+      <div class="chain-legend">
+        <span><i class="lg lg-done"></i>закрыт</span>
+        <span><i class="lg lg-today"></i>сегодня</span>
+        <span><i class="lg lg-rest"></i>отдых</span>
+        <span><i class="lg lg-open"></i>впереди</span>
+      </div>
+    </div>
+    <div class="card trophy-card" style="--accent:#5b3a26;animation-delay:60ms">
+      <div class="eyebrow"><span class="kanji">賞</span> Trophies · 勲章</div>
+      <div class="trophies" id="trophies"></div>
+    </div>
+  </section>
+
   <div class="section-head" style="margin-top:46px">
     <span class="eyebrow-mini">今日</span>
     <h2>Сегодня</h2>
     <span class="rule"></span>
   </div>
+  <div class="comeback" id="comeback" style="display:none"></div>
   <div class="day-rail">
     <button class="day-nav day-prev" id="prevDay" type="button" aria-label="Предыдущий день">&lsaquo;</button>
     <section class="today-wrap"><article class="today" id="todayCard"></article></section>
@@ -639,7 +795,9 @@ function renderToday(){
   }).join('');
   d.tasks.forEach(t => {
     document.getElementById('cb_'+t.id).onchange = (e) => {
-      state = L.setTaskDone(state, currentDayId, t.id, e.target.checked, todayStr());
+      const wasComplete = L.isDayComplete(C, state, currentDayId);
+      state = L.setTaskDone(C, state, currentDayId, t.id, e.target.checked, todayStr(), new Date().getHours());
+      if (!wasComplete && L.isDayComplete(C, state, currentDayId)) onDayCompleted();
       saveState(); renderAll();
     };
   });
@@ -666,7 +824,111 @@ function afterRenderToday(){
   })();
 }
 
-function renderAll(){ renderDaySelect(); renderToday(); renderDashboard(); }
+function renderAll(){ renderDaySelect(); renderToday(); renderDashboard(); renderChain(); renderTrophies(); renderComeback(); }
+
+/* ===== dopamine features ===== */
+function completedCount(){ return Object.keys(state.days).filter(function(id){return state.days[id].completedAt;}).length; }
+function onDayCompleted(){
+  celebrate();
+  var res = L.syncBadges(C, state, todayStr());
+  state = res.state;
+  if (res.unlocked.length) showBadgeToast(res.unlocked);
+  if (Math.random() < 0.12){
+    var msg = L.SURPRISES[Math.floor(Math.random()*L.SURPRISES.length)];
+    state.lastSurprise = { text: msg, at: todayStr() };
+    showSurprise(msg);
+  }
+}
+function renderChain(){
+  var host = document.getElementById('chainCal'); if(!host) return;
+  host.innerHTML = allDays.map(function(d){
+    var cls='cell';
+    if(d.track==='rest') cls+=' rest';
+    if(L.isDayComplete(C, state, d.id)) cls+=' done';
+    if(d.id===currentDayId) cls+=' today';
+    return '<span class="'+cls+'" title="'+esc('Нед '+d.week+' · '+dowName(d.dow))+'"></span>';
+  }).join('');
+}
+function renderTrophies(){
+  var host = document.getElementById('trophies'); if(!host) return;
+  var all = L.evaluateBadges(C, state, todayStr());
+  var got = all.filter(function(b){return b.unlocked;});
+  host.innerHTML = '<div class="trophy-count">'+got.length+'/'+all.length+'</div>' +
+    '<div class="trophy-row">' + all.map(function(b){
+      return '<span class="badge '+(b.unlocked?'on':'off')+'" title="'+esc(b.title+' — '+b.desc)+'">'+b.icon+'</span>';
+    }).join('') + '</div>';
+}
+function renderComeback(){
+  var cb = document.getElementById('comeback'); if(!cb) return;
+  var unlocked = L.evaluateBadges(C, state, todayStr()).find(function(b){return b.id==='comeback';}).unlocked;
+  if (unlocked && L.computeStreak(state, todayStr()) <= 2){
+    cb.style.display=''; cb.innerHTML = '🩹 С возвращением — всего пройдено <b>'+completedCount()+'</b> дней. Продолжаем.';
+  } else { cb.style.display='none'; }
+}
+
+/* ---- visual moments (no external libs) ---- */
+function celebrate(){
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+  var layer = document.createElement('div');
+  layer.className = 'dopa-confetti';
+  var colors = ['#c8a45c','#ecd39a','#2f7d5e','#164d3a','#b88a46','#1f5c46'];
+  var n = 46;
+  for (var i=0;i<n;i++){
+    var p = document.createElement('i');
+    var c = colors[i % colors.length];
+    var left = Math.random()*100;
+    var delay = Math.random()*120;
+    var dur = 1100 + Math.random()*900;
+    var drift = (Math.random()*180 - 90);
+    var rot = (Math.random()*720 - 360);
+    var size = 6 + Math.random()*7;
+    p.style.left = left + '%';
+    p.style.width = size + 'px';
+    p.style.height = (size*1.6) + 'px';
+    p.style.background = c;
+    p.style.setProperty('--drift', drift + 'px');
+    p.style.setProperty('--rot', rot + 'deg');
+    p.style.animationDelay = delay + 'ms';
+    p.style.animationDuration = dur + 'ms';
+    if (i % 4 === 0) p.style.borderRadius = '50%';
+    layer.appendChild(p);
+  }
+  document.body.appendChild(layer);
+  setTimeout(function(){ if (layer.parentNode) layer.parentNode.removeChild(layer); }, 2300);
+}
+function dopaToastHost(){
+  var h = document.getElementById('dopaToasts');
+  if (!h){ h = document.createElement('div'); h.id = 'dopaToasts'; h.className = 'dopa-toasts'; document.body.appendChild(h); }
+  return h;
+}
+function pushToast(html, kind, ttl){
+  var host = dopaToastHost();
+  var t = document.createElement('div');
+  t.className = 'dopa-toast' + (kind ? ' ' + kind : '');
+  t.innerHTML = html;
+  host.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('in'); });
+  setTimeout(function(){
+    t.classList.remove('in');
+    setTimeout(function(){ if (t.parentNode) t.parentNode.removeChild(t); }, 420);
+  }, ttl || 3500);
+}
+function showBadgeToast(ids){
+  var byId = {};
+  L.evaluateBadges(C, state, todayStr()).forEach(function(b){ byId[b.id] = b; });
+  var icons = ids.map(function(id){ return byId[id] ? byId[id].icon : '🏅'; }).join(' ');
+  var names = ids.map(function(id){ return byId[id] ? byId[id].title : id; }).join(', ');
+  pushToast(
+    '<span class="dopa-ico">'+esc(icons)+'</span>' +
+    '<span class="dopa-body"><span class="dopa-kicker">Новый трофей</span><span class="dopa-text">'+esc(names)+'</span></span>',
+    'trophy', 3800);
+}
+function showSurprise(text){
+  pushToast(
+    '<span class="dopa-ico">✦</span>' +
+    '<span class="dopa-body"><span class="dopa-kicker">Сюрприз</span><span class="dopa-text">'+esc(text)+'</span></span>',
+    'surprise', 4500);
+}
 
 function bar(pct){ return `<div class="bar"><i style="width:${pct}%"></i></div>`; }
 

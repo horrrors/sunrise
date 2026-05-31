@@ -338,6 +338,146 @@
 
   @keyframes pop{from{opacity:0; transform:translateY(12px) scale(.98)} to{opacity:1}}
 
+  /* ---------- dopamine: chain calendar ---------- */
+  .bonus-grid{display:grid; grid-template-columns:1.55fr 1fr; gap:20px; align-items:start}
+  .chain-cal{
+    display:grid; grid-template-columns:repeat(13, 1fr); gap:5px; margin-top:4px;
+  }
+  .chain-cal .cell{
+    aspect-ratio:1/1; border-radius:4px;
+    background:var(--paper-2); border:2px solid var(--ink);
+    box-shadow:1.5px 1.5px 0 0 rgba(20,17,13,.22);
+    transition:transform .1s ease;
+  }
+  .chain-cal .cell:hover{transform:translate(-1px,-1px) scale(1.08)}
+  .chain-cal .cell.rest{
+    background:var(--paper);
+    background-image:repeating-linear-gradient(45deg, rgba(20,17,13,.16) 0 2px, transparent 2px 5px);
+    opacity:.6;
+  }
+  .chain-cal .cell.done{
+    background:var(--orange);
+    background-image:repeating-linear-gradient(45deg, rgba(255,255,255,.3) 0 4px, transparent 4px 8px);
+    box-shadow:1.5px 1.5px 0 0 var(--ink);
+  }
+  .chain-cal .cell.today{
+    background:var(--cobalt); transform:scale(1.12); z-index:1;
+    box-shadow:0 0 0 2px var(--paper), 2px 2px 0 0 var(--ink);
+  }
+  .chain-cal .cell.done.today{background:var(--orange); box-shadow:0 0 0 2px var(--paper), 2px 2px 0 0 var(--cobalt)}
+  .chain-legend{
+    display:flex; flex-wrap:wrap; gap:12px; margin-top:16px;
+    font:600 11px var(--mono); letter-spacing:.04em; text-transform:uppercase; color:var(--ink); opacity:.85;
+  }
+  .chain-legend span{display:inline-flex; align-items:center; gap:6px}
+  .chain-legend i.lg{width:13px; height:13px; border-radius:3px; background:var(--paper-2); border:2px solid var(--ink)}
+  .chain-legend i.lg.done{background:var(--orange)}
+  .chain-legend i.lg.today{background:var(--cobalt)}
+  .chain-legend i.lg.rest{background-image:repeating-linear-gradient(45deg, rgba(20,17,13,.3) 0 2px, transparent 2px 5px)}
+
+  /* ---------- dopamine: trophies ---------- */
+  .trophies{display:flex; flex-direction:column; align-items:center; gap:14px; margin-top:2px}
+  .trophy-count{
+    font:400 52px/.85 var(--display); color:var(--ink);
+    text-shadow:3px 3px 0 var(--yellow);
+  }
+  .trophy-row{display:flex; flex-wrap:wrap; justify-content:center; gap:9px}
+  .trophy-row .badge{
+    display:grid; place-items:center; width:42px; height:42px; font-size:20px; line-height:1;
+    border:var(--bw) solid var(--ink); border-radius:11px;
+    background:var(--paper); box-shadow:2px 2px 0 0 var(--ink);
+    transition:transform .1s ease, box-shadow .1s ease;
+  }
+  .trophy-row .badge.on{
+    background:var(--yellow); box-shadow:3px 3px 0 0 var(--ink); transform:rotate(-3deg);
+  }
+  .trophy-row .badge.on:hover{transform:translate(-2px,-2px) rotate(0deg); box-shadow:5px 5px 0 0 var(--ink)}
+  .trophy-row .badge.off{
+    background:var(--paper-2); opacity:.42; filter:grayscale(1);
+    box-shadow:1.5px 1.5px 0 0 rgba(20,17,13,.3);
+  }
+
+  /* ---------- dopamine: comeback banner ---------- */
+  .comeback-banner{
+    margin:0 0 18px; padding:14px 18px; border-radius:12px;
+    font:600 14px var(--sans); color:var(--ink);
+    background:var(--pink); border:var(--bw) solid var(--ink);
+    box-shadow:5px 5px 0 0 var(--ink); transform:rotate(-.6deg);
+    animation:pop .4s both;
+  }
+  .comeback-banner b{font-family:var(--mono); font-weight:700;
+    background:var(--paper); border:2px solid var(--ink); border-radius:6px; padding:1px 7px}
+
+  /* ---------- dopamine: confetti / flash ---------- */
+  .fx-layer{position:fixed; inset:0; z-index:90; pointer-events:none; overflow:hidden}
+  .fx-flash{
+    position:absolute; inset:0; background:var(--yellow); mix-blend-mode:screen;
+    animation:fxFlash .5s ease-out forwards;
+  }
+  @keyframes fxFlash{0%{opacity:0} 18%{opacity:.5} 100%{opacity:0}}
+  .confetti{
+    position:absolute; left:50%; top:46%; width:var(--sz,12px); height:var(--sz,12px);
+    background:var(--c,var(--orange)); border:2px solid var(--ink);
+    opacity:0;
+    animation:fxBurst 1.25s cubic-bezier(.18,.7,.3,1) var(--d,0ms) forwards;
+  }
+  .confetti.sq{border-radius:2px}
+  .confetti.dot{border-radius:50%}
+  .confetti.tri{
+    background:transparent; border:0; width:0; height:0;
+    border-left:calc(var(--sz,12px)/1.4) solid transparent;
+    border-right:calc(var(--sz,12px)/1.4) solid transparent;
+    border-bottom:var(--sz,12px) solid var(--c,var(--orange));
+    filter:drop-shadow(1px 1px 0 var(--ink));
+  }
+  .confetti.plus{
+    background:var(--c,var(--orange)); border:0;
+    clip-path:polygon(38% 0,62% 0,62% 38%,100% 38%,100% 62%,62% 62%,62% 100%,38% 100%,38% 62%,0 62%,0 38%,38% 38%);
+    filter:drop-shadow(1px 1px 0 var(--ink));
+  }
+  @keyframes fxBurst{
+    0%{opacity:1; transform:translate(-50%,-50%) rotate(0) scale(.4)}
+    14%{opacity:1; transform:translate(calc(-50% + var(--dx)*.35),calc(-50% + var(--dy)*.35)) rotate(calc(var(--rot)*.4)) scale(1)}
+    100%{opacity:0; transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy) + 220px)) rotate(var(--rot)) scale(.85)}
+  }
+
+  /* ---------- dopamine: toasts ---------- */
+  .toast-host{
+    position:fixed; right:24px; bottom:24px; z-index:100;
+    display:flex; flex-direction:column; gap:12px; align-items:flex-end;
+    pointer-events:none; max-width:min(360px, calc(100vw - 32px));
+  }
+  .toast{
+    display:flex; align-items:center; gap:13px; padding:13px 16px; border-radius:13px;
+    background:var(--paper); color:var(--ink);
+    border:var(--bw) solid var(--ink); box-shadow:6px 6px 0 0 var(--ink);
+    opacity:0; transform:translateX(40px) rotate(2deg);
+    transition:opacity .32s ease, transform .32s cubic-bezier(.22,1,.36,1);
+  }
+  .toast.in{opacity:1; transform:translateX(0) rotate(-1deg)}
+  .toast.out{opacity:0; transform:translateX(40px) rotate(2deg)}
+  .toast .toast-k{
+    flex:0 0 auto; display:grid; place-items:center; width:40px; height:40px;
+    font-family:var(--display); font-size:18px; color:var(--ink);
+    background:var(--accent,var(--yellow)); border:var(--bw) solid var(--ink); border-radius:10px;
+    box-shadow:2px 2px 0 0 var(--ink); transform:rotate(-4deg);
+  }
+  .toast .toast-body{display:flex; flex-direction:column; gap:3px; min-width:0}
+  .toast .toast-eyebrow{
+    font:700 10px var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--ink); opacity:.65;
+  }
+  .toast .toast-line{font:600 14px/1.35 var(--sans); color:var(--ink)}
+  .toast .toast-icons{font-size:17px; letter-spacing:2px}
+
+  @media (max-width:760px){
+    .bonus-grid{grid-template-columns:1fr}
+    .chain-cal{grid-template-columns:repeat(13, 1fr)}
+  }
+  @media (max-width:480px){
+    .chain-cal{grid-template-columns:repeat(7, 1fr)}
+    .toast-host{right:12px; left:12px; bottom:12px; max-width:none}
+  }
+
   @media (max-width:640px){
     .today{flex-direction:column}
     .today-side{flex-basis:auto; height:46px; border-right:0; border-bottom:var(--bw) solid var(--ink)}
@@ -372,7 +512,27 @@
 <main class="wrap">
   <div class="section-head"><h2>Сводка</h2><span class="rule"></span></div>
   <section class="dash" id="dashboard"></section>
+
+  <div class="section-head" style="margin-top:38px"><h2>Серия · 連鎖</h2><span class="rule"></span></div>
+  <section class="bonus-grid">
+    <article class="card chain-card" style="--accent:var(--cobalt)">
+      <div class="eyebrow"><span class="kanji">鎖</span> Chain · 91 日</div>
+      <div class="chain-cal" id="chainCal"></div>
+      <div class="chain-legend">
+        <span><i class="lg done"></i> закрыт</span>
+        <span><i class="lg today"></i> сегодня</span>
+        <span><i class="lg rest"></i> отдых</span>
+        <span><i class="lg"></i> впереди</span>
+      </div>
+    </article>
+    <article class="card trophy-card" style="--accent:var(--yellow)">
+      <div class="eyebrow"><span class="kanji">賞</span> Trophies · 戦利品</div>
+      <div class="trophies" id="trophies"></div>
+    </article>
+  </section>
+
   <div class="section-head" style="margin-top:38px"><h2>Сегодня</h2><span class="rule"></span></div>
+  <div class="comeback-banner" id="comeback" style="display:none"></div>
   <div class="day-rail">
     <button class="day-nav day-prev" id="prevDay" type="button" aria-label="Предыдущий день">‹</button>
     <section class="today-wrap"><article class="today" id="todayCard"></article></section>
@@ -498,7 +658,9 @@ function renderToday(){
   }).join('');
   d.tasks.forEach(t => {
     document.getElementById('cb_'+t.id).onchange = (e) => {
-      state = L.setTaskDone(state, currentDayId, t.id, e.target.checked, todayStr());
+      const wasComplete = L.isDayComplete(C, state, currentDayId);
+      state = L.setTaskDone(C, state, currentDayId, t.id, e.target.checked, todayStr(), new Date().getHours());
+      if (!wasComplete && L.isDayComplete(C, state, currentDayId)) onDayCompleted();
       saveState(); renderAll();
     };
   });
@@ -521,7 +683,114 @@ function renderToday(){
   })();
 }
 
-function renderAll(){ renderDaySelect(); renderToday(); renderDashboard(); }
+function renderAll(){ renderDaySelect(); renderToday(); renderDashboard(); renderChain(); renderTrophies(); renderComeback(); }
+
+/* ---------- dopamine features ---------- */
+function completedCount(){ return Object.keys(state.days).filter(function(id){return state.days[id].completedAt;}).length; }
+function onDayCompleted(){
+  celebrate();
+  var res = L.syncBadges(C, state, todayStr());
+  state = res.state;
+  if (res.unlocked.length) showBadgeToast(res.unlocked);
+  if (Math.random() < 0.12){
+    var msg = L.SURPRISES[Math.floor(Math.random()*L.SURPRISES.length)];
+    state.lastSurprise = { text: msg, at: todayStr() };
+    showSurprise(msg);
+  }
+}
+function renderChain(){
+  var host = document.getElementById('chainCal'); if(!host) return;
+  host.innerHTML = allDays.map(function(d){
+    var cls='cell';
+    if(d.track==='rest') cls+=' rest';
+    if(L.isDayComplete(C, state, d.id)) cls+=' done';
+    if(d.id===currentDayId) cls+=' today';
+    return '<span class="'+cls+'" title="'+esc('Нед '+d.week+' · '+dowName(d.dow))+'"></span>';
+  }).join('');
+}
+function renderTrophies(){
+  var host = document.getElementById('trophies'); if(!host) return;
+  var all = L.evaluateBadges(C, state, todayStr());
+  var got = all.filter(function(b){return b.unlocked;});
+  host.innerHTML = '<div class="trophy-count">'+got.length+'/'+all.length+'</div>' +
+    '<div class="trophy-row">' + all.map(function(b){
+      return '<span class="badge '+(b.unlocked?'on':'off')+'" title="'+esc(b.title+' — '+b.desc)+'">'+b.icon+'</span>';
+    }).join('') + '</div>';
+}
+function renderComeback(){
+  var cb = document.getElementById('comeback'); if(!cb) return;
+  var unlocked = L.evaluateBadges(C, state, todayStr()).find(function(b){return b.id==='comeback';}).unlocked;
+  if (unlocked && L.computeStreak(state, todayStr()) <= 2){
+    cb.style.display=''; cb.innerHTML = '🩹 С возвращением — всего пройдено <b>'+completedCount()+'</b> дней. Продолжаем.';
+  } else { cb.style.display='none'; }
+}
+
+/* visual: confetti burst on day completion — pure CSS+DOM, riso palette */
+function celebrate(){
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+  var layer = document.getElementById('fxLayer');
+  if (!layer){ layer = document.createElement('div'); layer.id='fxLayer'; layer.className='fx-layer'; document.body.appendChild(layer); }
+  var flash = document.createElement('div'); flash.className='fx-flash'; layer.appendChild(flash);
+  setTimeout(function(){ flash.remove(); }, 520);
+  var palette = ['var(--orange)','var(--cobalt)','var(--yellow)','var(--green)','var(--violet)','var(--cyan)','var(--pink)'];
+  var shapes = ['sq','tri','dot','plus'];
+  var N = 56;
+  for (var i=0;i<N;i++){
+    var p = document.createElement('span');
+    p.className = 'confetti ' + shapes[i % shapes.length];
+    var ang = (Math.random()*360);
+    var dist = 120 + Math.random()*260;
+    var dx = Math.cos(ang*Math.PI/180) * dist;
+    var dy = Math.sin(ang*Math.PI/180) * dist - (140 + Math.random()*120);
+    p.style.setProperty('--dx', dx.toFixed(0)+'px');
+    p.style.setProperty('--dy', dy.toFixed(0)+'px');
+    p.style.setProperty('--rot', (Math.random()*720-360).toFixed(0)+'deg');
+    p.style.setProperty('--c', palette[i % palette.length]);
+    p.style.setProperty('--d', (Math.random()*120).toFixed(0)+'ms');
+    p.style.setProperty('--sz', (8 + Math.random()*9).toFixed(0)+'px');
+    layer.appendChild(p);
+    (function(node){ setTimeout(function(){ node.remove(); }, 1500); })(p);
+  }
+}
+
+function fxToastHost(){
+  var host = document.getElementById('toastHost');
+  if (!host){ host = document.createElement('div'); host.id='toastHost'; host.className='toast-host'; document.body.appendChild(host); }
+  return host;
+}
+function pushToast(html, accent, ms){
+  var host = fxToastHost();
+  var t = document.createElement('div');
+  t.className = 'toast';
+  if (accent) t.style.setProperty('--accent', accent);
+  t.innerHTML = html;
+  host.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('in'); });
+  setTimeout(function(){
+    t.classList.remove('in'); t.classList.add('out');
+    setTimeout(function(){ t.remove(); }, 360);
+  }, ms || 3500);
+}
+function showBadgeToast(ids){
+  var all = L.evaluateBadges(C, state, todayStr());
+  var byId = {}; all.forEach(function(b){ byId[b.id]=b; });
+  var icons = ids.map(function(id){ return byId[id] ? byId[id].icon : '🏅'; }).join(' ');
+  var names = ids.map(function(id){ return byId[id] ? esc(byId[id].title) : ''; }).filter(Boolean).join(' · ');
+  pushToast(
+    '<span class="toast-k">賞</span>'+
+    '<div class="toast-body"><span class="toast-eyebrow">Новый трофей!</span>'+
+    '<span class="toast-line"><span class="toast-icons">'+icons+'</span> '+names+'</span></div>',
+    'var(--yellow)', 3500
+  );
+}
+function showSurprise(text){
+  pushToast(
+    '<span class="toast-k">福</span>'+
+    '<div class="toast-body"><span class="toast-eyebrow">Сюрприз</span>'+
+    '<span class="toast-line">'+esc(text)+'</span></div>',
+    'var(--violet)', 4200
+  );
+}
 
 function bar(pct){ return `<div class="bar"><i style="width:${pct}%"></i></div>`; }
 

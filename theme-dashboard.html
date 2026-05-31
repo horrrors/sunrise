@@ -338,6 +338,112 @@
 
   @keyframes fadeUp{from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:none}}
 
+  /* ---- dopamine: extra section ---- */
+  .extra{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:18px; margin-top:18px}
+
+  /* chain calendar — 91-cell streak grid */
+  .chain-grid{
+    display:grid; grid-template-columns:repeat(13, 1fr); gap:5px; margin-top:4px;
+  }
+  .chain-grid .cell{
+    aspect-ratio:1/1; border-radius:5px; position:relative;
+    background:var(--surface-2); box-shadow:inset 0 0 0 1px var(--line-soft);
+    transition:transform .15s, box-shadow .2s, background .2s;
+  }
+  .chain-grid .cell.rest{
+    background:color-mix(in srgb,var(--amber) 9%, var(--surface-2));
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--amber) 16%, var(--line-soft));
+  }
+  .chain-grid .cell.done{
+    background:linear-gradient(135deg, color-mix(in srgb,var(--accent) 72%,#fff), var(--accent));
+    box-shadow:0 4px 10px -5px color-mix(in srgb,var(--accent) 70%, transparent);
+  }
+  .chain-grid .cell.today{
+    box-shadow:0 0 0 2px var(--accent), 0 4px 12px -4px color-mix(in srgb,var(--accent) 60%, transparent);
+    transform:scale(1.12); z-index:1;
+  }
+  .chain-grid .cell.today.done{box-shadow:0 0 0 2px var(--violet), 0 4px 12px -4px color-mix(in srgb,var(--accent) 70%, transparent)}
+  .chain-legend{display:flex; flex-wrap:wrap; gap:14px; margin-top:16px; font:600 11px var(--mono); color:var(--ink-dim); letter-spacing:.04em}
+  .chain-legend span{display:inline-flex; align-items:center; gap:6px}
+  .chain-legend i{width:11px; height:11px; border-radius:4px; display:inline-block}
+  .chain-legend i.l-done{background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 72%,#fff),var(--accent))}
+  .chain-legend i.l-rest{background:color-mix(in srgb,var(--amber) 22%,var(--surface-2)); box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--amber) 26%,transparent)}
+  .chain-legend i.l-open{background:var(--surface-2); box-shadow:inset 0 0 0 1px var(--line)}
+
+  /* trophies widget */
+  .trophy-count{
+    font:800 38px/1 var(--display); letter-spacing:-.03em; margin:2px 0 14px;
+    background:linear-gradient(135deg,var(--amber),var(--coral) 55%,var(--fuchsia));
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .trophy-row{display:flex; flex-wrap:wrap; gap:9px}
+  .trophy-row .badge{
+    width:42px; height:42px; border-radius:13px; flex:0 0 auto; display:grid; place-items:center;
+    font-size:21px; line-height:1; transition:transform .15s, box-shadow .2s, filter .2s;
+  }
+  .trophy-row .badge.on{
+    background:linear-gradient(135deg, color-mix(in srgb,var(--accent) 16%,#fff), color-mix(in srgb,var(--accent) 7%,#fff));
+    box-shadow:0 6px 16px -8px color-mix(in srgb,var(--accent) 60%, transparent), inset 0 0 0 1px color-mix(in srgb,var(--accent) 24%, transparent);
+  }
+  .trophy-row .badge.on:hover{transform:translateY(-3px) scale(1.05)}
+  .trophy-row .badge.off{
+    background:var(--surface-2); box-shadow:inset 0 0 0 1px var(--line-soft);
+    filter:grayscale(1); opacity:.42;
+  }
+
+  /* comeback banner */
+  #comeback{
+    margin-top:16px; padding:14px 18px; border-radius:16px; font-size:14px; color:var(--ink-soft); font-weight:600;
+    background:color-mix(in srgb,var(--teal) 12%,#fff);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--teal) 24%, transparent);
+    animation:fadeUp .45s both;
+  }
+  #comeback b{color:var(--teal)}
+
+  /* celebrate: confetti overlay */
+  .celebrate-layer{position:fixed; inset:0; z-index:60; pointer-events:none; overflow:hidden}
+  .confetti{
+    position:absolute; top:-14px; width:10px; height:14px; border-radius:2px; opacity:0;
+    animation:confetti-fall var(--dur,2.4s) cubic-bezier(.3,.6,.5,1) forwards;
+  }
+  @keyframes confetti-fall{
+    0%{opacity:0; transform:translateY(-10vh) rotate(0deg)}
+    8%{opacity:1}
+    100%{opacity:0; transform:translateY(108vh) rotate(var(--spin,540deg))}
+  }
+  .celebrate-flash{
+    position:fixed; inset:0; z-index:55; pointer-events:none;
+    background:radial-gradient(60% 50% at 50% 42%, color-mix(in srgb,var(--fuchsia) 30%, transparent), transparent 70%);
+    animation:cel-flash .9s ease-out forwards;
+  }
+  @keyframes cel-flash{0%{opacity:0}25%{opacity:1}100%{opacity:0}}
+
+  /* toasts */
+  .toast-stack{position:fixed; left:50%; bottom:30px; transform:translateX(-50%); z-index:70; display:flex; flex-direction:column; gap:10px; align-items:center; pointer-events:none; width:max-content; max-width:92vw}
+  .toast{
+    display:flex; align-items:center; gap:13px; padding:13px 20px 13px 14px; border-radius:18px;
+    background:rgba(255,255,255,.94); backdrop-filter:saturate(150%) blur(10px); -webkit-backdrop-filter:saturate(150%) blur(10px);
+    box-shadow:var(--shadow-lg), inset 0 0 0 1px var(--line);
+    color:var(--ink); font-weight:600; font-size:14px; pointer-events:auto;
+    animation:toast-in .4s cubic-bezier(.22,1,.36,1) both;
+  }
+  .toast.leaving{animation:toast-out .35s ease forwards}
+  .toast .t-ic{
+    flex:0 0 auto; width:40px; height:40px; border-radius:13px; display:grid; place-items:center; font-size:21px; line-height:1;
+    background:linear-gradient(135deg,color-mix(in srgb,var(--fuchsia) 16%,#fff),color-mix(in srgb,var(--violet) 12%,#fff));
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--fuchsia) 22%, transparent);
+  }
+  .toast .t-body{display:flex; flex-direction:column; gap:2px; min-width:0}
+  .toast .t-kicker{font:800 9.5px var(--mono); letter-spacing:.16em; text-transform:uppercase; color:var(--fuchsia)}
+  .toast .t-text{color:var(--ink-soft); font-size:13.5px; line-height:1.4}
+  .toast.surprise .t-ic{
+    background:linear-gradient(135deg,color-mix(in srgb,var(--teal) 18%,#fff),color-mix(in srgb,var(--blue) 12%,#fff));
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--teal) 24%, transparent);
+  }
+  .toast.surprise .t-kicker{color:var(--teal)}
+  @keyframes toast-in{from{opacity:0; transform:translateY(18px) scale(.96)} to{opacity:1; transform:none}}
+  @keyframes toast-out{to{opacity:0; transform:translateY(12px) scale(.97)}}
+
   @media (max-width:640px){
     .topbar{padding:13px 18px}
     .wrap{padding:24px 18px 64px}
@@ -368,6 +474,24 @@
 
 <main class="wrap">
   <section class="dash" id="dashboard"></section>
+
+  <section class="extra">
+    <article class="card chain-card" style="--accent:var(--violet)">
+      <div class="eyebrow"><span class="badge">🔗</span> Цепочка <small>91 день</small></div>
+      <div class="chain-grid" id="chainCal"></div>
+      <div class="chain-legend">
+        <span><i class="l-done"></i> закрыт</span>
+        <span><i class="l-rest"></i> отдых</span>
+        <span><i class="l-open"></i> впереди</span>
+      </div>
+    </article>
+    <article class="card" style="--accent:var(--amber)">
+      <div class="eyebrow"><span class="badge">🏆</span> Трофеи <small>badges</small></div>
+      <div id="trophies"></div>
+    </article>
+  </section>
+
+  <div id="comeback" style="display:none"></div>
   <div class="day-rail">
     <button class="day-nav day-prev" id="prevDay" type="button" aria-label="Предыдущий день">‹</button>
     <section class="today-wrap"><article class="today" id="todayCard"></article></section>
@@ -497,7 +621,9 @@ function renderToday(){
   }).join('');
   d.tasks.forEach(t => {
     document.getElementById('cb_'+t.id).onchange = (e) => {
-      state = L.setTaskDone(state, currentDayId, t.id, e.target.checked, todayStr());
+      const wasComplete = L.isDayComplete(C, state, currentDayId);
+      state = L.setTaskDone(C, state, currentDayId, t.id, e.target.checked, todayStr(), new Date().getHours());
+      if (!wasComplete && L.isDayComplete(C, state, currentDayId)) onDayCompleted();
       saveState(); renderAll();
     };
   });
@@ -521,7 +647,117 @@ function renderToday(){
   })();
 }
 
-function renderAll(){ renderDaySelect(); renderToday(); renderDashboard(); }
+function renderAll(){ renderDaySelect(); renderToday(); renderDashboard(); renderChain(); renderTrophies(); renderComeback(); }
+
+/* ---- dopamine features ---- */
+function completedCount(){ return Object.keys(state.days).filter(function(id){return state.days[id].completedAt;}).length; }
+function onDayCompleted(){
+  celebrate();
+  var res = L.syncBadges(C, state, todayStr());
+  state = res.state;
+  if (res.unlocked.length) showBadgeToast(res.unlocked);
+  if (Math.random() < 0.12){
+    var msg = L.SURPRISES[Math.floor(Math.random()*L.SURPRISES.length)];
+    state.lastSurprise = { text: msg, at: todayStr() };
+    showSurprise(msg);
+  }
+}
+function renderChain(){
+  var host = document.getElementById('chainCal'); if(!host) return;
+  host.innerHTML = allDays.map(function(d){
+    var cls='cell';
+    if(d.track==='rest') cls+=' rest';
+    if(L.isDayComplete(C, state, d.id)) cls+=' done';
+    if(d.id===currentDayId) cls+=' today';
+    return '<span class="'+cls+'" title="'+esc('Нед '+d.week+' · '+dowName(d.dow))+'"></span>';
+  }).join('');
+}
+function renderTrophies(){
+  var host = document.getElementById('trophies'); if(!host) return;
+  var all = L.evaluateBadges(C, state, todayStr());
+  var got = all.filter(function(b){return b.unlocked;});
+  host.innerHTML = '<div class="trophy-count">'+got.length+'/'+all.length+'</div>' +
+    '<div class="trophy-row">' + all.map(function(b){
+      return '<span class="badge '+(b.unlocked?'on':'off')+'" title="'+esc(b.title+' — '+b.desc)+'">'+b.icon+'</span>';
+    }).join('') + '</div>';
+}
+function renderComeback(){
+  var cb = document.getElementById('comeback'); if(!cb) return;
+  var unlocked = L.evaluateBadges(C, state, todayStr()).find(function(b){return b.id==='comeback';}).unlocked;
+  if (unlocked && L.computeStreak(state, todayStr()) <= 2){
+    cb.style.display=''; cb.innerHTML = '🩹 С возвращением — всего пройдено <b>'+completedCount()+'</b> дней. Продолжаем.';
+  } else { cb.style.display='none'; }
+}
+
+/* ---- visuals (theme-flavored, no external libs) ---- */
+function _accentColors(){
+  return ['#e6399b','#ff4fb8','#7c5cff','#13c2b5','#ff9f1c','#ff5d73','#3d8bff','#3ec96b','#22b8e6'];
+}
+function celebrate(){
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+  var layer = document.createElement('div'); layer.className = 'celebrate-layer';
+  var flash = document.createElement('div'); flash.className = 'celebrate-flash';
+  document.body.appendChild(flash);
+  document.body.appendChild(layer);
+  var colors = _accentColors();
+  var N = 80;
+  for (var i=0;i<N;i++){
+    var p = document.createElement('span'); p.className = 'confetti';
+    var c = colors[i % colors.length];
+    var dur = (1.9 + Math.random()*1.6).toFixed(2) + 's';
+    var spin = (Math.random()*720 - 360 + 540).toFixed(0) + 'deg';
+    p.style.left = (Math.random()*100) + 'vw';
+    p.style.background = c;
+    p.style.setProperty('--dur', dur);
+    p.style.setProperty('--spin', spin);
+    p.style.animationDelay = (Math.random()*0.35).toFixed(2) + 's';
+    if (i % 4 === 0){ p.style.width = '8px'; p.style.height = '8px'; p.style.borderRadius = '50%'; }
+    layer.appendChild(p);
+  }
+  setTimeout(function(){ if(flash.parentNode) flash.parentNode.removeChild(flash); }, 1000);
+  setTimeout(function(){ if(layer.parentNode) layer.parentNode.removeChild(layer); }, 4200);
+}
+function _toastStack(){
+  var s = document.getElementById('toastStack');
+  if (!s){ s = document.createElement('div'); s.id = 'toastStack'; s.className = 'toast-stack'; document.body.appendChild(s); }
+  return s;
+}
+function _pushToast(html, extraClass, ttl){
+  var stack = _toastStack();
+  var t = document.createElement('div');
+  t.className = 'toast' + (extraClass ? ' '+extraClass : '');
+  t.innerHTML = html;
+  stack.appendChild(t);
+  setTimeout(function(){
+    t.classList.add('leaving');
+    setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); }, 360);
+  }, ttl || 3500);
+}
+function showBadgeToast(ids){
+  var all = L.evaluateBadges(C, state, todayStr());
+  var icons = ids.map(function(id){
+    var b = all.find(function(x){return x.id===id;});
+    return b ? b.icon : '🏆';
+  }).join(' ');
+  var titles = ids.map(function(id){
+    var b = all.find(function(x){return x.id===id;});
+    return b ? b.title : id;
+  }).join(', ');
+  _pushToast(
+    '<span class="t-ic">'+esc(icons)+'</span>' +
+    '<span class="t-body"><span class="t-kicker">Новый трофей!</span>' +
+    '<span class="t-text">'+esc(titles)+'</span></span>',
+    '', 3500
+  );
+}
+function showSurprise(text){
+  _pushToast(
+    '<span class="t-ic">✨</span>' +
+    '<span class="t-body"><span class="t-kicker">Сюрприз</span>' +
+    '<span class="t-text">'+esc(text)+'</span></span>',
+    'surprise', 4500
+  );
+}
 
 function bar(pct){ return `<div class="bar"><i style="width:${pct}%"></i></div>`; }
 
