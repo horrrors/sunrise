@@ -569,12 +569,13 @@
   /* ====== trophies modal (marble slab on dimmed glass) ====== */
   .tr-modal{
     display:none; position:fixed; inset:0; z-index:200;
-    align-items:center; justify-content:center;
+    align-items:flex-start; justify-content:center;
+    overflow-y:auto; padding:32px 16px;
     background:rgba(0,0,0,.55); backdrop-filter:blur(4px);
   }
   .tr-modal.open{display:flex; animation:rise .3s both}
   .tr-panel{
-    position:relative; width:min(92vw, 560px); max-height:86vh; overflow:auto;
+    position:relative; width:min(92vw, 560px); margin:0 auto; overflow:visible;
     border-radius:var(--radius); padding:26px 26px 28px;
     color:var(--ink);
     background:

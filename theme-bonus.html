@@ -408,15 +408,18 @@
   .cday.done.today{box-shadow:0 0 0 3px var(--cobalt), 2px 2px 0 0 var(--ink)}
 
   /* ---------- trophies modal ---------- */
+  /* the modal itself scrolls (align-items:flex-start + overflow-y:auto + vertical padding),
+     so the panel never clips badge tooltips */
   .tr-modal{
     display:none; position:fixed; inset:0; z-index:200;
-    align-items:center; justify-content:center;
+    align-items:flex-start; justify-content:center;
+    overflow-y:auto;
     background:rgba(0,0,0,.55); backdrop-filter:blur(4px);
-    padding:20px;
+    padding:32px 16px;
   }
   .tr-modal.open{display:flex}
   .tr-panel{
-    width:min(560px, 100%); max-height:min(80vh, 720px); overflow:auto; border-radius:16px; padding:22px;
+    width:min(560px, 100%); margin:0 auto; overflow:visible; border-radius:16px; padding:22px;
     background:var(--paper); color:var(--ink);
     border:var(--bw) solid var(--ink);
     box-shadow:var(--off) var(--off) 0 0 var(--shadow);
