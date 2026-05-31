@@ -167,17 +167,6 @@ function completeReview(state, itemId, today) {
   return { ...state, reviews };
 }
 
-const SURPRISES = [
-  'Маленькие шаги каждый день обгоняют рывки раз в месяц.',
-  'Ты только что стал чуть лучшим инженером, чем вчера.',
-  'Сложный процент работает и для навыков — продолжай.',
-  'День закрыт. Будущий ты благодарит настоящего тебя.',
-  'Глубина приходит к тем, кто приходит каждый день.',
-  'Это не дедлайн — это путь. И ты на нём.',
-  '1% в день — это примерно 37× за год.',
-  'Дисциплина — это свобода будущего тебя.',
-];
-
 function _completedHours(state) {
   const hrs = [];
   for (const id in state.days) {
@@ -209,44 +198,44 @@ function completedWeeks(curriculum, state) {
 }
 
 const BADGES = [
-  { id: 'first-light', title: 'First Light', desc: 'Первый полностью закрытый день', icon: '🌅', predicate: (c, s) => _activeDates(s).size >= 1 },
-  { id: 'streak-7', title: '7 дней', desc: 'Серия 7 дней подряд', icon: '🔥', predicate: (c, s) => longestStreak(s) >= 7 },
-  { id: 'streak-30', title: '30 дней', desc: 'Серия 30 дней подряд', icon: '⚡', predicate: (c, s) => longestStreak(s) >= 30 },
-  { id: 'streak-100', title: '100 дней', desc: 'Серия 100 дней подряд', icon: '💯', predicate: (c, s) => longestStreak(s) >= 100 },
-  { id: 'phase-1', title: 'Фаза I', desc: 'Фаза 1 пройдена', icon: '①', predicate: (c, s) => (progressByPhase(c, s)[1] || {}).pct === 100 },
-  { id: 'phase-2', title: 'Фаза II', desc: 'Фаза 2 пройдена', icon: '②', predicate: (c, s) => (progressByPhase(c, s)[2] || {}).pct === 100 },
-  { id: 'phase-3', title: 'Фаза III', desc: 'Фаза 3 пройдена', icon: '③', predicate: (c, s) => (progressByPhase(c, s)[3] || {}).pct === 100 },
-  { id: 'algorithmist', title: 'Algorithmist', desc: '50 задач по алгоритмам', icon: '🧮', predicate: (c, s) => countCompletedTasks(c, s, 'dsa') >= 50 },
-  { id: 'comeback', title: 'Comeback', desc: 'Вернулся после пропуска', icon: '🩹', predicate: (c, s) => _hasComeback(s) },
-  { id: 'night-owl', title: 'Night Owl', desc: 'Закрыл день после 22:00 или до 5:00', icon: '🦉', predicate: (c, s) => _completedHours(s).some((h) => h >= 22 || h < 5) },
-  { id: 'early-lark', title: 'Early Lark', desc: 'Закрыл день до 8:00 утра', icon: '🐦', predicate: (c, s) => _completedHours(s).some((h) => h >= 5 && h < 8) },
-  { id: 'capstone', title: 'Capstone', desc: 'Капстоун завершён', icon: '🏛️', predicate: (c, s) => isDayComplete(c, s, 'w13d6') },
-  { id: 'streak-3', title: 'Разогрев', desc: 'Серия 3 дня подряд', icon: '🌱', predicate: (c, s) => longestStreak(s) >= 3 },
-  { id: 'streak-14', title: '14 дней', desc: 'Серия 14 дней подряд', icon: '🌋', predicate: (c, s) => longestStreak(s) >= 14 },
-  { id: 'days-10', title: '10 дней', desc: '10 дней программы пройдено', icon: '📅', predicate: (c, s) => overallProgress(c, s).done >= 10 },
-  { id: 'days-25', title: '25 дней', desc: '25 дней программы пройдено', icon: '🗓️', predicate: (c, s) => overallProgress(c, s).done >= 25 },
-  { id: 'days-50', title: '50 дней', desc: '50 дней программы пройдено', icon: '📆', predicate: (c, s) => overallProgress(c, s).done >= 50 },
-  { id: 'halfway', title: 'Экватор', desc: 'Пройдена половина программы', icon: '🌗', predicate: (c, s) => overallProgress(c, s).pct >= 50 },
-  { id: 'finisher', title: 'Финишер', desc: 'Пройдены все дни программы', icon: '🎓', predicate: (c, s) => { const o = overallProgress(c, s); return o.total > 0 && o.done === o.total; } },
-  { id: 'tasks-100', title: '100 задач', desc: '100 задач выполнено', icon: '✅', predicate: (c, s) => countCompletedTasks(c, s) >= 100 },
-  { id: 'scribe-10', title: 'Летописец', desc: '10 рефлексий написано', icon: '✍️', predicate: (c, s) => reflectionCount(s) >= 10 },
-  { id: 'scribe-30', title: 'Хронист', desc: '30 рефлексий написано', icon: '📜', predicate: (c, s) => reflectionCount(s) >= 30 },
-  { id: 'perfect-week', title: 'Идеальная неделя', desc: 'Неделя пройдена целиком', icon: '🌟', predicate: (c, s) => completedWeeks(c, s) >= 1 },
-  { id: 'weeks-4', title: 'Месяц в деле', desc: '4 недели пройдены целиком', icon: '📈', predicate: (c, s) => completedWeeks(c, s) >= 4 },
-  { id: 'polyglot', title: 'Полиглот', desc: 'Хотя бы один день в каждом треке', icon: '🌐', predicate: (c, s) => { const bt = progressByTrack(c, s); return ['dsa','js','ts','node','sysdesign','patterns','distsys','db','cs'].every((k) => (bt[k] || {}).done >= 1); } },
-  { id: 'dsa-master', title: 'Магистр алгоритмов', desc: 'Все дни алгоритмов пройдены', icon: '🧠', predicate: (c, s) => (progressByTrack(c, s).dsa || {}).pct === 100 },
-  { id: 'node-master', title: 'Магистр Node', desc: 'Все дни Node.js пройдены', icon: '🟢', predicate: (c, s) => (progressByTrack(c, s).node || {}).pct === 100 },
-  { id: 'ts-master', title: 'Магистр TS', desc: 'Все дни TypeScript пройдены', icon: '🔷', predicate: (c, s) => (progressByTrack(c, s).ts || {}).pct === 100 },
-  { id: 'sysdesign-master', title: 'Магистр System Design', desc: 'Все дни System Design пройдены', icon: '🏗️', predicate: (c, s) => (progressByTrack(c, s).sysdesign || {}).pct === 100 },
-  { id: 'weekend', title: 'Воин выходного', desc: 'Закрыл день в субботу или воскресенье', icon: '🌴', predicate: (c, s) => completedDates(s).some((d) => _weekdayMon(d) >= 5) },
+  { id: 'first-light', predicate: (c, s) => _activeDates(s).size >= 1 },
+  { id: 'streak-7', predicate: (c, s) => longestStreak(s) >= 7 },
+  { id: 'streak-30', predicate: (c, s) => longestStreak(s) >= 30 },
+  { id: 'streak-100', predicate: (c, s) => longestStreak(s) >= 100 },
+  { id: 'phase-1', predicate: (c, s) => (progressByPhase(c, s)[1] || {}).pct === 100 },
+  { id: 'phase-2', predicate: (c, s) => (progressByPhase(c, s)[2] || {}).pct === 100 },
+  { id: 'phase-3', predicate: (c, s) => (progressByPhase(c, s)[3] || {}).pct === 100 },
+  { id: 'algorithmist', predicate: (c, s) => countCompletedTasks(c, s, 'dsa') >= 50 },
+  { id: 'comeback', predicate: (c, s) => _hasComeback(s) },
+  { id: 'night-owl', predicate: (c, s) => _completedHours(s).some((h) => h >= 22 || h < 5) },
+  { id: 'early-lark', predicate: (c, s) => _completedHours(s).some((h) => h >= 5 && h < 8) },
+  { id: 'capstone', predicate: (c, s) => isDayComplete(c, s, 'w13d6') },
+  { id: 'streak-3', predicate: (c, s) => longestStreak(s) >= 3 },
+  { id: 'streak-14', predicate: (c, s) => longestStreak(s) >= 14 },
+  { id: 'days-10', predicate: (c, s) => overallProgress(c, s).done >= 10 },
+  { id: 'days-25', predicate: (c, s) => overallProgress(c, s).done >= 25 },
+  { id: 'days-50', predicate: (c, s) => overallProgress(c, s).done >= 50 },
+  { id: 'halfway', predicate: (c, s) => overallProgress(c, s).pct >= 50 },
+  { id: 'finisher', predicate: (c, s) => { const o = overallProgress(c, s); return o.total > 0 && o.done === o.total; } },
+  { id: 'tasks-100', predicate: (c, s) => countCompletedTasks(c, s) >= 100 },
+  { id: 'scribe-10', predicate: (c, s) => reflectionCount(s) >= 10 },
+  { id: 'scribe-30', predicate: (c, s) => reflectionCount(s) >= 30 },
+  { id: 'perfect-week', predicate: (c, s) => completedWeeks(c, s) >= 1 },
+  { id: 'weeks-4', predicate: (c, s) => completedWeeks(c, s) >= 4 },
+  { id: 'polyglot', predicate: (c, s) => { const bt = progressByTrack(c, s); return ['dsa','js','ts','node','sysdesign','patterns','distsys','db','cs'].every((k) => (bt[k] || {}).done >= 1); } },
+  { id: 'dsa-master', predicate: (c, s) => (progressByTrack(c, s).dsa || {}).pct === 100 },
+  { id: 'node-master', predicate: (c, s) => (progressByTrack(c, s).node || {}).pct === 100 },
+  { id: 'ts-master', predicate: (c, s) => (progressByTrack(c, s).ts || {}).pct === 100 },
+  { id: 'sysdesign-master', predicate: (c, s) => (progressByTrack(c, s).sysdesign || {}).pct === 100 },
+  { id: 'weekend', predicate: (c, s) => completedDates(s).some((d) => _weekdayMon(d) >= 5) },
 ];
 function evaluateBadges(curriculum, state, today) {
   const owned = state.badges || {};
-  return BADGES.map((b) => {
-    const persisted = owned[b.id];
-    return { id: b.id, title: b.title, desc: b.desc, icon: b.icon,
-      unlocked: !!persisted || b.predicate(curriculum, state, today), at: persisted ? persisted.at : null };
-  });
+  return BADGES.map((b) => ({
+    id: b.id,
+    unlocked: !!owned[b.id] || b.predicate(curriculum, state, today),
+    at: owned[b.id] ? owned[b.id].at : null,
+  }));
 }
 function syncBadges(curriculum, state, today) {
   const badges = { ...(state.badges || {}) };
@@ -283,7 +272,7 @@ const RoadmapLogic = {
   computeStreak, longestStreak, completedDates, countCompletedTasks, reflectionCount, completedWeeks,
   progressByTrack, progressByPhase, overallProgress,
   REVIEW_INTERVALS, scheduleReview, getDueReviews, completeReview,
-  BADGES, evaluateBadges, syncBadges, SURPRISES,
+  BADGES, evaluateBadges, syncBadges,
   serializeState, parseImported,
 };
 

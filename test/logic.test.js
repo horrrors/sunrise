@@ -184,14 +184,16 @@ test('syncBadges records new unlocks with date, idempotent', () => {
   const r2 = L.syncBadges(CURR2, r1.state, '2026-05-31');
   assert.equal(r2.unlocked.includes('first-light'), false);
 });
-test('SURPRISES is a non-empty array of strings', () => {
-  assert.ok(Array.isArray(L.SURPRISES) && L.SURPRISES.length >= 3);
-  assert.equal(typeof L.SURPRISES[0], 'string');
-});
-
-test('BADGES has 30 achievements with unique ids', () => {
+test('BADGES has 30 achievements with unique ids and predicates', () => {
   assert.equal(L.BADGES.length, 30);
   assert.equal(new Set(L.BADGES.map((b) => b.id)).size, 30);
+  L.BADGES.forEach((b) => { assert.equal(typeof b.predicate, 'function'); });
+});
+
+test('evaluateBadges returns {id, unlocked, at} (no text)', () => {
+  const e = L.evaluateBadges(CURR2, L.createInitialState(), '2026-05-30');
+  assert.equal(e.length, 30);
+  assert.deepEqual(Object.keys(e[0]).sort(), ['at', 'id', 'unlocked']);
 });
 
 test('reflectionCount counts non-empty reflections', () => {
