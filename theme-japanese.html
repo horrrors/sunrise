@@ -138,27 +138,8 @@
   }
   .section-mark .sl{height:1px; flex:1; background:linear-gradient(90deg, var(--line), transparent)}
 
-  .dash{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:14px}
-
-  /* ---------- compact summary cards (dashboard only) ---------- */
-  /* the main #todayCard stays large & airy — only the #dashboard grid is condensed */
-  #dashboard .card{padding:16px 18px 17px}
-  #dashboard .card::before{top:14px; bottom:14px}
-  #dashboard .eyebrow{margin-bottom:12px}
-  #dashboard .eyebrow .kanji{font-size:17px}
-  #dashboard .ring{width:88px; height:88px; margin:2px auto 0}
-  #dashboard .ring::before{inset:9px}
-  #dashboard .ring b{font-size:23px}
-  #dashboard .ring small{font-size:9px; margin-top:3px}
-  #dashboard .stat-sub{margin-top:6px; font-size:11.5px}
-  #dashboard .streak-wrap{gap:11px; margin:0 0 2px}
-  #dashboard .streak-seal{width:46px; height:46px}
-  #dashboard .streak-seal span{font-size:22px}
-  #dashboard .streak-num{font-size:34px}
-  #dashboard .prow{margin:9px 0 5px; font-size:12.5px}
-  #dashboard .trophy-count{font-size:28px; margin-bottom:11px}
-  #dashboard .trophy-row{gap:8px}
-  #dashboard .trophy-row .badge{width:36px; height:36px; font-size:18px}
+  /* dashboard summary — restored airy layout */
+  .dash{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px}
 
   /* ---------- cards ---------- */
   .card{
@@ -341,8 +322,6 @@
   /* ---------- day navigation ---------- */
   .day-rail{display:flex; align-items:center; gap:18px}
   .day-rail .today-wrap{flex:1; min-width:0; margin-top:0}
-  /* dashboard now sits below the day block — give its header breathing room */
-  .section-mark-dash{margin-top:48px}
   .day-nav{
     flex:0 0 auto; width:52px; height:78px; border-radius:3px; cursor:pointer;
     font-family:var(--serif-heavy); font-weight:700; font-size:34px; line-height:1;
@@ -483,28 +462,60 @@
   }
   .cday.done:hover{transform:translateY(-1px)}
 
-  /* ---------- trophies — 勲章 honor seals (dashboard card) ---------- */
-  .trophy-count{
-    font-family:var(--serif-heavy); font-weight:900; font-size:38px; line-height:1; color:var(--sumi);
-    letter-spacing:.01em; margin-bottom:16px;
+  /* ---------- trophies modal — 勲章 honor seals ---------- */
+  .tr-modal{
+    display:none; position:fixed; inset:0; z-index:200; align-items:center; justify-content:center;
+    background:rgba(0,0,0,.55); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
   }
-  .trophy-row{display:flex; flex-wrap:wrap; gap:10px}
-  .trophy-row .badge{
-    flex:0 0 auto; width:42px; height:42px; border-radius:8px; display:grid; place-items:center;
-    font-size:21px; line-height:1; transition:transform .18s ease, box-shadow .22s ease, filter .22s ease;
-    cursor:default;
+  .tr-modal.open{display:flex}
+  .tr-panel{
+    position:relative; width:min(560px, calc(100vw - 32px)); max-height:calc(100vh - 48px); overflow:auto;
+    border-radius:3px; padding:24px 24px 26px;
+    background:linear-gradient(180deg, #faf6ec, var(--washi-0));
+    border:1px solid var(--line);
+    box-shadow:0 1px 0 rgba(255,255,255,.6) inset, 0 34px 80px -34px rgba(43,38,34,.7);
+    animation:rise .4s both;
   }
-  .trophy-row .badge.on{
-    color:#fff7ef; transform:rotate(-3deg);
-    background:radial-gradient(circle at 32% 26%, var(--beni) 0%, var(--beni-deep) 82%);
-    box-shadow:0 4px 13px -6px rgba(178,58,34,.6), inset 0 0 0 1.5px rgba(255,247,239,.24);
+  .tr-panel::before{ /* left sumi rule in accent, echoing cards */
+    content:""; position:absolute; top:18px; bottom:18px; left:0; width:2px;
+    background:var(--beni); opacity:.85;
   }
-  .trophy-row .badge.on:hover{transform:rotate(0deg) translateY(-2px) scale(1.06)}
-  .trophy-row .badge.off{
+  .tr-head{display:flex; align-items:center; gap:10px; margin-bottom:18px}
+  .tr-head #trophiesTitle{
+    flex:1; font-family:var(--serif-heavy); font-weight:700; font-size:18px;
+    color:var(--sumi); letter-spacing:.04em;
+  }
+  .tr-head button{
+    flex:0 0 auto; width:34px; height:34px; border-radius:2px; cursor:pointer;
+    font-family:var(--serif-heavy); font-weight:700; font-size:15px; line-height:1;
+    color:var(--sumi-soft); background:transparent; border:1px solid var(--line);
+    display:grid; place-items:center; transition:transform .12s, border-color .2s, color .2s, background .2s;
+  }
+  .tr-head button:hover{border-color:var(--beni); color:var(--beni); background:rgba(216,73,43,.05)}
+  .tr-head button:active{transform:translateY(1px)}
+  .tr-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px}
+  .tr-grid .badge{
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:9px;
+    padding:18px 12px 16px; border-radius:8px; text-align:center;
+    transition:transform .18s ease, box-shadow .22s ease, filter .22s ease; cursor:default;
+  }
+  .tr-grid .badge .bi{font-size:30px; line-height:1; display:block}
+  .tr-grid .badge .bt{font-family:var(--serif); font-size:12px; line-height:1.35; letter-spacing:.02em}
+  .tr-grid .badge.on{
+    color:var(--sumi);
+    background:radial-gradient(circle at 50% 18%, rgba(216,73,43,.16), rgba(176,141,87,.10) 70%, transparent), var(--washi-0);
+    border:1px solid color-mix(in srgb, var(--beni) 40%, var(--line));
+    box-shadow:0 6px 18px -10px rgba(178,58,34,.55), inset 0 0 0 1px rgba(255,247,239,.4);
+  }
+  .tr-grid .badge.on .bi{filter:drop-shadow(0 2px 4px rgba(178,58,34,.3))}
+  .tr-grid .badge.on .bt{color:var(--beni-deep); font-weight:600}
+  .tr-grid .badge.on:hover{transform:translateY(-3px) scale(1.03); box-shadow:0 12px 26px -10px rgba(178,58,34,.6), inset 0 0 0 1px rgba(255,247,239,.4)}
+  .tr-grid .badge.off{
     color:var(--sumi-faint); filter:grayscale(1) opacity(.55);
     background:rgba(43,38,34,.045); border:1px solid var(--line);
   }
-  .trophy-row .badge.off:hover{filter:grayscale(.4) opacity(.8); transform:translateY(-1px)}
+  .tr-grid .badge.off .bt{color:var(--sumi-faint)}
+  .tr-grid .badge.off:hover{filter:grayscale(.4) opacity(.85); transform:translateY(-2px)}
 
   /* ---------- celebrate — sakura burst overlay ---------- */
   .celebrate-layer{position:fixed; inset:0; z-index:60; pointer-events:none; overflow:hidden}
@@ -558,6 +569,52 @@
   .toast-icons .toast-badge{display:inline-block}
   .toast-text{font-family:var(--serif); font-size:14px; line-height:1.55; color:var(--sumi)}
 
+  /* ---------- happy badge toast — celebratory pop/slide + sparkles ---------- */
+  .toast-trophy{
+    --toast-accent:var(--beni);
+    position:relative; overflow:hidden;
+    background:
+      radial-gradient(120px 70px at 18% 0%, rgba(216,73,43,.14), transparent 70%),
+      linear-gradient(180deg, #faf6ec, var(--washi-0));
+    transform:translateY(20px) scale(.9) rotate(-1.5deg);
+    transition:opacity .5s ease, transform .55s cubic-bezier(.34,1.56,.64,1);
+  }
+  .toast-trophy.show{transform:none}
+  .toast-trophy.pop{animation:trophyPop 2.6s ease-in-out 1}
+  @keyframes trophyPop{
+    0%{transform:none}
+    8%{transform:translateY(-6px) scale(1.035) rotate(.6deg)}
+    16%{transform:translateY(0) scale(1) rotate(0deg)}
+    24%{transform:translateY(-3px) scale(1.02)}
+    32%{transform:none}
+    100%{transform:none}
+  }
+  .toast-trophy .toast-seal{animation:trophyWobble 1.9s ease-in-out 1}
+  @keyframes trophyWobble{
+    0%{transform:rotate(-4deg) scale(.6)}
+    18%{transform:rotate(8deg) scale(1.18)}
+    34%{transform:rotate(-7deg) scale(1)}
+    50%{transform:rotate(4deg)}
+    66%{transform:rotate(-4deg)}
+    100%{transform:rotate(-4deg)}
+  }
+  .toast-trophy .toast-icons .toast-badge{display:inline-block; animation:trophyBadgeIn .6s cubic-bezier(.34,1.56,.64,1) both}
+  @keyframes trophyBadgeIn{0%{opacity:0; transform:translateY(8px) scale(.4) rotate(-18deg)} 100%{opacity:1; transform:none}}
+  .toast-trophy .toast-badge-name{font-family:var(--serif); font-size:13.5px; color:var(--sumi); line-height:1.5; margin-top:1px}
+  .toast-trophy .toast-badge-name b{font-family:var(--serif-heavy); font-weight:700; color:var(--beni-deep)}
+  .toast-spark{
+    position:absolute; pointer-events:none; font-size:13px; line-height:1; opacity:0; z-index:2;
+    color:var(--kincha); text-shadow:0 1px 2px rgba(176,141,87,.4);
+    animation:sparkFly 1.4s ease-out both;
+  }
+  .toast-spark:nth-child(2n){color:var(--beni)}
+  .toast-spark:nth-child(3n){color:var(--kincha-deep)}
+  @keyframes sparkFly{
+    0%{opacity:0; transform:translate(0,0) scale(.3) rotate(0deg)}
+    18%{opacity:1}
+    100%{opacity:0; transform:translate(var(--sx), var(--sy)) scale(1) rotate(var(--sr))}
+  }
+
   @media (max-width:680px){
     .toast-host{right:12px; left:12px; bottom:12px; max-width:none}
     .topbar{padding:16px 20px}
@@ -591,6 +648,7 @@
   <div class="toolbar">
     <label class="field"><span class="fk">日</span> <select id="daySelect"></select></label>
     <button class="btn" id="calBtn" type="button" aria-label="Календарь">📅</button>
+    <button class="btn" id="trophiesBtn" type="button" aria-label="Трофеи">🏆</button>
     <button class="btn" id="exportBtn">書き出し · Экспорт</button>
     <button class="btn" id="importBtn">読み込み · Импорт</button>
     <input type="file" id="importFile" accept="application/json" hidden />
@@ -600,16 +658,16 @@
 <main class="wrap">
   <div id="comeback" class="comeback" style="display:none"></div>
 
+  <div class="section-mark">
+    <span class="sk">進捗</span><span class="st">Progress</span><span class="sl"></span>
+  </div>
+  <section class="dash" id="dashboard"></section>
+
   <div class="day-rail">
     <button class="day-nav day-prev" id="prevDay" type="button" aria-label="Предыдущий день">‹</button>
     <section class="today-wrap"><article class="today" id="todayCard"></article></section>
     <button class="day-nav day-next" id="nextDay" type="button" aria-label="Следующий день">›</button>
   </div>
-
-  <div class="section-mark section-mark-dash">
-    <span class="sk">進捗</span><span class="st">Progress</span><span class="sl"></span>
-  </div>
-  <section class="dash" id="dashboard"></section>
 
 </main>
 
@@ -623,6 +681,16 @@
     </div>
     <div class="cal-dow"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
     <div class="cal-grid" id="calGrid"></div>
+  </div>
+</div>
+
+<div class="tr-modal" id="trophiesModal">
+  <div class="tr-panel">
+    <div class="tr-head">
+      <div id="trophiesTitle"></div>
+      <button id="trophiesClose" type="button">✕</button>
+    </div>
+    <div class="tr-grid" id="trophiesGrid"></div>
   </div>
 </div>
 
@@ -769,7 +837,7 @@ function setNavState(){
   if (cta) cta.onclick = function(){ goToDay(1); };
 }
 
-function renderAll(){ renderDaySelect(); renderToday(); renderDashboard(); renderComeback(); }
+function renderAll(){ renderDaySelect(); renderToday(); renderDashboard(); renderTrophies(); renderComeback(); }
 
 /* ---------- dopamine features ---------- */
 function completedCount(){ return Object.keys(state.days).filter(function(id){return state.days[id].completedAt;}).length; }
@@ -810,6 +878,16 @@ function renderCalendar(){
   grid.innerHTML = cells;
   var MN = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
   var tt = document.getElementById('calTitle'); if(tt) tt.textContent = MN[m-1]+' '+y;
+}
+
+function renderTrophies(){
+  var host=document.getElementById('trophiesGrid'); if(!host) return;
+  var all=L.evaluateBadges(C, state, todayStr());
+  var got=all.filter(function(b){return b.unlocked;}).length;
+  var tt=document.getElementById('trophiesTitle'); if(tt) tt.textContent='Трофеи · '+got+'/'+all.length;
+  host.innerHTML=all.map(function(b){
+    return '<div class="badge '+(b.unlocked?'on':'off')+'" title="'+esc(b.desc)+'"><span class="bi">'+b.icon+'</span><span class="bt">'+esc(b.title)+'</span></div>';
+  }).join('');
 }
 
 function renderComeback(){
@@ -889,17 +967,52 @@ function _spawnToast(html, accentVar, lifeMs){
   }, lifeMs || 3500);
 }
 
+/* happy animated badge toast — pop/slide in, wobbling seal, sparkles, auto-hide */
 function showBadgeToast(ids){
   var all = L.evaluateBadges(C, state, todayStr());
+  var first = null;
   var icons = ids.map(function(id){
     var b = all.find(function(x){return x.id===id;});
+    if (b && !first) first = b;
     return b ? '<span class="toast-badge">'+b.icon+'</span>' : '';
   }).join('');
-  _spawnToast(
+  var name = first ? '<span class="toast-badge-name"><b>'+esc(first.title)+'</b>'+(ids.length>1?' · и ещё '+(ids.length-1):'')+'</span>' : '';
+
+  var host = _ensureToastHost();
+  var t = document.createElement('div');
+  t.className = 'toast toast-trophy';
+  t.style.setProperty('--toast-accent', 'var(--beni)');
+  t.innerHTML =
     '<span class="toast-seal">賞</span>' +
-    '<span class="toast-body"><span class="toast-title">新しい勲章 · Новый трофей!</span>' +
-    '<span class="toast-icons">'+icons+'</span></span>',
-    'var(--beni)', 3500);
+    '<span class="toast-body"><span class="toast-title">🏆 新しい勲章 · Новый трофей!</span>' +
+    '<span class="toast-icons">'+icons+'</span>' + name + '</span>';
+
+  // sparkles around the seal
+  var sparks = ['✦','✧','＊','✦','✺','✧'];
+  for (var i=0;i<7;i++){
+    (function(idx){
+      var s = document.createElement('span');
+      s.className = 'toast-spark';
+      s.textContent = sparks[idx % sparks.length];
+      var ang = Math.random()*Math.PI*2;
+      var dist = 26 + Math.random()*30;
+      s.style.left = (14 + Math.random()*22) + 'px';
+      s.style.top = (50 + Math.random()*10) + '%';
+      s.style.setProperty('--sx', (Math.cos(ang)*dist).toFixed(0) + 'px');
+      s.style.setProperty('--sy', (Math.sin(ang)*dist - 14).toFixed(0) + 'px');
+      s.style.setProperty('--sr', (Math.random()*240 - 120).toFixed(0) + 'deg');
+      s.style.animationDelay = (idx*70 + Math.random()*120) + 'ms';
+      t.appendChild(s);
+      setTimeout(function(){ if(s.parentNode) s.parentNode.removeChild(s); }, 1700);
+    })(i);
+  }
+
+  host.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); t.classList.add('pop'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); }, 500);
+  }, 3500);
 }
 
 function showSurprise(text){
@@ -917,7 +1030,6 @@ function renderDashboard(){
   const streak = L.computeStreak(state, todayStr());
   const byPhase = L.progressByPhase(C, state);
   const byTrack = L.progressByTrack(C, state);
-  const due = L.getDueReviews(state, todayStr());
 
   const phaseRows = [1,2,3].map((p) => {
     const x = byPhase[p] || {done:0,total:0,pct:0};
@@ -928,12 +1040,6 @@ function renderDashboard(){
     const x = byTrack[k];
     return `<div class="prow"><span class="lbl"><i style="background:${TRACKS[k].color}"></i>${esc(TRACKS[k].label)}</span><span class="val">${x.pct}%</span></div>
       <div class="bar"><i style="width:${x.pct}%;background:${TRACKS[k].color}"></i></div>`;
-  }).join('');
-
-  const allB = L.evaluateBadges(C, state, todayStr());
-  const gotB = allB.filter(function(b){return b.unlocked;}).length;
-  const trophyRow = allB.map(function(b){
-    return '<span class="badge '+(b.unlocked?'on':'off')+'" title="'+esc(b.title+' — '+b.desc)+'">'+b.icon+'</span>';
   }).join('');
 
   document.getElementById('dashboard').innerHTML = `
@@ -955,15 +1061,6 @@ function renderDashboard(){
       <div class="eyebrow"><span class="kanji">領</span><span class="etxt"><span class="e-en">Tracks</span><span class="e-jp">領域</span></span></div>
       ${trackRows || '<div class="due-empty">ещё нет данных</div>'}
     </div>
-    <div class="card" style="--accent:var(--beni-deep);animation-delay:280ms">
-      <div class="eyebrow"><span class="kanji">復</span><span class="etxt"><span class="e-en">Review</span><span class="e-jp">復習</span></span></div>
-      ${due.length ? '<div class="due-list">'+due.map(x=>'<span class="dot">朱</span>'+esc(x)).join('<br>')+'</div>' : '<div class="due-empty">Пусто — чисто.</div>'}
-    </div>
-    <div class="card" style="--accent:var(--beni);animation-delay:350ms">
-      <div class="eyebrow"><span class="kanji">勲</span><span class="etxt"><span class="e-en">Trophies</span><span class="e-jp">🏆</span></span></div>
-      <div class="trophy-count">${gotB}/${allB.length}</div>
-      <div class="trophy-row">${trophyRow}</div>
-    </div>
   `;
 }
 
@@ -974,6 +1071,9 @@ document.getElementById('calClose').onclick = function(){ document.getElementByI
 document.getElementById('calPrev').onclick = function(){ calOffset--; renderCalendar(); };
 document.getElementById('calNext').onclick = function(){ calOffset++; renderCalendar(); };
 document.getElementById('calModal').onclick = function(e){ if(e.target.id==='calModal') document.getElementById('calModal').classList.remove('open'); };
+document.getElementById('trophiesBtn').onclick = function(){ renderTrophies(); document.getElementById('trophiesModal').classList.add('open'); };
+document.getElementById('trophiesClose').onclick = function(){ document.getElementById('trophiesModal').classList.remove('open'); };
+document.getElementById('trophiesModal').onclick = function(e){ if(e.target.id==='trophiesModal') document.getElementById('trophiesModal').classList.remove('open'); };
 document.getElementById('exportBtn').onclick = () => {
   const blob = new Blob([L.serializeState(state)], { type:'application/json' });
   const a = document.createElement('a');

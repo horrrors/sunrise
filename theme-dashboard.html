@@ -131,14 +131,7 @@
 
   /* ---- layout ---- */
   .wrap{position:relative; z-index:1; max-width:1160px; margin:0 auto; padding:34px 28px 80px}
-  .dash{display:grid; grid-template-columns:repeat(auto-fit,minmax(168px,1fr)); gap:14px; margin-top:22px}
-
-  /* compact summary cards (dashboard only) */
-  .dash .card{padding:16px 16px 15px; border-radius:18px}
-  .dash .eyebrow{margin-bottom:11px; font-size:10.5px}
-  .dash .eyebrow .badge{width:26px; height:26px; border-radius:9px; font-size:13px}
-  .dash .stat-sub{font-size:12px; margin-top:4px}
-  .dash .prow{margin:9px 0 5px}
+  .dash{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:18px; margin-bottom:30px}
 
   /* ---- cards ---- */
   .card{
@@ -409,28 +402,56 @@
   .cday.today.done{box-shadow:0 0 0 2px var(--violet), 0 6px 16px -8px rgba(230,57,155,.6); color:#fff}
   .cday.other.done{opacity:.42}
 
-  /* ---- dopamine: extra section ---- */
-  .extra{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:18px; margin-top:18px}
-
-  /* trophies widget */
-  .trophy-count{
-    font:800 30px/1 var(--display); letter-spacing:-.03em; margin:1px 0 11px;
-    background:linear-gradient(135deg,var(--amber),var(--coral) 55%,var(--fuchsia));
-    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  /* ---- trophies modal ---- */
+  .tr-modal{
+    display:none; position:fixed; inset:0; z-index:200;
+    align-items:center; justify-content:center;
+    background:rgba(0,0,0,.55);
+    backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
   }
-  .trophy-row{display:flex; flex-wrap:wrap; gap:8px}
-  .trophy-row .badge{
-    width:34px; height:34px; border-radius:11px; flex:0 0 auto; display:grid; place-items:center;
-    font-size:17px; line-height:1; transition:transform .15s, box-shadow .2s, filter .2s;
+  .tr-modal.open{display:flex; animation:cal-fade .22s ease both}
+  .tr-panel{
+    width:min(560px,92vw); max-height:86vh; overflow:auto; border-radius:26px; padding:22px 22px 24px;
+    background:var(--surface); border:1px solid var(--line);
+    box-shadow:var(--shadow-lg);
+    animation:fadeUp .3s both;
   }
-  .trophy-row .badge.on{
-    background:linear-gradient(135deg, color-mix(in srgb,var(--accent) 16%,#fff), color-mix(in srgb,var(--accent) 7%,#fff));
-    box-shadow:0 6px 16px -8px color-mix(in srgb,var(--accent) 60%, transparent), inset 0 0 0 1px color-mix(in srgb,var(--accent) 24%, transparent);
+  .tr-head{display:flex; align-items:center; gap:8px; margin-bottom:18px}
+  .tr-head #trophiesTitle{
+    flex:1; font-family:var(--display); font-weight:800;
+    font-size:19px; letter-spacing:-.01em; color:var(--ink);
   }
-  .trophy-row .badge.on:hover{transform:translateY(-3px) scale(1.05)}
-  .trophy-row .badge.off{
+  .tr-head #trophiesClose{
+    width:38px; height:38px; flex:0 0 auto; border-radius:12px; cursor:pointer;
+    display:grid; place-items:center; line-height:1;
+    font-family:var(--display); font-weight:800; font-size:16px; color:var(--fuchsia);
+    background:var(--surface); border:1.5px solid var(--line); box-shadow:var(--shadow-sm);
+    transition:transform .12s, box-shadow .2s, border-color .2s, color .2s, background .2s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .tr-head #trophiesClose:hover{
+    transform:translateY(-1px); color:#fff; border-color:transparent;
+    background:linear-gradient(135deg,var(--fuchsia-2),var(--fuchsia) 60%,var(--violet));
+    box-shadow:0 12px 26px -12px rgba(230,57,155,.6);
+  }
+  .tr-head #trophiesClose:active{transform:translateY(0)}
+  .tr-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px}
+  .tr-grid .badge{
+    --accent:var(--amber);
+    display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center;
+    padding:16px 12px 14px; border-radius:18px; transition:transform .15s, box-shadow .2s, filter .2s;
+  }
+  .tr-grid .badge .bi{font-size:30px; line-height:1}
+  .tr-grid .badge .bt{font:800 12px var(--sans); letter-spacing:.01em; color:var(--ink-soft); line-height:1.25}
+  .tr-grid .badge.on{
+    background:linear-gradient(135deg, color-mix(in srgb,var(--accent) 18%,#fff), color-mix(in srgb,var(--accent) 8%,#fff));
+    box-shadow:0 10px 24px -12px color-mix(in srgb,var(--accent) 70%, transparent), inset 0 0 0 1px color-mix(in srgb,var(--accent) 26%, transparent);
+  }
+  .tr-grid .badge.on .bt{color:var(--ink)}
+  .tr-grid .badge.on:hover{transform:translateY(-3px) scale(1.03)}
+  .tr-grid .badge.off{
     background:var(--surface-2); box-shadow:inset 0 0 0 1px var(--line-soft);
-    filter:grayscale(1); opacity:.42;
+    filter:grayscale(1); opacity:.5;
   }
 
   /* comeback banner */
@@ -486,6 +507,43 @@
   @keyframes toast-in{from{opacity:0; transform:translateY(18px) scale(.96)} to{opacity:1; transform:none}}
   @keyframes toast-out{to{opacity:0; transform:translateY(12px) scale(.97)}}
 
+  /* trophy toast — extra joyful: pop + slide-up, sparkly icon, gentle bounce */
+  .toast.trophy{
+    position:relative; overflow:visible; padding-right:24px;
+    background:linear-gradient(135deg, rgba(255,255,255,.97), color-mix(in srgb,var(--amber) 10%,#fff));
+    box-shadow:0 26px 60px -22px rgba(255,159,28,.5), inset 0 0 0 1px color-mix(in srgb,var(--amber) 30%, transparent);
+    animation:trophy-pop .55s cubic-bezier(.18,1.4,.4,1) both;
+  }
+  .toast.trophy .t-ic{
+    background:linear-gradient(135deg,color-mix(in srgb,var(--amber) 26%,#fff),color-mix(in srgb,var(--coral) 18%,#fff));
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--amber) 34%, transparent), 0 8px 18px -8px rgba(255,93,115,.5);
+    animation:trophy-bob 1s ease-in-out .35s 2;
+  }
+  .toast.trophy .t-kicker{
+    background:linear-gradient(92deg,var(--amber),var(--coral) 60%,var(--fuchsia));
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .toast.trophy .t-text{color:var(--ink); font-weight:700}
+  @keyframes trophy-pop{
+    0%{opacity:0; transform:translateY(26px) scale(.82)}
+    55%{opacity:1; transform:translateY(-6px) scale(1.04)}
+    75%{transform:translateY(0) scale(.99)}
+    100%{opacity:1; transform:none}
+  }
+  @keyframes trophy-bob{0%,100%{transform:translateY(0) rotate(0)}30%{transform:translateY(-5px) rotate(-7deg)}60%{transform:translateY(-2px) rotate(6deg)}}
+  /* sparkles around the trophy toast */
+  .toast.trophy .spark{position:absolute; font-size:13px; line-height:1; pointer-events:none; opacity:0;
+    animation:spark-pop 1.4s ease-out both}
+  .toast.trophy .spark.s1{left:6px;  top:-8px;  animation-delay:.18s}
+  .toast.trophy .spark.s2{right:10px; top:-10px; animation-delay:.3s}
+  .toast.trophy .spark.s3{left:46px; bottom:-9px; animation-delay:.42s}
+  .toast.trophy .spark.s4{right:24px; bottom:-8px; animation-delay:.24s}
+  @keyframes spark-pop{
+    0%{opacity:0; transform:scale(.4) translateY(4px)}
+    35%{opacity:1; transform:scale(1.15) translateY(-4px)}
+    100%{opacity:0; transform:scale(.7) translateY(-12px)}
+  }
+
   @media (max-width:640px){
     .topbar{padding:13px 18px}
     .wrap{padding:24px 18px 64px}
@@ -509,6 +567,7 @@
   <div class="toolbar">
     <label class="field">День <select id="daySelect"></select></label>
     <button class="btn" id="calBtn" type="button" aria-label="Календарь">📅</button>
+    <button class="btn" id="trophiesBtn" type="button" aria-label="Трофеи">🏆</button>
     <button class="btn" id="exportBtn">Экспорт</button>
     <button class="btn" id="importBtn">Импорт</button>
     <input type="file" id="importFile" accept="application/json" hidden />
@@ -516,14 +575,14 @@
 </header>
 
 <main class="wrap">
+  <section class="dash" id="dashboard"></section>
+
   <div id="comeback" style="display:none"></div>
   <div class="day-rail">
     <button class="day-nav day-prev" id="prevDay" type="button" aria-label="Предыдущий день">‹</button>
     <section class="today-wrap"><article class="today" id="todayCard"></article></section>
     <button class="day-nav day-next" id="nextDay" type="button" aria-label="Следующий день">›</button>
   </div>
-
-  <section class="dash" id="dashboard"></section>
 </main>
 <div class="foot">маленькие шаги каждый день · sunrise tracker</div>
 
@@ -537,6 +596,16 @@
     </div>
     <div class="cal-dow"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
     <div class="cal-grid" id="calGrid"></div>
+  </div>
+</div>
+
+<div class="tr-modal" id="trophiesModal">
+  <div class="tr-panel">
+    <div class="tr-head">
+      <div id="trophiesTitle"></div>
+      <button id="trophiesClose" type="button">✕</button>
+    </div>
+    <div class="tr-grid" id="trophiesGrid"></div>
   </div>
 </div>
 
@@ -687,7 +756,7 @@ function renderToday(){
   })();
 }
 
-function renderAll(){ renderDaySelect(); renderToday(); renderDashboard(); renderComeback(); }
+function renderAll(){ renderDaySelect(); renderToday(); renderDashboard(); renderTrophies(); renderComeback(); }
 
 /* ---- dopamine features ---- */
 function completedCount(){ return Object.keys(state.days).filter(function(id){return state.days[id].completedAt;}).length; }
@@ -779,22 +848,46 @@ function _pushToast(html, extraClass, ttl){
     setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); }, 360);
   }, ttl || 3500);
 }
+function _badgeById(id){
+  var b = (L.BADGES || []).find(function(x){return x.id===id;});
+  if (b) return b;
+  return (L.evaluateBadges(C, state, todayStr())).find(function(x){return x.id===id;}) || null;
+}
 function showBadgeToast(ids){
-  var all = L.evaluateBadges(C, state, todayStr());
-  var icons = ids.map(function(id){
-    var b = all.find(function(x){return x.id===id;});
-    return b ? b.icon : '🏆';
-  }).join(' ');
-  var titles = ids.map(function(id){
-    var b = all.find(function(x){return x.id===id;});
-    return b ? b.title : id;
-  }).join(', ');
-  _pushToast(
-    '<span class="t-ic">'+esc(icons)+'</span>' +
-    '<span class="t-body"><span class="t-kicker">Новый трофей!</span>' +
-    '<span class="t-text">'+esc(titles)+'</span></span>',
-    '', 3500
-  );
+  if (!ids || !ids.length) return;
+  ids.forEach(function(id, i){
+    var b = _badgeById(id);
+    var icon = b ? b.icon : '🏆';
+    var title = b ? b.title : id;
+    setTimeout(function(){
+      _pushToast(
+        '<span class="spark s1">✦</span><span class="spark s2">✧</span>' +
+        '<span class="spark s3">✦</span><span class="spark s4">✧</span>' +
+        '<span class="t-ic">'+esc(icon)+'</span>' +
+        '<span class="t-body"><span class="t-kicker">🏆 Новый трофей!</span>' +
+        '<span class="t-text">'+esc(title)+'</span></span>',
+        'trophy', 3500
+      );
+      _badgeSparkleBurst();
+    }, i * 240);
+  });
+}
+function _badgeSparkleBurst(){
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+  var layer = document.createElement('div'); layer.className = 'celebrate-layer';
+  document.body.appendChild(layer);
+  var colors = ['#ff9f1c','#ff5d73','#e6399b','#7c5cff','#ffe27a'];
+  for (var i=0;i<26;i++){
+    var p = document.createElement('span'); p.className = 'confetti';
+    p.style.left = (Math.random()*100) + 'vw';
+    p.style.background = colors[i % colors.length];
+    p.style.setProperty('--dur', (1.6 + Math.random()*1.2).toFixed(2) + 's');
+    p.style.setProperty('--spin', (Math.random()*540 + 180).toFixed(0) + 'deg');
+    p.style.animationDelay = (Math.random()*0.25).toFixed(2) + 's';
+    if (i % 3 === 0){ p.style.width='8px'; p.style.height='8px'; p.style.borderRadius='50%'; }
+    layer.appendChild(p);
+  }
+  setTimeout(function(){ if(layer.parentNode) layer.parentNode.removeChild(layer); }, 3200);
 }
 function showSurprise(text){
   _pushToast(
@@ -812,13 +905,6 @@ function renderDashboard(){
   const streak = L.computeStreak(state, todayStr());
   const byPhase = L.progressByPhase(C, state);
   const byTrack = L.progressByTrack(C, state);
-  const due = L.getDueReviews(state, todayStr());
-
-  const allB = L.evaluateBadges(C, state, todayStr());
-  const gotB = allB.filter(function(b){return b.unlocked;}).length;
-  const trophyRow = allB.map(function(b){
-    return '<span class="badge '+(b.unlocked?'on':'off')+'" title="'+esc(b.title+' — '+b.desc)+'">'+b.icon+'</span>';
-  }).join('');
 
   const phaseRows = [1,2,3].map((p) => {
     const x = byPhase[p] || {done:0,total:0,pct:0};
@@ -851,16 +937,17 @@ function renderDashboard(){
       <div class="eyebrow"><span class="badge">🎨</span> Треки <small>области</small></div>
       ${trackRows || '<div class="due-empty">ещё нет данных</div>'}
     </div>
-    <div class="card" style="--accent:var(--amber);animation-delay:280ms">
-      <div class="eyebrow"><span class="badge">🔁</span> Повторы <small>review</small></div>
-      ${due.length ? '<div class="due-list">'+due.map(x=>'· '+esc(x)).join('<br>')+'</div>' : '<div class="due-empty">✨ Пусто — всё чисто</div>'}
-    </div>
-    <div class="card" style="--accent:var(--amber);animation-delay:350ms">
-      <div class="eyebrow"><span class="badge">🏆</span> Трофеи <small>badges</small></div>
-      <div class="trophy-count">${gotB}/${allB.length}</div>
-      <div class="trophy-row">${trophyRow}</div>
-    </div>
   `;
+}
+
+function renderTrophies(){
+  var host=document.getElementById('trophiesGrid'); if(!host) return;
+  var all=L.evaluateBadges(C, state, todayStr());
+  var got=all.filter(function(b){return b.unlocked;}).length;
+  var tt=document.getElementById('trophiesTitle'); if(tt) tt.textContent='Трофеи · '+got+'/'+all.length;
+  host.innerHTML=all.map(function(b){
+    return '<div class="badge '+(b.unlocked?'on':'off')+'" title="'+esc(b.desc)+'"><span class="bi">'+b.icon+'</span><span class="bt">'+esc(b.title)+'</span></div>';
+  }).join('');
 }
 
 document.getElementById('prevDay').onclick = function(){ goToDay(-1); };
@@ -870,6 +957,9 @@ document.getElementById('calClose').onclick = function(){ document.getElementByI
 document.getElementById('calPrev').onclick = function(){ calOffset--; renderCalendar(); };
 document.getElementById('calNext').onclick = function(){ calOffset++; renderCalendar(); };
 document.getElementById('calModal').onclick = function(e){ if(e.target.id==='calModal') document.getElementById('calModal').classList.remove('open'); };
+document.getElementById('trophiesBtn').onclick = function(){ renderTrophies(); document.getElementById('trophiesModal').classList.add('open'); };
+document.getElementById('trophiesClose').onclick = function(){ document.getElementById('trophiesModal').classList.remove('open'); };
+document.getElementById('trophiesModal').onclick = function(e){ if(e.target.id==='trophiesModal') document.getElementById('trophiesModal').classList.remove('open'); };
 document.getElementById('exportBtn').onclick = () => {
   const blob = new Blob([L.serializeState(state)], { type:'application/json' });
   const a = document.createElement('a');
