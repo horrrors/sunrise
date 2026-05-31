@@ -415,6 +415,48 @@
     border:1px solid var(--brass-base); border-radius:6px; padding:2px 9px;
     box-shadow:var(--inset-shadow)}
 
+  /* ---------- day navigation (brass rail + winning CTA) ---------- */
+  .day-rail{display:flex; align-items:center; gap:18px}
+  .day-rail .today-wrap{flex:1; min-width:0}
+  .day-nav{
+    flex:0 0 auto; display:grid; place-items:center; width:54px; height:54px;
+    border-radius:50%; cursor:pointer;
+    font-family:var(--serif); font-weight:500; font-size:30px; line-height:1;
+    color:var(--em-deep);
+    background:radial-gradient(circle at 32% 28%, var(--brass-hi), var(--brass) 46%, var(--brass-base) 100%);
+    border:1px solid var(--brass-shadow);
+    box-shadow:inset 0 1px 2px rgba(255,255,255,.7), inset 0 -3px 6px rgba(122,90,43,.45), 0 8px 20px -12px rgba(122,90,43,.8);
+    transition:transform .14s ease, box-shadow .14s ease, filter .18s, opacity .18s;
+  }
+  .day-nav span{filter:drop-shadow(0 1px 0 rgba(255,255,255,.4))}
+  .day-nav:hover{transform:translateY(-2px) scale(1.04);
+    box-shadow:inset 0 1px 2px rgba(255,255,255,.8), inset 0 -3px 6px rgba(122,90,43,.45), 0 12px 26px -12px rgba(122,90,43,.9)}
+  .day-nav:active{transform:translateY(0) scale(1)}
+  .day-nav:disabled{
+    cursor:default; opacity:.45; color:var(--ink-dim);
+    background:linear-gradient(180deg, rgba(255,255,255,.5), rgba(231,224,210,.42));
+    border-color:rgba(143,137,124,.45);
+    box-shadow:var(--inset-shadow), inset 0 -2px 4px rgba(143,137,124,.3);
+  }
+  .day-nav:disabled:hover{transform:none;
+    box-shadow:var(--inset-shadow), inset 0 -2px 4px rgba(143,137,124,.3)}
+
+  /* "victorious" next-day CTA inside the day card */
+  .next-day-cta{
+    display:inline-flex; align-items:center; gap:.5em; margin-top:26px;
+    font-family:var(--sans); font-weight:600; font-size:12px; letter-spacing:.2em; text-transform:uppercase;
+    cursor:pointer; color:var(--em-deep);
+    border:1px solid var(--brass-shadow); border-radius:999px; padding:13px 26px;
+    background:linear-gradient(180deg, var(--brass-hi), var(--brass) 48%, var(--brass-base) 100%);
+    box-shadow:inset 0 1px 2px rgba(255,255,255,.7), inset 0 -3px 6px rgba(122,90,43,.45), 0 10px 24px -12px rgba(122,90,43,.85);
+    transition:transform .14s ease, box-shadow .14s ease, background .25s;
+    animation:rise .45s both;
+  }
+  .next-day-cta:hover{transform:translateY(-2px);
+    background:linear-gradient(180deg, var(--brass-hi), var(--brass) 60%, var(--brass-base) 100%);
+    box-shadow:inset 0 1px 2px rgba(255,255,255,.8), inset 0 -3px 6px rgba(122,90,43,.45), 0 14px 30px -12px rgba(122,90,43,.95)}
+  .next-day-cta:active{transform:translateY(0)}
+
   /* footer */
   .foot{position:relative; z-index:1; text-align:center; padding:8px 0 48px; max-width:1180px; margin:0 auto}
   .foot span{display:inline-block; font:400 13px var(--display); font-style:italic; letter-spacing:.04em;
@@ -438,6 +480,9 @@
     .topbar{padding:14px 18px}
     .wrap{padding:30px 18px 64px}
     .brand-name{font-size:24px}
+    .day-rail{gap:8px}
+    .day-nav{width:38px; height:38px; font-size:22px}
+    .next-day-cta{padding:12px 20px; font-size:11px; letter-spacing:.16em}
   }
   @media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important}}
 </style>
@@ -473,7 +518,11 @@
     <h2>Сегодня</h2>
     <span class="rule"></span>
   </div>
-  <section class="today-wrap"><article class="today" id="todayCard"></article></section>
+  <div class="day-rail">
+    <button class="day-nav day-prev" id="prevDay" type="button" aria-label="Предыдущий день">&lsaquo;</button>
+    <section class="today-wrap"><article class="today" id="todayCard"></article></section>
+    <button class="day-nav day-next" id="nextDay" type="button" aria-label="Следующий день">&rsaquo;</button>
+  </div>
 </main>
 
 <div class="foot"><span>継続は力なり<span class="dot">&bull;</span>постоянство — это сила</span></div>
@@ -532,6 +581,13 @@ function renderDaySelect(){
   sel.onchange = () => { currentDayId = sel.value; renderAll(); };
 }
 
+function dayIndex(){ return allDays.findIndex(function(d){ return d.id === currentDayId; }); }
+function goToDay(delta){
+  var i = dayIndex();
+  var j = Math.min(Math.max(i + delta, 0), allDays.length - 1);
+  if (j !== i){ currentDayId = allDays[j].id; renderAll(); if (window.scrollTo){ try{ window.scrollTo({top:0,behavior:'smooth'}); }catch(e){} } }
+}
+
 function renderToday(){
   const d = L.getDay(C, currentDayId);
   const el = document.getElementById('todayCard');
@@ -551,7 +607,9 @@ function renderToday(){
           <p class="warm"><span class="warm-i">&#9790;</span> <span class="muted">сегодня</span> ${esc(d.reflectPrompt)}</p>
           <div class="rest-due">${due.length ? 'К повтору сегодня — <b>'+esc(due.join(' · '))+'</b>' : 'Повторов на сегодня нет. Отдых заслужен 🌙'}</div>
         </div>
+        ${ ((d.track==='rest' || L.isDayComplete(C, state, currentDayId)) && dayIndex() < allDays.length-1) ? '<button class="next-day-cta" id="nextDayCta" type="button">Следующий день →</button>' : '' }
       </div>`;
+    afterRenderToday();
     return;
   }
 
@@ -569,6 +627,7 @@ function renderToday(){
       </div>
       ${d.resources.length ? '<div class="res-row">'+d.resources.map(r=>`<span class="chip"><b>${esc(r.label)}</b> ${esc(r.note)}</span>`).join('')+'</div>' : ''}
       ${d.track==='dsa' ? '<button class="btn gold" id="markReview">＋ Запланировать повтор паттерна недели</button>' : ''}
+      ${ ((d.track==='rest' || L.isDayComplete(C, state, currentDayId)) && dayIndex() < allDays.length-1) ? '<button class="next-day-cta" id="nextDayCta" type="button">Следующий день →</button>' : '' }
     </div>`;
 
   const list = document.getElementById('taskList');
@@ -593,6 +652,18 @@ function renderToday(){
       state = L.scheduleReview(state, item, todayStr()); saveState(); renderAll();
     };
   }
+  afterRenderToday();
+}
+
+function afterRenderToday(){
+  (function(){
+    var i = dayIndex(), last = allDays.length - 1;
+    var pv = document.getElementById('prevDay'), nx = document.getElementById('nextDay');
+    if (pv) pv.disabled = (i <= 0);
+    if (nx) nx.disabled = (i >= last);
+    var cta = document.getElementById('nextDayCta');
+    if (cta) cta.onclick = function(){ goToDay(1); };
+  })();
 }
 
 function renderAll(){ renderDaySelect(); renderToday(); renderDashboard(); }
@@ -644,6 +715,8 @@ function renderDashboard(){
   `;
 }
 
+document.getElementById('prevDay').onclick = function(){ goToDay(-1); };
+document.getElementById('nextDay').onclick = function(){ goToDay(1); };
 document.getElementById('exportBtn').onclick = () => {
   const blob = new Blob([L.serializeState(state)], { type:'application/json' });
   const a = document.createElement('a');

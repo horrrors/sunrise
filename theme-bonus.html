@@ -216,6 +216,41 @@
   }
   .today-main{padding:28px 30px 30px; flex:1; min-width:0}
 
+  /* ---------- day navigation ---------- */
+  .day-rail{display:flex; align-items:center; gap:18px}
+  .day-rail .today-wrap{flex:1; min-width:0}
+  .day-nav{
+    flex:0 0 auto; display:grid; place-items:center;
+    width:56px; height:56px; padding:0;
+    font-family:var(--display); font-size:30px; line-height:1; color:var(--ink);
+    background:var(--paper); border:var(--bw) solid var(--ink); border-radius:14px;
+    box-shadow:5px 5px 0 0 var(--ink); cursor:pointer;
+    transition:transform .1s ease, box-shadow .1s ease, background .15s;
+  }
+  .day-nav:hover{transform:translate(-2px,-2px); box-shadow:7px 7px 0 0 var(--ink); background:var(--yellow)}
+  .day-nav:active{transform:translate(2px,2px); box-shadow:2px 2px 0 0 var(--ink)}
+  .day-prev:hover{transform:translate(-2px,-2px) rotate(-3deg)}
+  .day-next:hover{transform:translate(-2px,-2px) rotate(3deg)}
+  .day-nav:disabled{
+    color:var(--ink); opacity:.32; cursor:default;
+    background:var(--paper-2); box-shadow:3px 3px 0 0 rgba(20,17,13,.28);
+    transform:none;
+  }
+  .day-nav:disabled:hover{transform:none; box-shadow:3px 3px 0 0 rgba(20,17,13,.28); background:var(--paper-2)}
+
+  /* victory CTA inside the day card */
+  .next-day-cta{
+    display:inline-flex; align-items:center; gap:10px; margin-top:24px;
+    font-family:var(--display); font-size:13px; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--paper); cursor:pointer;
+    background:var(--green); border:var(--bw) solid var(--ink); border-radius:11px;
+    padding:13px 20px; box-shadow:5px 5px 0 0 var(--ink);
+    transition:transform .08s ease, box-shadow .08s ease, background .15s;
+    animation:pop .4s both;
+  }
+  .next-day-cta:hover{transform:translate(-2px,-2px) rotate(-1deg); box-shadow:7px 7px 0 0 var(--ink); background:var(--ink); color:var(--yellow)}
+  .next-day-cta:active{transform:translate(2px,2px); box-shadow:2px 2px 0 0 var(--ink)}
+
   .trackpill{
     display:inline-flex; align-items:center; gap:9px; padding:7px 14px; border-radius:999px;
     font:700 12px var(--mono); letter-spacing:.06em; text-transform:uppercase;
@@ -312,6 +347,9 @@
     .wrap{padding:24px 16px 60px}
     .brand-name{font-size:24px}
     .card:nth-child(odd),.card:nth-child(even){transform:none}
+    .day-rail{gap:8px}
+    .day-nav{width:40px; height:40px; font-size:22px; border-radius:10px; box-shadow:3px 3px 0 0 var(--ink)}
+    .day-nav:hover{box-shadow:4px 4px 0 0 var(--ink)}
   }
   @media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important}}
 </style>
@@ -335,7 +373,11 @@
   <div class="section-head"><h2>Сводка</h2><span class="rule"></span></div>
   <section class="dash" id="dashboard"></section>
   <div class="section-head" style="margin-top:38px"><h2>Сегодня</h2><span class="rule"></span></div>
-  <section class="today-wrap"><article class="today" id="todayCard"></article></section>
+  <div class="day-rail">
+    <button class="day-nav day-prev" id="prevDay" type="button" aria-label="Предыдущий день">‹</button>
+    <section class="today-wrap"><article class="today" id="todayCard"></article></section>
+    <button class="day-nav day-next" id="nextDay" type="button" aria-label="Следующий день">›</button>
+  </div>
 </main>
 <div class="foot"><span>継続は力なり · постоянство — это сила</span></div>
 
@@ -383,6 +425,13 @@ function defaultDayId(){
 }
 let currentDayId = defaultDayId();
 
+function dayIndex(){ return allDays.findIndex(function(d){ return d.id === currentDayId; }); }
+function goToDay(delta){
+  var i = dayIndex();
+  var j = Math.min(Math.max(i + delta, 0), allDays.length - 1);
+  if (j !== i){ currentDayId = allDays[j].id; renderAll(); if (window.scrollTo){ try{ window.scrollTo({top:0,behavior:'smooth'}); }catch(e){} } }
+}
+
 function dowName(dow){ return ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'][dow-1]; }
 
 function renderDaySelect(){
@@ -410,7 +459,16 @@ function renderToday(){
         <h2 class="today-title">${esc(d.title)}</h2>
         <p class="warm"><span class="warm-i">☾</span> <span class="muted">сегодня</span> ${esc(d.reflectPrompt)}</p>
         <div class="rest-due">${due.length ? 'К повтору сегодня — <b>'+esc(due.join(' · '))+'</b>' : 'Повторов на сегодня нет. Отдых заслужен 🌙'}</div>
+        ${ ((d.track==='rest' || L.isDayComplete(C, state, currentDayId)) && dayIndex() < allDays.length-1) ? '<button class="next-day-cta" id="nextDayCta" type="button">Следующий день →</button>' : '' }
       </div>`;
+    (function(){
+      var i = dayIndex(), last = allDays.length - 1;
+      var pv = document.getElementById('prevDay'), nx = document.getElementById('nextDay');
+      if (pv) pv.disabled = (i <= 0);
+      if (nx) nx.disabled = (i >= last);
+      var cta = document.getElementById('nextDayCta');
+      if (cta) cta.onclick = function(){ goToDay(1); };
+    })();
     return;
   }
 
@@ -428,6 +486,7 @@ function renderToday(){
       </div>
       ${d.resources.length ? '<div class="res-row">'+d.resources.map(r=>`<span class="chip"><b>${esc(r.label)}</b> ${esc(r.note)}</span>`).join('')+'</div>' : ''}
       ${d.track==='dsa' ? '<button class="btn gold" id="markReview">＋ Запланировать повтор паттерна недели</button>' : ''}
+      ${ ((d.track==='rest' || L.isDayComplete(C, state, currentDayId)) && dayIndex() < allDays.length-1) ? '<button class="next-day-cta" id="nextDayCta" type="button">Следующий день →</button>' : '' }
     </div>`;
 
   const list = document.getElementById('taskList');
@@ -452,6 +511,14 @@ function renderToday(){
       state = L.scheduleReview(state, item, todayStr()); saveState(); renderAll();
     };
   }
+  (function(){
+    var i = dayIndex(), last = allDays.length - 1;
+    var pv = document.getElementById('prevDay'), nx = document.getElementById('nextDay');
+    if (pv) pv.disabled = (i <= 0);
+    if (nx) nx.disabled = (i >= last);
+    var cta = document.getElementById('nextDayCta');
+    if (cta) cta.onclick = function(){ goToDay(1); };
+  })();
 }
 
 function renderAll(){ renderDaySelect(); renderToday(); renderDashboard(); }
@@ -511,6 +578,8 @@ document.getElementById('exportBtn').onclick = () => {
   a.click();
   URL.revokeObjectURL(a.href);
 };
+document.getElementById('prevDay').onclick = function(){ goToDay(-1); };
+document.getElementById('nextDay').onclick = function(){ goToDay(1); };
 document.getElementById('importBtn').onclick = () => document.getElementById('importFile').click();
 document.getElementById('importFile').onchange = (e) => {
   const file = e.target.files[0];
