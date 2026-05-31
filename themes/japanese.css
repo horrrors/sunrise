@@ -1,0 +1,959 @@
+/* ============================================================
+   SUNRISE · тема «japanese» (васи / традиционная Япония)
+   Только CSS поверх каноничной разметки index.html + app.js.
+   Тёплый off-white васи, ai-индиго, вермиллион-ханко, матча,
+   суми, латунь. Минтё + готик. «ma» — простор и спокойствие.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700;800&family=Zen+Kaku+Gothic+New:wght@300;400;500;700;900&display=swap');
+
+/* ---------- палитра / токены ---------- */
+:root[data-theme="japanese"]{
+  --washi:#f4efe4;            /* тёплый off-white васи */
+  --washi-2:#efe8d8;          /* чуть глубже для карточек */
+  --washi-3:#e8dfca;          /* рамки/борозды */
+  --ai:#1b3a5b;               /* индиго ai */
+  --ai-deep:#13293f;          /* тёмный индиго */
+  --vermilion:#d8492b;        /* вермиллион — печать-ханко */
+  --vermilion-soft:#e7765c;
+  --matcha:#8a9a5b;           /* матча */
+  --matcha-deep:#6f7e45;
+  --sumi:#2b2622;             /* суми (тушь) — основной текст */
+  --sumi-soft:#574e44;        /* приглушённый текст */
+  --brass:#b08d57;            /* латунь */
+  --brass-deep:#8f7040;
+
+  --ink:var(--sumi);
+  --muted:#857a6c;
+  --line:#d9cfb8;
+  --line-soft:#e4dcc8;
+  --paper:var(--washi);
+  --card:var(--washi-2);
+  --card-2:#faf6ec;
+
+  --shadow-sm:0 1px 2px rgba(43,38,34,.07);
+  --shadow:0 6px 22px -12px rgba(27,58,91,.30), 0 2px 6px -3px rgba(43,38,34,.12);
+  --shadow-lg:0 22px 60px -26px rgba(19,41,63,.45);
+
+  --r-lg:14px; --r-md:10px; --r-sm:7px;
+  --serif:'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', 'Songti SC', Georgia, 'Times New Roman', serif;
+  --sans:'Zen Kaku Gothic New', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Helvetica Neue', system-ui, -apple-system, sans-serif;
+
+  /* акцент трека — переопределяется ниже на [data-track] */
+  --track:var(--ai);
+  --track-soft:#7e94ad;
+}
+
+/* ---------- сэйгайха: тонкий узор волн градиентом ---------- */
+:root[data-theme="japanese"] body{
+  --seigaiha:
+    radial-gradient(circle at 50% 100%, transparent 9px, rgba(27,58,91,.045) 9px, rgba(27,58,91,.045) 10px, transparent 10px),
+    radial-gradient(circle at 50% 100%, transparent 13px, rgba(27,58,91,.04) 13px, rgba(27,58,91,.04) 14px, transparent 14px),
+    radial-gradient(circle at 50% 100%, transparent 17px, rgba(27,58,91,.035) 17px, rgba(27,58,91,.035) 18px, transparent 18px);
+}
+
+/* ============================================================
+   БАЗА
+   ============================================================ */
+:root[data-theme="japanese"] *,
+:root[data-theme="japanese"] *::before,
+:root[data-theme="japanese"] *::after{ box-sizing:border-box; }
+
+:root[data-theme="japanese"] body{
+  margin:0;
+  font-family:var(--sans);
+  color:var(--ink);
+  background-color:var(--washi);
+  background-image:
+    var(--seigaiha),
+    radial-gradient(1200px 600px at 80% -10%, rgba(176,141,87,.07), transparent 60%),
+    radial-gradient(900px 500px at -5% 0%, rgba(138,154,91,.06), transparent 55%);
+  background-size:28px 28px, auto, auto;
+  background-attachment:fixed, scroll, scroll;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  letter-spacing:.005em;
+}
+
+:root[data-theme="japanese"] ::selection{ background:rgba(216,73,43,.22); color:var(--sumi); }
+
+/* мягкий фокус для доступности */
+:root[data-theme="japanese"] :focus-visible{
+  outline:2px solid var(--vermilion);
+  outline-offset:2px;
+  border-radius:4px;
+}
+
+/* ---------- шапка ---------- */
+:root[data-theme="japanese"] .app-header{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:18px; flex-wrap:wrap;
+  padding:18px clamp(16px,4vw,40px);
+  background:linear-gradient(180deg, rgba(250,246,236,.92), rgba(244,239,228,.86));
+  border-bottom:1px solid var(--line);
+  box-shadow:var(--shadow-sm);
+  backdrop-filter:saturate(1.05) blur(2px);
+  position:sticky; top:0; z-index:50;
+}
+
+:root[data-theme="japanese"] .brand{
+  display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;
+}
+:root[data-theme="japanese"] .brand-mark{
+  font-family:var(--serif);
+  font-size:26px; font-weight:700;
+  color:#fff;
+  background:linear-gradient(160deg, var(--vermilion), #b83a1f);
+  padding:6px 11px;
+  border-radius:8px;
+  box-shadow:0 4px 12px -5px rgba(216,73,43,.6), inset 0 0 0 1px rgba(255,255,255,.12);
+  letter-spacing:.04em;
+}
+:root[data-theme="japanese"] .brand-name{
+  font-family:var(--sans);
+  font-weight:900; font-size:20px;
+  letter-spacing:.34em;
+  color:var(--ai);
+  text-transform:uppercase;
+}
+:root[data-theme="japanese"] .brand-sub{
+  font-family:var(--serif);
+  font-size:13px; color:var(--brass-deep);
+  letter-spacing:.06em;
+  padding-left:12px;
+  border-left:1px solid var(--line);
+}
+
+/* ---------- тулбар ---------- */
+:root[data-theme="japanese"] .toolbar{
+  display:flex; align-items:center; gap:9px; flex-wrap:wrap;
+}
+:root[data-theme="japanese"] .field{
+  display:inline-flex; align-items:center; margin:0;
+}
+:root[data-theme="japanese"] select{
+  font-family:var(--sans);
+  font-size:13.5px; color:var(--ink);
+  background:var(--card-2);
+  border:1px solid var(--line);
+  border-radius:var(--r-md);
+  padding:8px 30px 8px 12px;
+  cursor:pointer;
+  appearance:none; -webkit-appearance:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'><path d='M1 1l4 4 4-4' fill='none' stroke='%231b3a5b' stroke-width='1.6' stroke-linecap='round'/></svg>");
+  background-repeat:no-repeat;
+  background-position:right 11px center;
+  box-shadow:var(--shadow-sm);
+  transition:border-color .18s, box-shadow .18s;
+  max-width:min(46vw,260px);
+}
+:root[data-theme="japanese"] select:hover{ border-color:var(--brass); }
+:root[data-theme="japanese"] select:focus{
+  border-color:var(--ai);
+  box-shadow:0 0 0 3px rgba(27,58,91,.14);
+  outline:none;
+}
+
+/* ---------- кнопки ---------- */
+:root[data-theme="japanese"] .btn{
+  font-family:var(--sans);
+  font-size:13.5px; font-weight:500;
+  color:var(--ink);
+  background:var(--card-2);
+  border:1px solid var(--line);
+  border-radius:var(--r-md);
+  padding:8px 14px;
+  cursor:pointer;
+  line-height:1.2;
+  box-shadow:var(--shadow-sm);
+  transition:transform .14s ease, box-shadow .18s, border-color .18s, background .18s, color .18s;
+}
+:root[data-theme="japanese"] .btn:hover{
+  transform:translateY(-1px);
+  border-color:var(--ai);
+  color:var(--ai);
+  box-shadow:var(--shadow);
+}
+:root[data-theme="japanese"] .btn:active{ transform:translateY(0); }
+
+:root[data-theme="japanese"] .btn.ghost{
+  background:transparent;
+  border-color:var(--line);
+}
+:root[data-theme="japanese"] .btn.ghost:hover{
+  background:rgba(27,58,91,.05);
+  border-color:var(--ai);
+}
+
+:root[data-theme="japanese"] .btn.gold{
+  background:linear-gradient(160deg, var(--brass), var(--brass-deep));
+  color:#fff5e8;
+  border-color:transparent;
+  font-weight:600;
+  letter-spacing:.02em;
+  box-shadow:0 6px 16px -8px rgba(176,141,87,.7);
+}
+:root[data-theme="japanese"] .btn.gold:hover{
+  color:#fff;
+  box-shadow:0 10px 22px -10px rgba(176,141,87,.85);
+}
+
+/* ---------- основной контейнер ---------- */
+:root[data-theme="japanese"] .wrap{
+  max-width:1080px;
+  margin:0 auto;
+  padding:clamp(20px,4vw,40px) clamp(16px,4vw,40px) 30px;
+}
+
+/* ============================================================
+   СВОДКА (dashboard)
+   ============================================================ */
+:root[data-theme="japanese"] .dash{
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:16px;
+  margin-bottom:28px;
+}
+@media (max-width:900px){
+  :root[data-theme="japanese"] .dash{ grid-template-columns:repeat(2,1fr); }
+}
+@media (max-width:520px){
+  :root[data-theme="japanese"] .dash{ grid-template-columns:1fr; }
+}
+
+:root[data-theme="japanese"] .stat-card{
+  position:relative;
+  background:linear-gradient(180deg, var(--card-2), var(--card));
+  border:1px solid var(--line);
+  border-radius:var(--r-lg);
+  padding:18px 16px;
+  box-shadow:var(--shadow);
+  display:flex; flex-direction:column;
+  overflow:hidden;
+}
+/* верхняя нить-акцент трека/типа */
+:root[data-theme="japanese"] .stat-card::before{
+  content:""; position:absolute; inset:0 0 auto 0; height:3px;
+  background:linear-gradient(90deg, var(--vermilion), transparent 70%);
+  opacity:.7;
+}
+:root[data-theme="japanese"] .stat-card[data-kind="streak"]::before{
+  background:linear-gradient(90deg, var(--vermilion), var(--brass) 75%);
+}
+:root[data-theme="japanese"] .stat-card[data-kind="phases"]::before{
+  background:linear-gradient(90deg, var(--ai), transparent 70%);
+}
+:root[data-theme="japanese"] .stat-card[data-kind="tracks"]::before{
+  background:linear-gradient(90deg, var(--matcha), transparent 70%);
+}
+
+:root[data-theme="japanese"] .eyebrow{
+  font-family:var(--sans);
+  font-size:11px; font-weight:700;
+  letter-spacing:.2em; text-transform:uppercase;
+  color:var(--brass-deep);
+  margin-bottom:12px;
+}
+
+/* кольцо прогресса (conic, var(--p)) */
+:root[data-theme="japanese"] .ring{
+  --p:0;
+  width:128px; height:128px; margin:6px auto 12px;
+  border-radius:50%;
+  display:grid; place-items:center;
+  background:
+    radial-gradient(closest-side, var(--card-2) 70%, transparent 71% 100%),
+    conic-gradient(var(--ai) calc(var(--p) * 1%), var(--line-soft) 0);
+  box-shadow:inset 0 0 0 1px rgba(27,58,91,.08);
+}
+:root[data-theme="japanese"] .ring > div{
+  display:flex; flex-direction:column; align-items:center; line-height:1.1;
+}
+:root[data-theme="japanese"] .ring b{
+  font-family:var(--serif);
+  font-size:30px; font-weight:700; color:var(--ai);
+}
+:root[data-theme="japanese"] .ring small{
+  font-size:12px; color:var(--muted); margin-top:3px; letter-spacing:.04em;
+}
+
+/* streak */
+:root[data-theme="japanese"] .stat-card[data-kind="streak"]{
+  align-items:center; text-align:center; justify-content:center;
+}
+:root[data-theme="japanese"] .flame{
+  font-size:34px; line-height:1; margin:4px 0 2px;
+  filter:drop-shadow(0 3px 6px rgba(216,73,43,.35));
+  animation:jp-flicker 2.6s ease-in-out infinite;
+}
+@keyframes jp-flicker{
+  0%,100%{ transform:translateY(0) scale(1); }
+  50%{ transform:translateY(-2px) scale(1.06); }
+}
+:root[data-theme="japanese"] .streak-num{
+  font-family:var(--serif);
+  font-size:48px; font-weight:800; color:var(--vermilion);
+  line-height:1; margin:2px 0;
+}
+
+/* строки phases/tracks */
+:root[data-theme="japanese"] .prow{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:10px; margin:10px 0 5px;
+}
+:root[data-theme="japanese"] .lbl{
+  display:inline-flex; align-items:center; gap:8px;
+  font-size:13px; color:var(--sumi-soft); font-weight:500;
+}
+:root[data-theme="japanese"] .lbl > i{
+  width:8px; height:8px; border-radius:2px;
+  background:var(--track, var(--ai));
+  box-shadow:0 0 0 2px rgba(0,0,0,.04);
+  transform:rotate(45deg);
+}
+:root[data-theme="japanese"] .val{
+  font-family:var(--serif);
+  font-size:13px; font-weight:600; color:var(--ai);
+}
+
+/* полоса прогресса */
+:root[data-theme="japanese"] .bar{
+  height:7px; border-radius:99px;
+  background:var(--line-soft);
+  overflow:hidden;
+  box-shadow:inset 0 1px 2px rgba(43,38,34,.08);
+  margin-bottom:7px;
+}
+:root[data-theme="japanese"] .bar > i{
+  display:block; height:100%;
+  border-radius:99px;
+  background:linear-gradient(90deg, var(--track, var(--ai)), color-mix(in srgb, var(--track, var(--ai)) 62%, #fff));
+  transition:width .7s cubic-bezier(.22,.61,.36,1);
+}
+
+:root[data-theme="japanese"] .stat-sub{
+  font-size:12px; color:var(--muted); margin-top:auto; padding-top:6px;
+  letter-spacing:.02em;
+}
+:root[data-theme="japanese"] .muted{ color:var(--muted); }
+
+/* ============================================================
+   ЦВЕТА ТРЕКОВ — каждый трек свой акцент
+   (dsa, js, ts, node, sysdesign, patterns, distsys, db, cs, rest)
+   ============================================================ */
+:root[data-theme="japanese"] [data-track="dsa"]      { --track:#1b3a5b; --track-soft:#5e7a98; } /* ai-индиго */
+:root[data-theme="japanese"] [data-track="js"]       { --track:#c89b2e; --track-soft:#dcc070; } /* кихада-жёлтый */
+:root[data-theme="japanese"] [data-track="ts"]       { --track:#3a6ea5; --track-soft:#7ca0c7; } /* ханада-синий */
+:root[data-theme="japanese"] [data-track="node"]     { --track:#6f7e45; --track-soft:#9aa86f; } /* матча */
+:root[data-theme="japanese"] [data-track="sysdesign"]{ --track:#8a5a9c; --track-soft:#b18cc0; } /* фудзи-лиловый */
+:root[data-theme="japanese"] [data-track="patterns"] { --track:#b08d57; --track-soft:#cdb088; } /* латунь */
+:root[data-theme="japanese"] [data-track="distsys"]  { --track:#2f7d74; --track-soft:#6fa9a1; } /* сэйдзи-бирюза */
+:root[data-theme="japanese"] [data-track="db"]       { --track:#8a6d4f; --track-soft:#b09377; } /* тяиро-умбра */
+:root[data-theme="japanese"] [data-track="cs"]       { --track:#5a6b8c; --track-soft:#8b99b3; } /* сёгун-сталь */
+:root[data-theme="japanese"] [data-track="rest"]     { --track:#a7a098; --track-soft:#c4bdb3; } /* пепельный покой */
+:root[data-theme="japanese"] [data-track="vermilion"]{ --track:var(--vermilion); }
+
+/* акцент проявляется в карточках/полосах/таблетке трека */
+:root[data-theme="japanese"] .stat-card[data-track]::before{
+  background:linear-gradient(90deg, var(--track), transparent 70%);
+}
+:root[data-theme="japanese"] .bar[data-track] > i{
+  background:linear-gradient(90deg, var(--track), var(--track-soft));
+}
+:root[data-theme="japanese"] .prow[data-track] .val{ color:var(--track); }
+
+/* ============================================================
+   ДЕНЬ (day-rail / today)
+   ============================================================ */
+:root[data-theme="japanese"] .day-rail{
+  display:flex; align-items:stretch; gap:12px;
+}
+:root[data-theme="japanese"] .today-wrap{ flex:1 1 auto; min-width:0; }
+
+:root[data-theme="japanese"] .day-nav{
+  flex:0 0 auto;
+  width:46px;
+  align-self:center;
+  font-family:var(--serif);
+  font-size:26px; line-height:1;
+  color:var(--ai);
+  background:var(--card-2);
+  border:1px solid var(--line);
+  border-radius:50%;
+  height:46px;
+  cursor:pointer;
+  display:grid; place-items:center;
+  box-shadow:var(--shadow-sm);
+  transition:transform .15s, box-shadow .18s, border-color .18s, color .18s, background .18s;
+}
+:root[data-theme="japanese"] .day-nav:hover:not(:disabled){
+  transform:translateY(-2px);
+  border-color:var(--vermilion);
+  color:var(--vermilion);
+  box-shadow:var(--shadow);
+}
+:root[data-theme="japanese"] .day-nav:active:not(:disabled){ transform:translateY(0); }
+:root[data-theme="japanese"] .day-nav:disabled{
+  opacity:.3; cursor:not-allowed;
+  color:var(--muted); border-color:var(--line-soft);
+  box-shadow:none;
+}
+
+/* карточка дня */
+:root[data-theme="japanese"] .today{
+  --track:var(--ai);
+  position:relative;
+  display:flex; align-items:stretch; gap:0;
+  background:linear-gradient(180deg, var(--card-2), var(--card));
+  border:1px solid var(--line);
+  border-radius:var(--r-lg);
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+/* левая полоса-акцент трека */
+:root[data-theme="japanese"] .today::before{
+  content:""; position:absolute; inset:0 auto 0 0; width:4px;
+  background:linear-gradient(180deg, var(--track), var(--track-soft));
+}
+
+/* боковая вертикальная подпись (.vert уже вертикальный текст) */
+:root[data-theme="japanese"] .today-side{
+  flex:0 0 auto;
+  display:flex; align-items:flex-start; justify-content:center;
+  padding:22px 6px 22px 10px;
+  background:linear-gradient(180deg, rgba(27,58,91,.04), transparent);
+  border-right:1px solid var(--line-soft);
+}
+:root[data-theme="japanese"] .vert{
+  writing-mode:vertical-rl;
+  text-orientation:upright;
+  font-family:var(--serif);
+  font-size:14px; font-weight:600;
+  letter-spacing:.28em;
+  color:var(--brass-deep);
+  white-space:nowrap;
+}
+
+:root[data-theme="japanese"] .today-main{
+  flex:1 1 auto; min-width:0;
+  padding:22px clamp(16px,3vw,28px) 24px;
+}
+
+/* таблетка трека */
+:root[data-theme="japanese"] .trackpill{
+  display:inline-flex; align-items:center; gap:8px;
+  font-family:var(--sans);
+  font-size:12.5px; font-weight:600;
+  letter-spacing:.03em;
+  color:var(--track);
+  background:color-mix(in srgb, var(--track) 12%, var(--card-2));
+  border:1px solid color-mix(in srgb, var(--track) 32%, transparent);
+  border-radius:99px;
+  padding:5px 13px 5px 6px;
+}
+:root[data-theme="japanese"] .trackpill .k{
+  display:inline-grid; place-items:center;
+  width:24px; height:24px;
+  font-family:var(--serif);
+  font-size:14px; font-weight:700;
+  color:#fff;
+  background:var(--track);
+  border-radius:7px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);
+}
+/* в карточке дня таблетка наследует акцент трека через .today[data-track] */
+:root[data-theme="japanese"] .today[data-track] .trackpill{ color:var(--track); }
+:root[data-theme="japanese"] .today[data-track] .trackpill .k{ background:var(--track); }
+
+:root[data-theme="japanese"] .today-title{
+  font-family:var(--serif);
+  font-size:clamp(20px,3.4vw,28px);
+  font-weight:700;
+  color:var(--sumi);
+  margin:14px 0 12px;
+  line-height:1.3;
+}
+
+/* разминка / приглашение к рефлексии */
+:root[data-theme="japanese"] .warm{
+  display:flex; align-items:baseline; gap:8px;
+  font-size:14.5px; color:var(--sumi-soft);
+  background:rgba(138,154,91,.08);
+  border-left:3px solid var(--matcha);
+  border-radius:0 var(--r-sm) var(--r-sm) 0;
+  padding:10px 14px;
+  margin:0 0 18px;
+}
+:root[data-theme="japanese"] .warm-i{
+  color:var(--matcha-deep); font-size:15px; flex:0 0 auto;
+}
+
+/* задачи */
+:root[data-theme="japanese"] .tasks{
+  display:flex; flex-direction:column; gap:9px;
+  margin-bottom:20px;
+}
+:root[data-theme="japanese"] .task{
+  user-select:text;                       /* текст выделяемый */
+  display:flex; align-items:flex-start; gap:11px;
+  font-size:15px; color:var(--ink);
+  background:var(--card-2);
+  border:1px solid var(--line-soft);
+  border-radius:var(--r-md);
+  padding:11px 14px;
+  cursor:pointer;
+  transition:border-color .18s, background .18s, box-shadow .18s, transform .12s;
+  animation:jp-task-in .42s cubic-bezier(.22,.61,.36,1) both;
+}
+@keyframes jp-task-in{
+  from{ opacity:0; transform:translateX(-8px); }
+  to{ opacity:1; transform:translateX(0); }
+}
+:root[data-theme="japanese"] .task:hover{
+  border-color:var(--track, var(--ai));
+  box-shadow:var(--shadow-sm);
+}
+/* нативный чекбокс прячем — рисуем .box */
+:root[data-theme="japanese"] .task input[type="checkbox"]{
+  position:absolute; opacity:0; width:0; height:0; pointer-events:none;
+}
+:root[data-theme="japanese"] .box{
+  flex:0 0 auto;
+  width:20px; height:20px; margin-top:1px;
+  border:1.6px solid var(--track-soft, var(--brass));
+  border-radius:6px;
+  background:var(--card-2);
+  position:relative;
+  transition:background .18s, border-color .18s, transform .14s;
+}
+:root[data-theme="japanese"] .box::after{
+  content:""; position:absolute;
+  left:6px; top:2px;
+  width:5px; height:10px;
+  border:solid #fff; border-width:0 2px 2px 0;
+  transform:rotate(45deg) scale(0);
+  transition:transform .2s cubic-bezier(.2,.9,.3,1.3);
+}
+:root[data-theme="japanese"] .task input:checked ~ .box{
+  background:var(--track, var(--ai));
+  border-color:var(--track, var(--ai));
+}
+:root[data-theme="japanese"] .task input:checked ~ .box::after{ transform:rotate(45deg) scale(1); }
+:root[data-theme="japanese"] .task input:focus-visible ~ .box{
+  outline:2px solid var(--vermilion); outline-offset:2px;
+}
+
+:root[data-theme="japanese"] .task-text{ flex:1 1 auto; }
+:root[data-theme="japanese"] .task.done{
+  background:rgba(138,154,91,.07);
+  border-color:rgba(138,154,91,.35);
+}
+:root[data-theme="japanese"] .task.done .task-text{
+  color:var(--muted);
+  text-decoration:line-through;
+  text-decoration-color:var(--matcha);
+}
+
+/* блок рефлексии */
+:root[data-theme="japanese"] .reflect-block{
+  margin:4px 0 18px;
+}
+:root[data-theme="japanese"] .reflect-label{
+  display:flex; align-items:baseline; gap:9px;
+  font-size:13.5px; font-weight:600; color:var(--sumi-soft);
+  margin-bottom:9px;
+}
+:root[data-theme="japanese"] .kanji{
+  font-family:var(--serif);
+  font-size:18px; font-weight:700;
+  color:#fff;
+  background:linear-gradient(160deg, var(--ai), var(--ai-deep));
+  width:30px; height:30px;
+  display:inline-grid; place-items:center;
+  border-radius:8px;
+  flex:0 0 auto;
+  box-shadow:0 3px 8px -4px rgba(27,58,91,.55);
+}
+:root[data-theme="japanese"] textarea{
+  width:100%;
+  font-family:var(--serif);
+  font-size:14.5px; line-height:1.6; color:var(--ink);
+  background:var(--card-2);
+  border:1px solid var(--line);
+  border-radius:var(--r-md);
+  padding:12px 14px;
+  min-height:84px;
+  resize:vertical;
+  transition:border-color .18s, box-shadow .18s;
+}
+:root[data-theme="japanese"] textarea::placeholder{ color:var(--muted); font-style:italic; }
+:root[data-theme="japanese"] textarea:focus{
+  outline:none;
+  border-color:var(--ai);
+  box-shadow:0 0 0 3px rgba(27,58,91,.13);
+}
+
+/* ресурсы — чипы */
+:root[data-theme="japanese"] .res-row{
+  display:flex; flex-wrap:wrap; gap:9px;
+  margin:0 0 18px;
+}
+:root[data-theme="japanese"] .chip{
+  font-size:12.5px; color:var(--sumi-soft);
+  background:var(--card-2);
+  border:1px dashed var(--line);
+  border-radius:99px;
+  padding:6px 13px;
+  transition:border-color .18s, background .18s;
+}
+:root[data-theme="japanese"] .chip:hover{
+  border-color:var(--brass);
+  border-style:solid;
+  background:rgba(176,141,87,.08);
+}
+:root[data-theme="japanese"] .chip b{
+  color:var(--ai); font-weight:600; margin-right:4px;
+}
+
+/* блок отдыха (rest-due рендерится в rest-дне) */
+:root[data-theme="japanese"] .rest-due{
+  font-size:14px; color:var(--sumi-soft);
+  background:rgba(27,58,91,.05);
+  border-radius:var(--r-md);
+  padding:12px 15px;
+  margin-bottom:18px;
+}
+:root[data-theme="japanese"] .rest-due b{ color:var(--vermilion); }
+
+/* CTA «следующий день» */
+:root[data-theme="japanese"] .next-day-cta{
+  font-family:var(--sans);
+  font-size:14px; font-weight:600;
+  color:#fff;
+  background:linear-gradient(160deg, var(--ai), var(--ai-deep));
+  border:none;
+  border-radius:var(--r-md);
+  padding:11px 20px;
+  cursor:pointer;
+  letter-spacing:.02em;
+  box-shadow:0 8px 18px -9px rgba(27,58,91,.7);
+  transition:transform .15s, box-shadow .2s, filter .2s;
+}
+:root[data-theme="japanese"] .next-day-cta:hover{
+  transform:translateY(-2px);
+  filter:brightness(1.06);
+  box-shadow:0 12px 26px -10px rgba(27,58,91,.8);
+}
+:root[data-theme="japanese"] .next-day-cta:active{ transform:translateY(0); }
+
+/* comeback-плашка */
+:root[data-theme="japanese"] #comeback{
+  font-size:14px; color:var(--sumi-soft);
+  background:linear-gradient(180deg, rgba(216,73,43,.1), rgba(216,73,43,.04));
+  border:1px solid rgba(216,73,43,.28);
+  border-radius:var(--r-md);
+  padding:12px 16px;
+  margin:0 0 22px;
+  box-shadow:var(--shadow-sm);
+}
+
+/* ============================================================
+   МОДАЛКИ — скроллятся целиком, тултипы не режутся
+   ============================================================ */
+:root[data-theme="japanese"] .modal{
+  display:none;
+  position:fixed; inset:0; z-index:200;
+  overflow-y:auto;
+  align-items:flex-start; justify-content:center;
+  padding:32px 16px;
+  background:rgba(19,29,41,.46);
+  backdrop-filter:blur(3px) saturate(1.05);
+}
+:root[data-theme="japanese"] .modal.open{ display:flex; }
+:root[data-theme="japanese"] .modal-panel{
+  overflow:visible;
+  max-width:min(560px,92vw);
+  margin:auto;
+  width:100%;
+  background:linear-gradient(180deg, var(--card-2), var(--card));
+  border:1px solid var(--line);
+  border-radius:var(--r-lg);
+  box-shadow:var(--shadow-lg);
+  padding:20px 22px 24px;
+  animation:jp-modal-in .28s cubic-bezier(.22,.61,.36,1) both;
+}
+@keyframes jp-modal-in{
+  from{ opacity:0; transform:translateY(14px) scale(.985); }
+  to{ opacity:1; transform:translateY(0) scale(1); }
+}
+
+/* шапки модалок */
+:root[data-theme="japanese"] .cal-head,
+:root[data-theme="japanese"] .tr-head{
+  display:flex; align-items:center; gap:10px;
+  margin-bottom:16px;
+}
+:root[data-theme="japanese"] .cal-head{ justify-content:space-between; }
+:root[data-theme="japanese"] .tr-head{ justify-content:space-between; }
+:root[data-theme="japanese"] #calTitle,
+:root[data-theme="japanese"] #trophiesTitle{
+  font-family:var(--serif);
+  font-size:17px; font-weight:700; color:var(--ai);
+  flex:1 1 auto; text-align:center;
+}
+:root[data-theme="japanese"] #trophiesTitle{ text-align:left; }
+:root[data-theme="japanese"] .cal-head button,
+:root[data-theme="japanese"] .tr-head button{
+  font-family:var(--serif);
+  font-size:16px; line-height:1;
+  color:var(--ai);
+  background:var(--card-2);
+  border:1px solid var(--line);
+  border-radius:8px;
+  width:34px; height:34px;
+  cursor:pointer;
+  display:grid; place-items:center;
+  transition:transform .14s, border-color .18s, color .18s, background .18s;
+}
+:root[data-theme="japanese"] .cal-head button:hover,
+:root[data-theme="japanese"] .tr-head button:hover{
+  border-color:var(--vermilion); color:var(--vermilion);
+  transform:translateY(-1px);
+}
+:root[data-theme="japanese"] #calClose,
+:root[data-theme="japanese"] #trophiesClose{
+  color:var(--muted);
+}
+:root[data-theme="japanese"] #calClose:hover,
+:root[data-theme="japanese"] #trophiesClose:hover{
+  color:#fff; background:var(--vermilion); border-color:var(--vermilion);
+}
+
+/* ---------- календарь ---------- */
+:root[data-theme="japanese"] .cal-dow{
+  display:grid; grid-template-columns:repeat(7,1fr);
+  gap:6px; margin-bottom:8px;
+}
+:root[data-theme="japanese"] .cal-dow span{
+  text-align:center;
+  font-size:11px; font-weight:700; letter-spacing:.06em;
+  color:var(--brass-deep);
+  text-transform:uppercase;
+}
+:root[data-theme="japanese"] .cal-grid{
+  display:grid; grid-template-columns:repeat(7,1fr);
+  gap:6px;
+}
+:root[data-theme="japanese"] .cday{
+  aspect-ratio:1/1;
+  display:grid; place-items:center;
+  font-family:var(--serif);
+  font-size:14px; color:var(--sumi-soft);
+  background:var(--card-2);
+  border:1px solid var(--line-soft);
+  border-radius:8px;
+  transition:transform .14s, box-shadow .18s, background .18s;
+}
+:root[data-theme="japanese"] .cday.other{ opacity:.36; }
+:root[data-theme="japanese"] .cday.done{
+  color:#fff; font-weight:600;
+  background:linear-gradient(160deg, var(--matcha), var(--matcha-deep));
+  border-color:transparent;
+  box-shadow:0 4px 10px -6px rgba(111,126,69,.7);
+}
+:root[data-theme="japanese"] .cday.today{
+  border-color:var(--vermilion);
+  box-shadow:0 0 0 2px rgba(216,73,43,.25);
+  color:var(--vermilion);
+  font-weight:700;
+}
+:root[data-theme="japanese"] .cday.done.today{
+  color:#fff;
+  box-shadow:0 0 0 2px rgba(216,73,43,.35), 0 4px 10px -6px rgba(111,126,69,.7);
+}
+
+/* ---------- трофеи ---------- */
+:root[data-theme="japanese"] .tr-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(96px,1fr));
+  gap:12px;
+}
+:root[data-theme="japanese"] .badge{
+  position:relative;
+  display:flex; flex-direction:column; align-items:center; gap:7px;
+  padding:14px 10px;
+  background:var(--card-2);
+  border:1px solid var(--line-soft);
+  border-radius:var(--r-md);
+  text-align:center;
+  transition:transform .16s, box-shadow .2s, border-color .18s;
+}
+:root[data-theme="japanese"] .badge:hover{
+  transform:translateY(-3px);
+  box-shadow:var(--shadow);
+  border-color:var(--brass);
+  z-index:5;
+}
+:root[data-theme="japanese"] .badge.on{
+  border-color:rgba(176,141,87,.5);
+  background:linear-gradient(180deg, rgba(176,141,87,.12), var(--card-2));
+}
+:root[data-theme="japanese"] .badge.off{ opacity:.5; filter:grayscale(.6); }
+:root[data-theme="japanese"] .bi{
+  font-size:30px; line-height:1;
+}
+:root[data-theme="japanese"] .badge.on .bi{
+  filter:drop-shadow(0 3px 6px rgba(176,141,87,.5));
+}
+:root[data-theme="japanese"] .bt{
+  font-size:11.5px; font-weight:600; color:var(--sumi-soft);
+  line-height:1.25;
+}
+
+/* тултип бейджа — не обрезается (panel/badge overflow:visible) */
+:root[data-theme="japanese"] .badge[data-tip]:hover::after{
+  content:attr(data-tip);
+  position:absolute;
+  bottom:calc(100% + 9px); left:50%;
+  transform:translateX(-50%);
+  width:max-content; max-width:230px;
+  font-family:var(--sans);
+  font-size:12px; font-weight:400; line-height:1.4;
+  color:#fdf8ee;
+  background:var(--ai-deep);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:8px;
+  padding:8px 11px;
+  text-align:left;
+  white-space:normal;
+  box-shadow:var(--shadow-lg);
+  z-index:30;
+  pointer-events:none;
+  animation:jp-tip .16s ease both;
+}
+:root[data-theme="japanese"] .badge[data-tip]:hover::before{
+  content:"";
+  position:absolute;
+  bottom:calc(100% + 3px); left:50%;
+  transform:translateX(-50%) rotate(45deg);
+  width:9px; height:9px;
+  background:var(--ai-deep);
+  border-right:1px solid rgba(255,255,255,.08);
+  border-bottom:1px solid rgba(255,255,255,.08);
+  z-index:30; pointer-events:none;
+}
+@keyframes jp-tip{
+  from{ opacity:0; transform:translateX(-50%) translateY(4px); }
+  to{ opacity:1; transform:translateX(-50%) translateY(0); }
+}
+
+/* ============================================================
+   ЭФФЕКТЫ (спавнятся app.js в #fx)
+   ============================================================ */
+:root[data-theme="japanese"] #fx{
+  position:fixed; inset:0; z-index:400;
+  pointer-events:none;
+  overflow:hidden;
+}
+
+/* конфетти — лепестки сакуры */
+:root[data-theme="japanese"] .confetti-piece{
+  --i:0;
+  position:absolute; top:-12px;
+  width:9px; height:11px;
+  background:var(--vermilion);
+  border-radius:80% 0 80% 0;
+  opacity:.95;
+  transform:rotate(0deg);
+  animation:jp-fall 1.7s cubic-bezier(.3,.4,.5,1) forwards;
+}
+:root[data-theme="japanese"] .confetti-piece:nth-child(3n){ background:var(--vermilion-soft); }
+:root[data-theme="japanese"] .confetti-piece:nth-child(3n+1){ background:var(--brass); }
+:root[data-theme="japanese"] .confetti-piece:nth-child(3n+2){ background:#f0d8c4; }
+:root[data-theme="japanese"] .confetti-piece:nth-child(4n){ background:var(--matcha); }
+@keyframes jp-fall{
+  0%{ transform:translateY(0) rotate(0deg); opacity:1; }
+  100%{ transform:translateY(102vh) rotate(540deg); opacity:.15; }
+}
+
+/* тосты */
+:root[data-theme="japanese"] .toast,
+:root[data-theme="japanese"] .badge-toast{
+  position:fixed;
+  left:50%; bottom:28px;
+  transform:translateX(-50%) translateY(24px);
+  display:flex; align-items:center; gap:10px;
+  max-width:min(440px,90vw);
+  font-family:var(--sans);
+  font-size:14px; color:#fdf8ee;
+  background:linear-gradient(160deg, var(--ai), var(--ai-deep));
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:var(--r-md);
+  padding:13px 18px;
+  box-shadow:var(--shadow-lg);
+  opacity:0;
+  pointer-events:none;
+  transition:transform .42s cubic-bezier(.22,.61,.36,1), opacity .42s;
+}
+:root[data-theme="japanese"] .toast::before{
+  content:"印";
+  font-family:var(--serif); font-weight:700;
+  color:var(--vermilion-soft);
+  margin-right:2px;
+}
+:root[data-theme="japanese"] .badge-toast{
+  background:linear-gradient(160deg, var(--brass), var(--brass-deep));
+  color:#fff8ee;
+}
+:root[data-theme="japanese"] .toast.show,
+:root[data-theme="japanese"] .badge-toast.show{
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+}
+:root[data-theme="japanese"] .badge-toast b{ font-weight:700; }
+:root[data-theme="japanese"] .bt-i{
+  font-size:22px; line-height:1;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.25));
+}
+
+/* ============================================================
+   ФУТЕР
+   ============================================================ */
+:root[data-theme="japanese"] .foot{
+  text-align:center;
+  padding:26px 16px 40px;
+  border-top:1px solid var(--line-soft);
+  margin-top:10px;
+}
+:root[data-theme="japanese"] #motd{
+  font-family:var(--serif);
+  font-size:14px; font-style:italic;
+  color:var(--sumi-soft);
+  letter-spacing:.04em;
+  opacity:1;
+  transition:opacity .55s ease;
+}
+:root[data-theme="japanese"] #motd.motd-out{ opacity:0; }
+
+/* ============================================================
+   АДАПТИВ
+   ============================================================ */
+@media (max-width:600px){
+  :root[data-theme="japanese"] .app-header{ gap:12px; }
+  :root[data-theme="japanese"] .brand-name{ letter-spacing:.22em; font-size:17px; }
+  :root[data-theme="japanese"] .today-side{ padding:14px 4px; }
+  :root[data-theme="japanese"] .vert{ font-size:12px; letter-spacing:.2em; }
+  :root[data-theme="japanese"] .day-nav{ width:40px; height:40px; font-size:22px; }
+}
+
+/* доступность: уважаем reduced-motion */
+@media (prefers-reduced-motion:reduce){
+  :root[data-theme="japanese"] *,
+  :root[data-theme="japanese"] *::before,
+  :root[data-theme="japanese"] *::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+  }
+}
