@@ -1,99 +1,53 @@
 <!doctype html>
-<html lang="ru">
+<html lang="ru" data-theme="bonus">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Sunrise · выбор темы</title>
-<style>
-  :root{
-    --bg:#0b0c12; --ink:#eaedf7; --dim:#9aa3c4; --faint:#646c93; --line:rgba(255,255,255,.09);
-    --sans:"Avenir Next","Segoe UI",system-ui,sans-serif;
-    --serif:"Hoefler Text",Didot,"Times New Roman",serif;
-    --mono:ui-monospace,"SFMono-Regular",Menlo,monospace;
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0; min-height:100vh; color:var(--ink); font-family:var(--sans); line-height:1.55;
-    -webkit-font-smoothing:antialiased;
-    background:
-      radial-gradient(900px 500px at 50% -8%, rgba(120,150,255,.10), transparent 60%),
-      radial-gradient(700px 420px at 88% 4%, rgba(255,95,210,.07), transparent 60%),
-      linear-gradient(180deg,#0a0b11,#0d0e16 60%,#10111b);
-    background-attachment:fixed;
-  }
-  .wrap{max-width:1100px; margin:0 auto; padding:64px 28px 80px}
-  .eyebrow{font:600 11px var(--mono); letter-spacing:.34em; text-transform:uppercase; color:var(--faint)}
-  h1{font-family:var(--serif); font-weight:600; font-size:clamp(34px,6vw,60px); line-height:1.04; margin:14px 0 10px; letter-spacing:.01em}
-  h1 .g{background:linear-gradient(92deg,#fff,#2ee6a6 50%,#ffcf6b); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent}
-  .lede{color:var(--dim); max-width:640px; font-size:16px}
-  .lede b{color:var(--ink)}
-  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:20px; margin-top:44px}
-  .theme{
-    display:block; text-decoration:none; color:inherit; border-radius:18px; overflow:hidden;
-    border:1px solid var(--line); background:rgba(255,255,255,.025);
-    box-shadow:0 20px 50px -30px #000; transition:transform .18s, box-shadow .25s, border-color .25s;
-    animation:rise .6s both;
-  }
-  .theme:hover{transform:translateY(-4px); border-color:rgba(255,255,255,.22);
-    box-shadow:0 34px 70px -34px #000, 0 0 40px -22px var(--c1)}
-  .swatch{height:104px; position:relative; display:flex; align-items:flex-end; padding:14px;
-    background:linear-gradient(120deg,var(--c1),var(--c2) 55%,var(--c3))}
-  .swatch .k{font-family:var(--serif); font-size:34px; color:rgba(255,255,255,.92); text-shadow:0 2px 14px rgba(0,0,0,.4); line-height:1}
-  .swatch .tag{position:absolute; top:12px; right:13px; font:600 10px var(--mono); letter-spacing:.14em;
-    text-transform:uppercase; color:rgba(255,255,255,.85); background:rgba(0,0,0,.28); padding:5px 9px; border-radius:99px; backdrop-filter:blur(4px)}
-  .body{padding:18px 18px 20px}
-  .body h2{margin:0 0 6px; font-size:18px; font-weight:600}
-  .body p{margin:0 0 14px; color:var(--dim); font-size:13.5px; min-height:38px}
-  .open{font:600 12px var(--mono); letter-spacing:.08em; color:var(--ink); display:inline-flex; align-items:center; gap:7px}
-  .open .arr{transition:transform .2s}
-  .theme:hover .open .arr{transform:translateX(4px)}
-  .foot{margin-top:46px; color:var(--faint); font:600 11px var(--mono); letter-spacing:.06em; line-height:1.9}
-  .foot b{color:var(--dim)}
-  @keyframes rise{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
-  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-</style>
+<title>Sunrise · 日の出</title>
+<link id="themeCss" rel="stylesheet" href="themes/bonus.css" />
 </head>
 <body>
-<div class="wrap">
-  <div class="eyebrow">日の出 · Sunrise · dev growth tracker</div>
-  <h1>Пять <span class="g">дизайнов</span>.<br>Один прогресс.</h1>
-  <p class="lede">Каждая тема — самостоятельный трекер с одной и той же программой и данными. Прогресс <b>общий</b> (localStorage + <span style="font-family:var(--mono)">progress.json</span>), так что можно свободно переключаться между темами.</p>
+<header class="app-header">
+  <div class="brand"><span class="brand-mark">日の出</span><span class="brand-name">SUNRISE</span><span class="brand-sub" id="phaseLabel"></span></div>
+  <div class="toolbar">
+    <label class="field"><select id="themeSelect"></select></label>
+    <label class="field"><select id="daySelect"></select></label>
+    <button class="btn ghost" id="calBtn" type="button" aria-label="Календарь">📅</button>
+    <button class="btn ghost" id="trophiesBtn" type="button" aria-label="Трофеи">🏆</button>
+    <button class="btn ghost" id="exportBtn" type="button">Экспорт</button>
+    <button class="btn ghost" id="importBtn" type="button">Импорт</button>
+    <input type="file" id="importFile" accept="application/json" hidden />
+  </div>
+</header>
+<main class="wrap">
+  <section class="dash" id="dashboard"></section>
+  <div id="comeback" style="display:none"></div>
+  <section class="day-rail">
+    <button class="day-nav day-prev" id="prevDay" type="button" aria-label="Предыдущий день">‹</button>
+    <section class="today-wrap"><article class="today" id="todayCard"></article></section>
+    <button class="day-nav day-next" id="nextDay" type="button" aria-label="Следующий день">›</button>
+  </section>
+</main>
+<div class="foot"><span id="motd"></span></div>
 
-  <div class="grid" id="grid"></div>
-
-  <div class="foot">
-    общий прогресс · 13 недель / 91 день · экспортируй <b>progress.json</b> для бэкапа<br>
-    логика и данные общие — это только визуальные слои
+<div class="modal" id="calModal">
+  <div class="modal-panel cal-panel">
+    <div class="cal-head"><button id="calPrev" type="button">‹</button><div id="calTitle"></div><button id="calNext" type="button">›</button><button id="calClose" type="button">✕</button></div>
+    <div class="cal-dow"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
+    <div class="cal-grid" id="calGrid"></div>
   </div>
 </div>
+<div class="modal" id="trophiesModal">
+  <div class="modal-panel tr-panel">
+    <div class="tr-head"><div id="trophiesTitle"></div><button id="trophiesClose" type="button">✕</button></div>
+    <div class="tr-grid" id="trophiesGrid"></div>
+  </div>
+</div>
+<div id="fx" aria-hidden="true"></div>
 
-<script>
-const THEMES = [
-  { file:'theme-neon.html', name:'Neon · Кислота', k:'酸', tag:'neon',
-    desc:'Кислотный неон-брутализм: lime/magenta/cyan на чёрном, толстые контуры, дерзкий шрифт. Громко и смело.',
-    c:['#c6ff00','#00f0ff','#ff00a8'] },
-  { file:'theme-japanese.html', name:'Japanese · 和', k:'和', tag:'washi',
-    desc:'Традиционная Япония: васи-бумага, минтё, печать-ханко, «ma». Спокойно и дорого.',
-    c:['#1b3a5b','#8a9a5b','#d8492b'] },
-  { file:'theme-emerald.html', name:'Emerald · Мрамор', k:'宝', tag:'emerald',
-    desc:'Кухня-на-заказ: драматичный мрамор, изумрудные инлеи, полированная латунь. Светло, галерейно.',
-    c:['#efe9dd','#1f5c46','#b88a46'] },
-  { file:'theme-dashboard.html', name:'Colorful Dashboard', k:'◑', tag:'modern',
-    desc:'Светлый современный дашборд: фуксия + мультиколор, кольца прогресса, мягкие тени, бодро.',
-    c:['#e6399b','#7c5cff','#16c0a0'] },
-  { file:'theme-bonus.html', name:'Neo-Brutalist Riso', k:'★', tag:'bonus',
-    desc:'Рисограф-поп на крафте: толстые обводки, жёсткие тени, крупный гротеск. Смело и весело.',
-    c:['#2b4cf0','#ff5436','#ffd23f'] },
-];
-document.getElementById('grid').innerHTML = THEMES.map((t,i) => `
-  <a class="theme" href="${t.file}" style="--c1:${t.c[0]};--c2:${t.c[1]};--c3:${t.c[2]};animation-delay:${i*70}ms">
-    <div class="swatch"><span class="k">${t.k}</span><span class="tag">${t.tag}</span></div>
-    <div class="body">
-      <h2>${t.name}</h2>
-      <p>${t.desc}</p>
-      <span class="open">Открыть <span class="arr">→</span></span>
-    </div>
-  </a>`).join('');
-</script>
+<script src="data/curriculum.js"></script>
+<script src="data/content.js"></script>
+<script src="logic.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
