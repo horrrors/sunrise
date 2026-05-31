@@ -156,7 +156,26 @@
   }
   .section-head .rule{flex:1; height:var(--bw); background:repeating-linear-gradient(90deg,var(--line) 0 14px, transparent 14px 22px)}
 
-  .dash{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:22px}
+  .dash{display:grid; grid-template-columns:repeat(auto-fit,minmax(168px,1fr)); gap:16px}
+
+  /* compact summary cards (dashboard only — hero today card stays large) */
+  .dash .card{padding:14px 15px}
+  .dash .eyebrow{margin-bottom:11px; font-size:10px; padding:4px 9px 3px}
+  .dash .eyebrow .kanji{font-size:13px}
+  .dash .ring{--p:0; width:96px; height:96px; margin:4px auto 2px}
+  .dash .ring::before{inset:9px}
+  .dash .ring b{font-size:27px}
+  .dash .ring small{font-size:9px; margin-top:2px}
+  .dash .stat-sub{margin-top:6px; font-size:11px}
+  .dash .card .stat-sub[style]{margin-top:9px !important}
+  .dash .flame{font-size:22px}
+  .dash .streak-num{font-size:58px; margin:2px 0 2px}
+  .dash .prow{margin:11px 0 5px; font-size:12px}
+  .dash .bar{height:13px}
+  .dash .trophy-count{font-size:46px}
+  .dash .trophy-row .badge{width:38px; height:38px; font-size:20px}
+  .dash .trophy-row{gap:8px}
+  .dash .due-list{gap:6px}
 
   /* ---------- cards (brutal neon blocks) ---------- */
   .card{
@@ -575,16 +594,16 @@
 </header>
 
 <main class="wrap">
-  <div class="section-head"><h2>Сводка</h2><span class="num">// STATS</span><span class="rule"></span></div>
-  <section class="dash" id="dashboard"></section>
-
-  <div class="section-head" style="margin-top:46px"><h2>Сегодня</h2><span class="num">// FOCUS</span><span class="rule"></span></div>
+  <div class="section-head"><h2>Сегодня</h2><span class="num">// FOCUS</span><span class="rule"></span></div>
   <div id="comeback" class="comeback" style="display:none"></div>
   <div class="day-rail">
     <button class="day-nav day-prev" id="prevDay" type="button" aria-label="Предыдущий день">‹</button>
     <section class="today-wrap"><article class="today" id="todayCard"></article></section>
     <button class="day-nav day-next" id="nextDay" type="button" aria-label="Следующий день">›</button>
   </div>
+
+  <div class="section-head" style="margin-top:46px"><h2>Сводка</h2><span class="num">// STATS</span><span class="rule"></span></div>
+  <section class="dash" id="dashboard"></section>
 </main>
 <div class="foot"><span>継続は力なり · постоянство — это сила</span></div>
 

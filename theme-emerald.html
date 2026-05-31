@@ -199,7 +199,27 @@
     background:linear-gradient(90deg, var(--brass-base), var(--brass-hi) 40%, transparent);
     box-shadow:0 1px 1px rgba(122,90,43,.3); border-radius:2px;}
 
-  .dash{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:24px}
+  .dash{display:grid; grid-template-columns:repeat(auto-fit,minmax(168px,1fr)); gap:16px}
+
+  /* ---------- compact summary cards (dashboard only — day card untouched) ---------- */
+  .dash .card{padding:16px 18px}
+  .dash .card .eyebrow{margin-bottom:11px; font-size:9.5px; letter-spacing:.22em}
+  .dash .card .eyebrow .kanji{width:22px; height:22px; border-radius:6px; font-size:12px}
+  .dash .ring{width:104px; height:104px; margin:4px auto 2px}
+  .dash .ring::before{inset:11px}
+  .dash .ring b{font-size:24px}
+  .dash .ring small{font-size:9px; margin-top:2px}
+  .dash .card .stat-sub{font-size:11.5px; margin-top:4px}
+  .dash .card .stat-sub[style]{margin-top:10px !important}
+  .dash .flame{font-size:22px}
+  .dash .streak-num{font-size:48px; margin:2px 0 1px}
+  .dash .prow{margin:10px 0 5px; font-size:12px}
+  .dash .bar{height:7px}
+  .dash .trophy-count{font-size:32px; margin:1px 0 9px}
+  .dash .trophy-count::after{font-size:10px; margin-left:6px}
+  .dash .trophy-row{gap:7px}
+  .dash .trophy-row .badge{width:34px; height:34px; border-radius:9px; font-size:17px}
+  .dash .due-list{gap:6px}
 
   /* ---------- cards (marble slabs) ---------- */
   .card{
@@ -679,13 +699,6 @@
 
 <main class="wrap">
   <div class="section-head">
-    <span class="eyebrow-mini">進捗</span>
-    <h2>Сводка</h2>
-    <span class="rule"></span>
-  </div>
-  <section class="dash" id="dashboard"></section>
-
-  <div class="section-head" style="margin-top:46px">
     <span class="eyebrow-mini">今日</span>
     <h2>Сегодня</h2>
     <span class="rule"></span>
@@ -696,6 +709,13 @@
     <section class="today-wrap"><article class="today" id="todayCard"></article></section>
     <button class="day-nav day-next" id="nextDay" type="button" aria-label="Следующий день">&rsaquo;</button>
   </div>
+
+  <div class="section-head" style="margin-top:46px">
+    <span class="eyebrow-mini">進捗</span>
+    <h2>Сводка</h2>
+    <span class="rule"></span>
+  </div>
+  <section class="dash" id="dashboard"></section>
 </main>
 
 <div class="foot"><span>継続は力なり<span class="dot">&bull;</span>постоянство — это сила</span></div>

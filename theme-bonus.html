@@ -130,7 +130,22 @@
   }
   .section-head .rule{flex:1; height:var(--bw); background:var(--ink); border-radius:2px}
 
-  .dash{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px}
+  .dash{display:grid; grid-template-columns:repeat(auto-fit,minmax(168px,1fr)); gap:14px}
+
+  /* compact summary cards (dashboard only — the day card stays roomy) */
+  .dash .card{padding:14px 15px}
+  .dash .eyebrow{margin-bottom:10px; padding:4px 8px; font-size:10px}
+  .dash .ring{width:92px; height:92px; margin:2px auto 0}
+  .dash .ring::before{inset:9px}
+  .dash .ring b{font-size:22px}
+  .dash .ring small{font-size:9px; margin-top:2px}
+  .dash .stat-sub{margin-top:8px; font-size:11px}
+  .dash .flame{font-size:24px}
+  .dash .streak-num{font-size:46px; margin:4px 0 2px; text-shadow:3px 3px 0 var(--ink)}
+  .dash .prow{margin:9px 0 5px; font-size:12px}
+  .dash .bar{height:13px}
+  .dash .trophy-count{font-size:38px; margin:2px 0 10px}
+  .dash .trophy-row .badge{width:36px; height:36px; font-size:17px; border-radius:9px}
 
   /* ---------- cards (sticker/badge) ---------- */
   .card{
@@ -535,16 +550,16 @@
 </header>
 
 <main class="wrap">
-  <div class="section-head"><h2>Сводка</h2><span class="rule"></span></div>
-  <section class="dash" id="dashboard"></section>
-
-  <div class="section-head" style="margin-top:38px"><h2>Сегодня</h2><span class="rule"></span></div>
+  <div class="section-head"><h2>Сегодня</h2><span class="rule"></span></div>
   <div class="comeback-banner" id="comeback" style="display:none"></div>
   <div class="day-rail">
     <button class="day-nav day-prev" id="prevDay" type="button" aria-label="Предыдущий день">‹</button>
     <section class="today-wrap"><article class="today" id="todayCard"></article></section>
     <button class="day-nav day-next" id="nextDay" type="button" aria-label="Следующий день">›</button>
   </div>
+
+  <div class="section-head" style="margin-top:38px"><h2>Сводка</h2><span class="rule"></span></div>
+  <section class="dash" id="dashboard"></section>
 </main>
 <div class="foot"><span>継続は力なり · постоянство — это сила</span></div>
 
