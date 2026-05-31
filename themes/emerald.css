@@ -1,36 +1,36 @@
 /* ============================================================================
-   Sunrise · тема "emerald"
-   Эстетика: тёплый-белый мрамор + изумруд + латунь. Галерейная элегантность.
-   Только CSS поверх каноничной разметки. Без JS, без bespoke-DOM.
+   Sunrise · "emerald" theme
+   Aesthetic: warm-white marble + emerald + brass. Gallery elegance.
+   CSS only over canonical markup. No JS, no bespoke DOM.
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap');
 
 :root[data-theme="emerald"], html[data-theme="emerald"] {
-  /* — палитра — */
-  --marble:      #f3efe7;   /* тёплый-белый мрамор   */
-  --marble-2:    #ece6da;   /* мрамор глубже         */
-  --marble-3:    #e3dccb;   /* мрамор край/край рамы */
-  --vein:        #d8d0bd;   /* прожилки              */
+  /* — palette — */
+  --marble:      #f3efe7;   /* warm-white marble     */
+  --marble-2:    #ece6da;   /* deeper marble         */
+  --marble-3:    #e3dccb;   /* marble edge/frame edge*/
+  --vein:        #d8d0bd;   /* veins                 */
   --vein-soft:   rgba(120,108,80,.10);
 
-  --emerald:     #1f5c46;   /* основной изумруд      */
-  --emerald-d:   #143b2d;   /* глубокий изумруд      */
-  --emerald-l:   #2f7a5d;   /* светлее               */
-  --emerald-mist:#dfeae3;   /* изумрудная дымка фона */
+  --emerald:     #1f5c46;   /* primary emerald       */
+  --emerald-d:   #143b2d;   /* deep emerald          */
+  --emerald-l:   #2f7a5d;   /* lighter               */
+  --emerald-mist:#dfeae3;   /* emerald background mist*/
 
-  --brass:       #b88a46;   /* латунь                */
-  --brass-l:     #d4a85e;   /* светлая латунь        */
-  --brass-d:     #8f6a31;   /* тёмная латунь         */
+  --brass:       #b88a46;   /* brass                 */
+  --brass-l:     #d4a85e;   /* light brass           */
+  --brass-d:     #8f6a31;   /* dark brass            */
   --brass-glow:  rgba(184,138,70,.35);
 
-  --ink:         #23281f;   /* тёмный графитово-зелёный текст */
+  --ink:         #23281f;   /* dark graphite-green text */
   --ink-soft:    #4c5347;
   --ink-faint:   #7d8377;
 
-  --line:        #ddd5c4;   /* тонкая линия          */
+  --line:        #ddd5c4;   /* thin line             */
   --line-strong: #c9bfa8;
-  --panel:       #fbf9f4;   /* чуть белее мрамора     */
+  --panel:       #fbf9f4;   /* slightly whiter than marble */
   --panel-2:     #f6f2e9;
 
   --shadow-soft: 0 1px 2px rgba(40,36,22,.06), 0 10px 30px rgba(40,36,22,.08);
@@ -41,27 +41,27 @@
   --serif-display: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
   --ui: 'EB Garamond', var(--serif);
 
-  --radius:   3px;          /* галерейная строгость — минимальное скругление */
+  --radius:   3px;          /* gallery strictness — minimal rounding */
   --radius-lg: 5px;
 
-  /* — цвета треков (акценты на мраморе) — */
-  --tr-dsa:       #1f5c46;  /* изумруд            */
-  --tr-js:        #b88a46;  /* латунь             */
-  --tr-ts:        #2f6f8f;  /* стальная синь      */
-  --tr-node:      #4a7c3f;  /* листовой зелёный   */
-  --tr-sysdesign: #7d5a9c;  /* аметист            */
-  --tr-patterns:  #a04a3c;  /* терракота/сангина  */
-  --tr-distsys:   #2b8a7a;  /* малахит            */
-  --tr-db:        #8f6a31;  /* тёмная латунь      */
-  --tr-cs:        #5a6e3a;  /* оливковый          */
-  --tr-rest:      #8a8676;  /* нейтральный камень */
+  /* — track colors (accents on marble) — */
+  --tr-dsa:       #1f5c46;  /* emerald            */
+  --tr-js:        #b88a46;  /* brass              */
+  --tr-ts:        #2f6f8f;  /* steel blue         */
+  --tr-node:      #4a7c3f;  /* leaf green         */
+  --tr-sysdesign: #7d5a9c;  /* amethyst           */
+  --tr-patterns:  #a04a3c;  /* terracotta/sanguine*/
+  --tr-distsys:   #2b8a7a;  /* malachite          */
+  --tr-db:        #8f6a31;  /* dark brass         */
+  --tr-cs:        #5a6e3a;  /* olive              */
+  --tr-rest:      #8a8676;  /* neutral stone      */
 }
 
-/* фолбэк, если data-theme не выставлен раньше загрузки */
+/* fallback if data-theme is not set before load */
 :root { color-scheme: light; }
 
 /* ============================================================================
-   БАЗА
+   BASE
    ========================================================================== */
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -74,7 +74,7 @@ body {
   line-height: 1.55;
   color: var(--ink);
   background-color: var(--marble);
-  /* мраморные прожилки тонкими SVG/градиентами */
+  /* marble veins via thin SVG/gradients */
   background-image:
     radial-gradient(1200px 800px at 18% -10%, rgba(255,255,255,.7), transparent 60%),
     radial-gradient(900px 700px at 92% 6%, rgba(223,234,227,.55), transparent 55%),
@@ -105,7 +105,7 @@ body {
 a { color: var(--emerald); text-underline-offset: 3px; }
 
 /* ============================================================================
-   ШАПКА
+   HEADER
    ========================================================================== */
 .app-header {
   display: flex;
@@ -123,7 +123,7 @@ a { color: var(--emerald); text-underline-offset: 3px; }
   z-index: 50;
   backdrop-filter: saturate(1.05) blur(6px);
 }
-/* латунная нить под шапкой */
+/* brass thread under header */
 .app-header::after {
   content: "";
   position: absolute;
@@ -175,7 +175,7 @@ a { color: var(--emerald); text-underline-offset: 3px; }
   white-space: nowrap;
 }
 
-/* — тулбар — */
+/* — toolbar — */
 .toolbar {
   display: flex;
   align-items: center;
@@ -186,7 +186,7 @@ a { color: var(--emerald); text-underline-offset: 3px; }
   display: inline-flex;
   position: relative;
 }
-.field::after { /* латунная стрелка селекта */
+.field::after { /* brass select arrow */
   content: "▾";
   position: absolute;
   right: 12px; top: 50%;
@@ -216,7 +216,7 @@ select:focus-visible {
   box-shadow: 0 0 0 3px rgba(31,92,70,.16);
 }
 
-/* — кнопки — */
+/* — buttons — */
 .btn {
   font-family: var(--ui);
   font-size: 15px;
@@ -267,7 +267,7 @@ select:focus-visible {
 }
 
 /* ============================================================================
-   КАРКАС
+   LAYOUT
    ========================================================================== */
 .wrap {
   max-width: 1080px;
@@ -283,7 +283,7 @@ select:focus-visible {
 }
 
 /* ============================================================================
-   СВОДКА · stat-card
+   SUMMARY · stat-card
    ========================================================================== */
 .stat-card {
   position: relative;
@@ -294,7 +294,7 @@ select:focus-visible {
   box-shadow: var(--shadow-card);
   overflow: hidden;
 }
-/* тонкая латунная окантовка-рама внутри */
+/* thin inner brass frame border */
 .stat-card::before {
   content: "";
   position: absolute;
@@ -328,7 +328,7 @@ select:focus-visible {
 }
 .muted { color: var(--ink-faint); }
 
-/* — кольцо прогресса (conic из var(--p)) — */
+/* — progress ring (conic from var(--p)) — */
 .ring {
   --p: 0;
   width: 150px;
@@ -342,7 +342,7 @@ select:focus-visible {
   position: relative;
   box-shadow: 0 0 0 1px rgba(184,138,70,.25);
 }
-.ring::before { /* латунный внутренний ободок */
+.ring::before { /* brass inner rim */
   content: "";
   position: absolute;
   inset: 11px;
@@ -372,7 +372,7 @@ select:focus-visible {
   color: var(--brass-d);
 }
 
-/* — серия / streak — */
+/* — series / streak — */
 .flame {
   text-align: center;
   font-size: 40px;
@@ -391,7 +391,7 @@ select:focus-visible {
 }
 [data-kind="streak"] .stat-sub { text-align: center; }
 
-/* — строки фаз/треков — */
+/* — phase/track rows — */
 .prow {
   display: flex;
   align-items: baseline;
@@ -423,7 +423,7 @@ select:focus-visible {
   font-variant-numeric: tabular-nums;
 }
 
-/* — полоса прогресса — */
+/* — progress bar — */
 .bar {
   height: 8px;
   border-radius: 100px;
@@ -441,7 +441,7 @@ select:focus-visible {
 }
 
 /* ============================================================================
-   ЦВЕТА ТРЕКОВ — акцент на карточках/барах/пилюлях
+   TRACK COLORS — accent on cards/bars/pills
    ========================================================================== */
 .bar[data-track="dsa"]       > i { background: linear-gradient(90deg, var(--tr-dsa), color-mix(in srgb, var(--tr-dsa) 70%, #fff)); box-shadow: 0 0 8px color-mix(in srgb, var(--tr-dsa) 45%, transparent); }
 .bar[data-track="js"]        > i { background: linear-gradient(90deg, var(--tr-js), color-mix(in srgb, var(--tr-js) 70%, #fff)); box-shadow: 0 0 8px color-mix(in srgb, var(--tr-js) 45%, transparent); }
@@ -454,7 +454,7 @@ select:focus-visible {
 .bar[data-track="cs"]        > i { background: linear-gradient(90deg, var(--tr-cs), color-mix(in srgb, var(--tr-cs) 70%, #fff)); box-shadow: 0 0 8px color-mix(in srgb, var(--tr-cs) 45%, transparent); }
 .bar[data-track="rest"]      > i { background: linear-gradient(90deg, var(--tr-rest), color-mix(in srgb, var(--tr-rest) 70%, #fff)); }
 
-/* точка-маркер в строке трека наследует цвет трека */
+/* track-row marker dot inherits the track color */
 .prow[data-track="dsa"]       .lbl > i { background: var(--tr-dsa); box-shadow: 0 0 0 2px color-mix(in srgb, var(--tr-dsa) 22%, transparent); }
 .prow[data-track="js"]        .lbl > i { background: var(--tr-js); box-shadow: 0 0 0 2px color-mix(in srgb, var(--tr-js) 22%, transparent); }
 .prow[data-track="ts"]        .lbl > i { background: var(--tr-ts); box-shadow: 0 0 0 2px color-mix(in srgb, var(--tr-ts) 22%, transparent); }
@@ -467,7 +467,7 @@ select:focus-visible {
 .prow[data-track="rest"]      .lbl > i { background: var(--tr-rest); }
 .prow[data-track] .val { color: inherit; }
 
-/* stat-card с привязкой к треку (на случай data-track на карточке) */
+/* stat-card bound to a track (in case data-track is on the card) */
 .stat-card[data-track="dsa"]       { --accent: var(--tr-dsa); }
 .stat-card[data-track="js"]        { --accent: var(--tr-js); }
 .stat-card[data-track="ts"]        { --accent: var(--tr-ts); }
@@ -481,7 +481,7 @@ select:focus-visible {
 .stat-card[data-track] { border-top: 3px solid var(--accent, var(--brass)); }
 
 /* ============================================================================
-   ДЕНЬ · day-rail / today
+   DAY · day-rail / today
    ========================================================================== */
 .day-rail {
   display: flex;
@@ -526,7 +526,7 @@ select:focus-visible {
   box-shadow: 0 0 0 3px rgba(31,92,70,.2);
 }
 
-/* — карточка дня — */
+/* — day card — */
 .today {
   --accent: var(--emerald);
   position: relative;
@@ -539,7 +539,7 @@ select:focus-visible {
   box-shadow: var(--shadow-lift);
   overflow: hidden;
 }
-/* левая акцентная полоса = цвет трека */
+/* left accent stripe = track color */
 .today::before {
   content: "";
   position: absolute;
@@ -548,7 +548,7 @@ select:focus-visible {
   background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 55%, var(--brass)));
 }
 
-/* — вертикальный корешок — */
+/* — vertical spine — */
 .today-side {
   flex: 0 0 auto;
   width: 58px;
@@ -577,7 +577,7 @@ select:focus-visible {
   padding: clamp(22px, 3vw, 36px) clamp(20px, 3.2vw, 40px);
 }
 
-/* — пилюля трека — */
+/* — track pill — */
 .trackpill {
   display: inline-flex;
   align-items: center;
@@ -607,7 +607,7 @@ select:focus-visible {
   box-shadow: 0 0 0 1px rgba(255,255,255,.4) inset;
 }
 
-/* привязка акцента карточки дня к треку */
+/* bind day-card accent to track */
 .today[data-track="dsa"]       { --accent: var(--tr-dsa); }
 .today[data-track="js"]        { --accent: var(--tr-js); }
 .today[data-track="ts"]        { --accent: var(--tr-ts); }
@@ -629,7 +629,7 @@ select:focus-visible {
   margin: 16px 0 18px;
 }
 
-/* — разминка / warm — */
+/* — warm-up / warm — */
 .warm {
   font-family: var(--serif);
   font-size: 18px;
@@ -648,7 +648,7 @@ select:focus-visible {
   margin-right: 4px;
 }
 
-/* — задачи — */
+/* — tasks — */
 .tasks {
   display: flex;
   flex-direction: column;
@@ -656,7 +656,7 @@ select:focus-visible {
   margin: 8px 0 22px;
 }
 .task {
-  user-select: text;                 /* выделяемость текста задач */
+  user-select: text;                 /* task text is selectable */
   -webkit-user-select: text;
   display: flex;
   align-items: flex-start;
@@ -678,7 +678,7 @@ select:focus-visible {
 }
 .task input { position: absolute; opacity: 0; width: 0; height: 0; }
 
-/* кастомный чекбокс — латунная рамка, изумрудная галочка */
+/* custom checkbox — brass border, emerald check */
 .box {
   flex: 0 0 auto;
   width: 22px; height: 22px;
@@ -724,7 +724,7 @@ select:focus-visible {
   text-decoration-thickness: 1px;
 }
 
-/* — рефлексия — */
+/* — reflection — */
 .reflect-block {
   margin: 4px 0 18px;
   padding-top: 18px;
@@ -775,7 +775,7 @@ textarea:focus {
   background: #fffdf8;
 }
 
-/* — ресурсы / chip — */
+/* — resources / chip — */
 .res-row {
   display: flex;
   flex-wrap: wrap;
@@ -800,7 +800,7 @@ textarea:focus {
   margin-right: 4px;
 }
 
-/* — отдых: due-блок — */
+/* — rest: due block — */
 .rest-due {
   font-family: var(--serif);
   font-size: 18px;
@@ -813,7 +813,7 @@ textarea:focus {
 }
 .rest-due b { color: var(--emerald-d); }
 
-/* — CTA "следующий день" — */
+/* — "next day" CTA — */
 .next-day-cta {
   font-family: var(--ui);
   font-size: 15px;
@@ -839,7 +839,7 @@ textarea:focus {
   box-shadow: 0 0 0 3px rgba(31,92,70,.22);
 }
 
-/* — comeback-баннер — */
+/* — comeback banner — */
 #comeback {
   font-family: var(--serif);
   font-size: 18px;
@@ -853,7 +853,7 @@ textarea:focus {
 }
 
 /* ============================================================================
-   МОДАЛКИ
+   MODALS
    ========================================================================== */
 .modal {
   display: none;
@@ -883,7 +883,7 @@ textarea:focus {
   position: relative;
   animation: panelIn .3s cubic-bezier(.2,.8,.2,1) both;
 }
-.modal-panel::before { /* латунная рамка музейной таблички */
+.modal-panel::before { /* brass frame of a museum label */
   content: "";
   position: absolute;
   inset: 7px;
@@ -896,7 +896,7 @@ textarea:focus {
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* — общие кнопки в шапках модалок — */
+/* — shared buttons in modal headers — */
 .cal-head button, .tr-head button {
   font-family: var(--serif-display);
   font-size: 20px;
@@ -915,7 +915,7 @@ textarea:focus {
   color: var(--emerald-d);
 }
 
-/* — календарь — */
+/* — calendar — */
 .cal-head, .tr-head {
   display: flex;
   align-items: center;
@@ -987,7 +987,7 @@ textarea:focus {
 }
 .cday.done.today { color: #fff; box-shadow: 0 0 0 2px var(--brass-glow), 0 2px 8px rgba(31,92,70,.3); }
 
-/* — трофеи — */
+/* — trophies — */
 .tr-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -1030,7 +1030,7 @@ textarea:focus {
   line-height: 1.2;
 }
 
-/* — тултип бейджа — */
+/* — badge tooltip — */
 .badge[data-tip]:hover::after {
   content: attr(data-tip);
   position: absolute;
@@ -1053,7 +1053,7 @@ textarea:focus {
   pointer-events: none;
   white-space: normal;
 }
-.badge[data-tip]:hover::before { /* стрелка тултипа */
+.badge[data-tip]:hover::before { /* tooltip arrow */
   content: "";
   position: absolute;
   left: 50%;
@@ -1068,7 +1068,7 @@ textarea:focus {
 }
 
 /* ============================================================================
-   ЭФФЕКТЫ (#fx) — конфетти / тосты
+   EFFECTS (#fx) — confetti / toasts
    ========================================================================== */
 #fx {
   position: fixed;
@@ -1090,7 +1090,7 @@ textarea:focus {
   animation: confettiFall 1.7s cubic-bezier(.3,.6,.4,1) forwards;
   transform: rotate(0deg);
 }
-/* чередуем фирменные цвета: латунь / изумруд / мрамор */
+/* alternate brand colors: brass / emerald / marble */
 .confetti-piece:nth-child(3n)   { background: var(--emerald); }
 .confetti-piece:nth-child(3n+1) { background: var(--brass-l); }
 .confetti-piece:nth-child(3n+2) { background: #fff; box-shadow: 0 0 0 1px var(--vein); }
@@ -1100,7 +1100,7 @@ textarea:focus {
   100% { transform: translateY(102vh) rotate(720deg); opacity: 0; }
 }
 
-/* — тосты (общий вид) — */
+/* — toasts (shared look) — */
 .toast, .badge-toast {
   position: fixed;
   left: 50%;
@@ -1143,7 +1143,7 @@ textarea:focus {
 }
 
 /* ============================================================================
-   ФУТЕР
+   FOOTER
    ========================================================================== */
 .foot {
   text-align: center;
@@ -1151,7 +1151,7 @@ textarea:focus {
   border-top: 1px solid var(--line);
   margin-top: 8px;
 }
-.foot::before { /* латунная виньетка */
+.foot::before { /* brass vignette */
   content: "❦";
   display: block;
   color: var(--brass);
@@ -1170,7 +1170,7 @@ textarea:focus {
 #motd.motd-out { opacity: 0; }
 
 /* ============================================================================
-   АДАПТИВ
+   RESPONSIVE
    ========================================================================== */
 @media (max-width: 720px) {
   body { font-size: 16px; }

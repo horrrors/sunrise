@@ -1,54 +1,54 @@
 /* ============================================================================
-   SUNRISE — тема «bonus»
-   Нео-брутализм / рисограф. Крафт-бумага, толстые обводки, жёсткие офсетные
-   тени, крупный гротеск, стикеры/бейджи, halftone, лёгкие повороты.
-   Только CSS поверх каноничной разметки. Без JS, без bespoke-DOM.
+   SUNRISE — "bonus" theme
+   Neo-brutalism / risograph. Kraft paper, thick outlines, hard offset
+   shadows, large grotesque, stickers/badges, halftone, slight rotations.
+   CSS only over canonical markup. No JS, no bespoke DOM.
    ============================================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
 
 :root{
-  /* Палитра рисографа */
-  --paper:#f5f1e6;       /* крафт-бумага */
-  --cobalt:#2b4cf0;      /* кобальт */
-  --alarm:#ff5436;       /* ало-оранж */
-  --yellow:#ffd23f;      /* жёлтый */
-  --ink:#14110d;         /* чернила */
-  --paper-2:#ece5d2;     /* тень бумаги */
-  --paper-3:#e2d9c0;     /* углубление */
+  /* Risograph palette */
+  --paper:#f5f1e6;       /* kraft paper */
+  --cobalt:#2b4cf0;      /* cobalt */
+  --alarm:#ff5436;       /* scarlet-orange */
+  --yellow:#ffd23f;      /* yellow */
+  --ink:#14110d;         /* ink */
+  --paper-2:#ece5d2;     /* paper shadow */
+  --paper-3:#e2d9c0;     /* recess */
 
-  /* Тёмная плашка */
+  /* Dark plate */
   --ink-soft:#241f17;
 
-  /* Обводки и тени */
-  --bw:3px;              /* базовая обводка */
-  --bw-thick:4px;        /* толстая обводка */
-  --bw-fat:5px;          /* очень толстая обводка */
-  --sh:6px;              /* офсет тени */
-  --sh-lg:9px;           /* большой офсет */
+  /* Outlines and shadows */
+  --bw:3px;              /* base outline */
+  --bw-thick:4px;        /* thick outline */
+  --bw-fat:5px;          /* very thick outline */
+  --sh:6px;              /* shadow offset */
+  --sh-lg:9px;           /* large offset */
   --shadow:6px 6px 0 var(--ink);
   --shadow-lg:9px 9px 0 var(--ink);
   --shadow-sm:4px 4px 0 var(--ink);
   --shadow-color:var(--cobalt);
 
-  /* Шрифты — Google + системный фолбэк */
+  /* Fonts — Google + system fallback */
   --display:'Archivo Black','Arial Black',system-ui,sans-serif;
   --body:'Space Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
   --mono:'Space Mono',ui-monospace,'SF Mono',Menlo,Consolas,monospace;
 
-  /* Скруговления — почти прямые углы у стикера */
+  /* Rounding — nearly square sticker corners */
   --r:4px;
   --r-pill:999px;
 
-  /* Halftone-точки */
+  /* Halftone dots */
   --dot:rgba(20,17,13,.16);
 
-  /* Дефолт акцент трека */
+  /* Default track accent */
   --acc:var(--cobalt);
 }
 
 /* ----------------------------------------------------------------------------
-   БАЗА
+   BASE
    ---------------------------------------------------------------------------- */
 *{ box-sizing:border-box; }
 
@@ -59,7 +59,7 @@ body{
   font-family:var(--body);
   color:var(--ink);
   background-color:var(--paper);
-  /* Рисограф-фон: крупный halftone + лёгкая «зернистость» сетки */
+  /* Risograph background: large halftone + slight grid "grain" */
   background-image:
     radial-gradient(var(--dot) 1.6px, transparent 1.7px),
     radial-gradient(var(--dot) 1.6px, transparent 1.7px);
@@ -79,7 +79,7 @@ a{ color:var(--cobalt); }
 b{ font-weight:700; }
 
 /* ----------------------------------------------------------------------------
-   ШАПКА
+   HEADER
    ---------------------------------------------------------------------------- */
 .app-header{
   display:flex;
@@ -122,7 +122,7 @@ b{ font-weight:700; }
   letter-spacing:.04em;
   color:var(--paper);
   text-transform:uppercase;
-  /* двойной офсет-аутлайн как у трафаретной печати */
+  /* double offset outline like screen printing */
   text-shadow:3px 3px 0 var(--ink), 6px 6px 0 var(--cobalt);
 }
 
@@ -179,7 +179,7 @@ select:hover{ transform:translate(-2px,-2px); box-shadow:6px 6px 0 var(--ink); }
 select:focus{ outline:none; background-color:var(--yellow); box-shadow:6px 6px 0 var(--ink); }
 select option{ background:var(--paper); color:var(--ink); }
 
-/* Кнопки */
+/* Buttons */
 .btn{
   font-family:var(--display);
   font-size:13px;
@@ -213,11 +213,11 @@ select option{ background:var(--paper); color:var(--ink); }
 }
 .btn.gold:hover{ background:var(--alarm); color:var(--paper); }
 
-/* иконочные кнопки в тулбаре (эмодзи) держим читаемыми */
+/* keep icon buttons in the toolbar (emoji) readable */
 #calBtn, #trophiesBtn{ font-size:16px; padding:8px 11px; }
 
 /* ----------------------------------------------------------------------------
-   КОМПОНОВКА
+   LAYOUT
    ---------------------------------------------------------------------------- */
 .wrap{
   max-width:1080px;
@@ -225,7 +225,7 @@ select option{ background:var(--paper); color:var(--ink); }
   padding:clamp(20px,4vw,40px) clamp(16px,4vw,40px) 24px;
 }
 
-/* СВОДКА */
+/* SUMMARY */
 .dash{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
@@ -242,7 +242,7 @@ select option{ background:var(--paper); color:var(--ink); }
   box-shadow:var(--shadow);
   --acc:var(--cobalt);
 }
-/* Стикер-уголок у каждой карточки */
+/* Corner sticker on each card */
 .stat-card::before{
   content:"";
   position:absolute;
@@ -281,7 +281,7 @@ select option{ background:var(--paper); color:var(--ink); }
   font-size:13px;
 }
 
-/* Прогресс-кольцо (conic, использует --p) */
+/* Progress ring (conic, uses --p) */
 .ring{
   --p:0;
   width:148px; height:148px;
@@ -296,7 +296,7 @@ select option{ background:var(--paper); color:var(--ink); }
   position:relative;
 }
 .ring::after{
-  /* halftone-кольцо поверх остатка */
+  /* halftone ring over the remainder */
   content:"";
   position:absolute; inset:6px;
   border-radius:50%;
@@ -330,7 +330,7 @@ select option{ background:var(--paper); color:var(--ink); }
   margin-top:3px;
 }
 
-/* Серия / streak */
+/* Streak */
 .flame{
   font-size:46px;
   line-height:1;
@@ -352,7 +352,7 @@ select option{ background:var(--paper); color:var(--ink); }
   margin:6px 0 2px;
 }
 
-/* Строки прогресса фаз/треков */
+/* Phase/track progress rows */
 .prow{
   display:flex;
   align-items:center;
@@ -388,7 +388,7 @@ select option{ background:var(--paper); color:var(--ink); }
   padding:2px 8px;
 }
 
-/* Бары */
+/* Bars */
 .bar{
   position:relative;
   height:16px;
@@ -419,27 +419,27 @@ select option{ background:var(--paper); color:var(--ink); }
 }
 
 /* ----------------------------------------------------------------------------
-   ЦВЕТА ТРЕКОВ — у каждого свой акцент
+   TRACK COLORS — each has its own accent
    ---------------------------------------------------------------------------- */
-[data-track="dsa"]{      --acc:#2b4cf0; }  /* кобальт */
-[data-track="js"]{       --acc:#ffd23f; }  /* жёлтый */
-[data-track="ts"]{       --acc:#2b6fff; }  /* синий */
-[data-track="node"]{     --acc:#2faa4f; }  /* зелёный */
-[data-track="sysdesign"]{--acc:#ff5436; }  /* ало-оранж */
-[data-track="patterns"]{ --acc:#a24bff; }  /* фиолет */
-[data-track="distsys"]{  --acc:#00a6a6; }  /* бирюза */
-[data-track="db"]{       --acc:#c8782d; }  /* охра */
-[data-track="cs"]{       --acc:#e2247f; }  /* маджента */
-[data-track="rest"]{     --acc:#6b6353; }  /* серый */
+[data-track="dsa"]{      --acc:#2b4cf0; }  /* cobalt */
+[data-track="js"]{       --acc:#ffd23f; }  /* yellow */
+[data-track="ts"]{       --acc:#2b6fff; }  /* blue */
+[data-track="node"]{     --acc:#2faa4f; }  /* green */
+[data-track="sysdesign"]{--acc:#ff5436; }  /* scarlet-orange */
+[data-track="patterns"]{ --acc:#a24bff; }  /* purple */
+[data-track="distsys"]{  --acc:#00a6a6; }  /* teal */
+[data-track="db"]{       --acc:#c8782d; }  /* ochre */
+[data-track="cs"]{       --acc:#e2247f; }  /* magenta */
+[data-track="rest"]{     --acc:#6b6353; }  /* gray */
 
-/* акцент в строках треков и барах */
+/* accent in track rows and bars */
 .prow[data-track] .lbl > i{ background:var(--acc); }
 .bar[data-track] > i{ background:var(--acc); }
 
-/* акцент карточки трека-строки наследуется через --acc на .prow/.bar */
+/* track-row card accent inherits via --acc on .prow/.bar */
 
 /* ----------------------------------------------------------------------------
-   ДЕНЬ
+   DAY
    ---------------------------------------------------------------------------- */
 .day-rail{
   display:grid;
@@ -476,7 +476,7 @@ select option{ background:var(--paper); color:var(--ink); }
 
 .today-wrap{ min-width:0; }
 
-/* Карточка дня — большой стикер */
+/* Day card — large sticker */
 .today{
   position:relative;
   display:grid;
@@ -489,7 +489,7 @@ select option{ background:var(--paper); color:var(--ink); }
   --acc:var(--cobalt);
 }
 
-/* боковая полоса с вертикальной надписью — красится в акцент трека */
+/* side strip with vertical label — colored with track accent */
 .today-side{
   background:var(--acc);
   border-right:var(--bw-fat) solid var(--ink);
@@ -513,7 +513,7 @@ select option{ background:var(--paper); color:var(--ink); }
 
 .today-main{ padding:clamp(18px,3vw,30px); min-width:0; }
 
-/* пилюля трека */
+/* track pill */
 .trackpill{
   display:inline-flex;
   align-items:center;
@@ -552,7 +552,7 @@ select option{ background:var(--paper); color:var(--ink); }
   margin:6px 0 18px;
 }
 
-/* разминка */
+/* warm-up */
 .warm{
   font-size:15px;
   color:var(--ink);
@@ -570,7 +570,7 @@ select option{ background:var(--paper); color:var(--ink); }
   margin-right:4px;
 }
 
-/* блок отдыха */
+/* rest block */
 .rest-due{
   font-family:var(--mono);
   font-size:14px;
@@ -585,7 +585,7 @@ select option{ background:var(--paper); color:var(--ink); }
 .rest-due b{ color:var(--cobalt); }
 
 /* ----------------------------------------------------------------------------
-   ЗАДАЧИ
+   TASKS
    ---------------------------------------------------------------------------- */
 .tasks{
   display:flex;
@@ -595,7 +595,7 @@ select option{ background:var(--paper); color:var(--ink); }
 }
 
 .task{
-  user-select:text;            /* текст задачи выделяем */
+  user-select:text;            /* task text is selectable */
   -webkit-user-select:text;
   display:flex;
   align-items:flex-start;
@@ -607,7 +607,7 @@ select option{ background:var(--paper); color:var(--ink); }
   padding:12px 14px;
   box-shadow:3px 3px 0 var(--ink);
   transition:transform .08s ease, box-shadow .08s ease, background .12s ease;
-  /* появление с задержкой (animation-delay задаётся инлайн) */
+  /* appears with delay (animation-delay set inline) */
   animation:taskIn .35s both cubic-bezier(.2,.9,.25,1);
 }
 @keyframes taskIn{
@@ -616,7 +616,7 @@ select option{ background:var(--paper); color:var(--ink); }
 }
 .task:hover{ transform:translate(-2px,-2px); box-shadow:5px 5px 0 var(--ink); background:#fffdf4; }
 
-/* спрятать нативный чекбокс */
+/* hide native checkbox */
 .task input[type=checkbox]{
   position:absolute;
   opacity:0;
@@ -624,7 +624,7 @@ select option{ background:var(--paper); color:var(--ink); }
   margin:0;
 }
 
-/* кастомный чекбокс-бокс */
+/* custom checkbox box */
 .box{
   flex:none;
   width:24px; height:24px;
@@ -639,7 +639,7 @@ select option{ background:var(--paper); color:var(--ink); }
 .task:hover .box{ background:var(--yellow); }
 .task input:focus-visible + .box{ outline:3px solid var(--cobalt); outline-offset:2px; }
 
-/* галочка */
+/* checkmark */
 .box::after{
   content:"";
   position:absolute;
@@ -659,7 +659,7 @@ select option{ background:var(--paper); color:var(--ink); }
   padding-top:1px;
 }
 
-/* выполненная задача */
+/* completed task */
 .task.done{
   background:var(--paper-2);
 }
@@ -672,11 +672,11 @@ select option{ background:var(--paper); color:var(--ink); }
   text-decoration-thickness:2px;
   color:#8a8270;
 }
-/* акцент чекбокса по треку дня */
+/* checkbox accent by day track */
 .today[data-track] .task.done .box{ background:var(--acc); }
 
 /* ----------------------------------------------------------------------------
-   РЕФЛЕКСИЯ
+   REFLECTION
    ---------------------------------------------------------------------------- */
 .reflect-block{
   margin:0 0 18px;
@@ -734,7 +734,7 @@ textarea:focus{
 }
 
 /* ----------------------------------------------------------------------------
-   РЕСУРСЫ
+   RESOURCES
    ---------------------------------------------------------------------------- */
 .res-row{
   display:flex;
@@ -756,7 +756,7 @@ textarea:focus{
 .chip:hover{ transform:translate(-2px,-2px); box-shadow:5px 5px 0 var(--ink); background:var(--yellow); }
 .chip b{ color:var(--cobalt); }
 
-/* CTA «следующий день» */
+/* "next day" CTA */
 .next-day-cta{
   font-family:var(--display);
   font-size:15px;
@@ -775,7 +775,7 @@ textarea:focus{
 .next-day-cta:hover{ transform:translate(-3px,-3px); box-shadow:9px 9px 0 var(--ink); background:var(--alarm); }
 .next-day-cta:active{ transform:translate(2px,2px); box-shadow:2px 2px 0 var(--ink); }
 
-/* comeback-баннер */
+/* comeback banner */
 #comeback{
   font-family:var(--body);
   font-weight:700;
@@ -791,7 +791,7 @@ textarea:focus{
 }
 
 /* ----------------------------------------------------------------------------
-   МОДАЛКИ — скроллятся целиком, тултипы не режутся
+   MODALS — scroll fully, tooltips not clipped
    ---------------------------------------------------------------------------- */
 .modal{
   display:none;
@@ -823,7 +823,7 @@ textarea:focus{
 }
 @keyframes panelIn{ from{ opacity:0; transform:translateY(-14px) rotate(-1deg); } to{ opacity:1; transform:translateY(0) rotate(0); } }
 
-/* --- Календарь --- */
+/* --- Calendar --- */
 .cal-head, .tr-head{
   display:flex;
   align-items:center;
@@ -906,7 +906,7 @@ textarea:focus{
   color:var(--paper);
 }
 
-/* --- Трофеи --- */
+/* --- Trophies --- */
 #trophiesTitle{
   font-family:var(--display);
   font-size:18px;
@@ -960,7 +960,7 @@ textarea:focus{
   color:var(--ink);
 }
 
-/* тултип бейджа */
+/* badge tooltip */
 .badge[data-tip]:hover::after{
   content:attr(data-tip);
   position:absolute;
@@ -997,7 +997,7 @@ textarea:focus{
 }
 
 /* ----------------------------------------------------------------------------
-   ЭФФЕКТЫ (#fx — спавнит app.js)
+   EFFECTS (#fx — spawned by app.js)
    ---------------------------------------------------------------------------- */
 #fx{
   position:fixed;
@@ -1007,7 +1007,7 @@ textarea:focus{
   overflow:hidden;
 }
 
-/* конфетти */
+/* confetti */
 .confetti-piece{
   --i:0;
   position:absolute;
@@ -1029,7 +1029,7 @@ textarea:focus{
   100%{ transform:translateY(105vh) rotate(720deg); opacity:.9; }
 }
 
-/* тосты */
+/* toasts */
 .toast, .badge-toast{
   position:fixed;
   left:50%;
@@ -1069,7 +1069,7 @@ textarea:focus{
 .badge-toast b{ color:var(--ink); }
 
 /* ----------------------------------------------------------------------------
-   ФУТЕР
+   FOOTER
    ---------------------------------------------------------------------------- */
 .foot{
   text-align:center;
@@ -1095,7 +1095,7 @@ textarea:focus{
 }
 
 /* ----------------------------------------------------------------------------
-   АДАПТИВ
+   RESPONSIVE
    ---------------------------------------------------------------------------- */
 @media (max-width:680px){
   .day-rail{
@@ -1123,7 +1123,7 @@ textarea:focus{
   select{ max-width:60vw; }
 }
 
-/* доступность: меньше движения */
+/* accessibility: reduced motion */
 @media (prefers-reduced-motion:reduce){
   *, *::before, *::after{
     animation-duration:.001ms !important;
@@ -1133,10 +1133,10 @@ textarea:focus{
 }
 
 /* ============================================================================
-   ВОССТАНОВЛЕННЫЕ ФИШКИ рисографа (после модульного рефактора) — чистый CSS
+   RESTORED risograph features (after modular refactor) — pure CSS
    ============================================================================ */
 
-/* Жирные секц-заголовки «СВОДКА / СЕГОДНЯ» (каноничный .section-title) */
+/* Bold section headings "SUMMARY / TODAY" (canonical .section-title) */
 .section-title{
   font-family:var(--display);
   font-size:clamp(19px,2.8vw,28px);
@@ -1149,19 +1149,19 @@ textarea:focus{
   margin:8px 2px 18px;
 }
 
-/* Чередующийся наклон карточек сводки (scattered stickers) */
+/* Alternating tilt of summary cards (scattered stickers) */
 .stat-card:nth-child(odd){ transform:rotate(-.8deg); }
 .stat-card:nth-child(even){ transform:rotate(.8deg); }
 .stat-card:hover{ transform:translate(-2px,-2px) rotate(0deg); box-shadow:var(--shadow-lg); }
 
-/* Поворот стрелок дня на hover */
+/* Rotate day arrows on hover */
 .day-prev:hover{ transform:translate(-2px,-2px) rotate(-4deg); }
 .day-next:hover{ transform:translate(-2px,-2px) rotate(4deg); }
 
-/* «Штамп»-галочка под лёгким углом */
+/* "Stamp" checkmark at a slight angle */
 .task.done .box::after{ transform:rotate(45deg) scale(1.05); }
 
-/* Вспышка экрана при завершении дня (app.js спавнит .fx-flash) */
+/* Screen flash on day completion (app.js spawns .fx-flash) */
 .fx-flash{
   position:fixed; inset:0; z-index:300; pointer-events:none;
   background:var(--yellow); mix-blend-mode:multiply;
@@ -1169,8 +1169,8 @@ textarea:focus{
 }
 @keyframes fxFlash{ 0%{opacity:0} 16%{opacity:.5} 100%{opacity:0} }
 
-/* Сочное разлётное конфетти: «поп» вверх → падение, с дрейфом и вращением
-   (использует --dx/--dy/--rot, которые задаёт generic celebrate() в app.js) */
+/* Juicy bursting confetti: "pop" up -> fall, with drift and rotation
+   (uses --dx/--dy/--rot set by generic celebrate() in app.js) */
 .confetti-piece{
   top:-18px;
   animation:confettiBurst 1.8s cubic-bezier(.2,.65,.3,1) forwards;

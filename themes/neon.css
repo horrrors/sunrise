@@ -1,11 +1,11 @@
 /* ============================================================
-   SUNRISE · тема "neon" — синтвейв / кислотный неон
-   Только CSS поверх каноничной разметки index.html + app.js.
+   SUNRISE · "neon" theme — synthwave / acid neon
+   CSS only, layered over canonical index.html + app.js markup.
    ============================================================ */
 @import url('https://fonts.googleapis.com/css2?family=Anton&family=Syne:wght@600;700;800&family=Space+Mono:wght@400;700&display=swap');
 
 :root[data-theme="neon"]{
-  /* база */
+  /* base */
   --bg:        #05060a;
   --bg-deep:   #000000;
   --panel:     #0a0c14;
@@ -16,13 +16,13 @@
   --ink-dim:   #9fb6c4;
   --muted:     #5d7384;
 
-  /* неон-палитра */
+  /* neon palette */
   --lime:    #c6ff00;
   --cyan:    #00f0ff;
   --magenta: #ff00a8;
   --gold:    #ffd23f;
 
-  /* свечения */
+  /* glows */
   --glow-cyan:    0 0 6px rgba(0,240,255,.8), 0 0 18px rgba(0,240,255,.45);
   --glow-lime:    0 0 6px rgba(198,255,0,.85), 0 0 20px rgba(198,255,0,.45);
   --glow-magenta: 0 0 6px rgba(255,0,168,.85), 0 0 22px rgba(255,0,168,.45);
@@ -36,7 +36,7 @@
   --font-ui:      'Syne', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --font-mono:    'Space Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 
-  /* акценты треков */
+  /* track accents */
   --t-dsa:      #c6ff00;
   --t-js:       #ffd23f;
   --t-ts:       #00f0ff;
@@ -49,7 +49,7 @@
   --t-rest:     #6d7f8f;
 }
 
-/* ====================== БАЗА / РЕСЕТ ====================== */
+/* ====================== BASE / RESET ====================== */
 :root[data-theme="neon"] *{ box-sizing:border-box; }
 
 :root[data-theme="neon"] body{
@@ -68,7 +68,7 @@
   position:relative;
 }
 
-/* CRT сканлайны */
+/* CRT scanlines */
 :root[data-theme="neon"] body::before{
   content:"";
   position:fixed; inset:0; z-index:9999;
@@ -88,7 +88,7 @@
   border-radius:9px; border:2px solid #04050a;
 }
 
-/* ====================== ШАПКА ====================== */
+/* ====================== HEADER ====================== */
 :root[data-theme="neon"] .app-header{
   display:flex; align-items:center; justify-content:space-between;
   flex-wrap:wrap; gap:14px;
@@ -174,7 +174,7 @@
   border-color:var(--gold); box-shadow:0 0 8px rgba(255,210,63,.7), 0 0 22px rgba(255,210,63,.4);
 }
 
-/* ====================== ЛЭЙАУТ ====================== */
+/* ====================== LAYOUT ====================== */
 :root[data-theme="neon"] .wrap{
   max-width:1100px; margin:0 auto;
   padding:clamp(18px,4vw,38px) clamp(14px,4vw,40px) 24px;
@@ -187,7 +187,7 @@
   margin-bottom:26px;
 }
 
-/* ====================== СТАТ-КАРТЫ ====================== */
+/* ====================== STAT CARDS ====================== */
 :root[data-theme="neon"] .stat-card{
   position:relative;
   background:linear-gradient(160deg, var(--panel), var(--bg-deep));
@@ -221,7 +221,7 @@
 :root[data-theme="neon"] .stat-card[data-kind="phases"] .eyebrow{ color:var(--lime); }
 :root[data-theme="neon"] .stat-card[data-kind="tracks"] .eyebrow{ color:#b07bff; }
 
-/* кольцо прогресса (conic, var(--p)) */
+/* progress ring (conic, var(--p)) */
 :root[data-theme="neon"] .ring{
   --p:0;
   width:150px; height:150px; margin:6px auto 14px;
@@ -241,7 +241,7 @@
   display:block; font-family:var(--font-mono); font-size:11px; color:var(--ink-dim); margin-top:4px;
 }
 
-/* серия */
+/* streak */
 :root[data-theme="neon"] .flame{
   font-size:40px; text-align:center; line-height:1; margin:4px 0;
   filter:drop-shadow(0 0 10px rgba(255,0,168,.6));
@@ -256,7 +256,7 @@
   margin-top:6px;
 }
 
-/* строки фаз/треков */
+/* phase/track rows */
 :root[data-theme="neon"] .prow{
   display:flex; align-items:center; justify-content:space-between;
   font-size:13px; margin:12px 0 5px;
@@ -286,7 +286,7 @@
 
 :root[data-theme="neon"] .muted{ color:var(--muted); font-family:var(--font-mono); font-size:12px; }
 
-/* ====================== ЦВЕТА ТРЕКОВ ====================== */
+/* ====================== TRACK COLORS ====================== */
 :root[data-theme="neon"] .prow[data-track="dsa"] .lbl>i,
 :root[data-theme="neon"] .bar[data-track="dsa"]>i{ background:var(--t-dsa); box-shadow:0 0 8px var(--t-dsa); }
 :root[data-theme="neon"] .prow[data-track="js"] .lbl>i,
@@ -306,13 +306,13 @@
 :root[data-theme="neon"] .prow[data-track="cs"] .lbl>i,
 :root[data-theme="neon"] .bar[data-track="cs"]>i{ background:var(--t-cs); box-shadow:0 0 8px var(--t-cs); }
 
-/* акцент на стат-карте/прогресс-кольце по треку (если используется) */
+/* track accent on stat card / progress ring (if used) */
 :root[data-theme="neon"] .stat-card[data-track="dsa"]{ border-color:rgba(198,255,0,.4); }
 :root[data-theme="neon"] .stat-card[data-track="ts"]{ border-color:rgba(0,240,255,.4); }
 :root[data-theme="neon"] .stat-card[data-track="sysdesign"]{ border-color:rgba(255,0,168,.4); }
 :root[data-theme="neon"] .stat-card[data-track="cs"]{ border-color:rgba(255,139,209,.4); }
 
-/* ====================== РЕЙЛ ДНЯ ====================== */
+/* ====================== DAY RAIL ====================== */
 :root[data-theme="neon"] .day-rail{
   display:grid;
   grid-template-columns:auto 1fr auto;
@@ -335,7 +335,7 @@
 }
 :root[data-theme="neon"] .day-nav:disabled{ opacity:.25; cursor:not-allowed; }
 
-/* ====================== КАРТА ДНЯ ====================== */
+/* ====================== DAY CARD ====================== */
 :root[data-theme="neon"] .today-wrap{ min-width:0; }
 :root[data-theme="neon"] .today{
   position:relative;
@@ -369,7 +369,7 @@
   padding:clamp(18px,3vw,30px);
 }
 
-/* трек-пилюля */
+/* track pill */
 :root[data-theme="neon"] .trackpill{
   display:inline-flex; align-items:center; gap:8px;
   font-family:var(--font-mono); font-size:12px; letter-spacing:1px;
@@ -385,7 +385,7 @@
   font-family:var(--font-ui); font-weight:800; font-size:13px;
   background:rgba(0,240,255,.12); color:var(--cyan);
 }
-/* цвет пилюли по треку */
+/* pill color by track */
 :root[data-theme="neon"] .today[data-track="dsa"] .trackpill{ border-color:var(--t-dsa); color:var(--t-dsa); }
 :root[data-theme="neon"] .today[data-track="dsa"] .trackpill .k{ background:rgba(198,255,0,.14); color:var(--t-dsa); box-shadow:0 0 8px rgba(198,255,0,.4); }
 :root[data-theme="neon"] .today[data-track="js"] .trackpill{ border-color:var(--t-js); color:var(--t-js); }
@@ -406,7 +406,7 @@
 :root[data-theme="neon"] .today[data-track="cs"] .trackpill .k{ background:rgba(255,139,209,.14); color:var(--t-cs); box-shadow:0 0 8px rgba(255,139,209,.4); }
 :root[data-theme="neon"] .today[data-track="rest"] .trackpill{ border-color:var(--t-rest); color:var(--ink-dim); }
 :root[data-theme="neon"] .today[data-track="rest"] .trackpill .k{ background:rgba(109,127,143,.14); color:var(--ink-dim); }
-/* левая полоса карты дня окрашивается по треку */
+/* day card left bar is tinted by track */
 :root[data-theme="neon"] .today[data-track="dsa"]::after{ background:linear-gradient(90deg,var(--t-dsa),transparent); }
 :root[data-theme="neon"] .today[data-track="ts"]::after{ background:linear-gradient(90deg,var(--t-ts),transparent); }
 :root[data-theme="neon"] .today[data-track="sysdesign"]::after{ background:linear-gradient(90deg,var(--t-sysdesign),transparent); }
@@ -426,7 +426,7 @@
   text-shadow:0 0 12px rgba(0,240,255,.25);
 }
 
-/* разминка / rest-prompt */
+/* warmup / rest-prompt */
 :root[data-theme="neon"] .warm{
   display:flex; gap:10px; align-items:flex-start;
   font-size:14px; line-height:1.55; color:var(--ink-dim);
@@ -446,7 +446,7 @@
 }
 :root[data-theme="neon"] .rest-due b{ color:var(--magenta); }
 
-/* ====================== ЗАДАЧИ ====================== */
+/* ====================== TASKS ====================== */
 :root[data-theme="neon"] .tasks{ display:flex; flex-direction:column; gap:8px; margin:6px 0 18px; }
 :root[data-theme="neon"] .task{
   display:flex; align-items:flex-start; gap:12px;
@@ -455,14 +455,14 @@
   border:1px solid var(--line-soft);
   border-radius:var(--r-sm);
   cursor:pointer;
-  user-select:text;            /* выделяемость текста */
+  user-select:text;            /* text selectable */
   transition:border-color var(--fast), background var(--fast), transform var(--fast);
   animation:neon-rise .4s both;
 }
 :root[data-theme="neon"] .task:hover{ border-color:var(--cyan); transform:translateX(2px); }
 :root[data-theme="neon"] .task input{ position:absolute; opacity:0; width:0; height:0; }
 
-/* кастомный чекбокс */
+/* custom checkbox */
 :root[data-theme="neon"] .box{
   flex:0 0 auto;
   width:20px; height:20px; margin-top:1px;
@@ -493,7 +493,7 @@
 }
 :root[data-theme="neon"] .task.done .task-text{ color:var(--muted); text-decoration:line-through; text-decoration-color:rgba(198,255,0,.6); }
 
-/* ====================== РЕФЛЕКСИЯ ====================== */
+/* ====================== REFLECTION ====================== */
 :root[data-theme="neon"] .reflect-block{ margin:8px 0 18px; }
 :root[data-theme="neon"] .reflect-label{
   display:flex; align-items:center; gap:8px;
@@ -518,7 +518,7 @@
 :root[data-theme="neon"] textarea::placeholder{ color:var(--muted); }
 :root[data-theme="neon"] textarea:focus{ outline:none; border-color:var(--magenta); box-shadow:var(--glow-magenta); }
 
-/* ресурсы / чипы */
+/* resources / chips */
 :root[data-theme="neon"] .res-row{ display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 14px; }
 :root[data-theme="neon"] .chip{
   font-family:var(--font-mono); font-size:11.5px;
@@ -532,7 +532,7 @@
 :root[data-theme="neon"] .chip:hover{ border-color:#b07bff; color:#fff; box-shadow:0 0 10px rgba(176,123,255,.4); }
 :root[data-theme="neon"] .chip b{ color:#b07bff; }
 
-/* CTA на следующий день */
+/* next-day CTA */
 :root[data-theme="neon"] .next-day-cta{
   display:inline-block; margin-top:8px;
   font-family:var(--font-display); font-size:15px; letter-spacing:1px;
@@ -548,7 +548,7 @@
   box-shadow:0 0 10px rgba(198,255,0,.6), 0 0 30px rgba(0,240,255,.45);
 }
 
-/* comeback-баннер */
+/* comeback banner */
 :root[data-theme="neon"] #comeback{
   font-family:var(--font-mono); font-size:13px; color:var(--lime);
   background:rgba(198,255,0,.06);
@@ -558,7 +558,7 @@
   text-shadow:0 0 6px rgba(198,255,0,.4);
 }
 
-/* ====================== МОДАЛКИ ====================== */
+/* ====================== MODALS ====================== */
 :root[data-theme="neon"] .modal{
   display:none;
   position:fixed; inset:0; z-index:200;
@@ -582,7 +582,7 @@
   animation:neon-pop .3s cubic-bezier(.22,1,.36,1);
 }
 
-/* модальные кнопки/заголовки */
+/* modal buttons / headings */
 :root[data-theme="neon"] .cal-head,
 :root[data-theme="neon"] .tr-head{
   display:flex; align-items:center; gap:10px;
@@ -608,7 +608,7 @@
 :root[data-theme="neon"] .cal-head button:hover,
 :root[data-theme="neon"] .tr-head button:hover{ color:#fff; border-color:var(--cyan); box-shadow:var(--glow-cyan); }
 
-/* календарь */
+/* calendar */
 :root[data-theme="neon"] .cal-dow{
   display:grid; grid-template-columns:repeat(7,1fr); gap:6px;
   margin-bottom:8px;
@@ -646,7 +646,7 @@
 :root[data-theme="neon"] .cday.done.today{ color:#04050a; outline:2px solid var(--magenta); outline-offset:1px; }
 :root[data-theme="neon"] .cday:hover{ transform:scale(1.08); }
 
-/* трофеи */
+/* trophies */
 :root[data-theme="neon"] .tr-grid{
   display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:12px;
 }
@@ -678,7 +678,7 @@
 }
 :root[data-theme="neon"] .badge.on .bt{ color:var(--lime); }
 
-/* тултип бейджа */
+/* badge tooltip */
 :root[data-theme="neon"] .badge[data-tip]:hover::after{
   content:attr(data-tip);
   position:absolute; bottom:calc(100% + 9px); left:50%; transform:translateX(-50%);
@@ -701,12 +701,12 @@
   pointer-events:none;
 }
 
-/* ====================== ЭФФЕКТЫ (#fx) ====================== */
+/* ====================== EFFECTS (#fx) ====================== */
 :root[data-theme="neon"] #fx{
   position:fixed; inset:0; z-index:300; pointer-events:none;
 }
 
-/* конфетти */
+/* confetti */
 :root[data-theme="neon"] .confetti-piece{
   --i:0;
   position:absolute; top:-12px;
@@ -720,7 +720,7 @@
 :root[data-theme="neon"] .confetti-piece:nth-child(3n+1){ background:var(--lime); }
 :root[data-theme="neon"] .confetti-piece:nth-child(4n){ width:6px; height:6px; border-radius:50%; }
 
-/* тосты */
+/* toasts */
 :root[data-theme="neon"] .toast,
 :root[data-theme="neon"] .badge-toast{
   position:fixed; right:20px; bottom:24px;
@@ -744,7 +744,7 @@
 :root[data-theme="neon"] .badge-toast b{ color:var(--lime); text-shadow:var(--glow-lime); }
 :root[data-theme="neon"] .bt-i{ font-size:24px; line-height:1; filter:drop-shadow(0 0 8px rgba(198,255,0,.6)); }
 
-/* ====================== ФУТЕР ====================== */
+/* ====================== FOOTER ====================== */
 :root[data-theme="neon"] .foot{
   text-align:center;
   padding:26px 16px 40px;
@@ -758,7 +758,7 @@
 }
 :root[data-theme="neon"] #motd.motd-out{ opacity:0; }
 
-/* ====================== АНИМАЦИИ ====================== */
+/* ====================== ANIMATIONS ====================== */
 @keyframes neon-rise{
   from{ opacity:0; transform:translateY(8px); }
   to{ opacity:1; transform:translateY(0); }
@@ -776,12 +776,12 @@
   100%{ transform:translateY(105vh) rotate(720deg); opacity:0; }
 }
 
-/* доступность: меньше движения */
+/* accessibility: reduced motion */
 @media (prefers-reduced-motion: reduce){
   :root[data-theme="neon"] *{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
 }
 
-/* адаптив */
+/* responsive */
 @media (max-width:640px){
   :root[data-theme="neon"] .day-rail{ grid-template-columns:1fr; }
   :root[data-theme="neon"] .day-nav{ display:none; }

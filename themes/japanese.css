@@ -1,26 +1,26 @@
 /* ============================================================
-   SUNRISE · тема «japanese» (васи / традиционная Япония)
-   Только CSS поверх каноничной разметки index.html + app.js.
-   Тёплый off-white васи, ai-индиго, вермиллион-ханко, матча,
-   суми, латунь. Минтё + готик. «ma» — простор и спокойствие.
+   SUNRISE · "japanese" theme (washi / traditional Japan)
+   CSS only, over the canonical index.html + app.js markup.
+   Warm off-white washi, ai-indigo, vermilion hanko, matcha,
+   sumi, brass. Mincho + gothic. "ma" — space and calm.
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700;800&family=Zen+Kaku+Gothic+New:wght@300;400;500;700;900&display=swap');
 
-/* ---------- палитра / токены ---------- */
+/* ---------- palette / tokens ---------- */
 :root[data-theme="japanese"]{
-  --washi:#f4efe4;            /* тёплый off-white васи */
-  --washi-2:#efe8d8;          /* чуть глубже для карточек */
-  --washi-3:#e8dfca;          /* рамки/борозды */
-  --ai:#1b3a5b;               /* индиго ai */
-  --ai-deep:#13293f;          /* тёмный индиго */
-  --vermilion:#d8492b;        /* вермиллион — печать-ханко */
+  --washi:#f4efe4;            /* warm off-white washi */
+  --washi-2:#efe8d8;          /* slightly deeper for cards */
+  --washi-3:#e8dfca;          /* borders/grooves */
+  --ai:#1b3a5b;               /* ai indigo */
+  --ai-deep:#13293f;          /* dark indigo */
+  --vermilion:#d8492b;        /* vermilion — hanko seal */
   --vermilion-soft:#e7765c;
-  --matcha:#8a9a5b;           /* матча */
+  --matcha:#8a9a5b;           /* matcha */
   --matcha-deep:#6f7e45;
-  --sumi:#2b2622;             /* суми (тушь) — основной текст */
-  --sumi-soft:#574e44;        /* приглушённый текст */
-  --brass:#b08d57;            /* латунь */
+  --sumi:#2b2622;             /* sumi (ink) — main text */
+  --sumi-soft:#574e44;        /* muted text */
+  --brass:#b08d57;            /* brass */
   --brass-deep:#8f7040;
 
   --ink:var(--sumi);
@@ -39,12 +39,12 @@
   --serif:'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', 'Songti SC', Georgia, 'Times New Roman', serif;
   --sans:'Zen Kaku Gothic New', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Helvetica Neue', system-ui, -apple-system, sans-serif;
 
-  /* акцент трека — переопределяется ниже на [data-track] */
+  /* track accent — overridden below on [data-track] */
   --track:var(--ai);
   --track-soft:#7e94ad;
 }
 
-/* ---------- сэйгайха: тонкий узор волн градиентом ---------- */
+/* ---------- seigaiha: thin wave pattern via gradient ---------- */
 :root[data-theme="japanese"] body{
   --seigaiha:
     radial-gradient(circle at 50% 100%, transparent 9px, rgba(27,58,91,.045) 9px, rgba(27,58,91,.045) 10px, transparent 10px),
@@ -53,7 +53,7 @@
 }
 
 /* ============================================================
-   БАЗА
+   BASE
    ============================================================ */
 :root[data-theme="japanese"] *,
 :root[data-theme="japanese"] *::before,
@@ -78,14 +78,14 @@
 
 :root[data-theme="japanese"] ::selection{ background:rgba(216,73,43,.22); color:var(--sumi); }
 
-/* мягкий фокус для доступности */
+/* soft focus for accessibility */
 :root[data-theme="japanese"] :focus-visible{
   outline:2px solid var(--vermilion);
   outline-offset:2px;
   border-radius:4px;
 }
 
-/* ---------- шапка ---------- */
+/* ---------- header ---------- */
 :root[data-theme="japanese"] .app-header{
   display:flex; align-items:center; justify-content:space-between;
   gap:18px; flex-wrap:wrap;
@@ -125,7 +125,7 @@
   border-left:1px solid var(--line);
 }
 
-/* ---------- тулбар ---------- */
+/* ---------- toolbar ---------- */
 :root[data-theme="japanese"] .toolbar{
   display:flex; align-items:center; gap:9px; flex-wrap:wrap;
 }
@@ -155,7 +155,7 @@
   outline:none;
 }
 
-/* ---------- кнопки ---------- */
+/* ---------- buttons ---------- */
 :root[data-theme="japanese"] .btn{
   font-family:var(--sans);
   font-size:13.5px; font-weight:500;
@@ -199,7 +199,7 @@
   box-shadow:0 10px 22px -10px rgba(176,141,87,.85);
 }
 
-/* ---------- основной контейнер ---------- */
+/* ---------- main container ---------- */
 :root[data-theme="japanese"] .wrap{
   max-width:1080px;
   margin:0 auto;
@@ -207,7 +207,7 @@
 }
 
 /* ============================================================
-   СВОДКА (dashboard)
+   DASHBOARD
    ============================================================ */
 :root[data-theme="japanese"] .dash{
   display:grid;
@@ -232,7 +232,7 @@
   display:flex; flex-direction:column;
   overflow:hidden;
 }
-/* верхняя нить-акцент трека/типа */
+/* top accent thread for track/type */
 :root[data-theme="japanese"] .stat-card::before{
   content:""; position:absolute; inset:0 0 auto 0; height:3px;
   background:linear-gradient(90deg, var(--vermilion), transparent 70%);
@@ -256,7 +256,7 @@
   margin-bottom:12px;
 }
 
-/* кольцо прогресса (conic, var(--p)) */
+/* progress ring (conic, var(--p)) */
 :root[data-theme="japanese"] .ring{
   --p:0;
   width:128px; height:128px; margin:6px auto 12px;
@@ -297,7 +297,7 @@
   line-height:1; margin:2px 0;
 }
 
-/* строки phases/tracks */
+/* phases/tracks rows */
 :root[data-theme="japanese"] .prow{
   display:flex; align-items:center; justify-content:space-between;
   gap:10px; margin:10px 0 5px;
@@ -317,7 +317,7 @@
   font-size:13px; font-weight:600; color:var(--ai);
 }
 
-/* полоса прогресса */
+/* progress bar */
 :root[data-theme="japanese"] .bar{
   height:7px; border-radius:99px;
   background:var(--line-soft);
@@ -339,22 +339,22 @@
 :root[data-theme="japanese"] .muted{ color:var(--muted); }
 
 /* ============================================================
-   ЦВЕТА ТРЕКОВ — каждый трек свой акцент
+   TRACK COLORS — each track its own accent
    (dsa, js, ts, node, sysdesign, patterns, distsys, db, cs, rest)
    ============================================================ */
-:root[data-theme="japanese"] [data-track="dsa"]      { --track:#1b3a5b; --track-soft:#5e7a98; } /* ai-индиго */
-:root[data-theme="japanese"] [data-track="js"]       { --track:#c89b2e; --track-soft:#dcc070; } /* кихада-жёлтый */
-:root[data-theme="japanese"] [data-track="ts"]       { --track:#3a6ea5; --track-soft:#7ca0c7; } /* ханада-синий */
-:root[data-theme="japanese"] [data-track="node"]     { --track:#6f7e45; --track-soft:#9aa86f; } /* матча */
-:root[data-theme="japanese"] [data-track="sysdesign"]{ --track:#8a5a9c; --track-soft:#b18cc0; } /* фудзи-лиловый */
-:root[data-theme="japanese"] [data-track="patterns"] { --track:#b08d57; --track-soft:#cdb088; } /* латунь */
-:root[data-theme="japanese"] [data-track="distsys"]  { --track:#2f7d74; --track-soft:#6fa9a1; } /* сэйдзи-бирюза */
-:root[data-theme="japanese"] [data-track="db"]       { --track:#8a6d4f; --track-soft:#b09377; } /* тяиро-умбра */
-:root[data-theme="japanese"] [data-track="cs"]       { --track:#5a6b8c; --track-soft:#8b99b3; } /* сёгун-сталь */
-:root[data-theme="japanese"] [data-track="rest"]     { --track:#a7a098; --track-soft:#c4bdb3; } /* пепельный покой */
+:root[data-theme="japanese"] [data-track="dsa"]      { --track:#1b3a5b; --track-soft:#5e7a98; } /* ai-indigo */
+:root[data-theme="japanese"] [data-track="js"]       { --track:#c89b2e; --track-soft:#dcc070; } /* kihada yellow */
+:root[data-theme="japanese"] [data-track="ts"]       { --track:#3a6ea5; --track-soft:#7ca0c7; } /* hanada blue */
+:root[data-theme="japanese"] [data-track="node"]     { --track:#6f7e45; --track-soft:#9aa86f; } /* matcha */
+:root[data-theme="japanese"] [data-track="sysdesign"]{ --track:#8a5a9c; --track-soft:#b18cc0; } /* fuji purple */
+:root[data-theme="japanese"] [data-track="patterns"] { --track:#b08d57; --track-soft:#cdb088; } /* brass */
+:root[data-theme="japanese"] [data-track="distsys"]  { --track:#2f7d74; --track-soft:#6fa9a1; } /* seiji teal */
+:root[data-theme="japanese"] [data-track="db"]       { --track:#8a6d4f; --track-soft:#b09377; } /* chairo umber */
+:root[data-theme="japanese"] [data-track="cs"]       { --track:#5a6b8c; --track-soft:#8b99b3; } /* shogun steel */
+:root[data-theme="japanese"] [data-track="rest"]     { --track:#a7a098; --track-soft:#c4bdb3; } /* ashen calm */
 :root[data-theme="japanese"] [data-track="vermilion"]{ --track:var(--vermilion); }
 
-/* акцент проявляется в карточках/полосах/таблетке трека */
+/* accent shows in cards/bars/track pill */
 :root[data-theme="japanese"] .stat-card[data-track]::before{
   background:linear-gradient(90deg, var(--track), transparent 70%);
 }
@@ -364,7 +364,7 @@
 :root[data-theme="japanese"] .prow[data-track] .val{ color:var(--track); }
 
 /* ============================================================
-   ДЕНЬ (day-rail / today)
+   DAY (day-rail / today)
    ============================================================ */
 :root[data-theme="japanese"] .day-rail{
   display:flex; align-items:stretch; gap:12px;
@@ -400,7 +400,7 @@
   box-shadow:none;
 }
 
-/* карточка дня */
+/* day card */
 :root[data-theme="japanese"] .today{
   --track:var(--ai);
   position:relative;
@@ -411,13 +411,13 @@
   box-shadow:var(--shadow);
   overflow:hidden;
 }
-/* левая полоса-акцент трека */
+/* left track accent stripe */
 :root[data-theme="japanese"] .today::before{
   content:""; position:absolute; inset:0 auto 0 0; width:4px;
   background:linear-gradient(180deg, var(--track), var(--track-soft));
 }
 
-/* боковая вертикальная подпись (.vert уже вертикальный текст) */
+/* side vertical caption (.vert is already vertical text) */
 :root[data-theme="japanese"] .today-side{
   flex:0 0 auto;
   display:flex; align-items:flex-start; justify-content:center;
@@ -440,7 +440,7 @@
   padding:22px clamp(16px,3vw,28px) 24px;
 }
 
-/* таблетка трека */
+/* track pill */
 :root[data-theme="japanese"] .trackpill{
   display:inline-flex; align-items:center; gap:8px;
   font-family:var(--sans);
@@ -462,7 +462,7 @@
   border-radius:7px;
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);
 }
-/* в карточке дня таблетка наследует акцент трека через .today[data-track] */
+/* in the day card the pill inherits the track accent via .today[data-track] */
 :root[data-theme="japanese"] .today[data-track] .trackpill{ color:var(--track); }
 :root[data-theme="japanese"] .today[data-track] .trackpill .k{ background:var(--track); }
 
@@ -475,7 +475,7 @@
   line-height:1.3;
 }
 
-/* разминка / приглашение к рефлексии */
+/* warm-up / reflection prompt */
 :root[data-theme="japanese"] .warm{
   display:flex; align-items:baseline; gap:8px;
   font-size:14.5px; color:var(--sumi-soft);
@@ -489,13 +489,13 @@
   color:var(--matcha-deep); font-size:15px; flex:0 0 auto;
 }
 
-/* задачи */
+/* tasks */
 :root[data-theme="japanese"] .tasks{
   display:flex; flex-direction:column; gap:9px;
   margin-bottom:20px;
 }
 :root[data-theme="japanese"] .task{
-  user-select:text;                       /* текст выделяемый */
+  user-select:text;                       /* text is selectable */
   display:flex; align-items:flex-start; gap:11px;
   font-size:15px; color:var(--ink);
   background:var(--card-2);
@@ -514,7 +514,7 @@
   border-color:var(--track, var(--ai));
   box-shadow:var(--shadow-sm);
 }
-/* нативный чекбокс прячем — рисуем .box */
+/* hide native checkbox — draw .box instead */
 :root[data-theme="japanese"] .task input[type="checkbox"]{
   position:absolute; opacity:0; width:0; height:0; pointer-events:none;
 }
@@ -555,7 +555,7 @@
   text-decoration-color:var(--matcha);
 }
 
-/* блок рефлексии */
+/* reflection block */
 :root[data-theme="japanese"] .reflect-block{
   margin:4px 0 18px;
 }
@@ -594,7 +594,7 @@
   box-shadow:0 0 0 3px rgba(27,58,91,.13);
 }
 
-/* ресурсы — чипы */
+/* resources — chips */
 :root[data-theme="japanese"] .res-row{
   display:flex; flex-wrap:wrap; gap:9px;
   margin:0 0 18px;
@@ -616,7 +616,7 @@
   color:var(--ai); font-weight:600; margin-right:4px;
 }
 
-/* блок отдыха (rest-due рендерится в rest-дне) */
+/* rest block (rest-due renders on a rest day) */
 :root[data-theme="japanese"] .rest-due{
   font-size:14px; color:var(--sumi-soft);
   background:rgba(27,58,91,.05);
@@ -626,7 +626,7 @@
 }
 :root[data-theme="japanese"] .rest-due b{ color:var(--vermilion); }
 
-/* CTA «следующий день» */
+/* CTA "next day" */
 :root[data-theme="japanese"] .next-day-cta{
   font-family:var(--sans);
   font-size:14px; font-weight:600;
@@ -647,7 +647,7 @@
 }
 :root[data-theme="japanese"] .next-day-cta:active{ transform:translateY(0); }
 
-/* comeback-плашка */
+/* comeback banner */
 :root[data-theme="japanese"] #comeback{
   font-size:14px; color:var(--sumi-soft);
   background:linear-gradient(180deg, rgba(216,73,43,.1), rgba(216,73,43,.04));
@@ -659,7 +659,7 @@
 }
 
 /* ============================================================
-   МОДАЛКИ — скроллятся целиком, тултипы не режутся
+   MODALS — scroll as a whole, tooltips not clipped
    ============================================================ */
 :root[data-theme="japanese"] .modal{
   display:none;
@@ -688,7 +688,7 @@
   to{ opacity:1; transform:translateY(0) scale(1); }
 }
 
-/* шапки модалок */
+/* modal headers */
 :root[data-theme="japanese"] .cal-head,
 :root[data-theme="japanese"] .tr-head{
   display:flex; align-items:center; gap:10px;
@@ -730,7 +730,7 @@
   color:#fff; background:var(--vermilion); border-color:var(--vermilion);
 }
 
-/* ---------- календарь ---------- */
+/* ---------- calendar ---------- */
 :root[data-theme="japanese"] .cal-dow{
   display:grid; grid-template-columns:repeat(7,1fr);
   gap:6px; margin-bottom:8px;
@@ -773,7 +773,7 @@
   box-shadow:0 0 0 2px rgba(216,73,43,.35), 0 4px 10px -6px rgba(111,126,69,.7);
 }
 
-/* ---------- трофеи ---------- */
+/* ---------- trophies ---------- */
 :root[data-theme="japanese"] .tr-grid{
   display:grid;
   grid-template-columns:repeat(auto-fill, minmax(96px,1fr));
@@ -811,7 +811,7 @@
   line-height:1.25;
 }
 
-/* тултип бейджа — не обрезается (panel/badge overflow:visible) */
+/* badge tooltip — not clipped (panel/badge overflow:visible) */
 :root[data-theme="japanese"] .badge[data-tip]:hover::after{
   content:attr(data-tip);
   position:absolute;
@@ -849,7 +849,7 @@
 }
 
 /* ============================================================
-   ЭФФЕКТЫ (спавнятся app.js в #fx)
+   EFFECTS (spawned by app.js into #fx)
    ============================================================ */
 :root[data-theme="japanese"] #fx{
   position:fixed; inset:0; z-index:400;
@@ -857,7 +857,7 @@
   overflow:hidden;
 }
 
-/* конфетти — лепестки сакуры */
+/* confetti — sakura petals */
 :root[data-theme="japanese"] .confetti-piece{
   --i:0;
   position:absolute; top:-12px;
@@ -877,7 +877,7 @@
   100%{ transform:translateY(102vh) rotate(540deg); opacity:.15; }
 }
 
-/* тосты */
+/* toasts */
 :root[data-theme="japanese"] .toast,
 :root[data-theme="japanese"] .badge-toast{
   position:fixed;
@@ -918,7 +918,7 @@
 }
 
 /* ============================================================
-   ФУТЕР
+   FOOTER
    ============================================================ */
 :root[data-theme="japanese"] .foot{
   text-align:center;
@@ -937,7 +937,7 @@
 :root[data-theme="japanese"] #motd.motd-out{ opacity:0; }
 
 /* ============================================================
-   АДАПТИВ
+   RESPONSIVE
    ============================================================ */
 @media (max-width:600px){
   :root[data-theme="japanese"] .app-header{ gap:12px; }
@@ -947,7 +947,7 @@
   :root[data-theme="japanese"] .day-nav{ width:40px; height:40px; font-size:22px; }
 }
 
-/* доступность: уважаем reduced-motion */
+/* accessibility: respect reduced-motion */
 @media (prefers-reduced-motion:reduce){
   :root[data-theme="japanese"] *,
   :root[data-theme="japanese"] *::before,
