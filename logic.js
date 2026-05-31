@@ -191,6 +191,23 @@ function _hasComeback(state) {
   for (let i = 1; i < dates.length; i++) if (diffDays(dates[i - 1], dates[i]) >= 2) return true;
   return false;
 }
+function _weekdayMon(dateStr) {
+  return ((diffDays('2024-01-01', dateStr)) % 7 + 7) % 7; // 0=Mon..6=Sun (2024-01-01 was a Monday)
+}
+function reflectionCount(state) {
+  let n = 0;
+  for (const id in state.days) { const r = state.days[id].reflection; if (r && r.trim()) n++; }
+  return n;
+}
+function completedWeeks(curriculum, state) {
+  let n = 0;
+  for (const w of curriculum.weeks) {
+    const work = w.days.filter((d) => d.track !== 'rest');
+    if (work.length && work.every((d) => isDayComplete(curriculum, state, d.id))) n++;
+  }
+  return n;
+}
+
 const BADGES = [
   { id: 'first-light', title: 'First Light', desc: 'Первый полностью закрытый день', icon: '🌅', predicate: (c, s) => _activeDates(s).size >= 1 },
   { id: 'streak-7', title: '7 дней', desc: 'Серия 7 дней подряд', icon: '🔥', predicate: (c, s) => longestStreak(s) >= 7 },
@@ -204,6 +221,24 @@ const BADGES = [
   { id: 'night-owl', title: 'Night Owl', desc: 'Закрыл день после 22:00 или до 5:00', icon: '🦉', predicate: (c, s) => _completedHours(s).some((h) => h >= 22 || h < 5) },
   { id: 'early-lark', title: 'Early Lark', desc: 'Закрыл день до 8:00 утра', icon: '🐦', predicate: (c, s) => _completedHours(s).some((h) => h >= 5 && h < 8) },
   { id: 'capstone', title: 'Capstone', desc: 'Капстоун завершён', icon: '🏛️', predicate: (c, s) => isDayComplete(c, s, 'w13d6') },
+  { id: 'streak-3', title: 'Разогрев', desc: 'Серия 3 дня подряд', icon: '🌱', predicate: (c, s) => longestStreak(s) >= 3 },
+  { id: 'streak-14', title: '14 дней', desc: 'Серия 14 дней подряд', icon: '🌋', predicate: (c, s) => longestStreak(s) >= 14 },
+  { id: 'days-10', title: '10 дней', desc: '10 дней программы пройдено', icon: '📅', predicate: (c, s) => overallProgress(c, s).done >= 10 },
+  { id: 'days-25', title: '25 дней', desc: '25 дней программы пройдено', icon: '🗓️', predicate: (c, s) => overallProgress(c, s).done >= 25 },
+  { id: 'days-50', title: '50 дней', desc: '50 дней программы пройдено', icon: '📆', predicate: (c, s) => overallProgress(c, s).done >= 50 },
+  { id: 'halfway', title: 'Экватор', desc: 'Пройдена половина программы', icon: '🌗', predicate: (c, s) => overallProgress(c, s).pct >= 50 },
+  { id: 'finisher', title: 'Финишер', desc: 'Пройдены все дни программы', icon: '🎓', predicate: (c, s) => { const o = overallProgress(c, s); return o.total > 0 && o.done === o.total; } },
+  { id: 'tasks-100', title: '100 задач', desc: '100 задач выполнено', icon: '✅', predicate: (c, s) => countCompletedTasks(c, s) >= 100 },
+  { id: 'scribe-10', title: 'Летописец', desc: '10 рефлексий написано', icon: '✍️', predicate: (c, s) => reflectionCount(s) >= 10 },
+  { id: 'scribe-30', title: 'Хронист', desc: '30 рефлексий написано', icon: '📜', predicate: (c, s) => reflectionCount(s) >= 30 },
+  { id: 'perfect-week', title: 'Идеальная неделя', desc: 'Неделя пройдена целиком', icon: '🌟', predicate: (c, s) => completedWeeks(c, s) >= 1 },
+  { id: 'weeks-4', title: 'Месяц в деле', desc: '4 недели пройдены целиком', icon: '📈', predicate: (c, s) => completedWeeks(c, s) >= 4 },
+  { id: 'polyglot', title: 'Полиглот', desc: 'Хотя бы один день в каждом треке', icon: '🌐', predicate: (c, s) => { const bt = progressByTrack(c, s); return ['dsa','js','ts','node','sysdesign','patterns','distsys','db','cs'].every((k) => (bt[k] || {}).done >= 1); } },
+  { id: 'dsa-master', title: 'Магистр алгоритмов', desc: 'Все дни алгоритмов пройдены', icon: '🧠', predicate: (c, s) => (progressByTrack(c, s).dsa || {}).pct === 100 },
+  { id: 'node-master', title: 'Магистр Node', desc: 'Все дни Node.js пройдены', icon: '🟢', predicate: (c, s) => (progressByTrack(c, s).node || {}).pct === 100 },
+  { id: 'ts-master', title: 'Магистр TS', desc: 'Все дни TypeScript пройдены', icon: '🔷', predicate: (c, s) => (progressByTrack(c, s).ts || {}).pct === 100 },
+  { id: 'sysdesign-master', title: 'Магистр System Design', desc: 'Все дни System Design пройдены', icon: '🏗️', predicate: (c, s) => (progressByTrack(c, s).sysdesign || {}).pct === 100 },
+  { id: 'weekend', title: 'Воин выходного', desc: 'Закрыл день в субботу или воскресенье', icon: '🌴', predicate: (c, s) => completedDates(s).some((d) => _weekdayMon(d) >= 5) },
 ];
 function evaluateBadges(curriculum, state, today) {
   const owned = state.badges || {};
@@ -245,7 +280,7 @@ function parseImported(jsonString) {
 const RoadmapLogic = {
   addDays, diffDays, phaseOfWeek, createInitialState,
   allDays, getDay, setTaskDone, setReflection, isDayComplete,
-  computeStreak, longestStreak, completedDates, countCompletedTasks,
+  computeStreak, longestStreak, completedDates, countCompletedTasks, reflectionCount, completedWeeks,
   progressByTrack, progressByPhase, overallProgress,
   REVIEW_INTERVALS, scheduleReview, getDueReviews, completeReview,
   BADGES, evaluateBadges, syncBadges, SURPRISES,

@@ -189,6 +189,42 @@ test('SURPRISES is a non-empty array of strings', () => {
   assert.equal(typeof L.SURPRISES[0], 'string');
 });
 
+test('BADGES has 30 achievements with unique ids', () => {
+  assert.equal(L.BADGES.length, 30);
+  assert.equal(new Set(L.BADGES.map((b) => b.id)).size, 30);
+});
+
+test('reflectionCount counts non-empty reflections', () => {
+  let s = L.createInitialState();
+  s = L.setReflection(s, 'a', 'note one');
+  s = L.setReflection(s, 'b', '   ');
+  s = L.setReflection(s, 'c', 'note two');
+  assert.equal(L.reflectionCount(s), 2);
+});
+
+test('completedWeeks counts fully-complete weeks', () => {
+  let s = L.createInitialState();
+  assert.equal(L.completedWeeks(CURR2, s), 0);
+  s = L.setTaskDone(CURR2, s, 'w1d1', 't1', true, '2026-05-30', 10);
+  s = L.setTaskDone(CURR2, s, 'w1d2', 't1', true, '2026-05-30', 10);
+  assert.equal(L.completedWeeks(CURR2, s), 1);
+});
+
+test('new badges: streak-3, weekend, dsa-master, halfway, finisher', () => {
+  assert.equal(L.evaluateBadges(CURR2, st(['2026-05-28', '2026-05-29', '2026-05-30']), '2026-05-30').find((b) => b.id === 'streak-3').unlocked, true);
+  // 2024-01-06 is a Saturday
+  assert.equal(L.evaluateBadges(CURR2, st(['2024-01-06']), '2024-01-06').find((b) => b.id === 'weekend').unlocked, true);
+  let s = L.createInitialState();
+  s = L.setTaskDone(CURR2, s, 'w1d1', 't1', true, '2026-05-30', 10);
+  s = L.setTaskDone(CURR2, s, 'w5d1', 't1', true, '2026-05-30', 10);
+  let e = L.evaluateBadges(CURR2, s, '2026-05-30');
+  assert.equal(e.find((b) => b.id === 'dsa-master').unlocked, true);
+  assert.equal(e.find((b) => b.id === 'halfway').unlocked, true);
+  assert.equal(e.find((b) => b.id === 'finisher').unlocked, false);
+  s = L.setTaskDone(CURR2, s, 'w1d2', 't1', true, '2026-05-30', 10);
+  assert.equal(L.evaluateBadges(CURR2, s, '2026-05-30').find((b) => b.id === 'finisher').unlocked, true);
+});
+
 // ---------- export / import + migration ----------
 test('serialize round-trips through parseImported (v2)', () => {
   let s = L.createInitialState();
