@@ -401,67 +401,88 @@
   }
   .comeback b{font-family:var(--serif-heavy); font-weight:900; color:var(--kincha-deep)}
 
-  /* ---------- chain calendar — 91 washi cells ---------- */
-  .chain-cal{
-    display:grid; grid-template-columns:repeat(13, 1fr); gap:4px; margin:4px 0 2px;
+  /* ---------- calendar modal — washi month sheet ---------- */
+  .cal-modal{
+    display:none; position:fixed; inset:0; z-index:200; align-items:center; justify-content:center;
+    background:rgba(43,38,34,.55); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
   }
-  .chain-cal .cell{
-    aspect-ratio:1/1; border-radius:2px; position:relative;
-    background:rgba(43,38,34,.055); border:1px solid var(--line-soft);
-    transition:transform .18s ease, box-shadow .2s ease, background .2s ease;
+  .cal-modal.open{display:flex}
+  .cal-panel{
+    position:relative; width:min(420px, calc(100vw - 32px)); border-radius:3px; padding:24px 24px 26px;
+    background:linear-gradient(180deg, #faf6ec, var(--washi-0));
+    border:1px solid var(--line);
+    box-shadow:0 1px 0 rgba(255,255,255,.6) inset, 0 34px 80px -34px rgba(43,38,34,.7);
+    animation:rise .4s both;
   }
-  .chain-cal .cell.rest{
-    background:rgba(176,141,87,.10);
-    background-image:repeating-linear-gradient(45deg, transparent 0 2px, rgba(176,141,87,.18) 2px 3px);
-    border-color:rgba(176,141,87,.22);
+  .cal-panel::before{ /* left sumi rule in accent, echoing cards */
+    content:""; position:absolute; top:18px; bottom:18px; left:0; width:2px;
+    background:var(--ai); opacity:.85;
   }
-  .chain-cal .cell.done{
+  .cal-head{
+    display:flex; align-items:center; gap:10px; margin-bottom:18px;
+  }
+  .cal-head #calTitle{
+    flex:1; text-align:center; font-family:var(--serif-heavy); font-weight:700; font-size:18px;
+    color:var(--sumi); letter-spacing:.04em;
+  }
+  .cal-head button{
+    flex:0 0 auto; width:34px; height:34px; border-radius:2px; cursor:pointer;
+    font-family:var(--serif-heavy); font-weight:700; font-size:18px; line-height:1;
+    color:var(--sumi-soft); background:transparent; border:1px solid var(--line);
+    display:grid; place-items:center; transition:transform .12s, border-color .2s, color .2s, background .2s;
+  }
+  .cal-head button:hover{border-color:var(--ai); color:var(--ai); background:rgba(27,58,91,.04)}
+  .cal-head button:active{transform:translateY(1px)}
+  .cal-head #calClose{margin-left:4px; font-size:15px}
+  .cal-dow{
+    display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:8px;
+    font:600 10.5px var(--sans); letter-spacing:.1em; text-transform:uppercase; color:var(--sumi-faint);
+  }
+  .cal-dow span{text-align:center}
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px}
+  .cday{
+    aspect-ratio:1/1; border-radius:4px; display:grid; place-items:center; position:relative;
+    font-family:var(--serif); font-size:13.5px; color:var(--sumi);
+    background:rgba(43,38,34,.045); border:1px solid var(--line-soft);
+    transition:transform .15s ease, box-shadow .2s ease;
+  }
+  .cday.other{color:var(--sumi-faint); opacity:.4; background:transparent; border-color:transparent}
+  .cday.done{
+    color:#fff7ef; font-family:var(--serif-heavy); font-weight:700;
     background:radial-gradient(circle at 34% 28%, var(--beni) 0%, var(--beni-deep) 86%);
     border-color:transparent;
     box-shadow:inset 0 0 0 1px rgba(255,247,239,.28), 0 2px 6px -3px rgba(178,58,34,.5);
   }
-  .chain-cal .cell.today{
-    box-shadow:0 0 0 2px var(--washi-0), 0 0 0 3.5px var(--ai);
-    z-index:1;
+  .cday.today{
+    box-shadow:0 0 0 2px var(--washi-0), 0 0 0 2.5px var(--ai); z-index:1;
   }
-  .chain-cal .cell.done.today{
-    box-shadow:0 0 0 2px var(--washi-0), 0 0 0 3.5px var(--ai), inset 0 0 0 1px rgba(255,247,239,.28);
+  .cday.done.today{
+    box-shadow:0 0 0 2px var(--washi-0), 0 0 0 2.5px var(--ai), inset 0 0 0 1px rgba(255,247,239,.28);
   }
-  .chain-cal .cell:hover{transform:scale(1.22); z-index:2}
-  .chain-legend{
-    display:flex; flex-wrap:wrap; gap:16px; margin-top:18px; padding-top:16px;
-    border-top:1px solid var(--line-soft);
-    font-family:var(--serif); font-size:12px; color:var(--sumi-faint);
-  }
-  .chain-legend span{display:inline-flex; align-items:center; gap:7px}
-  .chain-legend .lg{width:11px; height:11px; border-radius:2px; flex:0 0 auto}
-  .chain-legend .lg-done{background:radial-gradient(circle at 34% 28%, var(--beni), var(--beni-deep))}
-  .chain-legend .lg-today{background:rgba(43,38,34,.055); box-shadow:0 0 0 2px var(--washi-0), 0 0 0 3px var(--ai)}
-  .chain-legend .lg-rest{background:rgba(176,141,87,.18); background-image:repeating-linear-gradient(45deg, transparent 0 2px, rgba(176,141,87,.3) 2px 3px)}
+  .cday.done:hover{transform:translateY(-1px)}
 
-  /* ---------- trophies — 勲章 honor seals ---------- */
-  .trophies{display:flex; flex-direction:column; gap:16px}
+  /* ---------- trophies — 勲章 honor seals (dashboard card) ---------- */
   .trophy-count{
     font-family:var(--serif-heavy); font-weight:900; font-size:38px; line-height:1; color:var(--sumi);
-    letter-spacing:.01em;
+    letter-spacing:.01em; margin-bottom:16px;
   }
   .trophy-row{display:flex; flex-wrap:wrap; gap:10px}
-  .trophies .badge{
+  .trophy-row .badge{
     flex:0 0 auto; width:42px; height:42px; border-radius:8px; display:grid; place-items:center;
     font-size:21px; line-height:1; transition:transform .18s ease, box-shadow .22s ease, filter .22s ease;
     cursor:default;
   }
-  .trophies .badge.on{
+  .trophy-row .badge.on{
     color:#fff7ef; transform:rotate(-3deg);
     background:radial-gradient(circle at 32% 26%, var(--beni) 0%, var(--beni-deep) 82%);
     box-shadow:0 4px 13px -6px rgba(178,58,34,.6), inset 0 0 0 1.5px rgba(255,247,239,.24);
   }
-  .trophies .badge.on:hover{transform:rotate(0deg) translateY(-2px) scale(1.06)}
-  .trophies .badge.off{
+  .trophy-row .badge.on:hover{transform:rotate(0deg) translateY(-2px) scale(1.06)}
+  .trophy-row .badge.off{
     color:var(--sumi-faint); filter:grayscale(1) opacity(.55);
     background:rgba(43,38,34,.045); border:1px solid var(--line);
   }
-  .trophies .badge.off:hover{filter:grayscale(.4) opacity(.8); transform:translateY(-1px)}
+  .trophy-row .badge.off:hover{filter:grayscale(.4) opacity(.8); transform:translateY(-1px)}
 
   /* ---------- celebrate — sakura burst overlay ---------- */
   .celebrate-layer{position:fixed; inset:0; z-index:60; pointer-events:none; overflow:hidden}
@@ -547,6 +568,7 @@
   </div>
   <div class="toolbar">
     <label class="field"><span class="fk">日</span> <select id="daySelect"></select></label>
+    <button class="btn" id="calBtn" type="button" aria-label="Календарь">📅</button>
     <button class="btn" id="exportBtn">書き出し · Экспорт</button>
     <button class="btn" id="importBtn">読み込み · Импорт</button>
     <input type="file" id="importFile" accept="application/json" hidden />
@@ -567,25 +589,20 @@
     <button class="day-nav day-next" id="nextDay" type="button" aria-label="Следующий день">›</button>
   </div>
 
-  <div class="section-mark" style="margin-top:46px">
-    <span class="sk">継続</span><span class="st">Chain &amp; Honors</span><span class="sl"></span>
-  </div>
-  <section class="dash dash-extra">
-    <div class="card card-chain" style="--accent:var(--ai)">
-      <div class="eyebrow"><span class="kanji">継</span><span class="etxt"><span class="e-en">Chain</span><span class="e-jp">九十一日</span></span></div>
-      <div class="chain-cal" id="chainCal"></div>
-      <div class="chain-legend">
-        <span><i class="lg lg-done"></i>закрыт</span>
-        <span><i class="lg lg-today"></i>сегодня</span>
-        <span><i class="lg lg-rest"></i>отдых</span>
-      </div>
-    </div>
-    <div class="card card-trophy" style="--accent:var(--beni)">
-      <div class="eyebrow"><span class="kanji">勲</span><span class="etxt"><span class="e-en">Honors</span><span class="e-jp">勲章</span></span></div>
-      <div class="trophies" id="trophies"></div>
-    </div>
-  </section>
 </main>
+
+<div class="cal-modal" id="calModal">
+  <div class="cal-panel">
+    <div class="cal-head">
+      <button id="calPrev" type="button">‹</button>
+      <div id="calTitle"></div>
+      <button id="calNext" type="button">›</button>
+      <button id="calClose" type="button">✕</button>
+    </div>
+    <div class="cal-dow"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+</div>
 
 <div class="foot">
   <span class="fjp">継続は力なり</span>
@@ -730,7 +747,7 @@ function setNavState(){
   if (cta) cta.onclick = function(){ goToDay(1); };
 }
 
-function renderAll(){ renderDaySelect(); renderToday(); renderDashboard(); renderChain(); renderTrophies(); renderComeback(); }
+function renderAll(){ renderDaySelect(); renderToday(); renderDashboard(); renderComeback(); }
 
 /* ---------- dopamine features ---------- */
 function completedCount(){ return Object.keys(state.days).filter(function(id){return state.days[id].completedAt;}).length; }
@@ -747,25 +764,30 @@ function onDayCompleted(){
   }
 }
 
-function renderChain(){
-  var host = document.getElementById('chainCal'); if(!host) return;
-  host.innerHTML = allDays.map(function(d){
-    var cls='cell';
-    if(d.track==='rest') cls+=' rest';
-    if(L.isDayComplete(C, state, d.id)) cls+=' done';
-    if(d.id===currentDayId) cls+=' today';
-    return '<span class="'+cls+'" title="'+esc('Нед '+d.week+' · '+dowName(d.dow))+'"></span>';
-  }).join('');
-}
-
-function renderTrophies(){
-  var host = document.getElementById('trophies'); if(!host) return;
-  var all = L.evaluateBadges(C, state, todayStr());
-  var got = all.filter(function(b){return b.unlocked;});
-  host.innerHTML = '<div class="trophy-count">'+got.length+'/'+all.length+'</div>' +
-    '<div class="trophy-row">' + all.map(function(b){
-      return '<span class="badge '+(b.unlocked?'on':'off')+'" title="'+esc(b.title+' — '+b.desc)+'">'+b.icon+'</span>';
-    }).join('') + '</div>';
+var calOffset = 0;
+function _mondayIndex(dateStr){ return ((L.diffDays('2024-01-01', dateStr)) % 7 + 7) % 7; }  // 2024-01-01 = понедельник
+function renderCalendar(){
+  var grid = document.getElementById('calGrid'); if(!grid) return;
+  var done = {}; L.completedDates(state).forEach(function(d){ done[d]=1; });
+  var today = todayStr();
+  var p = today.split('-'); var y = +p[0], m = +p[1];
+  m += calOffset; while(m<1){m+=12;y--;} while(m>12){m-=12;y++;}
+  var mm = (m<10?'0':'')+m;
+  var first = y+'-'+mm+'-01';
+  var lead = _mondayIndex(first);
+  var start = L.addDays(first, -lead);
+  var cells = '';
+  for (var i=0;i<42;i++){
+    var d = L.addDays(start, i);
+    var cls = 'cday';
+    if (d.slice(0,7) !== first.slice(0,7)) cls += ' other';
+    if (done[d]) cls += ' done';
+    if (d === today) cls += ' today';
+    cells += '<span class="'+cls+'">'+(+d.slice(8,10))+'</span>';
+  }
+  grid.innerHTML = cells;
+  var MN = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  var tt = document.getElementById('calTitle'); if(tt) tt.textContent = MN[m-1]+' '+y;
 }
 
 function renderComeback(){
@@ -886,6 +908,12 @@ function renderDashboard(){
       <div class="bar"><i style="width:${x.pct}%;background:${TRACKS[k].color}"></i></div>`;
   }).join('');
 
+  const allB = L.evaluateBadges(C, state, todayStr());
+  const gotB = allB.filter(function(b){return b.unlocked;}).length;
+  const trophyRow = allB.map(function(b){
+    return '<span class="badge '+(b.unlocked?'on':'off')+'" title="'+esc(b.title+' — '+b.desc)+'">'+b.icon+'</span>';
+  }).join('');
+
   document.getElementById('dashboard').innerHTML = `
     <div class="card" style="--accent:var(--ai);animation-delay:0ms">
       <div class="eyebrow"><span class="kanji">進</span><span class="etxt"><span class="e-en">Progress</span><span class="e-jp">進捗</span></span></div>
@@ -909,11 +937,21 @@ function renderDashboard(){
       <div class="eyebrow"><span class="kanji">復</span><span class="etxt"><span class="e-en">Review</span><span class="e-jp">復習</span></span></div>
       ${due.length ? '<div class="due-list">'+due.map(x=>'<span class="dot">朱</span>'+esc(x)).join('<br>')+'</div>' : '<div class="due-empty">Пусто — чисто.</div>'}
     </div>
+    <div class="card" style="--accent:var(--beni);animation-delay:350ms">
+      <div class="eyebrow"><span class="kanji">勲</span><span class="etxt"><span class="e-en">Trophies</span><span class="e-jp">🏆</span></span></div>
+      <div class="trophy-count">${gotB}/${allB.length}</div>
+      <div class="trophy-row">${trophyRow}</div>
+    </div>
   `;
 }
 
 document.getElementById('prevDay').onclick = function(){ goToDay(-1); };
 document.getElementById('nextDay').onclick = function(){ goToDay(1); };
+document.getElementById('calBtn').onclick = function(){ calOffset=0; renderCalendar(); document.getElementById('calModal').classList.add('open'); };
+document.getElementById('calClose').onclick = function(){ document.getElementById('calModal').classList.remove('open'); };
+document.getElementById('calPrev').onclick = function(){ calOffset--; renderCalendar(); };
+document.getElementById('calNext').onclick = function(){ calOffset++; renderCalendar(); };
+document.getElementById('calModal').onclick = function(e){ if(e.target.id==='calModal') document.getElementById('calModal').classList.remove('open'); };
 document.getElementById('exportBtn').onclick = () => {
   const blob = new Blob([L.serializeState(state)], { type:'application/json' });
   const a = document.createElement('a');

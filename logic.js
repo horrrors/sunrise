@@ -94,6 +94,9 @@ function longestStreak(state) {
   }
   return best;
 }
+function completedDates(state) {
+  return Array.from(_activeDates(state)).sort();
+}
 function countCompletedTasks(curriculum, state, track) {
   let n = 0;
   for (const day of allDays(curriculum)) {
@@ -242,7 +245,7 @@ function parseImported(jsonString) {
 const RoadmapLogic = {
   addDays, diffDays, phaseOfWeek, createInitialState,
   allDays, getDay, setTaskDone, setReflection, isDayComplete,
-  computeStreak, longestStreak, countCompletedTasks,
+  computeStreak, longestStreak, completedDates, countCompletedTasks,
   progressByTrack, progressByPhase, overallProgress,
   REVIEW_INTERVALS, scheduleReview, getDueReviews, completeReview,
   BADGES, evaluateBadges, syncBadges, SURPRISES,

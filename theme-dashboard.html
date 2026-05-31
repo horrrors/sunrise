@@ -338,37 +338,72 @@
 
   @keyframes fadeUp{from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:none}}
 
+  /* ---- calendar modal ---- */
+  .cal-modal{
+    display:none; position:fixed; inset:0; z-index:200;
+    align-items:center; justify-content:center;
+    background:rgba(0,0,0,.55);
+    backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+  }
+  .cal-modal.open{display:flex; animation:cal-fade .22s ease both}
+  @keyframes cal-fade{from{opacity:0} to{opacity:1}}
+  .cal-panel{
+    width:min(420px,92vw); border-radius:26px; padding:22px 22px 24px;
+    background:var(--surface); border:1px solid var(--line);
+    box-shadow:var(--shadow-lg);
+    animation:fadeUp .3s both;
+  }
+  .cal-head{
+    display:flex; align-items:center; gap:8px; margin-bottom:18px;
+  }
+  .cal-head #calTitle{
+    flex:1; text-align:center; font-family:var(--display); font-weight:800;
+    font-size:19px; letter-spacing:-.01em; color:var(--ink);
+  }
+  .cal-head button{
+    width:38px; height:38px; flex:0 0 auto; border-radius:12px; cursor:pointer;
+    display:grid; place-items:center; line-height:1;
+    font-family:var(--display); font-weight:800; font-size:20px; color:var(--fuchsia);
+    background:var(--surface); border:1.5px solid var(--line); box-shadow:var(--shadow-sm);
+    transition:transform .12s, box-shadow .2s, border-color .2s, color .2s, background .2s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .cal-head button:hover{
+    transform:translateY(-1px); color:#fff; border-color:transparent;
+    background:linear-gradient(135deg,var(--fuchsia-2),var(--fuchsia) 60%,var(--violet));
+    box-shadow:0 12px 26px -12px rgba(230,57,155,.6);
+  }
+  .cal-head button:active{transform:translateY(0)}
+  .cal-head #calClose{margin-left:4px; font-size:16px}
+  .cal-dow{
+    display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:8px;
+  }
+  .cal-dow span{
+    text-align:center; font:700 10px var(--mono); letter-spacing:.1em; text-transform:uppercase;
+    color:var(--ink-faint);
+  }
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px}
+  .cday{
+    aspect-ratio:1/1; border-radius:12px; display:grid; place-items:center;
+    font:700 13.5px var(--sans); color:var(--ink-soft);
+    background:var(--surface-2); box-shadow:inset 0 0 0 1px var(--line-soft);
+    transition:transform .14s, box-shadow .2s, background .2s, color .2s;
+  }
+  .cday.other{color:var(--ink-faint); background:transparent; box-shadow:none; opacity:.55}
+  .cday.done{
+    color:#fff;
+    background:linear-gradient(135deg,var(--fuchsia-2),var(--fuchsia) 60%,var(--violet));
+    box-shadow:0 6px 16px -8px rgba(230,57,155,.6), inset 0 1px 0 rgba(255,255,255,.3);
+  }
+  .cday.today{
+    box-shadow:0 0 0 2px var(--fuchsia), inset 0 0 0 1px var(--line-soft);
+    color:var(--fuchsia); font-weight:800;
+  }
+  .cday.today.done{box-shadow:0 0 0 2px var(--violet), 0 6px 16px -8px rgba(230,57,155,.6); color:#fff}
+  .cday.other.done{opacity:.42}
+
   /* ---- dopamine: extra section ---- */
   .extra{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:18px; margin-top:18px}
-
-  /* chain calendar — 91-cell streak grid */
-  .chain-grid{
-    display:grid; grid-template-columns:repeat(13, 1fr); gap:5px; margin-top:4px;
-  }
-  .chain-grid .cell{
-    aspect-ratio:1/1; border-radius:5px; position:relative;
-    background:var(--surface-2); box-shadow:inset 0 0 0 1px var(--line-soft);
-    transition:transform .15s, box-shadow .2s, background .2s;
-  }
-  .chain-grid .cell.rest{
-    background:color-mix(in srgb,var(--amber) 9%, var(--surface-2));
-    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--amber) 16%, var(--line-soft));
-  }
-  .chain-grid .cell.done{
-    background:linear-gradient(135deg, color-mix(in srgb,var(--accent) 72%,#fff), var(--accent));
-    box-shadow:0 4px 10px -5px color-mix(in srgb,var(--accent) 70%, transparent);
-  }
-  .chain-grid .cell.today{
-    box-shadow:0 0 0 2px var(--accent), 0 4px 12px -4px color-mix(in srgb,var(--accent) 60%, transparent);
-    transform:scale(1.12); z-index:1;
-  }
-  .chain-grid .cell.today.done{box-shadow:0 0 0 2px var(--violet), 0 4px 12px -4px color-mix(in srgb,var(--accent) 70%, transparent)}
-  .chain-legend{display:flex; flex-wrap:wrap; gap:14px; margin-top:16px; font:600 11px var(--mono); color:var(--ink-dim); letter-spacing:.04em}
-  .chain-legend span{display:inline-flex; align-items:center; gap:6px}
-  .chain-legend i{width:11px; height:11px; border-radius:4px; display:inline-block}
-  .chain-legend i.l-done{background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 72%,#fff),var(--accent))}
-  .chain-legend i.l-rest{background:color-mix(in srgb,var(--amber) 22%,var(--surface-2)); box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--amber) 26%,transparent)}
-  .chain-legend i.l-open{background:var(--surface-2); box-shadow:inset 0 0 0 1px var(--line)}
 
   /* trophies widget */
   .trophy-count{
@@ -466,6 +501,7 @@
   </div>
   <div class="toolbar">
     <label class="field">День <select id="daySelect"></select></label>
+    <button class="btn" id="calBtn" type="button" aria-label="Календарь">📅</button>
     <button class="btn" id="exportBtn">Экспорт</button>
     <button class="btn" id="importBtn">Импорт</button>
     <input type="file" id="importFile" accept="application/json" hidden />
@@ -475,22 +511,6 @@
 <main class="wrap">
   <section class="dash" id="dashboard"></section>
 
-  <section class="extra">
-    <article class="card chain-card" style="--accent:var(--violet)">
-      <div class="eyebrow"><span class="badge">🔗</span> Цепочка <small>91 день</small></div>
-      <div class="chain-grid" id="chainCal"></div>
-      <div class="chain-legend">
-        <span><i class="l-done"></i> закрыт</span>
-        <span><i class="l-rest"></i> отдых</span>
-        <span><i class="l-open"></i> впереди</span>
-      </div>
-    </article>
-    <article class="card" style="--accent:var(--amber)">
-      <div class="eyebrow"><span class="badge">🏆</span> Трофеи <small>badges</small></div>
-      <div id="trophies"></div>
-    </article>
-  </section>
-
   <div id="comeback" style="display:none"></div>
   <div class="day-rail">
     <button class="day-nav day-prev" id="prevDay" type="button" aria-label="Предыдущий день">‹</button>
@@ -499,6 +519,19 @@
   </div>
 </main>
 <div class="foot">маленькие шаги каждый день · sunrise tracker</div>
+
+<div class="cal-modal" id="calModal">
+  <div class="cal-panel">
+    <div class="cal-head">
+      <button id="calPrev" type="button">‹</button>
+      <div id="calTitle"></div>
+      <button id="calNext" type="button">›</button>
+      <button id="calClose" type="button">✕</button>
+    </div>
+    <div class="cal-dow"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+</div>
 
 <script src="curriculum.js"></script>
 <script src="logic.js"></script>
@@ -647,7 +680,7 @@ function renderToday(){
   })();
 }
 
-function renderAll(){ renderDaySelect(); renderToday(); renderDashboard(); renderChain(); renderTrophies(); renderComeback(); }
+function renderAll(){ renderDaySelect(); renderToday(); renderDashboard(); renderComeback(); }
 
 /* ---- dopamine features ---- */
 function completedCount(){ return Object.keys(state.days).filter(function(id){return state.days[id].completedAt;}).length; }
@@ -662,24 +695,30 @@ function onDayCompleted(){
     showSurprise(msg);
   }
 }
-function renderChain(){
-  var host = document.getElementById('chainCal'); if(!host) return;
-  host.innerHTML = allDays.map(function(d){
-    var cls='cell';
-    if(d.track==='rest') cls+=' rest';
-    if(L.isDayComplete(C, state, d.id)) cls+=' done';
-    if(d.id===currentDayId) cls+=' today';
-    return '<span class="'+cls+'" title="'+esc('Нед '+d.week+' · '+dowName(d.dow))+'"></span>';
-  }).join('');
-}
-function renderTrophies(){
-  var host = document.getElementById('trophies'); if(!host) return;
-  var all = L.evaluateBadges(C, state, todayStr());
-  var got = all.filter(function(b){return b.unlocked;});
-  host.innerHTML = '<div class="trophy-count">'+got.length+'/'+all.length+'</div>' +
-    '<div class="trophy-row">' + all.map(function(b){
-      return '<span class="badge '+(b.unlocked?'on':'off')+'" title="'+esc(b.title+' — '+b.desc)+'">'+b.icon+'</span>';
-    }).join('') + '</div>';
+var calOffset = 0;
+function _mondayIndex(dateStr){ return ((L.diffDays('2024-01-01', dateStr)) % 7 + 7) % 7; }  // 2024-01-01 = понедельник
+function renderCalendar(){
+  var grid = document.getElementById('calGrid'); if(!grid) return;
+  var done = {}; L.completedDates(state).forEach(function(d){ done[d]=1; });
+  var today = todayStr();
+  var p = today.split('-'); var y = +p[0], m = +p[1];
+  m += calOffset; while(m<1){m+=12;y--;} while(m>12){m-=12;y++;}
+  var mm = (m<10?'0':'')+m;
+  var first = y+'-'+mm+'-01';
+  var lead = _mondayIndex(first);
+  var start = L.addDays(first, -lead);
+  var cells = '';
+  for (var i=0;i<42;i++){
+    var d = L.addDays(start, i);
+    var cls = 'cday';
+    if (d.slice(0,7) !== first.slice(0,7)) cls += ' other';
+    if (done[d]) cls += ' done';
+    if (d === today) cls += ' today';
+    cells += '<span class="'+cls+'">'+(+d.slice(8,10))+'</span>';
+  }
+  grid.innerHTML = cells;
+  var MN = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  var tt = document.getElementById('calTitle'); if(tt) tt.textContent = MN[m-1]+' '+y;
 }
 function renderComeback(){
   var cb = document.getElementById('comeback'); if(!cb) return;
@@ -768,6 +807,12 @@ function renderDashboard(){
   const byTrack = L.progressByTrack(C, state);
   const due = L.getDueReviews(state, todayStr());
 
+  const allB = L.evaluateBadges(C, state, todayStr());
+  const gotB = allB.filter(function(b){return b.unlocked;}).length;
+  const trophyRow = allB.map(function(b){
+    return '<span class="badge '+(b.unlocked?'on':'off')+'" title="'+esc(b.title+' — '+b.desc)+'">'+b.icon+'</span>';
+  }).join('');
+
   const phaseRows = [1,2,3].map((p) => {
     const x = byPhase[p] || {done:0,total:0,pct:0};
     return `<div class="prow"><span class="lbl"><i></i>Фаза ${p}</span><span class="val">${x.done}/${x.total}</span></div>${bar(x.pct)}`;
@@ -803,11 +848,21 @@ function renderDashboard(){
       <div class="eyebrow"><span class="badge">🔁</span> Повторы <small>review</small></div>
       ${due.length ? '<div class="due-list">'+due.map(x=>'· '+esc(x)).join('<br>')+'</div>' : '<div class="due-empty">✨ Пусто — всё чисто</div>'}
     </div>
+    <div class="card" style="--accent:var(--amber);animation-delay:350ms">
+      <div class="eyebrow"><span class="badge">🏆</span> Трофеи <small>badges</small></div>
+      <div class="trophy-count">${gotB}/${allB.length}</div>
+      <div class="trophy-row">${trophyRow}</div>
+    </div>
   `;
 }
 
 document.getElementById('prevDay').onclick = function(){ goToDay(-1); };
 document.getElementById('nextDay').onclick = function(){ goToDay(1); };
+document.getElementById('calBtn').onclick = function(){ calOffset=0; renderCalendar(); document.getElementById('calModal').classList.add('open'); };
+document.getElementById('calClose').onclick = function(){ document.getElementById('calModal').classList.remove('open'); };
+document.getElementById('calPrev').onclick = function(){ calOffset--; renderCalendar(); };
+document.getElementById('calNext').onclick = function(){ calOffset++; renderCalendar(); };
+document.getElementById('calModal').onclick = function(e){ if(e.target.id==='calModal') document.getElementById('calModal').classList.remove('open'); };
 document.getElementById('exportBtn').onclick = () => {
   const blob = new Blob([L.serializeState(state)], { type:'application/json' });
   const a = document.createElement('a');

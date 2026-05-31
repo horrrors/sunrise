@@ -91,6 +91,10 @@ test('computeStreak: anchors to yesterday', () => {
 test('computeStreak: older than yesterday -> 0', () => {
   assert.equal(L.computeStreak(st(['2026-05-27']), '2026-05-30'), 0);
 });
+test('completedDates returns sorted completion dates', () => {
+  assert.deepEqual(L.completedDates(st([])), []);
+  assert.deepEqual(L.completedDates(st(['2026-05-30', '2026-05-28', '2026-05-29'])), ['2026-05-28', '2026-05-29', '2026-05-30']);
+});
 test('longestStreak', () => {
   assert.equal(L.longestStreak(st([])), 0);
   assert.equal(L.longestStreak(st(['2026-05-30'])), 1);
