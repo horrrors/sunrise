@@ -11,6 +11,12 @@
       phasesTitle: 'Фазы', tracksTitle: 'Треки', daysOf91: 'пройдено дней из 91',
       newTrophy: '🏆 Новый трофей!', comeback: 'С возвращением — всего пройдено {n} дней. Продолжаем.',
       importOk: 'Прогресс импортирован.', importFail: 'Импорт не удался: {e}\nТекущий прогресс не изменён.',
+      weekAbbr: 'Нед', inARow: 'подряд', phaseWord: 'Фаза',
+      phaseLabel: 'フェーズ {p} · 第{w}週', todayVert: '今日 · TODAY', restVert: '休 · REST',
+      taskPlaceholder: 'Короткая заметка...', prevDayAria: 'Предыдущий день', nextDayAria: 'Следующий день',
+      dow: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+      streakWords: ['день', 'дня', 'дней'],
+      months: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
     },
     tracks: {
       dsa: { label: 'Алгоритмы', kanji: '算' }, js: { label: 'JavaScript', kanji: 'JS' },
