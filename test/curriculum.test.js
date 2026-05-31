@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const C = require('../curriculum.js');
+const C = require('../data/curriculum.js');
 
 const TRACKS = ['dsa','js','ts','node','sysdesign','patterns','distsys','db','cs','rest'];
 
