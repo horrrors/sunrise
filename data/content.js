@@ -2,7 +2,7 @@
 (function (root) {
   var content = {
     ui: {
-      brandSub: 'dev growth tracker',
+      brandSub: 'dev growth tracker', summaryTitle: 'Сводка', todayTitle: 'Сегодня',
       day: 'День', warmup: 'Разминка', reflect: 'Рефлексия',
       export: 'Экспорт', import: 'Импорт', calendar: 'Календарь', trophies: 'Трофеи',
       nextDay: 'Следующий день →', daysInARow: 'дней подряд', scheduleReview: '＋ Запланировать повтор паттерна недели',

@@ -112,7 +112,22 @@
   var M = (CT.mottos && CT.mottos.length) ? CT.mottos : ['継続は力なり · постоянство — это сила'], _motdI = 0;
   function _rotateMotd(){ var el = $('motd'); if (!el) return; el.classList.add('motd-out'); setTimeout(function (){ _motdI = (_motdI + 1) % M.length; el.textContent = M[_motdI]; el.classList.remove('motd-out'); }, 600); }
 
-  function celebrate(){ var fx = $('fx'); if (!fx) return; for (var k = 0; k < 28; k++){ var p = document.createElement('span'); p.className = 'confetti-piece'; p.style.left = (Math.random()*100) + '%'; p.style.setProperty('--i', k); p.style.animationDelay = (Math.random()*0.25) + 's'; fx.appendChild(p); setTimeout((function (n){ return function (){ if (n.parentNode) n.parentNode.removeChild(n); }; })(p), 1800); } }
+  function celebrate(){
+    var fx = $('fx'); if (!fx) return;
+    var flash = document.createElement('div'); flash.className = 'fx-flash'; fx.appendChild(flash);
+    setTimeout(function (){ if (flash.parentNode) flash.parentNode.removeChild(flash); }, 650);
+    for (var k = 0; k < 30; k++){
+      var p = document.createElement('span'); p.className = 'confetti-piece';
+      p.style.left = (Math.random() * 100) + '%';
+      p.style.setProperty('--i', k);
+      p.style.setProperty('--dx', (Math.random() * 2 - 1).toFixed(2));   // -1..1 horizontal spread
+      p.style.setProperty('--dy', Math.random().toFixed(2));             // 0..1 vertical bias
+      p.style.setProperty('--rot', Math.floor(Math.random() * 720 - 360) + 'deg');
+      p.style.animationDelay = (Math.random() * 0.2) + 's';
+      fx.appendChild(p);
+      setTimeout((function (n){ return function (){ if (n.parentNode) n.parentNode.removeChild(n); }; })(p), 1900);
+    }
+  }
   function _toast(cls, html){ var fx = $('fx'); if (!fx) return; var el = document.createElement('div'); el.className = cls; el.innerHTML = html; fx.appendChild(el); setTimeout(function (){ el.classList.add('show'); }, 20); setTimeout(function (){ el.classList.remove('show'); setTimeout(function (){ if (el.parentNode) el.parentNode.removeChild(el); }, 400); }, 3500); }
   function showBadgeToast(ids){ var first = badgeText(ids[0]); _toast('badge-toast', '<span class="bt-i">' + first.icon + '</span><span>' + esc(ui('newTrophy')) + ' <b>' + esc(first.title) + '</b></span>'); }
   function showSurprise(text){ _toast('toast', esc(text)); }
@@ -147,6 +162,8 @@
     $('importBtn').onclick = function (){ $('importFile').click(); };
     $('importFile').onchange = function (e){ var f = e.target.files[0]; if (!f) return; var rd = new FileReader(); rd.onload = function (){ var r = L.parseImported(String(rd.result)); if (!r.ok){ alert(ui('importFail').replace('{e}', r.error)); return; } state = r.state; saveState(); currentDayId = defaultDayId(); renderAll(); alert(ui('importOk')); }; rd.readAsText(f); e.target.value = ''; };
     if ($('motd')) $('motd').textContent = M[0];
+    if ($('summaryTitle')) $('summaryTitle').textContent = ui('summaryTitle');
+    if ($('todayTitle')) $('todayTitle').textContent = ui('todayTitle');
     setInterval(_rotateMotd, 6000);
     renderAll();
   }

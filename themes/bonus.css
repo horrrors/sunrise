@@ -1131,3 +1131,52 @@ textarea:focus{
     transition-duration:.001ms !important;
   }
 }
+
+/* ============================================================================
+   ВОССТАНОВЛЕННЫЕ ФИШКИ рисографа (после модульного рефактора) — чистый CSS
+   ============================================================================ */
+
+/* Жирные секц-заголовки «СВОДКА / СЕГОДНЯ» (каноничный .section-title) */
+.section-title{
+  font-family:var(--display);
+  font-size:clamp(19px,2.8vw,28px);
+  letter-spacing:.01em; text-transform:uppercase; opacity:1;
+  color:var(--paper); background:var(--ink);
+  display:inline-block; padding:6px 16px 4px;
+  border:var(--bw-thick) solid var(--ink); border-radius:var(--r);
+  box-shadow:5px 5px 0 var(--alarm);
+  transform:rotate(-1.2deg);
+  margin:8px 2px 18px;
+}
+
+/* Чередующийся наклон карточек сводки (scattered stickers) */
+.stat-card:nth-child(odd){ transform:rotate(-.8deg); }
+.stat-card:nth-child(even){ transform:rotate(.8deg); }
+.stat-card:hover{ transform:translate(-2px,-2px) rotate(0deg); box-shadow:var(--shadow-lg); }
+
+/* Поворот стрелок дня на hover */
+.day-prev:hover{ transform:translate(-2px,-2px) rotate(-4deg); }
+.day-next:hover{ transform:translate(-2px,-2px) rotate(4deg); }
+
+/* «Штамп»-галочка под лёгким углом */
+.task.done .box::after{ transform:rotate(45deg) scale(1.05); }
+
+/* Вспышка экрана при завершении дня (app.js спавнит .fx-flash) */
+.fx-flash{
+  position:fixed; inset:0; z-index:300; pointer-events:none;
+  background:var(--yellow); mix-blend-mode:multiply;
+  animation:fxFlash .6s ease-out forwards;
+}
+@keyframes fxFlash{ 0%{opacity:0} 16%{opacity:.5} 100%{opacity:0} }
+
+/* Сочное разлётное конфетти: «поп» вверх → падение, с дрейфом и вращением
+   (использует --dx/--dy/--rot, которые задаёт generic celebrate() в app.js) */
+.confetti-piece{
+  top:-18px;
+  animation:confettiBurst 1.8s cubic-bezier(.2,.65,.3,1) forwards;
+}
+@keyframes confettiBurst{
+  0%{ opacity:1; transform:translate(0,0) rotate(0) scale(.5); }
+  14%{ opacity:1; transform:translate(calc(var(--dx,0) * 9vw), calc(-6vh - var(--dy,0) * 9vh)) rotate(calc(var(--rot,0deg) * .3)) scale(1.12); }
+  100%{ opacity:.85; transform:translate(calc(var(--dx,0) * 24vw), 114vh) rotate(var(--rot,0deg)) scale(.85); }
+}

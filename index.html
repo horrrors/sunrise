@@ -4,6 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Sunrise · 日の出</title>
+<!-- canonical default for optional section titles; themes override (e.g. bonus = bold blocks) -->
+<style>.section-title{font:600 12px ui-monospace,SFMono-Regular,monospace;letter-spacing:.18em;text-transform:uppercase;opacity:.5;margin:20px 2px 10px}</style>
 <link id="themeCss" rel="stylesheet" href="themes/bonus.css" />
 </head>
 <body>
@@ -20,8 +22,10 @@
   </div>
 </header>
 <main class="wrap">
+  <h2 class="section-title" id="summaryTitle"></h2>
   <section class="dash" id="dashboard"></section>
   <div id="comeback" style="display:none"></div>
+  <h2 class="section-title" id="todayTitle"></h2>
   <section class="day-rail">
     <button class="day-nav day-prev" id="prevDay" type="button" aria-label="Предыдущий день">‹</button>
     <section class="today-wrap"><article class="today" id="todayCard"></article></section>
