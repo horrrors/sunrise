@@ -369,6 +369,8 @@
   .foot span{display:inline-block; font:700 11px var(--mono); letter-spacing:.18em; text-transform:uppercase;
     color:var(--lime); background:var(--black); border:var(--bw) solid var(--lime);
     padding:9px 18px; box-shadow:0 0 18px -4px var(--lime)}
+  #motd{ display:inline-block; transition: opacity .55s ease, transform .55s ease, text-shadow .55s ease; text-shadow:0 0 12px rgba(198,255,0,.35); }
+  #motd.motd-out{ opacity:0; transform: translateY(6px); text-shadow:none; }
 
   ::selection{background:var(--magenta); color:var(--black)}
   ::-webkit-scrollbar{width:13px; height:13px}
@@ -677,7 +679,7 @@
     <button class="day-nav day-next" id="nextDay" type="button" aria-label="Следующий день">›</button>
   </div>
 </main>
-<div class="foot"><span>継続は力なり · постоянство — это сила</span></div>
+<div class="foot"><span id="motd">継続は力なり · постоянство — это сила</span></div>
 
 <div class="cal-modal" id="calModal">
   <div class="cal-panel">
@@ -1077,6 +1079,31 @@ document.getElementById('importFile').onchange = (e) => {
   e.target.value = '';
 };
 renderAll();
+
+/* ---- мотивирующие фразы в футере: плавная ротация по кругу ---- */
+var PHRASES = [
+  '継続は力なり · постоянство — это сила',
+  '七転び八起き · упал семь раз — встань восемь',
+  '千里の道も一歩から · путь в тысячу ли начинается с одного шага',
+  '塵も積もれば山となる · и пылинки, накапливаясь, становятся горой',
+  '石の上にも三年 · посиди на камне три года — и камень нагреется',
+  '為せば成る · возьмёшься — выйдет',
+  '初心忘るべからず · не забывай дух начинающего',
+  '雨垂れ石を穿つ · капля камень точит',
+  '急がば回れ · спешишь — иди в обход',
+  '一歩一歩 · шаг за шагом'
+];
+var _motdI = 0;
+function _rotateMotd(){
+  var el = document.getElementById('motd'); if(!el) return;
+  el.classList.add('motd-out');
+  setTimeout(function(){
+    _motdI = (_motdI + 1) % PHRASES.length;
+    el.textContent = PHRASES[_motdI];
+    el.classList.remove('motd-out');
+  }, 600);
+}
+setInterval(_rotateMotd, 6000);
 </script>
 </body>
 </html>

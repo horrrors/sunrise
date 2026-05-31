@@ -330,6 +330,8 @@
   /* footer note */
   .foot{position:relative; z-index:1; text-align:center; color:var(--ink-faint); font:700 10.5px var(--mono);
     letter-spacing:.16em; text-transform:uppercase; padding:6px 0 40px; max-width:1160px; margin:0 auto}
+  #motd{ display:inline-block; transition: opacity .55s ease, transform .55s ease; }
+  #motd.motd-out{ opacity:0; transform: translateY(6px); }
 
   ::selection{background:color-mix(in srgb,var(--fuchsia) 28%, transparent); color:var(--ink)}
   ::-webkit-scrollbar{width:12px; height:12px}
@@ -584,7 +586,7 @@
     <button class="day-nav day-next" id="nextDay" type="button" aria-label="Следующий день">›</button>
   </div>
 </main>
-<div class="foot">маленькие шаги каждый день · sunrise tracker</div>
+<div class="foot"><span id="motd">継続は力なり · постоянство — это сила</span> · sunrise tracker</div>
 
 <div class="cal-modal" id="calModal">
   <div class="cal-panel">
@@ -982,6 +984,32 @@ document.getElementById('importFile').onchange = (e) => {
   reader.readAsText(file);
   e.target.value = '';
 };
+
+/* ---- rotating footer motivation (fade) ---- */
+var PHRASES = [
+  '継続は力なり · постоянство — это сила',
+  '七転び八起き · упал семь раз — встань восемь',
+  '千里の道も一歩から · путь в тысячу ли начинается с одного шага',
+  '塵も積もれば山となる · и пылинки, накапливаясь, становятся горой',
+  '石の上にも三年 · посиди на камне три года — и камень нагреется',
+  '為せば成る · возьмёшься — выйдет',
+  '初心忘るべからず · не забывай дух начинающего',
+  '雨垂れ石を穿つ · капля камень точит',
+  '急がば回れ · спешишь — иди в обход',
+  '一歩一歩 · шаг за шагом'
+];
+var _motdI = 0;
+function _rotateMotd(){
+  var el = document.getElementById('motd'); if(!el) return;
+  el.classList.add('motd-out');
+  setTimeout(function(){
+    _motdI = (_motdI + 1) % PHRASES.length;
+    el.textContent = PHRASES[_motdI];
+    el.classList.remove('motd-out');
+  }, 600);
+}
+setInterval(_rotateMotd, 6000);
+
 renderAll();
 </script>
 </body>
