@@ -201,8 +201,8 @@ const BADGES = [
   { id: 'phase-3', title: 'Фаза III', desc: 'Фаза 3 пройдена', icon: '③', predicate: (c, s) => (progressByPhase(c, s)[3] || {}).pct === 100 },
   { id: 'algorithmist', title: 'Algorithmist', desc: '50 задач по алгоритмам', icon: '🧮', predicate: (c, s) => countCompletedTasks(c, s, 'dsa') >= 50 },
   { id: 'comeback', title: 'Comeback', desc: 'Вернулся после пропуска', icon: '🩹', predicate: (c, s) => _hasComeback(s) },
-  { id: 'night-owl', title: 'Night Owl', desc: 'Закрыл день поздней ночью', icon: '🦉', predicate: (c, s) => _completedHours(s).some((h) => h >= 22 || h < 5) },
-  { id: 'early-lark', title: 'Early Lark', desc: 'Закрыл день ранним утром', icon: '🐦', predicate: (c, s) => _completedHours(s).some((h) => h >= 5 && h < 8) },
+  { id: 'night-owl', title: 'Night Owl', desc: 'Закрыл день после 22:00 или до 5:00', icon: '🦉', predicate: (c, s) => _completedHours(s).some((h) => h >= 22 || h < 5) },
+  { id: 'early-lark', title: 'Early Lark', desc: 'Закрыл день до 8:00 утра', icon: '🐦', predicate: (c, s) => _completedHours(s).some((h) => h >= 5 && h < 8) },
   { id: 'capstone', title: 'Capstone', desc: 'Капстоун завершён', icon: '🏛️', predicate: (c, s) => isDayComplete(c, s, 'w13d6') },
 ];
 function evaluateBadges(curriculum, state, today) {

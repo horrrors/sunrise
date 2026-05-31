@@ -440,9 +440,47 @@
   .tr-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px}
   .tr-grid .badge{
     --accent:var(--amber);
+    position:relative;
     display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center;
     padding:16px 12px 14px; border-radius:18px; transition:transform .15s, box-shadow .2s, filter .2s;
   }
+  /* custom tooltip — theme-flavored, shows what the trophy is for */
+  .tr-grid .badge[data-tip]::after{
+    content:attr(data-tip);
+    position:absolute; left:50%; bottom:calc(100% + 9px);
+    transform:translateX(-50%) translateY(4px);
+    width:max-content; max-width:210px; white-space:normal; text-align:center;
+    padding:9px 12px; border-radius:12px;
+    font-family:var(--sans); font-weight:600; font-size:12px; line-height:1.4;
+    z-index:60; opacity:0; pointer-events:none;
+    transition:opacity .16s ease, transform .16s ease;
+    color:#fff; filter:none;
+    background:linear-gradient(135deg, color-mix(in srgb,var(--ink) 96%, var(--fuchsia)), color-mix(in srgb,var(--ink) 90%, var(--violet)));
+    box-shadow:var(--shadow-lg), inset 0 0 0 1px rgba(255,255,255,.14);
+  }
+  /* little arrow under the tooltip */
+  .tr-grid .badge[data-tip]::before{
+    content:""; position:absolute; left:50%; bottom:calc(100% + 3px);
+    transform:translateX(-50%) translateY(4px) rotate(45deg);
+    width:11px; height:11px; border-radius:2px; z-index:61;
+    opacity:0; pointer-events:none;
+    transition:opacity .16s ease, transform .16s ease;
+    background:color-mix(in srgb,var(--ink) 90%, var(--violet));
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.10);
+  }
+  .tr-grid .badge[data-tip]:hover::after{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .tr-grid .badge[data-tip]:hover::before{ opacity:1; transform:translateX(-50%) translateY(0) rotate(45deg); }
+  /* top-row badges: flip tooltip below so it never gets clipped by the panel top */
+  .tr-grid .badge.tip-below[data-tip]::after{
+    bottom:auto; top:calc(100% + 9px);
+    transform:translateX(-50%) translateY(-4px);
+  }
+  .tr-grid .badge.tip-below[data-tip]::before{
+    bottom:auto; top:calc(100% + 3px);
+    transform:translateX(-50%) translateY(-4px) rotate(45deg);
+  }
+  .tr-grid .badge.tip-below[data-tip]:hover::after{ transform:translateX(-50%) translateY(0); }
+  .tr-grid .badge.tip-below[data-tip]:hover::before{ transform:translateX(-50%) translateY(0) rotate(45deg); }
   .tr-grid .badge .bi{font-size:30px; line-height:1}
   .tr-grid .badge .bt{font:800 12px var(--sans); letter-spacing:.01em; color:var(--ink-soft); line-height:1.25}
   .tr-grid .badge.on{
@@ -453,8 +491,10 @@
   .tr-grid .badge.on:hover{transform:translateY(-3px) scale(1.03)}
   .tr-grid .badge.off{
     background:var(--surface-2); box-shadow:inset 0 0 0 1px var(--line-soft);
-    filter:grayscale(1); opacity:.5;
   }
+  /* dim only the badge contents, not the tooltip pseudo-elements */
+  .tr-grid .badge.off .bi,
+  .tr-grid .badge.off .bt{ filter:grayscale(1); opacity:.5; }
 
   /* comeback banner */
   #comeback{
@@ -948,8 +988,17 @@ function renderTrophies(){
   var got=all.filter(function(b){return b.unlocked;}).length;
   var tt=document.getElementById('trophiesTitle'); if(tt) tt.textContent='Трофеи · '+got+'/'+all.length;
   host.innerHTML=all.map(function(b){
-    return '<div class="badge '+(b.unlocked?'on':'off')+'" title="'+esc(b.desc)+'"><span class="bi">'+b.icon+'</span><span class="bt">'+esc(b.title)+'</span></div>';
+    return '<div class="badge '+(b.unlocked?'on':'off')+'" data-tip="'+esc(b.title+' — '+b.desc)+'"><span class="bi">'+b.icon+'</span><span class="bt">'+esc(b.title)+'</span></div>';
   }).join('');
+  // first visual row → tooltip below (so it can't be clipped by the panel top)
+  (function(){
+    var badges = host.querySelectorAll('.badge');
+    if (!badges.length) return;
+    var topY = badges[0].offsetTop;
+    for (var i=0;i<badges.length;i++){
+      if (badges[i].offsetTop <= topY + 1) badges[i].classList.add('tip-below');
+    }
+  })();
 }
 
 document.getElementById('prevDay').onclick = function(){ goToDay(-1); };
@@ -959,7 +1008,7 @@ document.getElementById('calClose').onclick = function(){ document.getElementByI
 document.getElementById('calPrev').onclick = function(){ calOffset--; renderCalendar(); };
 document.getElementById('calNext').onclick = function(){ calOffset++; renderCalendar(); };
 document.getElementById('calModal').onclick = function(e){ if(e.target.id==='calModal') document.getElementById('calModal').classList.remove('open'); };
-document.getElementById('trophiesBtn').onclick = function(){ renderTrophies(); document.getElementById('trophiesModal').classList.add('open'); };
+document.getElementById('trophiesBtn').onclick = function(){ document.getElementById('trophiesModal').classList.add('open'); renderTrophies(); };
 document.getElementById('trophiesClose').onclick = function(){ document.getElementById('trophiesModal').classList.remove('open'); };
 document.getElementById('trophiesModal').onclick = function(e){ if(e.target.id==='trophiesModal') document.getElementById('trophiesModal').classList.remove('open'); };
 document.getElementById('exportBtn').onclick = () => {

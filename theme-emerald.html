@@ -607,9 +607,45 @@
   .tr-head #trophiesClose:active{transform:translateY(0)}
   .tr-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px}
   .tr-grid .badge{
+    position:relative;
     display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:9px;
     padding:18px 12px 15px; border-radius:12px; text-align:center; cursor:default;
     transition:transform .14s ease, box-shadow .18s ease;
+  }
+
+  /* ----- custom tooltip on hover (theme aesthetic: emerald slab + brass hairline) ----- */
+  .badge[data-tip]::after{
+    content:attr(data-tip);
+    position:absolute; left:50%; bottom:calc(100% + 9px); transform:translateX(-50%) translateY(4px);
+    width:max-content; max-width:210px; white-space:normal; text-align:center;
+    padding:9px 12px; border-radius:10px;
+    font:400 12px/1.4 var(--sans); letter-spacing:.01em;
+    color:var(--cream);
+    background:linear-gradient(160deg, var(--em-mid), var(--em-deep));
+    border:1px solid rgba(236,211,154,.45);
+    box-shadow:0 16px 34px -16px rgba(14,59,46,.95), inset 0 1px 0 rgba(255,255,255,.14);
+    opacity:0; pointer-events:none; z-index:60;
+    transition:opacity .16s ease, transform .16s ease;
+  }
+  /* brass hairline + little pointer-arrow */
+  .badge[data-tip]::before{
+    content:""; position:absolute; left:50%; bottom:calc(100% + 3px);
+    transform:translateX(-50%) translateY(4px) rotate(45deg);
+    width:11px; height:11px; border-radius:2px;
+    background:var(--em-deep);
+    border-right:1px solid rgba(236,211,154,.45); border-bottom:1px solid rgba(236,211,154,.45);
+    opacity:0; pointer-events:none; z-index:60;
+    transition:opacity .16s ease, transform .16s ease;
+  }
+  .badge[data-tip]:hover::after{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .badge[data-tip]:hover::before{ opacity:1; transform:translateX(-50%) translateY(0) rotate(45deg); }
+  /* top-row badges: flip tooltip below so it never gets clipped by the panel edge */
+  .badge[data-tip].tip-below::after{ bottom:auto; top:calc(100% + 9px); }
+  .badge[data-tip].tip-below::before{
+    bottom:auto; top:calc(100% + 3px);
+    border-right:0; border-bottom:0;
+    border-left:1px solid rgba(236,211,154,.45); border-top:1px solid rgba(236,211,154,.45);
+    background:var(--em-mid);
   }
   .tr-grid .badge .bi{font-size:34px; line-height:1}
   .tr-grid .badge .bt{
@@ -1115,8 +1151,18 @@ function renderTrophies(){
   var got=all.filter(function(b){return b.unlocked;}).length;
   var tt=document.getElementById('trophiesTitle'); if(tt) tt.textContent='Трофеи · '+got+'/'+all.length;
   host.innerHTML=all.map(function(b){
-    return '<div class="badge '+(b.unlocked?'on':'off')+'" title="'+esc(b.desc)+'"><span class="bi">'+b.icon+'</span><span class="bt">'+esc(b.title)+'</span></div>';
+    return '<div class="badge '+(b.unlocked?'on':'off')+'" data-tip="'+esc(b.title+' — '+b.desc)+'"><span class="bi">'+b.icon+'</span><span class="bt">'+esc(b.title)+'</span></div>';
   }).join('');
+  // top-row badges flip their tooltip below so the panel edge never clips it
+  (function(){
+    var badges = host.querySelectorAll('.badge');
+    if (!badges.length) return;
+    var top0 = badges[0].offsetTop;
+    for (var i=0;i<badges.length;i++){
+      if (badges[i].offsetTop <= top0) badges[i].classList.add('tip-below');
+      else badges[i].classList.remove('tip-below');
+    }
+  })();
 }
 
 document.getElementById('prevDay').onclick = function(){ goToDay(-1); };
@@ -1126,7 +1172,7 @@ document.getElementById('calClose').onclick = function(){ document.getElementByI
 document.getElementById('calPrev').onclick = function(){ calOffset--; renderCalendar(); };
 document.getElementById('calNext').onclick = function(){ calOffset++; renderCalendar(); };
 document.getElementById('calModal').onclick = function(e){ if(e.target.id==='calModal') document.getElementById('calModal').classList.remove('open'); };
-document.getElementById('trophiesBtn').onclick = function(){ renderTrophies(); document.getElementById('trophiesModal').classList.add('open'); };
+document.getElementById('trophiesBtn').onclick = function(){ document.getElementById('trophiesModal').classList.add('open'); renderTrophies(); };
 document.getElementById('trophiesClose').onclick = function(){ document.getElementById('trophiesModal').classList.remove('open'); };
 document.getElementById('trophiesModal').onclick = function(e){ if(e.target.id==='trophiesModal') document.getElementById('trophiesModal').classList.remove('open'); };
 document.getElementById('exportBtn').onclick = () => {

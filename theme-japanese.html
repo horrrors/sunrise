@@ -467,11 +467,12 @@
   /* ---------- trophies modal — 勲章 honor seals ---------- */
   .tr-modal{
     display:none; position:fixed; inset:0; z-index:200; align-items:center; justify-content:center;
+    overflow:auto; padding:24px 16px;
     background:rgba(0,0,0,.55); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
   }
   .tr-modal.open{display:flex}
   .tr-panel{
-    position:relative; width:min(560px, calc(100vw - 32px)); max-height:calc(100vh - 48px); overflow:auto;
+    position:relative; width:min(560px, calc(100vw - 32px)); margin:auto; overflow:visible;
     border-radius:3px; padding:24px 24px 26px;
     background:linear-gradient(180deg, #faf6ec, var(--washi-0));
     border:1px solid var(--line);
@@ -497,10 +498,45 @@
   .tr-head button:active{transform:translateY(1px)}
   .tr-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px}
   .tr-grid .badge{
+    position:relative;
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:9px;
     padding:18px 12px 16px; border-radius:8px; text-align:center;
     transition:transform .18s ease, box-shadow .22s ease, filter .22s ease; cursor:default;
   }
+
+  /* ---------- trophy tooltip — washi note above the seal ---------- */
+  .tr-grid .badge[data-tip]::after{
+    content:attr(data-tip);
+    position:absolute; left:50%; bottom:calc(100% + 9px); transform:translateX(-50%) translateY(4px);
+    width:max-content; max-width:210px; white-space:normal; text-align:center;
+    padding:8px 11px; border-radius:10px; font-family:var(--serif); font-size:12px; line-height:1.4; font-weight:400;
+    color:#fbf5e9; letter-spacing:.01em; z-index:60;
+    background:linear-gradient(180deg, var(--sumi) 0%, var(--sumi-soft) 100%);
+    border:1px solid rgba(255,247,239,.16);
+    box-shadow:0 14px 30px -14px rgba(43,38,34,.7), inset 0 0 0 1px rgba(255,247,239,.05);
+    opacity:0; pointer-events:none; transition:opacity .16s ease, transform .16s ease;
+  }
+  /* 朱 hanko-accent tail pointing down at the seal */
+  .tr-grid .badge[data-tip]::before{
+    content:""; position:absolute; left:50%; bottom:calc(100% + 4px); transform:translateX(-50%) translateY(4px) rotate(45deg);
+    width:9px; height:9px; z-index:61;
+    background:var(--sumi-soft); border-right:1px solid rgba(255,247,239,.16); border-bottom:1px solid rgba(255,247,239,.16);
+    opacity:0; pointer-events:none; transition:opacity .16s ease, transform .16s ease;
+  }
+  .tr-grid .badge[data-tip]:hover::after{ opacity:1; transform:translateX(-50%) translateY(0) }
+  .tr-grid .badge[data-tip]:hover::before{ opacity:1; transform:translateX(-50%) translateY(0) rotate(45deg) }
+
+  /* top row: flip tooltip below so it isn't clipped by the panel's scroll box */
+  .tr-grid .badge.tip-below[data-tip]::after{
+    bottom:auto; top:calc(100% + 9px); transform:translateX(-50%) translateY(-4px);
+  }
+  .tr-grid .badge.tip-below[data-tip]::before{
+    bottom:auto; top:calc(100% + 4px); transform:translateX(-50%) translateY(-4px) rotate(45deg);
+    border:0; border-left:1px solid rgba(255,247,239,.16); border-top:1px solid rgba(255,247,239,.16);
+    background:var(--sumi);
+  }
+  .tr-grid .badge.tip-below[data-tip]:hover::after{ opacity:1; transform:translateX(-50%) translateY(0) }
+  .tr-grid .badge.tip-below[data-tip]:hover::before{ opacity:1; transform:translateX(-50%) translateY(0) rotate(45deg) }
   .tr-grid .badge .bi{font-size:30px; line-height:1; display:block}
   .tr-grid .badge .bt{font-family:var(--serif); font-size:12px; line-height:1.35; letter-spacing:.02em}
   .tr-grid .badge.on{
@@ -513,11 +549,16 @@
   .tr-grid .badge.on .bt{color:var(--beni-deep); font-weight:600}
   .tr-grid .badge.on:hover{transform:translateY(-3px) scale(1.03); box-shadow:0 12px 26px -10px rgba(178,58,34,.6), inset 0 0 0 1px rgba(255,247,239,.4)}
   .tr-grid .badge.off{
-    color:var(--sumi-faint); filter:grayscale(1) opacity(.55);
+    color:var(--sumi-faint);
     background:rgba(43,38,34,.045); border:1px solid var(--line);
   }
+  /* dim only the seal contents — not the pseudo-element tooltip — so the tip stays readable */
+  .tr-grid .badge.off .bi,
+  .tr-grid .badge.off .bt{filter:grayscale(1) opacity(.55); transition:filter .22s ease}
   .tr-grid .badge.off .bt{color:var(--sumi-faint)}
-  .tr-grid .badge.off:hover{filter:grayscale(.4) opacity(.85); transform:translateY(-2px)}
+  .tr-grid .badge.off:hover{transform:translateY(-2px)}
+  .tr-grid .badge.off:hover .bi,
+  .tr-grid .badge.off:hover .bt{filter:grayscale(.4) opacity(.85)}
 
   /* ---------- celebrate — sakura burst overlay ---------- */
   .celebrate-layer{position:fixed; inset:0; z-index:60; pointer-events:none; overflow:hidden}
@@ -886,8 +927,20 @@ function renderTrophies(){
   var got=all.filter(function(b){return b.unlocked;}).length;
   var tt=document.getElementById('trophiesTitle'); if(tt) tt.textContent='Трофеи · '+got+'/'+all.length;
   host.innerHTML=all.map(function(b){
-    return '<div class="badge '+(b.unlocked?'on':'off')+'" title="'+esc(b.desc)+'"><span class="bi">'+b.icon+'</span><span class="bt">'+esc(b.title)+'</span></div>';
+    return '<div class="badge '+(b.unlocked?'on':'off')+'" data-tip="'+esc(b.title+' — '+b.desc)+'"><span class="bi">'+b.icon+'</span><span class="bt">'+esc(b.title)+'</span></div>';
   }).join('');
+  flipTopRowTips(host);
+}
+
+/* Flip the top-row tooltips downward so they aren't clipped by the panel's scroll box.
+   offsetTop is only reliable when the modal is visible, so this also runs on modal open. */
+function flipTopRowTips(host){
+  if(!host) return;
+  var badges = host.querySelectorAll('.badge');
+  if(!badges.length) return;
+  var minTop = Infinity;
+  badges.forEach(function(b){ b.classList.remove('tip-below'); if(b.offsetTop < minTop) minTop = b.offsetTop; });
+  badges.forEach(function(b){ if(b.offsetTop - minTop < 4) b.classList.add('tip-below'); });
 }
 
 function renderComeback(){
@@ -1071,7 +1124,7 @@ document.getElementById('calClose').onclick = function(){ document.getElementByI
 document.getElementById('calPrev').onclick = function(){ calOffset--; renderCalendar(); };
 document.getElementById('calNext').onclick = function(){ calOffset++; renderCalendar(); };
 document.getElementById('calModal').onclick = function(e){ if(e.target.id==='calModal') document.getElementById('calModal').classList.remove('open'); };
-document.getElementById('trophiesBtn').onclick = function(){ renderTrophies(); document.getElementById('trophiesModal').classList.add('open'); };
+document.getElementById('trophiesBtn').onclick = function(){ renderTrophies(); document.getElementById('trophiesModal').classList.add('open'); flipTopRowTips(document.getElementById('trophiesGrid')); };
 document.getElementById('trophiesClose').onclick = function(){ document.getElementById('trophiesModal').classList.remove('open'); };
 document.getElementById('trophiesModal').onclick = function(e){ if(e.target.id==='trophiesModal') document.getElementById('trophiesModal').classList.remove('open'); };
 document.getElementById('exportBtn').onclick = () => {

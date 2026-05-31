@@ -508,6 +508,43 @@
   .tr-grid .badge.on .bi{ filter:drop-shadow(0 0 8px rgba(198,255,0,.6)) }
   .tr-grid .badge.on:hover{ transform:translate(-2px,-2px); box-shadow:0 0 0 2px var(--black), 5px 5px 0 0 var(--lime) }
 
+  /* ---- custom trophy tooltip (theme-styled, not native) ---- */
+  .tr-grid .badge{ position:relative; }
+  .tr-grid .badge[data-tip]::after{
+    content:attr(data-tip);
+    position:absolute; left:50%; bottom:calc(100% + 9px);
+    transform:translateX(-50%) translateY(4px);
+    width:max-content; max-width:210px; white-space:normal; text-align:center;
+    padding:9px 12px; border-radius:0; z-index:60;
+    font:700 12px/1.4 var(--syne); letter-spacing:.01em; color:var(--chalk);
+    background:var(--void); border:2px solid var(--magenta);
+    box-shadow:0 0 22px -4px var(--magenta), 5px 5px 0 0 var(--black);
+    opacity:0; pointer-events:none;
+    transition:opacity .16s ease, transform .16s ease;
+  }
+  .tr-grid .badge[data-tip]::before{
+    content:""; position:absolute; left:50%; bottom:calc(100% + 3px);
+    transform:translateX(-50%) translateY(4px) rotate(45deg);
+    width:11px; height:11px; z-index:61;
+    background:var(--void); border-right:2px solid var(--magenta); border-bottom:2px solid var(--magenta);
+    opacity:0; pointer-events:none;
+    transition:opacity .16s ease, transform .16s ease;
+  }
+  .tr-grid .badge[data-tip]:hover::after{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .tr-grid .badge[data-tip]:hover::before{ opacity:1; transform:translateX(-50%) translateY(0) rotate(45deg); }
+  /* top row: flip tooltip below the tile so it is never clipped by the panel */
+  .tr-grid .badge[data-tip].tip-below::after{
+    bottom:auto; top:calc(100% + 9px);
+    transform:translateX(-50%) translateY(-4px);
+  }
+  .tr-grid .badge[data-tip].tip-below::before{
+    bottom:auto; top:calc(100% + 3px);
+    transform:translateX(-50%) translateY(-4px) rotate(45deg);
+    border-right:0; border-bottom:0; border-left:2px solid var(--magenta); border-top:2px solid var(--magenta);
+  }
+  .tr-grid .badge[data-tip].tip-below:hover::after{ transform:translateX(-50%) translateY(0); }
+  .tr-grid .badge[data-tip].tip-below:hover::before{ transform:translateX(-50%) translateY(0) rotate(45deg); }
+
   /* comeback banner */
   .comeback{
     margin:0 0 20px; padding:14px 18px;
@@ -1042,8 +1079,14 @@ function renderTrophies(){
   var got=all.filter(function(b){return b.unlocked;}).length;
   var tt=document.getElementById('trophiesTitle'); if(tt) tt.textContent='Трофеи · '+got+'/'+all.length;
   host.innerHTML=all.map(function(b){
-    return '<div class="badge '+(b.unlocked?'on':'off')+'" title="'+esc(b.desc)+'"><span class="bi">'+b.icon+'</span><span class="bt">'+esc(b.title)+'</span></div>';
+    return '<div class="badge '+(b.unlocked?'on':'off')+'" data-tip="'+esc(b.title+' — '+b.desc)+'"><span class="bi">'+b.icon+'</span><span class="bt">'+esc(b.title)+'</span></div>';
   }).join('');
+  // top-row tiles flip their tooltip downward so it is never clipped by the panel edge
+  var badges = host.querySelectorAll('.badge');
+  if (badges.length){
+    var topY = badges[0].offsetTop;
+    badges.forEach(function(el){ if (el.offsetTop <= topY + 1) el.classList.add('tip-below'); });
+  }
 }
 
 document.getElementById('prevDay').onclick = function(){ goToDay(-1); };

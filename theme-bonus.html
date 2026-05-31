@@ -437,8 +437,10 @@
   }
   .tr-head #trophiesClose:hover{transform:translate(-2px,-2px); box-shadow:5px 5px 0 0 var(--ink); background:var(--orange); color:var(--paper)}
   .tr-head #trophiesClose:active{transform:translate(2px,2px); box-shadow:1px 1px 0 0 var(--ink)}
-  .tr-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px}
+  /* padding-top: room so a top-row tooltip (drawn above its badge) isn't clipped by the scroll area */
+  .tr-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px; padding-top:40px}
   .tr-grid .badge{
+    position:relative;
     display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center;
     padding:14px 10px; border-radius:13px;
     border:var(--bw) solid var(--ink);
@@ -458,6 +460,39 @@
     background:var(--paper-2); opacity:.5; filter:grayscale(1);
     box-shadow:1.5px 1.5px 0 0 rgba(20,17,13,.3);
   }
+
+  /* ---------- trophy tooltip (riso/neo-brutalist sticker) ---------- */
+  .tr-grid .badge[data-tip]{ z-index:1; }
+  .tr-grid .badge[data-tip]:hover{ z-index:62; }
+  .tr-grid .badge[data-tip]::after{
+    content:attr(data-tip);
+    position:absolute; left:50%; bottom:calc(100% + 10px);
+    transform:translateX(-50%) translateY(4px);
+    width:max-content; max-width:210px; white-space:normal; text-align:center;
+    padding:9px 12px; border-radius:10px;
+    font:600 12px/1.4 var(--sans); letter-spacing:0; text-transform:none;
+    color:var(--paper); background:var(--ink);
+    border:var(--bw) solid var(--ink); box-shadow:4px 4px 0 0 var(--orange);
+    z-index:62; opacity:0; pointer-events:none; filter:grayscale(0);
+    transition:opacity .16s ease, transform .16s ease;
+  }
+  /* little tail pointing down to the badge */
+  .tr-grid .badge[data-tip]::before{
+    content:""; position:absolute; left:50%; bottom:calc(100% + 5px);
+    transform:translateX(-50%) translateY(4px) rotate(45deg);
+    width:11px; height:11px; background:var(--ink);
+    border-right:var(--bw) solid var(--ink); border-bottom:var(--bw) solid var(--ink);
+    z-index:63; opacity:0; pointer-events:none;
+    transition:opacity .16s ease, transform .16s ease;
+  }
+  .tr-grid .badge[data-tip]:hover::after{
+    opacity:1; transform:translateX(-50%) translateY(0);
+  }
+  .tr-grid .badge[data-tip]:hover::before{
+    opacity:1; transform:translateX(-50%) translateY(0) rotate(45deg);
+  }
+  /* keep the tooltip crisp even on dimmed/grayscale locked badges */
+  .tr-grid .badge.off[data-tip]:hover{ opacity:1; filter:none; }
 
   /* ---------- dopamine: comeback banner ---------- */
   .comeback-banner{
@@ -974,7 +1009,7 @@ function renderTrophies(){
   var got=all.filter(function(b){return b.unlocked;}).length;
   var tt=document.getElementById('trophiesTitle'); if(tt) tt.textContent='Трофеи · '+got+'/'+all.length;
   host.innerHTML=all.map(function(b){
-    return '<div class="badge '+(b.unlocked?'on':'off')+'" title="'+esc(b.desc)+'"><span class="bi">'+b.icon+'</span><span class="bt">'+esc(b.title)+'</span></div>';
+    return '<div class="badge '+(b.unlocked?'on':'off')+'" data-tip="'+esc(b.title+' — '+b.desc)+'"><span class="bi">'+b.icon+'</span><span class="bt">'+esc(b.title)+'</span></div>';
   }).join('');
 }
 
