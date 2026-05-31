@@ -58,7 +58,7 @@
   <div class="eyebrow">日の出 · Sunrise · dev growth tracker</div>
   <h1>Выбери <span class="g">вкус</span>.<br>Один прогресс.</h1>
   <p class="lede">Каждая тема — самостоятельный трекер с одной и той же программой и данными. Прогресс <b>общий</b> (localStorage + <span style="font-family:var(--mono)">progress.json</span>), так что можно свободно переключаться между темами.</p>
-  <p class="lede" style="margin-top:10px">🟢 <b>Изумруд переделан</b> в стиле дорогих кухонь-на-заказ — три кандидата: <b>A · Шейкер</b>, <b>B · Рейка + орех</b>, <b>C · Мрамор-шоурум</b>. Открой их и скажи, какой станет финальным.</p>
+  <p class="lede" style="margin-top:10px">🟢 <b>Идёт выбор финалов по двум темам.</b><br><b>Неон</b> — 4 кандидата: A · Токио-сити, B · Терминал, C · Голо-стекло, D · Кислота. <b>Изумруд</b> (кухни-на-заказ) — 3 кандидата: A · Шейкер, B · Рейка+орех, C · Мрамор. Открой и скажи по каждой, какой оставить.</p>
 
   <div class="grid" id="grid"></div>
 
@@ -70,9 +70,18 @@
 
 <script>
 const THEMES = [
-  { file:'theme-neon.html', name:'Neon Cyberpunk', k:'ネオ', tag:'neon',
-    desc:'Синтвейв-HUD: near-black, неон cyan × magenta, glow, CRT-сетка. Как твоя VSCode-тема.',
-    c:['#00eaff','#a26bff','#ff2bd6'] },
+  { file:'theme-neon-city.html', name:'Неон · Токио-сити', k:'夜', tag:'neon A',
+    desc:'Блейд-раннер: неоновые вывески, отражения, дождь, виньетка. Кинематографично, муди.',
+    c:['#22e6ff','#9b6bff','#ff3d9a'] },
+  { file:'theme-neon-terminal.html', name:'Неон · Терминал', k:'端', tag:'neon B',
+    desc:'Операторская консоль: моноширинный, сканлайны, дата-ридаут, [x]-чеклисты. Сдержанно, технично.',
+    c:['#0a0f14','#36f0ff','#ffb000'] },
+  { file:'theme-neon-holo.html', name:'Неон · Голо-стекло', k:'虹', tag:'neon C',
+    desc:'Sleek-премиум: матовое стекло, голографические переливы, мягкое свечение. Apple × киберпанк.',
+    c:['#22e6ff','#bf6bff','#3ef2b6'] },
+  { file:'theme-neon-acid.html', name:'Неон · Кислота', k:'酸', tag:'neon D',
+    desc:'Кислотный брутализм: lime/magenta на чёрном, толстые контуры, крупный дерзкий шрифт. Громко.',
+    c:['#c6ff00','#00f0ff','#ff00a8'] },
   { file:'theme-japanese.html', name:'Japanese · 和', k:'和', tag:'washi',
     desc:'Традиционная Япония: васи-бумага, минтё, печать-ханко, «ma». Спокойно и дорого. Без неона.',
     c:['#1b3a5b','#8a9a5b','#d8492b'] },
