@@ -1,13 +1,8 @@
 import type { PackSource, ThemeSource } from '../ports/index.ts';
-import type { Pack, Theme } from '../domain/entities.ts';
+import type { Pack, Theme } from '../domain/entities.types.ts';
 import { PackValidator, ThemeValidator } from '../domain/validators.ts';
 import { ValidationError } from '../domain/errors.ts';
-
-export interface Rejection {
-  kind: 'pack' | 'theme';
-  id: string;
-  issues: readonly { path: string; msg: string }[];
-}
+import type { Rejection } from './window-registry.types.ts';
 
 export class WindowPluginRegistry implements PackSource, ThemeSource {
   #packs: Pack[] = [];

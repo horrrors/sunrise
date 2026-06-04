@@ -1,11 +1,10 @@
-import type { Pack } from './entities.ts';
+import type { Pack } from './entities.types.ts';
 import type { Progress } from './progress.ts';
-import type { BadgeRule } from './badge-rule.ts';
+import type { BadgeRule } from './badge-rule.types.ts';
+import type { BadgeStatus } from './badge-engine.types.ts';
 import { Streaks } from './streaks.ts';
 import { ProgressStats } from './progress-stats.ts';
 import { weekdayMon } from './dates.ts';
-
-export interface BadgeStatus { id: string; unlocked: boolean; at: string | null; }
 
 interface BadgeContext {
   longestStreak: number; daysDone: number; total: number; pct: number;

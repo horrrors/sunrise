@@ -1,7 +1,7 @@
-import type { Pack, Item } from './entities.ts';
+import type { Pack, Item } from './entities.types.ts';
 import type { Progress } from './progress.ts';
+import type { Stat } from './progress-stats.types.ts';
 
-export interface Stat { done: number; total: number; pct: number; }
 const pct = (done: number, total: number): number => (total ? Math.round((done / total) * 100) : 0);
 
 export class ProgressStats {

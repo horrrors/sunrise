@@ -1,4 +1,4 @@
-import type { Pack, Theme, Session } from '../domain/entities.ts';
+import type { Pack, Theme, Session } from '../domain/entities.types.ts';
 import type { Progress } from '../domain/progress.ts';
 
 export interface Clock {

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Streaks } from '../../src/domain/streaks.ts';
 import { Progress } from '../../src/domain/progress.ts';
-import type { ProgressData } from '../../src/domain/progress.ts';
+import type { ProgressData } from '../../src/domain/progress.types.ts';
 
 function progressOf(dates: string[]): Progress {
   const items: ProgressData['items'] = {};

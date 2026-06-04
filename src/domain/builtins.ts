@@ -1,5 +1,5 @@
-import type { BadgeRule } from './badge-rule.ts';
-import type { Theme } from './entities.ts';
+import type { BadgeRule } from './badge-rule.types.ts';
+import type { Theme } from './entities.types.ts';
 
 // String-valued UI defaults (ported from data/app-defaults.js `ui`).
 // Array-valued keys (dow/streakWords/months) are separate exports so this stays Record<string,string>.

@@ -5,34 +5,11 @@ import type {
   CalendarVM,
   TrophyVM,
   TrackColor,
-} from '../domain/view-models.ts';
+} from '../domain/view-models.types.ts';
+
+import type { RenderLabels } from './dom-renderer.types.ts';
 
 const ESC: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
-
-/**
- * Static UI label strings the renderer needs but that the VMs don't carry.
- * The controller fills these from `tracker.ui(key)` (the facade's label query),
- * so the renderer stays a pure presenter and the domain is untouched.
- */
-export interface RenderLabels {
-  todayVert: string;
-  restVert: string;
-  warmup: string;
-  reflect: string;
-  taskPlaceholder: string;
-  scheduleReview: string;
-  nextDay: string;
-  hint: string;
-  dueToday: string;
-  restToday: string;
-  overallTitle: string;
-  streakTitle: string;
-  inARow: string;
-  phasesTitle: string;
-  tracksTitle: string;
-  trophies: string;
-  newTrophy: string;
-}
 
 /**
  * Renders the Tracker's view-models into the canonical DOM hooks (ids/classes

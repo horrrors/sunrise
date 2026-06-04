@@ -1,5 +1,5 @@
 import type { ProgressStore, SessionStore } from '../ports/index.ts';
-import type { Session } from '../domain/entities.ts';
+import type { Session } from '../domain/entities.types.ts';
 import { Progress } from '../domain/progress.ts';
 import { ProgressValidator } from '../domain/validators.ts';
 

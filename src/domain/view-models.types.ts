@@ -1,4 +1,4 @@
-import type { Stat } from './progress-stats.ts';
+import type { Stat } from './progress-stats.types.ts';
 
 export interface Option {
   id: string;

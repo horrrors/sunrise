@@ -1,18 +1,7 @@
-import type { Pack, Item, Group, Track } from './entities.ts';
-import type { BadgeRule } from './badge-rule.ts';
-import type {
-  Clock,
-  Random,
-  ProgressStore,
-  SessionStore,
-  PackSource,
-  ThemeSource,
-} from '../ports/index.ts';
+import type { Pack, Item, Group, Track } from './entities.types.ts';
+import type { BadgeRule } from './badge-rule.types.ts';
+import type { TrackerDeps } from './tracker.types.ts';
 import { Progress } from './progress.ts';
-import { Streaks } from './streaks.ts';
-import { ProgressStats } from './progress-stats.ts';
-import { ReviewSchedule } from './review-schedule.ts';
-import { BadgeEngine } from './badge-engine.ts';
 import { ProgressValidator } from './validators.ts';
 import { addDays, weekdayMon } from './dates.ts';
 import type {
@@ -24,26 +13,7 @@ import type {
   CompleteResult,
   TrackColor,
   TaskVM,
-} from './view-models.ts';
-
-export interface TrackerDeps {
-  packs: PackSource;
-  themes: ThemeSource;
-  progressStore: ProgressStore;
-  sessionStore: SessionStore;
-  clock: Clock;
-  random: Random;
-  streaks: Streaks;
-  stats: ProgressStats;
-  reviews: ReviewSchedule;
-  badges: BadgeEngine;
-  defaultUi: Record<string, string>;
-  genericBadges: readonly BadgeRule[];
-  defaultDow: readonly string[];
-  defaultStreakWords: readonly string[];
-  defaultMonths: readonly string[];
-  defaultMottos: readonly string[];
-}
+} from './view-models.types.ts';
 
 const SURPRISE_CHANCE = 0.12;
 

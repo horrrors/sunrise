@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { WindowPluginRegistry } from '../../src/adapters/window-registry.ts';
-import type { Pack, Theme } from '../../src/domain/entities.ts';
+import type { Pack, Theme } from '../../src/domain/entities.types.ts';
 
 // ---------------------------------------------------------------------------
 // Fixtures

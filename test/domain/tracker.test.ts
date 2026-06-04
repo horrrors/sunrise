@@ -6,7 +6,7 @@ import { Streaks } from '../../src/domain/streaks.ts';
 import { ProgressStats } from '../../src/domain/progress-stats.ts';
 import { ReviewSchedule } from '../../src/domain/review-schedule.ts';
 import { BadgeEngine } from '../../src/domain/badge-engine.ts';
-import type { Pack, Theme, Session } from '../../src/domain/entities.ts';
+import type { Pack, Theme, Session } from '../../src/domain/entities.types.ts';
 import type {
   ProgressStore,
   SessionStore,

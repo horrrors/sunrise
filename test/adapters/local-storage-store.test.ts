@@ -2,7 +2,7 @@ import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { LocalStorageProgressStore, LocalStorageSessionStore, migrateLegacy } from '../../src/adapters/local-storage-store.ts';
 import { Progress } from '../../src/domain/progress.ts';
-import type { Item } from '../../src/domain/entities.ts';
+import type { Item } from '../../src/domain/entities.types.ts';
 
 // ---------------------------------------------------------------------------
 // Fake localStorage: Map-backed stub assigned to globalThis

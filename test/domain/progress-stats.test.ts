@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ProgressStats } from '../../src/domain/progress-stats.ts';
 import { Progress } from '../../src/domain/progress.ts';
-import type { Pack, Item } from '../../src/domain/entities.ts';
+import type { Pack, Item } from '../../src/domain/entities.types.ts';
 
 const PACK: Pack = {
   schema: 'sunrise.pack/v1', id: 't', name: 'T', version: '1.0.0',
