@@ -1,0 +1,1701 @@
+"use strict";
+(() => {
+  // src/domain/progress.ts
+  var Progress = class _Progress {
+    #items;
+    #reviews;
+    #badges;
+    #lastSurprise;
+    constructor(data) {
+      this.#items = data.items;
+      this.#reviews = data.reviews;
+      this.#badges = data.badges;
+      this.#lastSurprise = data.lastSurprise;
+    }
+    static empty() {
+      return new _Progress({ schema: "sunrise.progress/v1", items: {}, reviews: [], badges: {}, lastSurprise: null });
+    }
+    toJSON() {
+      return structuredClone({ schema: "sunrise.progress/v1", items: this.#items, reviews: this.#reviews, badges: this.#badges, lastSurprise: this.#lastSurprise });
+    }
+    #ensure(itemId) {
+      let it = this.#items[itemId];
+      if (!it) {
+        it = { tasks: {}, reflection: "", completedAt: null, completedHour: null };
+        this.#items[itemId] = it;
+      }
+      return it;
+    }
+    isItemComplete(item) {
+      if (item.rest || !item.tasks || item.tasks.length === 0) return false;
+      const st = this.#items[item.id];
+      if (!st) return false;
+      return item.tasks.every((t) => st.tasks?.[t.id] === true);
+    }
+    setTaskDone(item, taskId, done, today, hour) {
+      const st = this.#ensure(item.id);
+      if (done) st.tasks[taskId] = true;
+      else delete st.tasks[taskId];
+      if (this.isItemComplete(item)) {
+        if (!st.completedAt) {
+          st.completedAt = today;
+          st.completedHour = hour;
+        }
+      } else {
+        st.completedAt = null;
+        st.completedHour = null;
+      }
+    }
+    setReflection(itemId, text) {
+      this.#ensure(itemId).reflection = text;
+    }
+    reflection(itemId) {
+      return this.#items[itemId]?.reflection ?? "";
+    }
+    taskChecked(itemId, taskId) {
+      return this.#items[itemId]?.tasks?.[taskId] === true;
+    }
+    completedDates() {
+      const set = /* @__PURE__ */ new Set();
+      for (const id of Object.keys(this.#items)) {
+        const c = this.#items[id]?.completedAt;
+        if (c) set.add(c);
+      }
+      return [...set].sort();
+    }
+    completedHours() {
+      const out = [];
+      for (const id of Object.keys(this.#items)) {
+        const it = this.#items[id];
+        if (it && it.completedAt != null && it.completedHour != null) out.push(it.completedHour);
+      }
+      return out;
+    }
+    completedCount() {
+      return Object.keys(this.#items).filter((id) => this.#items[id]?.completedAt).length;
+    }
+    reflectionCount() {
+      let n = 0;
+      for (const id of Object.keys(this.#items)) {
+        const r = this.#items[id]?.reflection;
+        if (r && r.trim()) n++;
+      }
+      return n;
+    }
+    get reviewList() {
+      return this.#reviews;
+    }
+    scheduleReview(itemId, today) {
+      this.#reviews = this.#reviews.filter((r) => r.itemId !== itemId);
+      this.#reviews.push({ itemId, lastDate: today, stage: 0 });
+    }
+    advanceReview(itemId, today, maxStage) {
+      const r = this.#reviews.find((x) => x.itemId === itemId);
+      if (r) {
+        r.lastDate = today;
+        r.stage = Math.min(r.stage + 1, maxStage);
+      }
+    }
+    ownedBadges() {
+      return this.#badges;
+    }
+    isBadgeOwned(id) {
+      return this.#badges[id] !== void 0;
+    }
+    awardBadge(id, at) {
+      if (!this.#badges[id]) this.#badges[id] = { at };
+    }
+    badgeAt(id) {
+      return this.#badges[id]?.at ?? null;
+    }
+    get lastSurprise() {
+      return this.#lastSurprise;
+    }
+    setLastSurprise(s) {
+      this.#lastSurprise = s;
+    }
+  };
+
+  // src/domain/dates.ts
+  function ms(s) {
+    const [y, m, d] = s.split("-").map(Number);
+    return Date.UTC(y, m - 1, d);
+  }
+  function addDays(s, n) {
+    const dt = new Date(ms(s));
+    dt.setUTCDate(dt.getUTCDate() + n);
+    return dt.toISOString().slice(0, 10);
+  }
+  function diffDays(a, b) {
+    return Math.round((ms(b) - ms(a)) / 864e5);
+  }
+  function weekdayMon(s) {
+    return (diffDays("2024-01-01", s) % 7 + 7) % 7;
+  }
+
+  // src/domain/streaks.ts
+  var Streaks = class {
+    current(progress, today) {
+      const set = new Set(progress.completedDates());
+      if (set.size === 0) return 0;
+      let cursor;
+      if (set.has(today)) cursor = today;
+      else if (set.has(addDays(today, -1))) cursor = addDays(today, -1);
+      else return 0;
+      let n = 0;
+      while (set.has(cursor)) {
+        n++;
+        cursor = addDays(cursor, -1);
+      }
+      return n;
+    }
+    longest(progress) {
+      const dates = progress.completedDates();
+      if (dates.length === 0) return 0;
+      let best = 1, cur = 1;
+      for (let i = 1; i < dates.length; i++) {
+        if (diffDays(dates[i - 1], dates[i]) === 1) cur++;
+        else cur = 1;
+        if (cur > best) best = cur;
+      }
+      return best;
+    }
+    hasComeback(progress) {
+      const dates = progress.completedDates();
+      for (let i = 1; i < dates.length; i++) if (diffDays(dates[i - 1], dates[i]) >= 2) return true;
+      return false;
+    }
+  };
+
+  // src/domain/progress-stats.ts
+  var pct = (done, total) => total ? Math.round(done / total * 100) : 0;
+  var ProgressStats = class {
+    #all(pack) {
+      return pack.groups.flatMap((g) => [...g.items]);
+    }
+    tracks(pack) {
+      const s = /* @__PURE__ */ new Set();
+      for (const it of this.#all(pack)) if (!it.rest) s.add(it.track);
+      return [...s];
+    }
+    overall(pack, progress) {
+      let done = 0, total = 0;
+      for (const it of this.#all(pack)) {
+        if (it.rest) continue;
+        total++;
+        if (progress.isItemComplete(it)) done++;
+      }
+      return { done, total, pct: pct(done, total) };
+    }
+    byTrack(pack, progress) {
+      const acc = {};
+      for (const it of this.#all(pack)) {
+        if (it.rest) continue;
+        this.#bump(acc, it.track, progress.isItemComplete(it));
+      }
+      return this.#finalize(acc);
+    }
+    byPhase(pack, progress) {
+      const acc = {};
+      for (const g of pack.groups) {
+        if (g.phase == null) continue;
+        for (const it of g.items) {
+          if (it.rest) continue;
+          this.#bump(acc, g.phase, progress.isItemComplete(it));
+        }
+      }
+      return this.#finalize(acc);
+    }
+    countTasks(pack, progress, track) {
+      let n = 0;
+      for (const it of this.#all(pack)) {
+        if (track && it.track !== track) continue;
+        for (const t of it.tasks ?? []) if (progress.taskChecked(it.id, t.id)) n++;
+      }
+      return n;
+    }
+    completedGroups(pack, progress) {
+      let n = 0;
+      for (const g of pack.groups) {
+        const work = g.items.filter((it) => !it.rest);
+        if (work.length && work.every((it) => progress.isItemComplete(it))) n++;
+      }
+      return n;
+    }
+    #bump(acc, key, done) {
+      const a = acc[key] ?? (acc[key] = { done: 0, total: 0, pct: 0 });
+      a.total++;
+      if (done) a.done++;
+    }
+    #finalize(acc) {
+      for (const k of Object.keys(acc)) {
+        const a = acc[k];
+        a.pct = pct(a.done, a.total);
+      }
+      return acc;
+    }
+  };
+
+  // src/domain/review-schedule.ts
+  var REVIEW_INTERVALS = [1, 3, 7, 16];
+  var MAX_STAGE = REVIEW_INTERVALS.length - 1;
+  var ReviewSchedule = class {
+    due(progress, today) {
+      return progress.reviewList.filter((r) => {
+        const stage = Math.min(Math.max(r.stage, 0), MAX_STAGE);
+        return diffDays(r.lastDate, today) >= REVIEW_INTERVALS[stage];
+      }).map((r) => r.itemId);
+    }
+    schedule(progress, itemId, today) {
+      progress.scheduleReview(itemId, today);
+    }
+    complete(progress, itemId, today) {
+      progress.advanceReview(itemId, today, MAX_STAGE);
+    }
+  };
+
+  // src/domain/badge-engine.ts
+  var inHourRange = (h, from, to) => from <= to ? h >= from && h < to : h >= from || h < to;
+  var BadgeEngine = class {
+    #streaks;
+    #stats;
+    constructor(streaks, stats) {
+      this.#streaks = streaks;
+      this.#stats = stats;
+    }
+    #context(pack, progress) {
+      const overall = this.#stats.overall(pack, progress);
+      const byTrack = this.#stats.byTrack(pack, progress);
+      const byPhase = this.#stats.byPhase(pack, progress);
+      const byId = new Map(pack.groups.flatMap((g) => g.items).map((it) => [it.id, it]));
+      return {
+        longestStreak: this.#streaks.longest(progress),
+        daysDone: overall.done,
+        total: overall.total,
+        pct: overall.pct,
+        reflections: progress.reflectionCount(),
+        groupsComplete: this.#stats.completedGroups(pack, progress),
+        hasComeback: this.#streaks.hasComeback(progress),
+        tracks: this.#stats.tracks(pack),
+        dates: progress.completedDates(),
+        hours: progress.completedHours(),
+        tasks: (track) => this.#stats.countTasks(pack, progress, track),
+        trackDone: (track) => byTrack[track]?.done ?? 0,
+        trackPct: (track) => byTrack[track]?.pct ?? 0,
+        phasePct: (phase) => byPhase[phase]?.pct ?? 0,
+        itemComplete: (id) => {
+          const it = byId.get(id);
+          return it ? progress.isItemComplete(it) : false;
+        }
+      };
+    }
+    #passes(rule, c) {
+      switch (rule.type) {
+        case "streak":
+          return c.longestStreak >= rule.gte;
+        case "days-done":
+          return c.daysDone >= rule.gte;
+        case "percent":
+          return c.pct >= rule.gte;
+        case "all-done":
+          return c.total > 0 && c.daysDone === c.total;
+        case "tasks-done":
+          return c.tasks(rule.track) >= rule.gte;
+        case "reflections":
+          return c.reflections >= rule.gte;
+        case "groups-complete":
+          return c.groupsComplete >= rule.gte;
+        case "track-complete":
+          return c.trackPct(rule.track) === 100;
+        case "phase-complete":
+          return c.phasePct(rule.phase) === 100;
+        case "item-complete":
+          return c.itemComplete(rule.item);
+        case "all-tracks":
+          return c.tracks.length > 0 && c.tracks.every((t) => c.trackDone(t) >= rule.eachGte);
+        case "weekday":
+          return c.dates.some((d) => rule.days.includes(weekdayMon(d) + 1));
+        case "hour-range":
+          return c.hours.some((h) => inHourRange(h, rule.from, rule.to));
+        case "comeback":
+          return c.hasComeback;
+        default: {
+          const _exhaustive = rule;
+          return _exhaustive;
+        }
+      }
+    }
+    #dedupe(rules) {
+      const idx = /* @__PURE__ */ new Map();
+      const out = [];
+      for (const r of rules) {
+        const at = idx.get(r.id);
+        if (at !== void 0) out[at] = r;
+        else {
+          idx.set(r.id, out.length);
+          out.push(r);
+        }
+      }
+      return out;
+    }
+    evaluate(pack, progress, rules) {
+      const ctx = this.#context(pack, progress);
+      return this.#dedupe(rules).map((r) => ({
+        id: r.id,
+        unlocked: progress.isBadgeOwned(r.id) || this.#passes(r, ctx),
+        at: progress.badgeAt(r.id)
+      }));
+    }
+    sync(pack, progress, rules, today) {
+      const ctx = this.#context(pack, progress);
+      const unlocked = [];
+      for (const r of this.#dedupe(rules)) {
+        if (!progress.isBadgeOwned(r.id) && this.#passes(r, ctx)) {
+          progress.awardBadge(r.id, today);
+          unlocked.push(r.id);
+        }
+      }
+      return unlocked;
+    }
+  };
+
+  // src/domain/errors.ts
+  var ValidationError = class extends Error {
+    issues;
+    constructor(issues) {
+      super(issues.map((i) => `${i.path}: ${i.msg}`).join("; ") || "validation failed");
+      this.name = "ValidationError";
+      this.issues = issues;
+    }
+  };
+  var ImportError = class extends Error {
+    constructor(message) {
+      super(message);
+      this.name = "ImportError";
+    }
+  };
+
+  // src/domain/validators.ts
+  function typeOf(v) {
+    return Array.isArray(v) ? "array" : v === null ? "null" : typeof v;
+  }
+  function check(value, schema, path, errors) {
+    if (value === void 0 || value === null) {
+      if (schema.required) errors.push({ path, msg: "required" });
+      return;
+    }
+    const t = typeOf(value);
+    if (schema.type && t !== schema.type) {
+      errors.push({ path, msg: `expected ${schema.type}, got ${t}` });
+      return;
+    }
+    if (schema.type === "string" && schema.pattern && !schema.pattern.test(value)) {
+      errors.push({ path, msg: "invalid format" });
+    }
+    if (schema.type === "array") {
+      const arr = value;
+      if (schema.min != null && arr.length < schema.min) {
+        errors.push({ path, msg: `expected >= ${schema.min} items` });
+      }
+      if (schema.of) arr.forEach((v, i) => check(v, schema.of, `${path}[${i}]`, errors));
+    }
+    if (schema.type === "object" && schema.props) {
+      const obj = value;
+      for (const k in schema.props) {
+        check(obj[k], schema.props[k], path ? `${path}.${k}` : k, errors);
+      }
+    }
+  }
+  var ID = { type: "string", required: true, pattern: /^[a-z0-9][a-z0-9-]*$/ };
+  var THEME_SCHEMA = {
+    type: "object",
+    required: true,
+    props: {
+      schema: { type: "string", required: true },
+      id: ID,
+      name: { type: "string", required: true },
+      version: { type: "string", required: true },
+      cssHref: { type: "string", required: true }
+    }
+  };
+  var TASK = {
+    type: "object",
+    props: { id: ID, text: { type: "string", required: true }, guidance: { type: "string" } }
+  };
+  var RES = {
+    type: "object",
+    props: { label: { type: "string", required: true }, note: { type: "string", required: true } }
+  };
+  var ITEM = {
+    type: "object",
+    props: {
+      id: ID,
+      track: { type: "string", required: true },
+      title: { type: "string" },
+      warmup: { type: "string" },
+      reflectPrompt: { type: "string" },
+      tasks: { type: "array", of: TASK },
+      resources: { type: "array", of: RES },
+      rest: { type: "boolean" }
+    }
+  };
+  var GROUP = {
+    type: "object",
+    props: {
+      id: ID,
+      title: { type: "string", required: true },
+      phase: { type: "string" },
+      theme: { type: "string" },
+      items: { type: "array", required: true, min: 1, of: ITEM }
+    }
+  };
+  var TRACK = {
+    type: "object",
+    props: {
+      id: ID,
+      label: { type: "string", required: true },
+      icon: { type: "string" },
+      color: { type: "string" },
+      reviewable: { type: "boolean" }
+    }
+  };
+  var PHASE = { type: "object", props: { id: ID, title: { type: "string", required: true } } };
+  var BADGE = {
+    type: "object",
+    props: {
+      id: ID,
+      title: { type: "string", required: true },
+      desc: { type: "string" },
+      icon: { type: "string" },
+      type: { type: "string", required: true }
+    }
+  };
+  var PACK_SCHEMA = {
+    type: "object",
+    required: true,
+    props: {
+      schema: { type: "string", required: true },
+      id: ID,
+      name: { type: "string", required: true },
+      version: { type: "string", required: true },
+      locale: { type: "string" },
+      settings: { type: "object" },
+      tracks: { type: "array", required: true, min: 1, of: TRACK },
+      phases: { type: "array", of: PHASE },
+      groups: { type: "array", required: true, min: 1, of: GROUP },
+      badges: { type: "array", of: BADGE },
+      mottos: { type: "array", of: { type: "string" } },
+      surprises: { type: "array", of: { type: "string" } }
+    }
+  };
+  var BADGE_PARAMS = {
+    streak: { gte: "number" },
+    "days-done": { gte: "number" },
+    percent: { gte: "number" },
+    "all-done": {},
+    "tasks-done": { gte: "number", track: "string?" },
+    reflections: { gte: "number" },
+    "groups-complete": { gte: "number" },
+    "track-complete": { track: "string" },
+    "phase-complete": { phase: "string" },
+    "item-complete": { item: "string" },
+    "all-tracks": { eachGte: "number" },
+    weekday: { days: "number[]" },
+    "hour-range": { from: "number", to: "number" },
+    comeback: {}
+  };
+  function uniq(list, keyFn, label, errors) {
+    const seen = /* @__PURE__ */ new Set();
+    list.forEach((x, i) => {
+      const k = keyFn(x);
+      if (k == null) return;
+      if (seen.has(k)) errors.push({ path: `${label}[${i}]`, msg: `duplicate id "${k}"` });
+      seen.add(k);
+    });
+  }
+  function checkBadgeRule(b, path, refs, errors) {
+    const params = BADGE_PARAMS[b["type"]];
+    if (!params) {
+      errors.push({ path: `${path}.type`, msg: `unknown rule type "${String(b["type"])}"` });
+      return;
+    }
+    for (const k in params) {
+      const spec = params[k];
+      const optional = spec.endsWith("?");
+      const base = optional ? spec.slice(0, -1) : spec;
+      const v = b[k];
+      if (v === void 0) {
+        if (!optional) errors.push({ path: `${path}.${k}`, msg: "required" });
+        continue;
+      }
+      const ok = base === "number[]" ? Array.isArray(v) && v.every((n) => typeof n === "number") : typeof v === base;
+      if (!ok) errors.push({ path: `${path}.${k}`, msg: `expected ${base}` });
+    }
+    const type = b["type"];
+    const track = b["track"];
+    if ((type === "track-complete" || type === "tasks-done") && track != null && !refs.trackIds.has(track)) {
+      errors.push({ path: `${path}.track`, msg: `track "${String(track)}" not declared` });
+    }
+    const phase = b["phase"];
+    if (type === "phase-complete" && phase != null && !refs.phaseIds.has(phase)) {
+      errors.push({ path: `${path}.phase`, msg: `phase "${String(phase)}" not declared` });
+    }
+    const item = b["item"];
+    if (type === "item-complete" && item != null && !refs.itemIds.has(item)) {
+      errors.push({ path: `${path}.item`, msg: `item "${String(item)}" not declared` });
+    }
+  }
+  var PackValidator = class {
+    parse(raw) {
+      const errors = [];
+      check(raw, PACK_SCHEMA, "", errors);
+      if (errors.length) throw new ValidationError(errors);
+      const pack = raw;
+      if (pack["schema"] !== "sunrise.pack/v1") {
+        throw new ValidationError([
+          { path: "schema", msg: `unsupported contract version "${String(pack["schema"])}"` }
+        ]);
+      }
+      const tracks = pack["tracks"];
+      const phases = pack["phases"] || [];
+      const groups = pack["groups"];
+      const badges = pack["badges"] || [];
+      uniq(tracks, (t) => t["id"], "tracks", errors);
+      if (pack["phases"]) uniq(phases, (p) => p["id"], "phases", errors);
+      uniq(groups, (g) => g["id"], "groups", errors);
+      if (pack["badges"]) uniq(badges, (b) => b["id"], "badges", errors);
+      const trackIds = new Set(tracks.map((t) => t["id"]));
+      trackIds.add("rest");
+      const phaseIds = new Set(phases.map((p) => p["id"]));
+      const itemIds = /* @__PURE__ */ new Set();
+      groups.forEach((g, gi) => {
+        const gphase = g["phase"];
+        if (gphase != null && !phaseIds.has(gphase)) {
+          errors.push({ path: `groups[${gi}].phase`, msg: `phase "${String(gphase)}" not declared` });
+        }
+        const items = g["items"];
+        items.forEach((it, ii) => {
+          const p = `groups[${gi}].items[${ii}]`;
+          const itId = it["id"];
+          if (itemIds.has(itId)) errors.push({ path: `${p}.id`, msg: `duplicate item id "${itId}"` });
+          itemIds.add(itId);
+          if (!trackIds.has(it["track"])) {
+            errors.push({ path: `${p}.track`, msg: `track "${String(it["track"])}" not declared` });
+          }
+          const tids = /* @__PURE__ */ new Set();
+          const tasks = it["tasks"] || [];
+          tasks.forEach((t, ti) => {
+            const tid = t["id"];
+            if (tids.has(tid)) errors.push({ path: `${p}.tasks[${ti}].id`, msg: `duplicate task id "${tid}"` });
+            tids.add(tid);
+          });
+        });
+      });
+      badges.forEach((b, bi) => checkBadgeRule(b, `badges[${bi}]`, { trackIds, phaseIds, itemIds }, errors));
+      if (errors.length) throw new ValidationError(errors);
+      return raw;
+    }
+  };
+  var ThemeValidator = class {
+    parse(raw) {
+      const errors = [];
+      check(raw, THEME_SCHEMA, "", errors);
+      if (errors.length) throw new ValidationError(errors);
+      const theme = raw;
+      if (theme["schema"] !== "sunrise.theme/v1") {
+        throw new ValidationError([
+          { path: "schema", msg: `unsupported contract version "${String(theme["schema"])}"` }
+        ]);
+      }
+      return raw;
+    }
+  };
+  var PROGRESS_SCHEMA = {
+    type: "object",
+    required: true,
+    props: {
+      schema: { type: "string" },
+      items: { type: "object", required: true },
+      reviews: { type: "array", required: true },
+      badges: { type: "object" }
+    }
+  };
+  var isObj = (v) => typeof v === "object" && v !== null && !Array.isArray(v);
+  var ProgressValidator = class {
+    parse(raw) {
+      let data;
+      if (isObj(raw)) data = raw;
+      else throw new ValidationError([{ path: "", msg: `expected object, got ${typeOf(raw)}` }]);
+      if (data["days"] && !data["items"]) {
+        data = {
+          schema: "sunrise.progress/v1",
+          items: data["days"],
+          reviews: data["reviews"] || [],
+          badges: data["badges"] || {},
+          lastSurprise: data["lastSurprise"] || null
+        };
+      }
+      const errors = [];
+      check(data, PROGRESS_SCHEMA, "", errors);
+      if (errors.length) throw new ValidationError(errors);
+      const items = data["items"];
+      for (const id in items) {
+        const it = items[id];
+        if (!it || typeof it !== "object" || Array.isArray(it)) {
+          errors.push({ path: `items.${id}`, msg: "must be an object" });
+        }
+      }
+      const reviews = data["reviews"];
+      reviews.forEach((r, i) => {
+        const rr = r;
+        if (!rr || typeof rr !== "object" || typeof rr["itemId"] !== "string" || typeof rr["lastDate"] !== "string" || typeof rr["stage"] !== "number") {
+          errors.push({ path: `reviews[${i}]`, msg: "bad review shape" });
+        }
+      });
+      if (errors.length) throw new ValidationError(errors);
+      const rawBadges = data["badges"];
+      const badges = isObj(rawBadges) ? rawBadges : {};
+      return {
+        schema: "sunrise.progress/v1",
+        items,
+        reviews,
+        badges,
+        lastSurprise: data["lastSurprise"] || null
+      };
+    }
+    parseJson(json) {
+      let data;
+      try {
+        data = JSON.parse(json);
+      } catch {
+        throw new ImportError("Invalid JSON");
+      }
+      return this.parse(data);
+    }
+  };
+
+  // src/domain/tracker.ts
+  var SURPRISE_CHANCE = 0.12;
+  var Tracker = class {
+    #deps;
+    #pack;
+    #progress;
+    #themeId = null;
+    #currentItemId = "";
+    #rules = [];
+    #allItems = [];
+    #groupById = {};
+    #mottos = [];
+    constructor(deps) {
+      this.#deps = deps;
+    }
+    // ----- lifecycle -----------------------------------------------------------
+    init() {
+      const packs = this.#deps.packs.packs();
+      if (packs.length === 0) throw new Error("no packs registered");
+      const sess = this.#deps.sessionStore.load();
+      const pack = packs.find((p) => p.id === sess.activePackId) ?? packs[0];
+      this.#loadPack(pack.id);
+      const themes = this.#deps.themes.themes();
+      const theme = themes.find((t) => t.id === sess.themeId) ?? themes[0];
+      this.#themeId = theme ? theme.id : null;
+      this.#currentItemId = this.#defaultItemId();
+    }
+    #loadPack(packId) {
+      const packs = this.#deps.packs.packs();
+      this.#pack = packs.find((p) => p.id === packId) ?? packs[0];
+      this.#progress = this.#deps.progressStore.load(this.#pack.id);
+      this.#rules = [...this.#deps.genericBadges, ...this.#pack.badges ?? []];
+      this.#allItems = this.#pack.groups.flatMap((g) => [...g.items]);
+      this.#groupById = {};
+      for (const g of this.#pack.groups) for (const it of g.items) this.#groupById[it.id] = g;
+      this.#mottos = this.#pack.mottos && this.#pack.mottos.length ? this.#pack.mottos : this.#deps.defaultMottos;
+    }
+    #save() {
+      this.#deps.progressStore.save(this.#pack.id, this.#progress);
+    }
+    // ----- helpers -------------------------------------------------------------
+    #ui(k) {
+      const fromPack = this.#pack.ui && this.#pack.ui[k];
+      if (fromPack != null) return fromPack;
+      return this.#deps.defaultUi[k] ?? "";
+    }
+    #lbl(k, fallback) {
+      const l = this.#pack.settings && this.#pack.settings.labels;
+      const v = l && l[k];
+      return v != null ? v : this.#ui(fallback);
+    }
+    #itemOf(id) {
+      const it = this.#allItems.find((x) => x.id === id);
+      if (!it) throw new Error(`unknown item "${id}"`);
+      return it;
+    }
+    #trackMeta(id) {
+      for (const t of this.#pack.tracks) if (t.id === id) return t;
+      return { id, label: "", icon: "" };
+    }
+    #defaultItemId() {
+      const open = this.#allItems.find((it) => !it.rest && !this.#progress.isItemComplete(it));
+      return (open ?? this.#allItems[this.#allItems.length - 1]).id;
+    }
+    #itemIndex() {
+      return this.#allItems.findIndex((it) => it.id === this.#currentItemId);
+    }
+    #groupOrdinal(id) {
+      return this.#pack.groups.indexOf(this.#groupById[id]) + 1;
+    }
+    // ----- intents -------------------------------------------------------------
+    toggleTask(taskId, done) {
+      const item = this.#itemOf(this.#currentItemId);
+      const wasComplete = this.#progress.isItemComplete(item);
+      this.#progress.setTaskDone(item, taskId, done, this.#deps.clock.today(), this.#deps.clock.hour());
+      if (!wasComplete && this.#progress.isItemComplete(item)) return this.#onItemCompleted();
+      this.#save();
+      return { unlockedBadges: [] };
+    }
+    #onItemCompleted() {
+      const today = this.#deps.clock.today();
+      const unlocked = this.#deps.badges.sync(this.#pack, this.#progress, this.#rules, today);
+      let surprise;
+      if (this.#deps.random.next() < SURPRISE_CHANCE) {
+        const pool = this.#pack.surprises ?? [];
+        const msg = pool.length ? pool[Math.floor(this.#deps.random.next() * pool.length)] : void 0;
+        if (msg) {
+          this.#progress.setLastSurprise({ text: msg, at: today });
+          surprise = msg;
+        }
+      }
+      this.#save();
+      return surprise === void 0 ? { unlockedBadges: unlocked } : { unlockedBadges: unlocked, surprise };
+    }
+    setReflection(text) {
+      this.#progress.setReflection(this.#currentItemId, text);
+      this.#save();
+    }
+    selectItem(id) {
+      this.#currentItemId = id;
+    }
+    goToItem(delta) {
+      const i = this.#itemIndex();
+      const j = Math.min(Math.max(i + delta, 0), this.#allItems.length - 1);
+      if (j !== i) this.#currentItemId = this.#allItems[j].id;
+    }
+    selectPack(id) {
+      const sess = this.#deps.sessionStore.load();
+      sess.activePackId = id;
+      this.#deps.sessionStore.save(sess);
+      this.#loadPack(id);
+      this.#currentItemId = this.#defaultItemId();
+    }
+    selectTheme(id) {
+      const sess = this.#deps.sessionStore.load();
+      sess.themeId = id;
+      this.#deps.sessionStore.save(sess);
+      this.#themeId = id;
+    }
+    scheduleReviewForCurrent() {
+      const it = this.#itemOf(this.#currentItemId);
+      const g = this.#groupById[it.id];
+      const reviewId = g.id + "-" + (it.title || it.id);
+      this.#deps.reviews.schedule(this.#progress, reviewId, this.#deps.clock.today());
+      this.#save();
+    }
+    importProgress(json) {
+      const data = new ProgressValidator().parseJson(json);
+      this.#progress = new Progress(data);
+      this.#save();
+      this.#currentItemId = this.#defaultItemId();
+    }
+    exportProgress() {
+      return JSON.stringify(this.#progress.toJSON(), null, 2);
+    }
+    // ----- queries -------------------------------------------------------------
+    selectors() {
+      const packs = this.#deps.packs.packs().map((p) => ({
+        id: p.id,
+        label: p.name,
+        selected: p.id === this.#pack.id
+      }));
+      const themes = this.#deps.themes.themes().map((t) => ({
+        id: t.id,
+        label: t.name,
+        selected: t.id === this.#themeId
+      }));
+      const items = this.#allItems.map((it) => {
+        const g = this.#groupById[it.id];
+        const tl = it.rest ? this.#ui("restVert") : this.#trackMeta(it.track).label;
+        return { id: it.id, label: `${g.title} \xB7 ${tl}`, selected: it.id === this.#currentItemId };
+      });
+      return { packs, themes, items };
+    }
+    todayCard() {
+      const it = this.#itemOf(this.#currentItemId);
+      const m = this.#trackMeta(it.track);
+      const g = this.#groupById[it.id];
+      const cfg = this.#pack.settings ?? {};
+      const i = this.#itemIndex();
+      const notLast = i < this.#allItems.length - 1;
+      const phaseLabel = this.#ui("phaseLabel").replace("{p}", g.phase == null ? "" : g.phase).replace("{w}", String(this.#groupOrdinal(it.id)));
+      if (it.rest) {
+        const dueReviews = cfg.reviews ? this.#deps.reviews.due(this.#progress, this.#deps.clock.today()) : [];
+        return {
+          itemId: it.id,
+          rest: true,
+          track: it.track,
+          trackLabel: m.label,
+          trackIcon: m.icon ?? "",
+          title: this.#ui("restTitle"),
+          phaseLabel,
+          reflectPrompt: it.reflectPrompt,
+          reflection: "",
+          tasks: [],
+          resources: [],
+          reviewable: false,
+          dueReviews,
+          complete: false,
+          notLast,
+          show: { warmup: false, reflection: false, review: false }
+        };
+      }
+      const complete = this.#progress.isItemComplete(it);
+      const tasks = (it.tasks ?? []).map((t) => ({
+        id: t.id,
+        text: t.text,
+        ...t.guidance !== void 0 ? { guidance: t.guidance } : {},
+        done: this.#progress.taskChecked(it.id, t.id)
+      }));
+      const showWarmup = cfg.warmups !== false && it.warmup != null;
+      const showReflection = cfg.reflections !== false;
+      const showReview = !!(m.reviewable && cfg.reviews);
+      return {
+        itemId: it.id,
+        rest: false,
+        track: it.track,
+        trackLabel: m.label,
+        trackIcon: m.icon ?? "",
+        title: it.title ?? "",
+        phaseLabel,
+        warmup: it.warmup,
+        reflectPrompt: it.reflectPrompt,
+        reflection: this.#progress.reflection(it.id),
+        tasks,
+        resources: (it.resources ?? []).map((r) => ({ label: r.label, note: r.note })),
+        reviewable: showReview,
+        dueReviews: [],
+        complete,
+        notLast,
+        show: { warmup: showWarmup, reflection: showReflection, review: showReview }
+      };
+    }
+    dashboard() {
+      const overall = this.#deps.stats.overall(this.#pack, this.#progress);
+      const streak = this.#deps.streaks.current(this.#progress, this.#deps.clock.today());
+      const byPhase = this.#deps.stats.byPhase(this.#pack, this.#progress);
+      const byTrack = this.#deps.stats.byTrack(this.#pack, this.#progress);
+      const sw = this.#deps.defaultStreakWords;
+      const streakWord = streak === 1 ? sw[0] ?? "" : streak >= 2 && streak <= 4 ? sw[1] ?? "" : sw[2] ?? "";
+      const phaseList = this.#pack.phases ?? [];
+      const phases = phaseList.length ? phaseList.map((ph) => ({
+        id: ph.id,
+        title: ph.title || `${this.#lbl("phase", "phaseWord")} ${ph.id}`,
+        stat: byPhase[ph.id] ?? { done: 0, total: 0, pct: 0 }
+      })) : null;
+      const tracks = this.#pack.tracks.filter((t) => byTrack[t.id]).map((t) => ({ id: t.id, label: t.label, stat: byTrack[t.id] }));
+      return {
+        overall,
+        streak,
+        streakWord,
+        phases,
+        tracks,
+        daysOfLabel: this.#ui("daysOf").replace("{n}", String(overall.total))
+      };
+    }
+    calendar(monthOffset) {
+      const done = new Set(this.#progress.completedDates());
+      const today = this.#deps.clock.today();
+      const [ys, ms2] = today.split("-");
+      let y = Number(ys);
+      let m = Number(ms2) + monthOffset;
+      while (m < 1) {
+        m += 12;
+        y--;
+      }
+      while (m > 12) {
+        m -= 12;
+        y++;
+      }
+      const first = `${y}-${m < 10 ? "0" : ""}${m}-01`;
+      const start = addDays(first, -weekdayMon(first));
+      const cells = [];
+      for (let k = 0; k < 42; k++) {
+        const dd = addDays(start, k);
+        cells.push({
+          day: Number(dd.slice(8, 10)),
+          done: done.has(dd),
+          today: dd === today,
+          other: dd.slice(0, 7) !== first.slice(0, 7)
+        });
+      }
+      const months = this.#deps.defaultMonths;
+      return {
+        title: `${months[m - 1] ?? ""} ${y}`,
+        dow: [...this.#deps.defaultDow],
+        cells
+      };
+    }
+    trophies() {
+      const all = this.#deps.badges.evaluate(this.#pack, this.#progress, this.#rules);
+      return all.map((b) => {
+        const meta = this.#rules.find((r) => r.id === b.id);
+        return {
+          id: b.id,
+          title: meta?.title ?? b.id,
+          desc: meta?.desc ?? "",
+          icon: meta?.icon ?? "\u2022",
+          unlocked: b.unlocked
+        };
+      });
+    }
+    comeback() {
+      const today = this.#deps.clock.today();
+      const b = this.#deps.badges.evaluate(this.#pack, this.#progress, this.#rules).find((x) => x.id === "comeback");
+      const streak = this.#deps.streaks.current(this.#progress, today);
+      const show = !!(b && b.unlocked && streak <= 2);
+      return { show, days: this.#progress.completedCount() };
+    }
+    trackColors() {
+      const out = [];
+      for (const t of this.#pack.tracks) if (t.color) out.push({ id: t.id, color: t.color });
+      return out;
+    }
+    mottos() {
+      return this.#mottos;
+    }
+    ui(key) {
+      return this.#ui(key);
+    }
+    itemLabel() {
+      return this.#lbl("item", "weekAbbr");
+    }
+    activeThemeHref() {
+      const theme = this.#deps.themes.themes().find((t) => t.id === this.#themeId);
+      return theme ? theme.cssHref : null;
+    }
+    activeThemeId() {
+      return this.#themeId;
+    }
+    activePackId() {
+      return this.#pack.id;
+    }
+    locale() {
+      return this.#pack.locale ?? "en";
+    }
+  };
+
+  // src/domain/builtins.ts
+  var DEFAULT_UI = {
+    summaryTitle: "\u0421\u0432\u043E\u0434\u043A\u0430",
+    todayTitle: "\u0421\u0435\u0433\u043E\u0434\u043D\u044F",
+    warmup: "\u0420\u0430\u0437\u043C\u0438\u043D\u043A\u0430",
+    reflect: "\u0420\u0435\u0444\u043B\u0435\u043A\u0441\u0438\u044F",
+    export: "\u042D\u043A\u0441\u043F\u043E\u0440\u0442",
+    import: "\u0418\u043C\u043F\u043E\u0440\u0442",
+    calendar: "\u041A\u0430\u043B\u0435\u043D\u0434\u0430\u0440\u044C",
+    trophies: "\u0422\u0440\u043E\u0444\u0435\u0438",
+    nextDay: "\u0421\u043B\u0435\u0434\u0443\u044E\u0449\u0438\u0439 \u0434\u0435\u043D\u044C \u2192",
+    scheduleReview: "\uFF0B \u0417\u0430\u043F\u043B\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043F\u043E\u0432\u0442\u043E\u0440",
+    restTitle: "\u0420\u0430\u0437\u0433\u0440\u0443\u0437\u043A\u0430 / \u043F\u043E\u0432\u0442\u043E\u0440\u044B",
+    restToday: "\u041F\u043E\u0432\u0442\u043E\u0440\u043E\u0432 \u043D\u0430 \u0441\u0435\u0433\u043E\u0434\u043D\u044F \u043D\u0435\u0442. \u041E\u0442\u0434\u044B\u0445 \u0437\u0430\u0441\u043B\u0443\u0436\u0435\u043D \u{1F319}",
+    dueToday: "\u041A \u043F\u043E\u0432\u0442\u043E\u0440\u0443 \u0441\u0435\u0433\u043E\u0434\u043D\u044F",
+    overallTitle: "\u041E\u0431\u0449\u0438\u0439 \u043F\u0440\u043E\u0433\u0440\u0435\u0441\u0441",
+    streakTitle: "\u0421\u0435\u0440\u0438\u044F",
+    phasesTitle: "\u0424\u0430\u0437\u044B",
+    tracksTitle: "\u0422\u0440\u0435\u043A\u0438",
+    daysOf: "\u043F\u0440\u043E\u0439\u0434\u0435\u043D\u043E \u0434\u043D\u0435\u0439 \u0438\u0437 {n}",
+    newTrophy: "\u{1F3C6} \u041D\u043E\u0432\u044B\u0439 \u0442\u0440\u043E\u0444\u0435\u0439!",
+    comeback: "\u0421 \u0432\u043E\u0437\u0432\u0440\u0430\u0449\u0435\u043D\u0438\u0435\u043C \u2014 \u0432\u0441\u0435\u0433\u043E \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u043E {n} \u0434\u043D\u0435\u0439. \u041F\u0440\u043E\u0434\u043E\u043B\u0436\u0430\u0435\u043C.",
+    importOk: "\u041F\u0440\u043E\u0433\u0440\u0435\u0441\u0441 \u0438\u043C\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u043D.",
+    importFail: "\u0418\u043C\u043F\u043E\u0440\u0442 \u043D\u0435 \u0443\u0434\u0430\u043B\u0441\u044F: {e}\n\u0422\u0435\u043A\u0443\u0449\u0438\u0439 \u043F\u0440\u043E\u0433\u0440\u0435\u0441\u0441 \u043D\u0435 \u0438\u0437\u043C\u0435\u043D\u0451\u043D.",
+    weekAbbr: "\u041D\u0435\u0434",
+    inARow: "\u043F\u043E\u0434\u0440\u044F\u0434",
+    phaseWord: "\u0424\u0430\u0437\u0430",
+    phaseLabel: "",
+    todayVert: "TODAY",
+    restVert: "REST",
+    taskPlaceholder: "\u041A\u043E\u0440\u043E\u0442\u043A\u0430\u044F \u0437\u0430\u043C\u0435\u0442\u043A\u0430...",
+    prevDayAria: "\u041F\u0440\u0435\u0434\u044B\u0434\u0443\u0449\u0438\u0439 \u0434\u0435\u043D\u044C",
+    nextDayAria: "\u0421\u043B\u0435\u0434\u0443\u044E\u0449\u0438\u0439 \u0434\u0435\u043D\u044C",
+    theme: "\u0422\u0435\u043C\u0430",
+    pack: "\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u0430",
+    hint: "\u0427\u0442\u043E \u0441\u0447\u0438\u0442\u0430\u0435\u0442\u0441\u044F \u0441\u0438\u043B\u044C\u043D\u044B\u043C \u043E\u0442\u0432\u0435\u0442\u043E\u043C"
+  };
+  var DEFAULT_DOW = ["\u041F\u043D", "\u0412\u0442", "\u0421\u0440", "\u0427\u0442", "\u041F\u0442", "\u0421\u0431", "\u0412\u0441"];
+  var DEFAULT_STREAK_WORDS = ["\u0434\u0435\u043D\u044C", "\u0434\u043D\u044F", "\u0434\u043D\u0435\u0439"];
+  var DEFAULT_MONTHS = [
+    "\u042F\u043D\u0432\u0430\u0440\u044C",
+    "\u0424\u0435\u0432\u0440\u0430\u043B\u044C",
+    "\u041C\u0430\u0440\u0442",
+    "\u0410\u043F\u0440\u0435\u043B\u044C",
+    "\u041C\u0430\u0439",
+    "\u0418\u044E\u043D\u044C",
+    "\u0418\u044E\u043B\u044C",
+    "\u0410\u0432\u0433\u0443\u0441\u0442",
+    "\u0421\u0435\u043D\u0442\u044F\u0431\u0440\u044C",
+    "\u041E\u043A\u0442\u044F\u0431\u0440\u044C",
+    "\u041D\u043E\u044F\u0431\u0440\u044C",
+    "\u0414\u0435\u043A\u0430\u0431\u0440\u044C"
+  ];
+  var DEFAULT_MOTTOS = ["\u4E00\u6B69\u4E00\u6B69 \xB7 \u0448\u0430\u0433 \u0437\u0430 \u0448\u0430\u0433\u043E\u043C"];
+  var GENERIC_BADGES = [
+    { id: "first-light", type: "days-done", gte: 1, title: "First Light", desc: "\u041F\u0435\u0440\u0432\u044B\u0439 \u043F\u043E\u043B\u043D\u043E\u0441\u0442\u044C\u044E \u0437\u0430\u043A\u0440\u044B\u0442\u044B\u0439 \u0434\u0435\u043D\u044C", icon: "\u{1F305}" },
+    { id: "streak-3", type: "streak", gte: 3, title: "\u0420\u0430\u0437\u043E\u0433\u0440\u0435\u0432", desc: "\u0421\u0435\u0440\u0438\u044F 3 \u0434\u043D\u044F \u043F\u043E\u0434\u0440\u044F\u0434", icon: "\u{1F331}" },
+    { id: "streak-7", type: "streak", gte: 7, title: "7 \u0434\u043D\u0435\u0439", desc: "\u0421\u0435\u0440\u0438\u044F 7 \u0434\u043D\u0435\u0439 \u043F\u043E\u0434\u0440\u044F\u0434", icon: "\u{1F525}" },
+    { id: "streak-14", type: "streak", gte: 14, title: "14 \u0434\u043D\u0435\u0439", desc: "\u0421\u0435\u0440\u0438\u044F 14 \u0434\u043D\u0435\u0439 \u043F\u043E\u0434\u0440\u044F\u0434", icon: "\u{1F30B}" },
+    { id: "streak-30", type: "streak", gte: 30, title: "30 \u0434\u043D\u0435\u0439", desc: "\u0421\u0435\u0440\u0438\u044F 30 \u0434\u043D\u0435\u0439 \u043F\u043E\u0434\u0440\u044F\u0434", icon: "\u26A1" },
+    { id: "streak-100", type: "streak", gte: 100, title: "100 \u0434\u043D\u0435\u0439", desc: "\u0421\u0435\u0440\u0438\u044F 100 \u0434\u043D\u0435\u0439 \u043F\u043E\u0434\u0440\u044F\u0434", icon: "\u{1F4AF}" },
+    { id: "days-10", type: "days-done", gte: 10, title: "10 \u0434\u043D\u0435\u0439", desc: "10 \u0434\u043D\u0435\u0439 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u043E", icon: "\u{1F4C5}" },
+    { id: "days-25", type: "days-done", gte: 25, title: "25 \u0434\u043D\u0435\u0439", desc: "25 \u0434\u043D\u0435\u0439 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u043E", icon: "\u{1F5D3}\uFE0F" },
+    { id: "days-50", type: "days-done", gte: 50, title: "50 \u0434\u043D\u0435\u0439", desc: "50 \u0434\u043D\u0435\u0439 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u043E", icon: "\u{1F4C6}" },
+    { id: "halfway", type: "percent", gte: 50, title: "\u042D\u043A\u0432\u0430\u0442\u043E\u0440", desc: "\u041F\u0440\u043E\u0439\u0434\u0435\u043D\u0430 \u043F\u043E\u043B\u043E\u0432\u0438\u043D\u0430 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B", icon: "\u{1F317}" },
+    { id: "finisher", type: "all-done", title: "\u0424\u0438\u043D\u0438\u0448\u0435\u0440", desc: "\u041F\u0440\u043E\u0439\u0434\u0435\u043D\u044B \u0432\u0441\u0435 \u0434\u043D\u0438 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B", icon: "\u{1F393}" },
+    { id: "tasks-100", type: "tasks-done", gte: 100, title: "100 \u0437\u0430\u0434\u0430\u0447", desc: "100 \u0437\u0430\u0434\u0430\u0447 \u0432\u044B\u043F\u043E\u043B\u043D\u0435\u043D\u043E", icon: "\u2705" },
+    { id: "scribe-10", type: "reflections", gte: 10, title: "\u041B\u0435\u0442\u043E\u043F\u0438\u0441\u0435\u0446", desc: "10 \u0440\u0435\u0444\u043B\u0435\u043A\u0441\u0438\u0439 \u043D\u0430\u043F\u0438\u0441\u0430\u043D\u043E", icon: "\u270D\uFE0F" },
+    { id: "scribe-30", type: "reflections", gte: 30, title: "\u0425\u0440\u043E\u043D\u0438\u0441\u0442", desc: "30 \u0440\u0435\u0444\u043B\u0435\u043A\u0441\u0438\u0439 \u043D\u0430\u043F\u0438\u0441\u0430\u043D\u043E", icon: "\u{1F4DC}" },
+    { id: "perfect-week", type: "groups-complete", gte: 1, title: "\u0418\u0434\u0435\u0430\u043B\u044C\u043D\u0430\u044F \u043D\u0435\u0434\u0435\u043B\u044F", desc: "\u041D\u0435\u0434\u0435\u043B\u044F \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u0430 \u0446\u0435\u043B\u0438\u043A\u043E\u043C", icon: "\u{1F31F}" },
+    { id: "weeks-4", type: "groups-complete", gte: 4, title: "\u041C\u0435\u0441\u044F\u0446 \u0432 \u0434\u0435\u043B\u0435", desc: "4 \u043D\u0435\u0434\u0435\u043B\u0438 \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u044B \u0446\u0435\u043B\u0438\u043A\u043E\u043C", icon: "\u{1F4C8}" },
+    { id: "comeback", type: "comeback", title: "Comeback", desc: "\u0412\u0435\u0440\u043D\u0443\u043B\u0441\u044F \u043F\u043E\u0441\u043B\u0435 \u043F\u0440\u043E\u043F\u0443\u0441\u043A\u0430", icon: "\u{1FA79}" },
+    { id: "night-owl", type: "hour-range", from: 22, to: 5, title: "Night Owl", desc: "\u0417\u0430\u043A\u0440\u044B\u043B \u0434\u0435\u043D\u044C \u043F\u043E\u0441\u043B\u0435 22:00 \u0438\u043B\u0438 \u0434\u043E 5:00", icon: "\u{1F989}" },
+    { id: "early-lark", type: "hour-range", from: 5, to: 8, title: "Early Lark", desc: "\u0417\u0430\u043A\u0440\u044B\u043B \u0434\u0435\u043D\u044C \u0434\u043E 8:00 \u0443\u0442\u0440\u0430", icon: "\u{1F426}" },
+    { id: "weekend", type: "weekday", days: [6, 7], title: "\u0412\u043E\u0438\u043D \u0432\u044B\u0445\u043E\u0434\u043D\u043E\u0433\u043E", desc: "\u0417\u0430\u043A\u0440\u044B\u043B \u0434\u0435\u043D\u044C \u0432 \u0441\u0443\u0431\u0431\u043E\u0442\u0443 \u0438\u043B\u0438 \u0432\u043E\u0441\u043A\u0440\u0435\u0441\u0435\u043D\u044C\u0435", icon: "\u{1F334}" }
+  ];
+  var BUILTIN_THEMES = [
+    { schema: "sunrise.theme/v1", id: "bonus", name: "Neo-Brutalist Riso", version: "1.0.0", cssHref: "themes/bonus.css" },
+    { schema: "sunrise.theme/v1", id: "neon", name: "Neon \xB7 \u041A\u0438\u0441\u043B\u043E\u0442\u0430", version: "1.0.0", cssHref: "themes/neon.css" },
+    { schema: "sunrise.theme/v1", id: "japanese", name: "Japanese \xB7 \u548C", version: "1.0.0", cssHref: "themes/japanese.css" },
+    { schema: "sunrise.theme/v1", id: "emerald", name: "Emerald \xB7 \u041C\u0440\u0430\u043C\u043E\u0440", version: "1.0.0", cssHref: "themes/emerald.css" },
+    { schema: "sunrise.theme/v1", id: "dashboard", name: "Colorful Dashboard", version: "1.0.0", cssHref: "themes/dashboard.css" }
+  ];
+
+  // src/adapters/system-clock.ts
+  var SystemClock = class {
+    today() {
+      return (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+    }
+    // UTC date (parity)
+    hour() {
+      return (/* @__PURE__ */ new Date()).getHours();
+    }
+    // local hour (parity)
+  };
+
+  // src/adapters/math-random.ts
+  var MathRandom = class {
+    next() {
+      return Math.random();
+    }
+  };
+
+  // src/adapters/local-storage-store.ts
+  var PREFIX = "sunrise.progress.";
+  var SESSION = "sunrise.session";
+  var LEGACY = "devRoadmapState.v1";
+  var LEGACY_THEME = "sunriseTheme";
+  var LocalStorageProgressStore = class {
+    #validator = new ProgressValidator();
+    load(packId) {
+      try {
+        const raw = localStorage.getItem(PREFIX + packId);
+        if (!raw) return Progress.empty();
+        return new Progress(this.#validator.parse(JSON.parse(raw)));
+      } catch {
+        return Progress.empty();
+      }
+    }
+    save(packId, p) {
+      try {
+        localStorage.setItem(PREFIX + packId, JSON.stringify(p.toJSON(), null, 2));
+      } catch {
+      }
+    }
+  };
+  function readSession() {
+    try {
+      const raw = localStorage.getItem(SESSION);
+      const o = raw ? JSON.parse(raw) : {};
+      return o && typeof o === "object" && !Array.isArray(o) ? o : {};
+    } catch {
+      return {};
+    }
+  }
+  var LocalStorageSessionStore = class {
+    load() {
+      return readSession();
+    }
+    save(s) {
+      try {
+        localStorage.setItem(SESSION, JSON.stringify(s));
+      } catch {
+      }
+    }
+  };
+  function migrateLegacy() {
+    try {
+      const legacy = localStorage.getItem(LEGACY);
+      if (!legacy || localStorage.getItem(PREFIX + "dev-roadmap")) return;
+      const data = new ProgressValidator().parse(JSON.parse(legacy));
+      localStorage.setItem(PREFIX + "dev-roadmap", JSON.stringify(data, null, 2));
+      const sess = readSession();
+      if (!sess.activePackId) sess.activePackId = "dev-roadmap";
+      const th = localStorage.getItem(LEGACY_THEME);
+      if (th && !sess.themeId) sess.themeId = th;
+      localStorage.setItem(SESSION, JSON.stringify(sess));
+    } catch {
+    }
+  }
+
+  // src/adapters/window-registry.ts
+  var WindowPluginRegistry = class {
+    #packs = [];
+    #themes = [];
+    #rejected = [];
+    #packValidator = new PackValidator();
+    #themeValidator = new ThemeValidator();
+    packs() {
+      return [...this.#packs];
+    }
+    themes() {
+      return [...this.#themes];
+    }
+    rejected() {
+      return [...this.#rejected];
+    }
+    addBuiltinThemes(themes) {
+      this.#themes.push(...themes);
+    }
+    registerPack(raw) {
+      try {
+        this.#packs.push(this.#packValidator.parse(raw));
+      } catch (e) {
+        this.#reject("pack", raw, e);
+      }
+    }
+    registerTheme(raw) {
+      try {
+        this.#themes.push(this.#themeValidator.parse(raw));
+      } catch (e) {
+        this.#reject("theme", raw, e);
+      }
+    }
+    #reject(kind, raw, e) {
+      const id = raw && typeof raw === "object" && "id" in raw && typeof raw.id === "string" ? raw.id : "(no id)";
+      const issues = e instanceof ValidationError ? e.issues : [{ path: "", msg: String(e) }];
+      this.#rejected.push({ kind, id, issues });
+      console.error(`[sunrise] ${kind} "${id}" rejected:`, issues);
+    }
+  };
+
+  // src/adapters/dom-renderer.ts
+  var ESC = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
+  var DomRenderer = class {
+    esc(s) {
+      return String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ESC[c]);
+    }
+    $(id) {
+      return document.getElementById(id);
+    }
+    // ----- selectors -----------------------------------------------------------
+    renderSelectors(vm) {
+      this.#fillSelect("packSelect", vm.packs);
+      this.#fillSelect("themeSelect", vm.themes);
+      this.#fillSelect("daySelect", vm.items);
+    }
+    #fillSelect(id, options) {
+      const sel = this.$(id);
+      if (!sel) return;
+      sel.innerHTML = options.map(
+        (o) => '<option value="' + this.esc(o.id) + '"' + (o.selected ? " selected" : "") + ">" + this.esc(o.label) + "</option>"
+      ).join("");
+    }
+    // ----- today ---------------------------------------------------------------
+    renderToday(vm, lbl) {
+      const el = this.$("todayCard");
+      if (!el) return;
+      el.setAttribute("data-track", vm.track);
+      const phaseLabel = this.$("phaseLabel");
+      if (phaseLabel) phaseLabel.textContent = vm.phaseLabel;
+      if (vm.rest) {
+        el.innerHTML = '<div class="today-side"><span class="vert">' + this.esc(lbl.restVert) + '</span></div><div class="today-main"><h2 class="today-title">' + this.esc(vm.title) + '</h2><p class="warm"><span class="warm-i">\u263E</span> ' + this.esc(vm.reflectPrompt || "") + '</p><div class="rest-due">' + (vm.dueReviews.length ? this.esc(lbl.dueToday) + " \u2014 <b>" + this.esc(vm.dueReviews.join(" \xB7 ")) + "</b>" : this.esc(lbl.restToday)) + "</div>" + (vm.notLast ? '<button class="next-day-cta" id="nextDayCta" type="button">' + this.esc(lbl.nextDay) + "</button>" : "") + "</div>";
+        return;
+      }
+      el.innerHTML = '<div class="today-side"><span class="vert">' + this.esc(lbl.todayVert) + '</span></div><div class="today-main"><span class="trackpill"><span class="k">' + this.esc(vm.trackIcon) + "</span> " + this.esc(vm.trackLabel) + '</span><h2 class="today-title">' + this.esc(vm.title) + "</h2>" + (vm.show.warmup && vm.warmup ? '<div class="warm"><span class="warm-i">\u2726</span> <span class="muted">' + this.esc(lbl.warmup) + "</span> " + this.esc(vm.warmup) + "</div>" : "") + '<div class="tasks" id="taskList"></div>' + (vm.show.reflection ? '<div class="reflect-block"><label class="reflect-label" for="reflect"><span class="kanji">\u7701</span> ' + this.esc(lbl.reflect) + (vm.reflectPrompt ? " \u2014 " + this.esc(vm.reflectPrompt) : "") + '</label><textarea id="reflect" placeholder="' + this.esc(lbl.taskPlaceholder) + '">' + this.esc(vm.reflection || "") + "</textarea></div>" : "") + (vm.resources.length ? '<div class="res-row">' + vm.resources.map(
+        (r) => '<span class="chip"><b>' + this.esc(r.label) + "</b> " + this.esc(r.note) + "</span>"
+      ).join("") + "</div>" : "") + (vm.show.review ? '<button class="btn gold" id="markReview" type="button">' + this.esc(lbl.scheduleReview) + "</button>" : "") + (vm.complete && vm.notLast ? '<button class="next-day-cta" id="nextDayCta" type="button">' + this.esc(lbl.nextDay) + "</button>" : "") + "</div>";
+      const taskList = this.$("taskList");
+      if (taskList) {
+        taskList.innerHTML = vm.tasks.map((t, k) => {
+          const label = '<label class="task ' + (t.done ? "done" : "") + '" style="animation-delay:' + k * 55 + 'ms"><input type="checkbox" id="cb_' + this.esc(t.id) + '"' + (t.done ? " checked" : "") + '/><span class="box"></span><span class="task-text">' + this.esc(t.text) + "</span></label>";
+          if (!t.guidance) return label;
+          return '<div class="task-wrap">' + label + '<details class="task-hint"><summary>' + this.esc(lbl.hint) + '</summary><div class="task-hint-body">' + this.esc(t.guidance) + "</div></details></div>";
+        }).join("");
+      }
+    }
+    // ----- dashboard -----------------------------------------------------------
+    #bar(p) {
+      return '<div class="bar"><i style="width:' + p + '%"></i></div>';
+    }
+    renderDashboard(vm, lbl) {
+      const dash = this.$("dashboard");
+      if (!dash) return;
+      const phaseRows = (vm.phases ?? []).map(
+        (ph) => '<div class="prow"><span class="lbl"><i></i>' + this.esc(ph.title) + '</span><span class="val">' + ph.stat.done + "/" + ph.stat.total + "</span></div>" + this.#bar(ph.stat.pct)
+      ).join("");
+      const trackRows = vm.tracks.map(
+        (t) => '<div class="prow" data-track="' + this.esc(t.id) + '"><span class="lbl"><i></i>' + this.esc(t.label) + '</span><span class="val">' + t.stat.pct + '%</span></div><div class="bar" data-track="' + this.esc(t.id) + '"><i style="width:' + t.stat.pct + '%"></i></div>'
+      ).join("");
+      dash.innerHTML = '<div class="stat-card" data-kind="progress"><div class="eyebrow">' + this.esc(lbl.overallTitle) + '</div><div class="ring" style="--p:' + vm.overall.pct + '"><div><b>' + vm.overall.pct + "%</b><small>" + vm.overall.done + "/" + vm.overall.total + '</small></div></div><div class="stat-sub" style="text-align:center">' + this.esc(vm.daysOfLabel) + '</div></div><div class="stat-card" data-kind="streak"><div class="eyebrow">' + this.esc(lbl.streakTitle) + '</div><div class="flame">\u{1F525}</div><div class="streak-num">' + vm.streak + '</div><div class="stat-sub">' + this.esc(vm.streakWord) + " " + this.esc(lbl.inARow) + "</div></div>" + (vm.phases && vm.phases.length ? '<div class="stat-card" data-kind="phases"><div class="eyebrow">' + this.esc(lbl.phasesTitle) + "</div>" + phaseRows + "</div>" : "") + '<div class="stat-card" data-kind="tracks"><div class="eyebrow">' + this.esc(lbl.tracksTitle) + "</div>" + (trackRows || '<div class="muted">\u2014</div>') + "</div>";
+    }
+    // ----- comeback ------------------------------------------------------------
+    renderComeback(vm) {
+      const cb = this.$("comeback");
+      if (!cb) return;
+      if (vm.show) {
+        cb.style.display = "";
+        cb.innerHTML = "\u{1FA79} " + this.esc(vm.text);
+      } else {
+        cb.style.display = "none";
+      }
+    }
+    // ----- calendar ------------------------------------------------------------
+    renderCalendar(vm) {
+      const grid = this.$("calGrid");
+      if (!grid) return;
+      const dh = this.$("calDow");
+      if (dh) dh.innerHTML = vm.dow.map((x) => "<span>" + this.esc(x) + "</span>").join("");
+      grid.innerHTML = vm.cells.map((c) => {
+        let cls = "cday";
+        if (c.other) cls += " other";
+        if (c.done) cls += " done";
+        if (c.today) cls += " today";
+        return '<span class="' + cls + '">' + c.day + "</span>";
+      }).join("");
+      const title = this.$("calTitle");
+      if (title) title.textContent = vm.title;
+    }
+    // ----- trophies ------------------------------------------------------------
+    renderTrophies(vm, titleLabel) {
+      const host = this.$("trophiesGrid");
+      if (!host) return;
+      const got = vm.filter((b) => b.unlocked).length;
+      const title = this.$("trophiesTitle");
+      if (title) title.textContent = titleLabel + " \xB7 " + got + "/" + vm.length;
+      host.innerHTML = vm.map(
+        (b) => '<div class="badge ' + (b.unlocked ? "on" : "off") + '" data-tip="' + this.esc(b.title + " \u2014 " + (b.desc || "")) + '"><span class="bi">' + this.esc(b.icon || "\u2022") + '</span><span class="bt">' + this.esc(b.title) + "</span></div>"
+      ).join("");
+    }
+    // ----- theme & track colors ------------------------------------------------
+    applyTheme(href, id) {
+      const link = this.$("themeCss");
+      if (link) link.href = href;
+      document.documentElement.setAttribute("data-theme", id);
+    }
+    applyTrackColors(colors) {
+      for (const c of colors) {
+        document.documentElement.style.setProperty("--track-" + c.id, c.color);
+      }
+    }
+    setLang(lang) {
+      document.documentElement.lang = lang;
+    }
+    // ----- labels --------------------------------------------------------------
+    setText(id, text) {
+      const el = this.$(id);
+      if (el) el.textContent = text;
+    }
+    setAttr(id, name, value) {
+      const el = this.$(id);
+      if (el) el.setAttribute(name, value);
+    }
+    // ----- effects -------------------------------------------------------------
+    celebrate() {
+      const fx = this.$("fx");
+      if (!fx) return;
+      const flash = document.createElement("div");
+      flash.className = "fx-flash";
+      fx.appendChild(flash);
+      setTimeout(() => {
+        if (flash.parentNode) flash.parentNode.removeChild(flash);
+      }, 650);
+      for (let k = 0; k < 30; k++) {
+        const p = document.createElement("span");
+        p.className = "confetti-piece";
+        p.style.left = Math.random() * 100 + "%";
+        p.style.setProperty("--i", String(k));
+        p.style.setProperty("--dx", (Math.random() * 2 - 1).toFixed(2));
+        p.style.setProperty("--dy", Math.random().toFixed(2));
+        p.style.setProperty("--rot", Math.floor(Math.random() * 720 - 360) + "deg");
+        p.style.animationDelay = Math.random() * 0.2 + "s";
+        fx.appendChild(p);
+        setTimeout(() => {
+          if (p.parentNode) p.parentNode.removeChild(p);
+        }, 1900);
+      }
+    }
+    toast(cls, html) {
+      const fx = this.$("fx");
+      if (!fx) return;
+      const el = document.createElement("div");
+      el.className = cls;
+      el.innerHTML = html;
+      fx.appendChild(el);
+      setTimeout(() => el.classList.add("show"), 20);
+      setTimeout(() => {
+        el.classList.remove("show");
+        setTimeout(() => {
+          if (el.parentNode) el.parentNode.removeChild(el);
+        }, 400);
+      }, 3500);
+    }
+    badgeToast(newTrophyLabel, title, icon) {
+      this.toast(
+        "badge-toast",
+        '<span class="bt-i">' + this.esc(icon || "\u2022") + "</span><span>" + this.esc(newTrophyLabel) + " <b>" + this.esc(title) + "</b></span>"
+      );
+    }
+    // ----- load-fail fallback --------------------------------------------------
+    stub(message, reasons) {
+      const detail = reasons.length ? "<ul>" + reasons.map((x) => "<li>" + this.esc(x) + "</li>").join("") + "</ul>" : "";
+      document.body.innerHTML = '<div style="padding:24px;font:16px system-ui"><p>' + this.esc(message) + "</p>" + detail + "</div>";
+    }
+  };
+
+  // src/adapters/dom-controller.ts
+  var DomController = class {
+    #t;
+    #r;
+    #calOffset = 0;
+    constructor(tracker, renderer) {
+      this.#t = tracker;
+      this.#r = renderer;
+    }
+    start() {
+      this.#applyStaticLabels();
+      const href = this.#t.activeThemeHref();
+      if (href != null) this.#r.applyTheme(href, this.#t.activeThemeId() ?? "");
+      this.#r.applyTrackColors(this.#t.trackColors());
+      this.#r.setLang(this.#t.locale());
+      this.#wire();
+      this.#renderAll();
+      this.#startMotd();
+    }
+    // ----- labels --------------------------------------------------------------
+    #labels() {
+      const u = (k) => this.#t.ui(k);
+      return {
+        todayVert: u("todayVert"),
+        restVert: u("restVert"),
+        warmup: u("warmup"),
+        reflect: u("reflect"),
+        taskPlaceholder: u("taskPlaceholder"),
+        scheduleReview: u("scheduleReview"),
+        nextDay: u("nextDay"),
+        hint: u("hint"),
+        dueToday: u("dueToday"),
+        restToday: u("restToday"),
+        overallTitle: u("overallTitle"),
+        streakTitle: u("streakTitle"),
+        inARow: u("inARow"),
+        phasesTitle: u("phasesTitle"),
+        tracksTitle: u("tracksTitle"),
+        trophies: u("trophies"),
+        newTrophy: u("newTrophy")
+      };
+    }
+    #applyStaticLabels() {
+      const u = (k) => this.#t.ui(k);
+      this.#r.setText("exportBtn", u("export"));
+      this.#r.setText("importBtn", u("import"));
+      const aria = [
+        ["exportBtn", "export"],
+        ["importBtn", "import"],
+        ["calBtn", "calendar"],
+        ["trophiesBtn", "trophies"],
+        ["prevDay", "prevDayAria"],
+        ["nextDay", "nextDayAria"]
+      ];
+      for (const [id, key] of aria) this.#r.setAttr(id, "aria-label", u(key));
+      this.#r.setAttr("packSelect", "aria-label", u("pack"));
+      this.#r.setAttr("themeSelect", "aria-label", u("theme"));
+      this.#r.setAttr("daySelect", "aria-label", this.#t.itemLabel());
+      this.#r.setText("summaryTitle", u("summaryTitle"));
+      this.#r.setText("todayTitle", u("todayTitle"));
+    }
+    // ----- render --------------------------------------------------------------
+    #renderAll() {
+      const lbl = this.#labels();
+      const today = this.#t.todayCard();
+      this.#r.renderSelectors(this.#t.selectors());
+      this.#r.renderToday(today, lbl);
+      this.#r.renderDashboard(this.#t.dashboard(), lbl);
+      this.#renderComeback();
+      this.#renderTrophies();
+      this.#bindTodayHandlers(today);
+      this.#syncDayNav();
+    }
+    #renderComeback() {
+      const cb = this.#t.comeback();
+      const text = this.#t.ui("comeback").replace("{n}", String(cb.days));
+      this.#r.renderComeback({ show: cb.show, text });
+    }
+    #renderTrophies() {
+      this.#r.renderTrophies(this.#t.trophies(), this.#t.ui("trophies"));
+    }
+    #renderCalendar() {
+      this.#r.renderCalendar(this.#t.calendar(this.#calOffset));
+    }
+    // ----- today-card handlers (re-bound on every render) ----------------------
+    #bindTodayHandlers(vm) {
+      if (vm.rest) return;
+      for (const t of vm.tasks) {
+        const cb = this.#r.$("cb_" + t.id);
+        if (cb) {
+          cb.onchange = (e) => {
+            const checked = e.target.checked;
+            const was = this.#t.todayCard().complete;
+            const res = this.#t.toggleTask(t.id, checked);
+            if (!was && this.#t.todayCard().complete) {
+              this.#r.celebrate();
+              if (res.unlockedBadges.length) {
+                const tro = this.#t.trophies().find((x) => x.id === res.unlockedBadges[0]);
+                if (tro) this.#r.badgeToast(this.#t.ui("newTrophy"), tro.title, tro.icon);
+              }
+              if (res.surprise) this.#r.toast("toast", this.#r.esc(res.surprise));
+            }
+            this.#renderAll();
+          };
+        }
+      }
+      if (vm.show.reflection) {
+        const reflect = this.#r.$("reflect");
+        if (reflect) {
+          reflect.oninput = (e) => {
+            this.#t.setReflection(e.target.value);
+          };
+        }
+      }
+      if (vm.show.review) {
+        const mr = this.#r.$("markReview");
+        if (mr) {
+          mr.onclick = () => {
+            this.#t.scheduleReviewForCurrent();
+            this.#renderAll();
+          };
+        }
+      }
+    }
+    #syncDayNav() {
+      const sel = this.#t.selectors();
+      const i = sel.items.findIndex((o) => o.selected);
+      const prev = this.#r.$("prevDay");
+      const next = this.#r.$("nextDay");
+      if (prev) prev.disabled = i <= 0;
+      if (next) next.disabled = i >= sel.items.length - 1;
+      const cta = this.#r.$("nextDayCta");
+      if (cta) cta.onclick = () => this.#go(1);
+    }
+    #go(delta) {
+      this.#t.goToItem(delta);
+      this.#renderAll();
+      try {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } catch {
+      }
+    }
+    // ----- wiring (port of app.js init()) --------------------------------------
+    #wire() {
+      const pack = this.#r.$("packSelect");
+      if (pack) {
+        pack.onchange = () => {
+          this.#t.selectPack(pack.value);
+          this.#r.applyTrackColors(this.#t.trackColors());
+          this.#r.setLang(this.#t.locale());
+          this.#renderAll();
+        };
+      }
+      const theme = this.#r.$("themeSelect");
+      if (theme) {
+        theme.onchange = () => {
+          this.#t.selectTheme(theme.value);
+          const href = this.#t.activeThemeHref();
+          if (href != null) this.#r.applyTheme(href, theme.value);
+        };
+      }
+      const day = this.#r.$("daySelect");
+      if (day) {
+        day.onchange = () => {
+          this.#t.selectItem(day.value);
+          this.#renderAll();
+        };
+      }
+      const calBtn = this.#r.$("calBtn");
+      if (calBtn) {
+        calBtn.onclick = () => {
+          this.#calOffset = 0;
+          this.#renderCalendar();
+          this.#open("calModal");
+        };
+      }
+      this.#bindClose("calClose", "calModal");
+      const calPrev = this.#r.$("calPrev");
+      if (calPrev) {
+        calPrev.onclick = () => {
+          this.#calOffset--;
+          this.#renderCalendar();
+        };
+      }
+      const calNext = this.#r.$("calNext");
+      if (calNext) {
+        calNext.onclick = () => {
+          this.#calOffset++;
+          this.#renderCalendar();
+        };
+      }
+      this.#bindBackdrop("calModal");
+      const trBtn = this.#r.$("trophiesBtn");
+      if (trBtn) {
+        trBtn.onclick = () => {
+          this.#renderTrophies();
+          this.#open("trophiesModal");
+        };
+      }
+      this.#bindClose("trophiesClose", "trophiesModal");
+      this.#bindBackdrop("trophiesModal");
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          const m = document.querySelector(".modal.open");
+          if (m) m.classList.remove("open");
+        }
+      });
+      const prev = this.#r.$("prevDay");
+      if (prev) prev.onclick = () => this.#go(-1);
+      const next = this.#r.$("nextDay");
+      if (next) next.onclick = () => this.#go(1);
+      const exportBtn = this.#r.$("exportBtn");
+      if (exportBtn) {
+        exportBtn.onclick = () => {
+          const blob = new Blob([this.#t.exportProgress()], { type: "application/json" });
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = this.#t.activePackId() + "-progress.json";
+          a.click();
+          URL.revokeObjectURL(a.href);
+        };
+      }
+      const importBtn = this.#r.$("importBtn");
+      const importFile = this.#r.$("importFile");
+      if (importBtn && importFile) {
+        importBtn.onclick = () => importFile.click();
+        importFile.onchange = (e) => {
+          const f = e.target.files?.[0];
+          if (!f) return;
+          const rd = new FileReader();
+          rd.onload = () => {
+            try {
+              this.#t.importProgress(String(rd.result));
+              this.#renderAll();
+              alert(this.#t.ui("importOk"));
+            } catch (err) {
+              if (err instanceof ImportError || err instanceof ValidationError) {
+                alert(this.#t.ui("importFail").replace("{e}", err.message));
+              } else {
+                throw err;
+              }
+            }
+          };
+          rd.readAsText(f);
+          e.target.value = "";
+        };
+      }
+    }
+    #open(id) {
+      const el = this.#r.$(id);
+      if (el) el.classList.add("open");
+    }
+    #bindClose(btnId, modalId) {
+      const btn = this.#r.$(btnId);
+      if (btn) {
+        btn.onclick = () => {
+          const m = this.#r.$(modalId);
+          if (m) m.classList.remove("open");
+        };
+      }
+    }
+    #bindBackdrop(modalId) {
+      const m = this.#r.$(modalId);
+      if (m) {
+        m.onclick = (e) => {
+          if (e.target.id === modalId) m.classList.remove("open");
+        };
+      }
+    }
+    // ----- motd ----------------------------------------------------------------
+    #startMotd() {
+      const mottos = this.#t.mottos();
+      if (!mottos.length) return;
+      this.#r.setText("motd", mottos[0]);
+      if (mottos.length > 1) {
+        let i = 0;
+        setInterval(() => {
+          const el = this.#r.$("motd");
+          if (!el) return;
+          el.classList.add("motd-out");
+          setTimeout(() => {
+            i = (i + 1) % mottos.length;
+            el.textContent = mottos[i];
+            el.classList.remove("motd-out");
+          }, 600);
+        }, 6e3);
+      }
+    }
+  };
+
+  // src/main.ts
+  var registry = new WindowPluginRegistry();
+  registry.addBuiltinThemes(BUILTIN_THEMES);
+  window.SUNRISE = {
+    registerPack: (p) => registry.registerPack(p),
+    registerTheme: (t) => registry.registerTheme(t)
+  };
+  function boot() {
+    const renderer = new DomRenderer();
+    try {
+      migrateLegacy();
+      const streaks = new Streaks();
+      const stats = new ProgressStats();
+      const tracker = new Tracker({
+        packs: registry,
+        themes: registry,
+        progressStore: new LocalStorageProgressStore(),
+        sessionStore: new LocalStorageSessionStore(),
+        clock: new SystemClock(),
+        random: new MathRandom(),
+        streaks,
+        stats,
+        reviews: new ReviewSchedule(),
+        badges: new BadgeEngine(streaks, stats),
+        defaultUi: DEFAULT_UI,
+        genericBadges: GENERIC_BADGES,
+        defaultDow: DEFAULT_DOW,
+        defaultStreakWords: DEFAULT_STREAK_WORDS,
+        defaultMonths: DEFAULT_MONTHS,
+        defaultMottos: DEFAULT_MOTTOS
+      });
+      tracker.init();
+      new DomController(tracker, renderer).start();
+    } catch {
+      renderer.stub("Failed to load plugins. Check that dist/sunrise.js and data/packs/* sit next to index.html.", registry.rejected().map((r) => `${r.kind} "${r.id}": ${r.issues.map((i) => `${i.path} ${i.msg}`).join(", ")}`));
+    }
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
+})();
+//# sourceMappingURL=sunrise.js.map
