@@ -43,3 +43,24 @@ test('no legacy key -> migrate is a no-op', () => {
   const s = fakeStore();
   assert.equal(ST.migrate(s), false);
 });
+test('migrate is safe when sunrise.session holds a non-object (e.g. "null")', () => {
+  const s = fakeStore({ 'devRoadmapState.v1': LEGACY, 'sunrise.session': 'null' });
+  assert.doesNotThrow(() => ST.migrate(s));
+  assert.equal(ST.loadSession(s).activePackId, 'dev-roadmap');
+});
+test('migrate preserves per-item reflection (lossless beyond tasks/dates)', () => {
+  const s = fakeStore({ 'devRoadmapState.v1': LEGACY });
+  ST.migrate(s);
+  assert.equal(ST.loadProgress(s, 'dev-roadmap').items.w1d1.reflection, 'note');
+});
+test('migrate does not clobber an existing activePackId', () => {
+  const s = fakeStore({ 'devRoadmapState.v1': LEGACY });
+  ST.saveSession(s, { activePackId:'other-pack' });
+  assert.equal(ST.migrate(s), true);
+  assert.equal(ST.loadSession(s).activePackId, 'other-pack');
+});
+test('migrate swallows a throwing store (no boot abort)', () => {
+  const throwing = { getItem(){ throw new Error('boom'); }, setItem(){}, removeItem(){} };
+  assert.doesNotThrow(() => ST.migrate(throwing));
+  assert.equal(ST.migrate(throwing), false);
+});
