@@ -4,9 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Sunrise · 日の出</title>
-<!-- canonical default for optional section titles; themes override (e.g. bonus = bold blocks) -->
+<!-- canonical defaults for optional section titles + the per-task guidance spoiler; themes override -->
 <style>.section-title{font:600 12px ui-monospace,SFMono-Regular,monospace;letter-spacing:.18em;text-transform:uppercase;opacity:.5;margin:20px 2px 10px}
-/* canonical default for the behavioral-tick spoiler; inherits theme color/font, themes may override */
 .task-wrap{display:flex;flex-direction:column;gap:8px}
 .task-hint{font-size:13px;margin-left:6px}
 .task-hint>summary{cursor:pointer;list-style:none;opacity:.55;font-weight:600;letter-spacing:.02em;display:inline-flex;align-items:center;gap:6px;width:fit-content}
@@ -19,8 +18,9 @@
 </head>
 <body>
 <header class="app-header">
-  <div class="brand"><span class="brand-mark">日の出</span><span class="brand-name">SUNRISE</span><span class="brand-sub" id="phaseLabel"></span></div>
+  <div class="brand"><span class="brand-mark" lang="ja">日の出</span><span class="brand-name">SUNRISE</span><span class="brand-sub" id="phaseLabel"></span></div>
   <div class="toolbar">
+    <label class="field"><select id="packSelect"></select></label>
     <label class="field"><select id="themeSelect"></select></label>
     <label class="field"><select id="daySelect"></select></label>
     <button class="btn ghost" id="calBtn" type="button">📅</button>
@@ -43,14 +43,14 @@
 </main>
 <div class="foot"><span id="motd"></span></div>
 
-<div class="modal" id="calModal">
+<div class="modal" id="calModal" role="dialog" aria-modal="true" aria-labelledby="calTitle">
   <div class="modal-panel cal-panel">
     <div class="cal-head"><button id="calPrev" type="button">‹</button><div id="calTitle"></div><button id="calNext" type="button">›</button><button id="calClose" type="button">✕</button></div>
     <div class="cal-dow" id="calDow"></div>
     <div class="cal-grid" id="calGrid"></div>
   </div>
 </div>
-<div class="modal" id="trophiesModal">
+<div class="modal" id="trophiesModal" role="dialog" aria-modal="true" aria-labelledby="trophiesTitle">
   <div class="modal-panel tr-panel">
     <div class="tr-head"><div id="trophiesTitle"></div><button id="trophiesClose" type="button">✕</button></div>
     <div class="tr-grid" id="trophiesGrid"></div>
@@ -58,9 +58,13 @@
 </div>
 <div id="fx" aria-hidden="true"></div>
 
-<script src="data/curriculum.js"></script>
-<script src="data/content.js"></script>
+<script src="core/validate.js"></script>
+<script src="core/registry.js"></script>
+<script src="core/state.js"></script>
 <script src="logic.js"></script>
+<script src="data/app-defaults.js"></script>
+<script src="data/builtin-themes.js"></script>
+<script src="data/packs/dev-roadmap.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
