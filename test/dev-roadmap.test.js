@@ -27,3 +27,10 @@ test('per-task guidance carries through into pack #1', () => {
   const withGuidance = L.allItems(pack).some((it) => (it.tasks || []).some((t) => typeof t.guidance === 'string' && t.guidance.length));
   assert.ok(withGuidance, 'at least one task should carry guidance');
 });
+test('every non-rest item has at least one task, each with non-empty text', () => {
+  for (const it of L.allItems(pack)){
+    if (it.rest) continue;
+    assert.ok((it.tasks || []).length >= 1, it.id + ' has no tasks');
+    for (const t of it.tasks) assert.ok(typeof t.text === 'string' && t.text.length > 0, it.id + '/' + t.id + ' empty text');
+  }
+});
