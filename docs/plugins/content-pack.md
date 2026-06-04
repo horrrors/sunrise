@@ -7,7 +7,7 @@ A content pack is one declarative object registered via `SUNRISE.registerPack(pa
 | field | type | required | notes |
 |---|---|---|---|
 | `schema` | string | ✅ | exactly `"sunrise.pack/v1"` |
-| `id` | string | ✅ | lowercase `[a-z0-9-]`; namespaces the user's saved progress |
+| `id` | string | ✅ | lowercase `[a-z0-9-]`, must start with a letter or digit; namespaces the user's saved progress |
 | `name` | string | ✅ | shown in the pack switcher |
 | `version` | string | ✅ | e.g. `"1.0.0"` |
 | `locale` | string | — | sets `<html lang>`, e.g. `"ru"`, `"en"`, `"ja"` |
@@ -16,6 +16,7 @@ A content pack is one declarative object registered via `SUNRISE.registerPack(pa
 | `phases` | array | — | optional top grouping for the dashboard "phases" card |
 | `groups` | array | ✅ (≥1) | ordered sections, each holding items |
 | `badges` | array | — | extra achievements (declarative rules) |
+| `ui` | object | — | overrides app-default UI strings (see **UI overrides** below) |
 | `mottos` | string[] | — | footer lines; falls back to app defaults |
 | `surprises` | string[] | — | occasional congratulation messages |
 
@@ -24,7 +25,7 @@ A content pack is one declarative object registered via `SUNRISE.registerPack(pa
 ```js
 { id:"dsa", label:"Algorithms", icon:"算", color:"#e23", reviewable:true }
 ```
-- `id` ✅, `label` ✅. `icon` optional (short glyph/emoji). `color` optional **hint** — the app sets `--track-<id>` so the pack looks right under any theme; a theme may override. `reviewable` optional — items on this track show a "schedule review" button (spaced repetition).
+- `id` ✅, `label` ✅. `icon` optional (short glyph/emoji). `color` is an optional **hint**: the app applies it inline as `--track-<id>` so the pack looks right under any theme. This pack `color` takes precedence over a theme's `:root` `--track-<id>`; a theme that wants to control a track's color should style `[data-track="<id>"]` elements directly. `reviewable` optional — items on this track show a "schedule review" button (spaced repetition).
 
 ## `settings{}`
 
@@ -77,6 +78,17 @@ Example pack-specific badge:
 ```js
 { id:"capstone", title:"Capstone", desc:"Final project done", icon:"🏛️", type:"item-complete", item:"g13i6" }
 ```
+
+## UI overrides (`ui`)
+
+A pack may override any app-default UI string via a top-level `ui` object (falls back to the app defaults otherwise). The ones most worth setting per pack:
+
+- `phaseLabel` — the small header label; supports `{p}` (the current group's phase id) and `{w}` (the current group's 1-based ordinal). The app default is empty, so set this if you want a header label, e.g. `"Phase {p} · Week {w}"`.
+- `todayVert` / `restVert` — the vertical captions on the day card and rest card.
+- `hint` — the label on the per-task `guidance` spoiler (default: a localized "what counts as a strong answer").
+- `scheduleReview`, `restTitle`, `restToday`, `dueToday` — review/rest captions.
+
+Example: `ui: { phaseLabel:"Phase {p} · Week {w}", todayVert:"TODAY", restVert:"REST" }`
 
 ## Complete minimal example
 

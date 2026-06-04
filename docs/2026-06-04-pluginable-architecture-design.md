@@ -105,8 +105,10 @@ Required: `schema, id, name, version, tracks, groups`. All else optional with do
 ```js
 { id:"dsa", label:"Алгоритмы", icon:"算", color:"#e23", reviewable:true }
 ```
-- `color` is a **hint**: `app.js` sets `--track-<id>: <color>` inline so a pack looks right under *any* theme;
-  a theme may override it. This lets a brand-new pack with brand-new track ids work without a custom theme.
+- `color` is a **hint**: `app.js` sets `--track-<id>: <color>` inline so a pack looks right under *any* theme.
+  This pack `color` takes precedence over a theme's `:root` `--track-<id>`; a theme that wants to control a
+  track's color should style `[data-track="<id>"]` elements directly. This lets a brand-new pack with
+  brand-new track ids work without a custom theme.
 - `reviewable` generalizes spaced repetition (today hardcoded to `track==='dsa'`).
 
 ### 5.3 `settings{}` — structural/behavioral knobs (no hardcoded counts)

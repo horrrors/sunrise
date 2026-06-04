@@ -10,7 +10,7 @@ SUNRISE.registerTheme({ schema:"sunrise.theme/v1", id:"my-theme", name:"My Theme
 | field | type | required |
 |---|---|---|
 | `schema` | string | ✅ `"sunrise.theme/v1"` |
-| `id` | string | ✅ lowercase `[a-z0-9-]` |
+| `id` | string | ✅ lowercase `[a-z0-9-]`, must start with a letter or digit |
 | `name` | string | ✅ shown in the theme picker |
 | `version` | string | ✅ |
 | `cssHref` | string | ✅ path to the CSS file |
@@ -19,6 +19,8 @@ SUNRISE.registerTheme({ schema:"sunrise.theme/v1", id:"my-theme", name:"My Theme
 
 Define these on `:root` (or `:root[data-theme="my-theme"]`):
 `--bg, --panel, --line, --ink, --ink-dim, --ink-faint, --accent, --gold, --font-display, --font-body, --font-mono`, per-track colors `--track-<id>` (e.g. `--track-dsa`), and confetti colors `--confetti-1..4`.
+
+Note: if the active pack declares a `color` on a track, the app sets `--track-<id>` inline and that wins over your `:root` value — so a theme's `--track-<id>` is only the fallback for tracks the pack leaves uncolored. To force a track's color regardless of the pack, style `[data-track="<id>"]` elements directly.
 
 A theme must style every canonical hook in `README.md` and **must honor reduced motion**:
 ```css
