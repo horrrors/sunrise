@@ -128,7 +128,7 @@ groups: [
     items: [
       { id:"w1d1", track:"dsa", title:"Сложность + массивы + хеш-таблицы",
         warmup:"…", reflectPrompt:"…",
-        tasks:[ {id:"t1", text:"…"}, {id:"t2", text:"…"} ],
+        tasks:[ {id:"t1", text:"…", guidance:"what a strong answer looks like"}, {id:"t2", text:"…"} ],
         resources:[ {label:"Big-O", note:"bigocheatsheet.com"} ] },
       { id:"w1d7", track:"rest", rest:true, reflectPrompt:"…" }   // breather, not counted
     ] }
@@ -136,6 +136,9 @@ groups: [
 ```
 - `item` is complete when all its `tasks` are checked (unchanged semantics). `rest:true` items are
   non-trackable and excluded from all progress.
+- Each task is `{ id, text, guidance? }`. `guidance` is optional text shown as a collapsible
+  `.task-hint` spoiler under the checkbox (the "what counts as a strong answer" note); its label is the
+  app-default `ui.hint`. `.task-wrap`/`.task-hint`/`.task-hint-body` are canonical hooks themes may style.
 - `group.phase` (optional) references a `phases[].id`. A pack with no phases hides the phases card.
 - Dropped vs today: the required `week`/`dow` integer fields (they baked in the 7-day-week assumption).
 - Mapping from today's curriculum: week→group, day→item, `week.theme`→`group.theme`, `week.phase`→`group.phase`,

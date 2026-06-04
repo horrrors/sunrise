@@ -291,7 +291,7 @@ Expected: FAIL — `V.validatePack is not a function`.
 Add to `core/validate.js` (descriptors after `THEME_SCHEMA`, functions before `API`):
 
 ```js
-const _TASK  = { type:'object', props:{ id:ID, text:{ type:'string', required:true } } };
+const _TASK  = { type:'object', props:{ id:ID, text:{ type:'string', required:true }, guidance:{ type:'string' } } };
 const _RES   = { type:'object', props:{ label:{ type:'string', required:true }, note:{ type:'string', required:true } } };
 const _ITEM  = { type:'object', props:{
   id:ID, track:{ type:'string', required:true }, title:{ type:'string' },
@@ -940,7 +940,7 @@ Expected: FAIL — module not found.
       importOk:'Прогресс импортирован.', importFail:'Импорт не удался: {e}\nТекущий прогресс не изменён.',
       weekAbbr:'Нед', inARow:'подряд', phaseWord:'Фаза', phaseLabel:'', todayVert:'TODAY', restVert:'REST',
       taskPlaceholder:'Короткая заметка...', prevDayAria:'Предыдущий день', nextDayAria:'Следующий день',
-      theme:'Тема', pack:'Программа',
+      theme:'Тема', pack:'Программа', hint:'Что считается сильным ответом',
       dow:['Пн','Вт','Ср','Чт','Пт','Сб','Вс'], streakWords:['день','дня','дней'],
       months:['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],
     },
@@ -1150,6 +1150,10 @@ test('all 9 non-rest tracks present (polyglot achievable); capstone item exists'
   assert.deepEqual(L.tracksOf(pack).sort(), ['cs','db','distsys','dsa','js','node','patterns','sysdesign','ts']);
   assert.ok(L.getItem(pack, 'w13d6'));
 });
+test('per-task guidance carries through into pack #1', () => {
+  const withGuidance = L.allItems(pack).some((it) => (it.tasks || []).some((t) => typeof t.guidance === 'string' && t.guidance.length));
+  assert.ok(withGuidance, 'at least one task should carry guidance');
+});
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -1352,8 +1356,16 @@ This is the coordinated switch. After it, the browser app runs entirely on the p
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Sunrise · 日の出</title>
-<!-- canonical default for optional section titles; themes override -->
-<style>.section-title{font:600 12px ui-monospace,SFMono-Regular,monospace;letter-spacing:.18em;text-transform:uppercase;opacity:.5;margin:20px 2px 10px}</style>
+<!-- canonical defaults for optional section titles + the per-task guidance spoiler; themes override -->
+<style>.section-title{font:600 12px ui-monospace,SFMono-Regular,monospace;letter-spacing:.18em;text-transform:uppercase;opacity:.5;margin:20px 2px 10px}
+.task-wrap{display:flex;flex-direction:column;gap:8px}
+.task-hint{font-size:13px;margin-left:6px}
+.task-hint>summary{cursor:pointer;list-style:none;opacity:.55;font-weight:600;letter-spacing:.02em;display:inline-flex;align-items:center;gap:6px;width:fit-content}
+.task-hint>summary::-webkit-details-marker{display:none}
+.task-hint>summary::before{content:"\25B8";font-size:11px}
+.task-hint[open]>summary::before{content:"\25BE"}
+.task-hint[open]>summary{margin-bottom:6px}
+.task-hint-body{font-size:13px;line-height:1.55;opacity:.78;border-left:2px solid currentColor;padding-left:10px;margin-left:3px}</style>
 <link id="themeCss" rel="stylesheet" href="themes/bonus.css" />
 </head>
 <body>
@@ -1498,7 +1510,7 @@ git commit -m "feat(index): plugin load order + pack switcher + dialog/lang a11y
       ((it.resources && it.resources.length) ? '<div class="res-row">' + it.resources.map(function (r){ return '<span class="chip"><b>' + esc(r.label) + '</b> ' + esc(r.note) + '</span>'; }).join('') + '</div>' : '') +
       ((m.reviewable && cfg.reviews) ? '<button class="btn gold" id="markReview" type="button">' + esc(ui('scheduleReview')) + '</button>' : '') +
       ((complete && notLast) ? '<button class="next-day-cta" id="nextDayCta" type="button">' + esc(ui('nextDay')) + '</button>' : '') + '</div>';
-    $('taskList').innerHTML = (it.tasks || []).map(function (t, k){ var done = !!(st.tasks && st.tasks[t.id]); return '<label class="task ' + (done ? 'done' : '') + '" style="animation-delay:' + (k * 55) + 'ms"><input type="checkbox" id="cb_' + esc(t.id) + '"' + (done ? ' checked' : '') + '/><span class="box"></span><span class="task-text">' + esc(t.text) + '</span></label>'; }).join('');
+    $('taskList').innerHTML = (it.tasks || []).map(function (t, k){ var done = !!(st.tasks && st.tasks[t.id]); var label = '<label class="task ' + (done ? 'done' : '') + '" style="animation-delay:' + (k * 55) + 'ms"><input type="checkbox" id="cb_' + esc(t.id) + '"' + (done ? ' checked' : '') + '/><span class="box"></span><span class="task-text">' + esc(t.text) + '</span></label>'; if (!t.guidance) return label; return '<div class="task-wrap">' + label + '<details class="task-hint"><summary>' + esc(ui('hint')) + '</summary><div class="task-hint-body">' + esc(t.guidance) + '</div></details></div>'; }).join('');
     (it.tasks || []).forEach(function (t){ $('cb_' + t.id).onchange = function (e){ var was = L.isItemComplete(pack, progress, currentItemId); progress = L.setTaskDone(pack, progress, currentItemId, t.id, e.target.checked, todayStr(), new Date().getHours()); if (!was && L.isItemComplete(pack, progress, currentItemId)) onItemCompleted(); saveProgress(); renderAll(); }; });
     if (cfg.reflections !== false) $('reflect').oninput = function (e){ progress = L.setReflection(progress, currentItemId, e.target.value); saveProgress(); };
     if (m.reviewable && cfg.reviews) $('markReview').onclick = function (){ progress = L.scheduleReview(progress, g.id + '-' + (it.title || it.id), todayStr()); saveProgress(); renderAll(); };
@@ -1769,7 +1781,7 @@ Stable `id`/`class` hooks the app renders and themes target:
 - Header `header.app-header`: `.brand` (`.brand-mark`, `.brand-name`, `#phaseLabel`), `#packSelect`, `#themeSelect`, `#daySelect`, `#calBtn`, `#trophiesBtn`, `#exportBtn`, `#importBtn`.
 - Dashboard `#dashboard`: 4 `.stat-card` with `data-kind="progress|streak|phases|tracks"`; inside, `.eyebrow`, `.ring`, `.streak-num`, `.prow` + `.bar`.
 - Day block: `.day-rail` → `#prevDay.day-nav`, `#todayCard.today`, `#nextDay.day-nav`; `#comeback`.
-  - Inside `#todayCard`: `.trackpill`, `.today-title`, `.warm`, `#taskList` (`.task` > `input#cb_<taskId>` + `.box` + `.task-text`), `#reflect`, `.res-row .chip`, `#markReview`, `#nextDayCta`.
+  - Inside `#todayCard`: `.trackpill`, `.today-title`, `.warm`, `#taskList` (`.task` > `input#cb_<taskId>` + `.box` + `.task-text`; a task with `guidance` is wrapped in `.task-wrap` with a `.task-hint` > `.task-hint-body` spoiler), `#reflect`, `.res-row .chip`, `#markReview`, `#nextDayCta`.
   - Track-colored elements carry `data-track="<trackId>"`; **the CSS theme sets the color** via `--track-<id>`.
 - Calendar modal `#calModal.modal` (`role="dialog"`): `#calPrev`, `#calTitle`, `#calNext`, `#calClose`, `.cal-dow`, `#calGrid` (`.cday[.done|.today|.other]`).
 - Trophies modal `#trophiesModal.modal`: `#trophiesTitle`, `#trophiesClose`, `#trophiesGrid` (`.badge[.on|.off]` with `data-tip`).
@@ -1843,6 +1855,7 @@ groups: [
 ]
 ```
 - An **item** is complete when all its `tasks` are checked. `rest:true` items are breathers — not counted toward progress, no tasks. `id`s must be globally unique within the pack. `phase` on a group must reference a declared phase id.
+- A task is `{ id, text, guidance? }`. Optional `guidance` renders as a collapsible hint under the checkbox (label from the app-default `ui.hint`) — use it for "what a strong answer looks like" notes.
 
 ## `badges[]` — declarative achievement rules
 
