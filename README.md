@@ -1,10 +1,10 @@
 # Sunrise · 日の出
 
-A personal dev-growth tracker — a single, offline, **zero-build** web app that turns a long learning roadmap into one checkable day at a time, with streaks, trophies, and a calendar to keep momentum.
+A personal **goal-achievement tracker** — a single, offline, **zero-build** web app that turns any long-term goal or plan into one checkable day at a time, with streaks, trophies, and a calendar to keep momentum.
 
-It runs by **double-clicking `index.html`** — no server, no build step, no dependencies. Just vanilla JS, swappable CSS themes, and plain-data content.
+It runs by **double-clicking `index.html`** — no server, no build step, no dependencies. Just vanilla JS, swappable CSS themes, and plain-data content packs.
 
-> The shipped roadmap ("pack #1") is a 13-week / 91-day software-engineering curriculum (algorithms, JS/TS, Node, system design, patterns, distributed systems, databases, CS fundamentals) with a Russian UI and Japanese flourishes. The app itself is content-agnostic — see [Plugins](#plugins).
+> Sunrise is **goal-agnostic**: a "content pack" is any plan broken into days — a language, a fitness program, a reading list, an instrument, a course, a 30-day challenge. The bundled example pack happens to be a 13-week software-engineering curriculum (Russian UI, Japanese flourishes), but it's just one pack — load or author your own. See [Plugins](#plugins).
 
 ---
 
