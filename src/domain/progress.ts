@@ -1,5 +1,5 @@
-import type { Item } from './entities.types.ts';
-import type { ItemProgress, Review, Surprise, ProgressData } from './progress.types.ts';
+import type { Item } from './types/entities.ts';
+import type { ItemProgress, Review, Surprise, ProgressData } from './types/progress.ts';
 
 export class Progress {
   private items: Record<string, ItemProgress>;

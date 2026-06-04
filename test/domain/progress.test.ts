@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Progress } from '../../src/domain/progress.ts';
-import type { ProgressData } from '../../src/domain/progress.types.ts';
-import type { Item } from '../../src/domain/entities.types.ts';
+import type { ProgressData } from '../../src/domain/types/progress.ts';
+import type { Item } from '../../src/domain/types/entities.ts';
 
 const item: Item = { id: 'i1', track: 'dsa', title: 'A', tasks: [{ id: 't1', text: 'x' }, { id: 't2', text: 'y' }] };
 const rest: Item = { id: 'r', track: 'rest', rest: true };

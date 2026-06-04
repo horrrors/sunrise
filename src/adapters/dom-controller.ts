@@ -1,7 +1,7 @@
 import type { Tracker } from '../domain/tracker.ts';
-import type { TodayVM } from '../domain/view-models.types.ts';
+import type { TodayVM } from '../domain/types/view-models.ts';
 import type { DomRenderer } from './dom-renderer.ts';
-import type { RenderLabels } from './dom-renderer.types.ts';
+import type { RenderLabels } from './types/dom-renderer.ts';
 import { ImportError, ValidationError } from '../domain/errors.ts';
 
 /**

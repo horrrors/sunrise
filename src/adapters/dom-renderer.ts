@@ -5,8 +5,8 @@ import type {
   CalendarVM,
   TrophyVM,
   TrackColor,
-} from '../domain/view-models.types.ts';
-import type { RenderLabels } from './dom-renderer.types.ts';
+} from '../domain/types/view-models.ts';
+import type { RenderLabels } from './types/dom-renderer.ts';
 
 const ESC: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
 

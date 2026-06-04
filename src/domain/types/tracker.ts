@@ -1,4 +1,4 @@
-import type { BadgeRule } from './badge-rule.types.ts';
+import type { BadgeRule } from './badge-rule.ts';
 import type {
   Clock,
   Random,
@@ -6,11 +6,11 @@ import type {
   SessionStore,
   PackSource,
   ThemeSource,
-} from '../ports/index.ts';
-import type { Streaks } from './streaks.ts';
-import type { ProgressStats } from './progress-stats.ts';
-import type { ReviewSchedule } from './review-schedule.ts';
-import type { BadgeEngine } from './badge-engine.ts';
+} from '../../ports/index.ts';
+import type { Streaks } from '../streaks.ts';
+import type { ProgressStats } from '../progress-stats.ts';
+import type { ReviewSchedule } from '../review-schedule.ts';
+import type { BadgeEngine } from '../badge-engine.ts';
 
 export interface TrackerDeps {
   packs: PackSource;

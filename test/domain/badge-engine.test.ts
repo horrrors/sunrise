@@ -4,8 +4,8 @@ import { BadgeEngine } from '../../src/domain/badge-engine.ts';
 import { Streaks } from '../../src/domain/streaks.ts';
 import { ProgressStats } from '../../src/domain/progress-stats.ts';
 import { Progress } from '../../src/domain/progress.ts';
-import type { Pack, Item } from '../../src/domain/entities.types.ts';
-import type { BadgeRule } from '../../src/domain/badge-rule.types.ts';
+import type { Pack, Item } from '../../src/domain/types/entities.ts';
+import type { BadgeRule } from '../../src/domain/types/badge-rule.ts';
 
 const PACK: Pack = {
   schema: 'sunrise.pack/v1', id: 't', name: 'T', version: '1.0.0',

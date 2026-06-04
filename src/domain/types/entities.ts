@@ -1,4 +1,4 @@
-import type { BadgeRule } from './badge-rule.types.ts';
+import type { BadgeRule } from './badge-rule.ts';
 
 export interface Task { readonly id: string; readonly text: string; readonly guidance?: string; }
 export interface Resource { readonly label: string; readonly note: string; }

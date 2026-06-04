@@ -1,6 +1,6 @@
-import type { Pack, Item, Group, Track } from './entities.types.ts';
-import type { BadgeRule } from './badge-rule.types.ts';
-import type { TrackerDeps } from './tracker.types.ts';
+import type { Pack, Item, Group, Track } from './types/entities.ts';
+import type { BadgeRule } from './types/badge-rule.ts';
+import type { TrackerDeps } from './types/tracker.ts';
 import { Progress } from './progress.ts';
 import { ProgressValidator } from './validators.ts';
 import { addDays, weekdayMon } from './dates.ts';
@@ -13,7 +13,7 @@ import type {
   CompleteResult,
   TrackColor,
   TaskVM,
-} from './view-models.types.ts';
+} from './types/view-models.ts';
 
 const SURPRISE_CHANCE = 0.12;
 

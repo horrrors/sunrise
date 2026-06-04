@@ -1,8 +1,8 @@
 import type { PackSource, ThemeSource } from '../ports/index.ts';
-import type { Pack, Theme } from '../domain/entities.types.ts';
+import type { Pack, Theme } from '../domain/types/entities.ts';
 import { PackValidator, ThemeValidator } from '../domain/validators.ts';
 import { ValidationError } from '../domain/errors.ts';
-import type { Rejection } from './window-registry.types.ts';
+import type { Rejection } from './types/window-registry.ts';
 
 export class WindowPluginRegistry implements PackSource, ThemeSource {
   private packList: Pack[] = [];

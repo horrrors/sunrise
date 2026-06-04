@@ -1,6 +1,6 @@
-import type { Pack, Theme } from './entities.types.ts';
-import type { BadgeType } from './badge-rule.types.ts';
-import type { ProgressData } from './progress.types.ts';
+import type { Pack, Theme } from './types/entities.ts';
+import type { BadgeType } from './types/badge-rule.ts';
+import type { ProgressData } from './types/progress.ts';
 import { ValidationError, ImportError, type ValidationIssue } from './errors.ts';
 
 // Schema node for the generic structural walker (port of core/validate.js).

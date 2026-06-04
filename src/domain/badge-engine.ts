@@ -1,7 +1,7 @@
-import type { Pack } from './entities.types.ts';
+import type { Pack } from './types/entities.ts';
 import type { Progress } from './progress.ts';
-import type { BadgeRule } from './badge-rule.types.ts';
-import type { BadgeStatus } from './badge-engine.types.ts';
+import type { BadgeRule } from './types/badge-rule.ts';
+import type { BadgeStatus } from './types/badge-engine.ts';
 import { Streaks } from './streaks.ts';
 import { ProgressStats } from './progress-stats.ts';
 import { weekdayMon } from './dates.ts';
