@@ -63,3 +63,17 @@ test('later rule with same id wins (dedupe keeps last)', () => {
   const by = engine().evaluate(PACK, done(['i1']), rules).find((b) => b.id === 'first')!;
   assert.equal(by.unlocked, false); // gte:99 wins
 });
+test('true paths: phase-complete, all-tracks, item-complete, streak', () => {
+  const rules: BadgeRule[] = [
+    { id: 'p1c', type: 'phase-complete', phase: 'p1', title: 'P' },
+    { id: 'poly', type: 'all-tracks', eachGte: 1, title: 'Poly' },
+    { id: 'cap', type: 'item-complete', item: 'i2', title: 'C' },
+    { id: 'st', type: 'streak', gte: 1, title: 'S' },
+  ];
+  const p = done(['i1', 'i2']); // both tracks + both items + phase p1 complete
+  const by = Object.fromEntries(engine().evaluate(PACK, p, rules).map((b) => [b.id, b.unlocked]));
+  assert.equal(by['p1c'], true);
+  assert.equal(by['poly'], true);
+  assert.equal(by['cap'], true);
+  assert.equal(by['st'], true);
+});

@@ -35,3 +35,13 @@ test('countTasks (optionally by track), completedGroups', () => {
   assert.equal(s.countTasks(PACK, p, 'js'), 0);
   assert.equal(s.completedGroups(PACK, p), 0);
 });
+test('completedGroups counts a fully-complete non-rest group; byPhase skips phaseless groups; countTasks by track is positive', () => {
+  const s = new ProgressStats();
+  const p = Progress.empty();
+  complete(p, itemOf('g1i1')); complete(p, itemOf('g1i2')); // all non-rest items of g1
+  assert.equal(s.completedGroups(PACK, p), 1);
+  assert.equal(s.countTasks(PACK, p, 'dsa'), 2);
+  // a pack whose group has no phase → excluded from byPhase
+  const noPhase = { ...PACK, groups: [{ id: 'gx', title: 'GX', items: [{ id: 'gxi', track: 'dsa', tasks: [{ id: 't1', text: 'x' }] }] }] };
+  assert.deepEqual(s.byPhase(noPhase, Progress.empty()), {});
+});

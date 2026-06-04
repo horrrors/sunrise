@@ -34,13 +34,7 @@ export class Progress {
   }
 
   toJSON(): ProgressData {
-    return {
-      schema: 'sunrise.progress/v1',
-      items: this.#items,
-      reviews: this.#reviews,
-      badges: this.#badges,
-      lastSurprise: this.#lastSurprise,
-    };
+    return structuredClone({ schema: 'sunrise.progress/v1', items: this.#items, reviews: this.#reviews, badges: this.#badges, lastSurprise: this.#lastSurprise });
   }
 
   #ensure(itemId: string): ItemProgress {
@@ -56,7 +50,7 @@ export class Progress {
     if (item.rest || !item.tasks || item.tasks.length === 0) return false;
     const st = this.#items[item.id];
     if (!st) return false;
-    return item.tasks.every((t) => st.tasks[t.id] === true);
+    return item.tasks.every((t) => st.tasks?.[t.id] === true);
   }
 
   setTaskDone(item: Item, taskId: string, done: boolean, today: string, hour: number): void {
@@ -81,7 +75,7 @@ export class Progress {
     return this.#items[itemId]?.reflection ?? '';
   }
   taskChecked(itemId: string, taskId: string): boolean {
-    return this.#items[itemId]?.tasks[taskId] === true;
+    return this.#items[itemId]?.tasks?.[taskId] === true;
   }
 
   completedDates(): string[] {

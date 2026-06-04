@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Progress } from '../../src/domain/progress.ts';
+import type { ProgressData } from '../../src/domain/progress.ts';
 import type { Item } from '../../src/domain/entities.ts';
 
 const item: Item = { id: 'i1', track: 'dsa', title: 'A', tasks: [{ id: 't1', text: 'x' }, { id: 't2', text: 'y' }] };
@@ -60,4 +61,11 @@ test('badges: award is sticky and records date', () => {
   p.awardBadge('first-light', '2026-06-01'); // ignored — already owned
   assert.equal(p.isBadgeOwned('first-light'), true);
   assert.equal(p.badgeAt('first-light'), '2026-05-30');
+});
+test('isItemComplete/taskChecked tolerate a progress entry missing tasks (legacy/tampered)', () => {
+  const bad = { schema: 'sunrise.progress/v1', items: { i1: { reflection: '', completedAt: null, completedHour: null } }, reviews: [], badges: {}, lastSurprise: null } as unknown as ProgressData;
+  const p = new Progress(bad);
+  assert.doesNotThrow(() => p.isItemComplete(item));
+  assert.equal(p.isItemComplete(item), false);
+  assert.equal(p.taskChecked('i1', 't1'), false);
 });

@@ -23,3 +23,9 @@ test('longest streak across gaps', () => {
   assert.equal(s.longest(progressOf(['2026-05-30'])), 1);
   assert.equal(s.longest(progressOf(['2026-05-20', '2026-05-21', '2026-05-29', '2026-05-30', '2026-05-31'])), 3);
 });
+test('hasComeback: true only when a >=2-day gap exists between completions', () => {
+  const s = new Streaks();
+  assert.equal(s.hasComeback(progressOf(['2026-05-28', '2026-05-29', '2026-05-30'])), false);
+  assert.equal(s.hasComeback(progressOf(['2026-05-20', '2026-05-28'])), true);
+  assert.equal(s.hasComeback(progressOf([])), false);
+});

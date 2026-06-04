@@ -61,7 +61,7 @@ export class BadgeEngine {
       case 'weekday': return c.dates.some((d) => rule.days.includes(weekdayMon(d) + 1));
       case 'hour-range': return c.hours.some((h) => inHourRange(h, rule.from, rule.to));
       case 'comeback': return c.hasComeback;
-      default: { const _exhaustive: never = rule; return _exhaustive ? false : false; }
+      default: { const _exhaustive: never = rule; return _exhaustive; }
     }
   }
 
