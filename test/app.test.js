@@ -87,3 +87,24 @@ test('legacy v2 progress migrates on boot', () => {
   const { sandbox } = harness();
   assert.equal(typeof sandbox.SUNRISE.state.migrate, 'function');
 });
+test('guidance spoiler renders for a task that has guidance', () => {
+  const { registry, sandbox } = harness();
+  const pack = sandbox.SUNRISE.packs()[0];
+  const gItem = pack.groups.flatMap((g) => g.items).find((it) => (it.tasks || []).some((t) => t.guidance));
+  assert.ok(gItem, 'fixture has at least one guidance task');
+  registry.daySelect.value = gItem.id; registry.daySelect.onchange();
+  assert.ok((registry.taskList.innerHTML || '').includes('task-hint'), 'guidance .task-hint rendered');
+});
+test('rest-day item renders the rest branch without throwing', () => {
+  const { registry, sandbox } = harness();
+  const pack = sandbox.SUNRISE.packs()[0];
+  const restItem = pack.groups.flatMap((g) => g.items).find((it) => it.rest);
+  assert.ok(restItem, 'fixture has a rest item');
+  registry.daySelect.value = restItem.id; registry.daySelect.onchange();
+  assert.ok((registry.todayCard.innerHTML || '').includes('rest-due'), 'rest branch rendered');
+});
+test('pack switcher onchange re-renders without throwing', () => {
+  const { registry } = harness();
+  registry.packSelect.value = 'dev-roadmap'; registry.packSelect.onchange();
+  assert.ok((registry.dashboard.innerHTML || '').includes('stat-card'), 'dashboard re-rendered after pack switch');
+});
