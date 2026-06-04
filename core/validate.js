@@ -63,8 +63,8 @@ const PACK_SCHEMA = { type:'object', required:true, props:{
   mottos:{ type:'array', of:{ type:'string' } }, surprises:{ type:'array', of:{ type:'string' } } } };
 
 function _uniq(list, keyFn, label, errors){
-  const seen = {}; list.forEach((x, i) => { const k = keyFn(x); if (k == null) return;
-    if (seen[k]) errors.push({ path:`${label}[${i}]`, msg:`duplicate id "${k}"` }); seen[k] = true; });
+  const seen = new Set(); list.forEach((x, i) => { const k = keyFn(x); if (k == null) return;
+    if (seen.has(k)) errors.push({ path:`${label}[${i}]`, msg:`duplicate id "${k}"` }); seen.add(k); });
 }
 
 function _checkBadgeRule(b, path, refs, errors){
