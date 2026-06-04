@@ -15,5 +15,6 @@ export default tseslint.config(
       ],
     },
   },
+  { files: ['src/domain/dates.ts'], rules: { 'no-restricted-globals': 'off' } },
   { ignores: ['dist/', 'node_modules/', 'data/', 'themes/', 'logic.js', 'app.js', 'core/'] },
 );
