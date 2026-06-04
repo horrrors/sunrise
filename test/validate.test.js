@@ -72,3 +72,27 @@ test('validatePack: wrong contract version rejected', () => {
   assert.equal(r.ok, false);
   assert.ok(r.errors[0].msg.includes('unsupported contract version'));
 });
+
+test('validateProgress: well-formed passes', () => {
+  const p = { schema:'sunrise.progress/v1', items:{ a:{ tasks:{}, reflection:'', completedAt:null, completedHour:null } }, reviews:[], badges:{} };
+  assert.deepEqual(V.validateProgress(p), { ok:true });
+});
+test('validateProgress: null day value rejected (review robustness bug)', () => {
+  const r = V.validateProgress({ items:{ x:null }, reviews:[] });
+  assert.equal(r.ok, false);
+  assert.ok(r.errors.some(e => e.path === 'items.x'));
+});
+test('validateProgress: malformed review element rejected', () => {
+  const r = V.validateProgress({ items:{}, reviews:['oops', null] });
+  assert.equal(r.ok, false);
+  assert.ok(r.errors.some(e => /reviews\[0\]/.test(e.path)));
+});
+test('parseProgress: rejects bad JSON / bad shape; migrates legacy days->items', () => {
+  assert.equal(V.parseProgress('{x').ok, false);
+  assert.equal(V.parseProgress(JSON.stringify({ items:{ a:5 }, reviews:[] })).ok, false);
+  const legacy = JSON.stringify({ version:2, days:{ w1d1:{ tasks:{t1:true}, reflection:'', completedAt:'2026-05-30', completedHour:14 } }, reviews:[], badges:{ 'first-light':{ at:'2026-05-30' } } });
+  const r = V.parseProgress(legacy);
+  assert.equal(r.ok, true);
+  assert.ok(r.progress.items.w1d1, 'days migrated to items');
+  assert.equal(r.progress.badges['first-light'].at, '2026-05-30');
+});

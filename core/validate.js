@@ -130,7 +130,36 @@ const BADGE_RULES = {
   'comeback':        { params:{},                              test:(r,c)=> c.hasComeback },
 };
 
-const API = { check, ID, THEME_SCHEMA, validateTheme, PACK_SCHEMA, validatePack, BADGE_RULES, _inHourRange };
+const PROGRESS_SCHEMA = { type:'object', required:true, props:{
+  schema:{ type:'string' },
+  items:{ type:'object', required:true },
+  reviews:{ type:'array', required:true },
+  badges:{ type:'object' } } };
+
+function validateProgress(progress){
+  const errors = []; check(progress, PROGRESS_SCHEMA, '', errors);
+  if (errors.length) return { ok:false, errors };
+  for (const id in progress.items){ const it = progress.items[id];
+    if (!it || typeof it !== 'object' || Array.isArray(it)) errors.push({ path:`items.${id}`, msg:'must be an object' }); }
+  progress.reviews.forEach((r, i) => {
+    if (!r || typeof r !== 'object' || typeof r.itemId !== 'string' || typeof r.lastDate !== 'string' || typeof r.stage !== 'number')
+      errors.push({ path:`reviews[${i}]`, msg:'bad review shape' }); });
+  return errors.length ? { ok:false, errors } : { ok:true };
+}
+
+function serializeProgress(progress){ return JSON.stringify(progress, null, 2); }
+
+function parseProgress(jsonString){
+  let data; try { data = JSON.parse(jsonString); } catch (e){ return { ok:false, error:'Invalid JSON' }; }
+  if (!data || typeof data !== 'object') return { ok:false, error:'Not an object' };
+  if (data.days && !data.items) data = { schema:'sunrise.progress/v1', items:data.days, reviews:data.reviews || [], badges:data.badges || {}, lastSurprise:data.lastSurprise || null };
+  const v = validateProgress(data);
+  if (!v.ok) return { ok:false, error: v.errors.map(e => `${e.path}: ${e.msg}`).join('; ') };
+  const badges = (data.badges && typeof data.badges === 'object' && !Array.isArray(data.badges)) ? data.badges : {};
+  return { ok:true, progress:{ schema:'sunrise.progress/v1', items:data.items, reviews:data.reviews, badges, lastSurprise:data.lastSurprise || null } };
+}
+
+const API = { check, ID, THEME_SCHEMA, validateTheme, PACK_SCHEMA, validatePack, PROGRESS_SCHEMA, validateProgress, serializeProgress, parseProgress, BADGE_RULES, _inHourRange };
 if (typeof module !== 'undefined' && module.exports) module.exports = API;
 if (root){ root.SUNRISE = root.SUNRISE || {}; root.SUNRISE._validate = API; }
 })(typeof window !== 'undefined' ? window : globalThis);
