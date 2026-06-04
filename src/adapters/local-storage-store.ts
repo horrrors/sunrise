@@ -9,15 +9,15 @@ const LEGACY = 'devRoadmapState.v1';
 const LEGACY_THEME = 'sunriseTheme';
 
 export class LocalStorageProgressStore implements ProgressStore {
-  #validator = new ProgressValidator();
-  load(packId: string): Progress {
+  private validator = new ProgressValidator();
+  public load(packId: string): Progress {
     try {
       const raw = localStorage.getItem(PREFIX + packId);
       if (!raw) return Progress.empty();
-      return new Progress(this.#validator.parse(JSON.parse(raw)));
+      return new Progress(this.validator.parse(JSON.parse(raw)));
     } catch { return Progress.empty(); }
   }
-  save(packId: string, p: Progress): void {
+  public save(packId: string, p: Progress): void {
     try { localStorage.setItem(PREFIX + packId, JSON.stringify(p.toJSON(), null, 2)); } catch { /* quota */ }
   }
 }
@@ -31,8 +31,8 @@ function readSession(): Session {
 }
 
 export class LocalStorageSessionStore implements SessionStore {
-  load(): Session { return readSession(); }
-  save(s: Session): void { try { localStorage.setItem(SESSION, JSON.stringify(s)); } catch { /* quota */ } }
+  public load(): Session { return readSession(); }
+  public save(s: Session): void { try { localStorage.setItem(SESSION, JSON.stringify(s)); } catch { /* quota */ } }
 }
 
 export function migrateLegacy(): void {

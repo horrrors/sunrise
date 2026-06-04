@@ -6,7 +6,6 @@ import type {
   TrophyVM,
   TrackColor,
 } from '../domain/view-models.types.ts';
-
 import type { RenderLabels } from './dom-renderer.types.ts';
 
 const ESC: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
@@ -17,23 +16,23 @@ const ESC: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"
  * the only change is reading VM fields instead of recomputing via L.*.
  */
 export class DomRenderer {
-  esc(s: unknown): string {
+  public esc(s: unknown): string {
     return String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ESC[c]!);
   }
 
-  $(id: string): HTMLElement | null {
+  public $(id: string): HTMLElement | null {
     return document.getElementById(id);
   }
 
   // ----- selectors -----------------------------------------------------------
 
-  renderSelectors(vm: SelectorsVM): void {
-    this.#fillSelect('packSelect', vm.packs);
-    this.#fillSelect('themeSelect', vm.themes);
-    this.#fillSelect('daySelect', vm.items);
+  public renderSelectors(vm: SelectorsVM): void {
+    this.fillSelect('packSelect', vm.packs);
+    this.fillSelect('themeSelect', vm.themes);
+    this.fillSelect('daySelect', vm.items);
   }
 
-  #fillSelect(id: string, options: SelectorsVM['packs']): void {
+  private fillSelect(id: string, options: SelectorsVM['packs']): void {
     const sel = this.$(id);
     if (!sel) return;
     sel.innerHTML = options
@@ -52,7 +51,7 @@ export class DomRenderer {
 
   // ----- today ---------------------------------------------------------------
 
-  renderToday(vm: TodayVM, lbl: RenderLabels): void {
+  public renderToday(vm: TodayVM, lbl: RenderLabels): void {
     const el = this.$('todayCard');
     if (!el) return;
     el.setAttribute('data-track', vm.track);
@@ -173,11 +172,11 @@ export class DomRenderer {
 
   // ----- dashboard -----------------------------------------------------------
 
-  #bar(p: number): string {
+  private bar(p: number): string {
     return '<div class="bar"><i style="width:' + p + '%"></i></div>';
   }
 
-  renderDashboard(vm: DashboardVM, lbl: RenderLabels): void {
+  public renderDashboard(vm: DashboardVM, lbl: RenderLabels): void {
     const dash = this.$('dashboard');
     if (!dash) return;
     const phaseRows = (vm.phases ?? [])
@@ -190,7 +189,7 @@ export class DomRenderer {
           '/' +
           ph.stat.total +
           '</span></div>' +
-          this.#bar(ph.stat.pct),
+          this.bar(ph.stat.pct),
       )
       .join('');
     const trackRows = vm.tracks
@@ -248,7 +247,7 @@ export class DomRenderer {
 
   // ----- comeback ------------------------------------------------------------
 
-  renderComeback(vm: { show: boolean; text: string }): void {
+  public renderComeback(vm: { show: boolean; text: string }): void {
     const cb = this.$('comeback');
     if (!cb) return;
     if (vm.show) {
@@ -261,7 +260,7 @@ export class DomRenderer {
 
   // ----- calendar ------------------------------------------------------------
 
-  renderCalendar(vm: CalendarVM): void {
+  public renderCalendar(vm: CalendarVM): void {
     const grid = this.$('calGrid');
     if (!grid) return;
     const dh = this.$('calDow');
@@ -281,7 +280,7 @@ export class DomRenderer {
 
   // ----- trophies ------------------------------------------------------------
 
-  renderTrophies(vm: TrophyVM[], titleLabel: string): void {
+  public renderTrophies(vm: TrophyVM[], titleLabel: string): void {
     const host = this.$('trophiesGrid');
     if (!host) return;
     const got = vm.filter((b) => b.unlocked).length;
@@ -305,37 +304,37 @@ export class DomRenderer {
 
   // ----- theme & track colors ------------------------------------------------
 
-  applyTheme(href: string, id: string): void {
+  public applyTheme(href: string, id: string): void {
     const link = this.$('themeCss') as HTMLLinkElement | null;
     if (link) link.href = href;
     document.documentElement.setAttribute('data-theme', id);
   }
 
-  applyTrackColors(colors: TrackColor[]): void {
+  public applyTrackColors(colors: TrackColor[]): void {
     for (const c of colors) {
       document.documentElement.style.setProperty('--track-' + c.id, c.color);
     }
   }
 
-  setLang(lang: string): void {
+  public setLang(lang: string): void {
     document.documentElement.lang = lang;
   }
 
   // ----- labels --------------------------------------------------------------
 
-  setText(id: string, text: string): void {
+  public setText(id: string, text: string): void {
     const el = this.$(id);
     if (el) el.textContent = text;
   }
 
-  setAttr(id: string, name: string, value: string): void {
+  public setAttr(id: string, name: string, value: string): void {
     const el = this.$(id);
     if (el) el.setAttribute(name, value);
   }
 
   // ----- effects -------------------------------------------------------------
 
-  celebrate(): void {
+  public celebrate(): void {
     const fx = this.$('fx');
     if (!fx) return;
     const flash = document.createElement('div');
@@ -360,7 +359,7 @@ export class DomRenderer {
     }
   }
 
-  toast(cls: string, html: string): void {
+  public toast(cls: string, html: string): void {
     const fx = this.$('fx');
     if (!fx) return;
     const el = document.createElement('div');
@@ -376,7 +375,7 @@ export class DomRenderer {
     }, 3500);
   }
 
-  badgeToast(newTrophyLabel: string, title: string, icon: string): void {
+  public badgeToast(newTrophyLabel: string, title: string, icon: string): void {
     this.toast(
       'badge-toast',
       '<span class="bt-i">' +
@@ -391,7 +390,7 @@ export class DomRenderer {
 
   // ----- load-fail fallback --------------------------------------------------
 
-  stub(message: string, reasons: string[]): void {
+  public stub(message: string, reasons: string[]): void {
     const detail = reasons.length
       ? '<ul>' + reasons.map((x) => '<li>' + this.esc(x) + '</li>').join('') + '</ul>'
       : '';

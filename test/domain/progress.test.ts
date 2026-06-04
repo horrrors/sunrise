@@ -48,12 +48,12 @@ test('reviews: schedule replaces; advance clamps to maxStage', () => {
   const p = Progress.empty();
   p.scheduleReview('bfs', '2026-05-30');
   p.scheduleReview('bfs', '2026-05-31'); // replaces
-  assert.equal(p.reviewList.length, 1);
-  assert.equal(p.reviewList[0]?.stage, 0);
+  assert.equal(p.getReviewList().length, 1);
+  assert.equal(p.getReviewList()[0]?.stage, 0);
   p.advanceReview('bfs', '2026-06-01', 3);
-  assert.equal(p.reviewList[0]?.stage, 1);
+  assert.equal(p.getReviewList()[0]?.stage, 1);
   for (let i = 0; i < 9; i++) p.advanceReview('bfs', '2026-06-02', 3);
-  assert.equal(p.reviewList[0]?.stage, 3); // clamped
+  assert.equal(p.getReviewList()[0]?.stage, 3); // clamped
 });
 test('badges: award is sticky and records date', () => {
   const p = Progress.empty();

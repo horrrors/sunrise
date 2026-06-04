@@ -5,33 +5,33 @@ import { ValidationError } from '../domain/errors.ts';
 import type { Rejection } from './window-registry.types.ts';
 
 export class WindowPluginRegistry implements PackSource, ThemeSource {
-  #packs: Pack[] = [];
-  #themes: Theme[] = [];
-  #rejected: Rejection[] = [];
-  #packValidator = new PackValidator();
-  #themeValidator = new ThemeValidator();
+  private packList: Pack[] = [];
+  private themeList: Theme[] = [];
+  private rejectedList: Rejection[] = [];
+  private packValidator = new PackValidator();
+  private themeValidator = new ThemeValidator();
 
-  packs(): readonly Pack[] { return [...this.#packs]; }
-  themes(): readonly Theme[] { return [...this.#themes]; }
-  rejected(): readonly Rejection[] { return [...this.#rejected]; }
+  public packs(): readonly Pack[] { return [...this.packList]; }
+  public themes(): readonly Theme[] { return [...this.themeList]; }
+  public rejected(): readonly Rejection[] { return [...this.rejectedList]; }
 
-  addBuiltinThemes(themes: readonly Theme[]): void { this.#themes.push(...themes); }
+  public addBuiltinThemes(themes: readonly Theme[]): void { this.themeList.push(...themes); }
 
-  registerPack(raw: unknown): void {
-    try { this.#packs.push(this.#packValidator.parse(raw)); } catch (e) { this.#reject('pack', raw, e); }
+  public registerPack(raw: unknown): void {
+    try { this.packList.push(this.packValidator.parse(raw)); } catch (e) { this.reject('pack', raw, e); }
   }
 
-  registerTheme(raw: unknown): void {
-    try { this.#themes.push(this.#themeValidator.parse(raw)); } catch (e) { this.#reject('theme', raw, e); }
+  public registerTheme(raw: unknown): void {
+    try { this.themeList.push(this.themeValidator.parse(raw)); } catch (e) { this.reject('theme', raw, e); }
   }
 
-  #reject(kind: 'pack' | 'theme', raw: unknown, e: unknown): void {
+  private reject(kind: 'pack' | 'theme', raw: unknown, e: unknown): void {
     const id =
       raw && typeof raw === 'object' && 'id' in raw && typeof (raw as { id: unknown }).id === 'string'
         ? (raw as { id: string }).id
         : '(no id)';
     const issues = e instanceof ValidationError ? e.issues : [{ path: '', msg: String(e) }];
-    this.#rejected.push({ kind, id, issues });
+    this.rejectedList.push({ kind, id, issues });
     console.error(`[sunrise] ${kind} "${id}" rejected:`, issues);
   }
 }

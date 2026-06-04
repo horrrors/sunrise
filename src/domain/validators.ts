@@ -213,7 +213,7 @@ function checkBadgeRule(
 }
 
 export class PackValidator {
-  parse(raw: unknown): Pack {
+  public parse(raw: unknown): Pack {
     const errors: ValidationIssue[] = [];
     check(raw, PACK_SCHEMA, '', errors);
     if (errors.length) throw new ValidationError(errors);
@@ -265,7 +265,7 @@ export class PackValidator {
 }
 
 export class ThemeValidator {
-  parse(raw: unknown): Theme {
+  public parse(raw: unknown): Theme {
     const errors: ValidationIssue[] = [];
     check(raw, THEME_SCHEMA, '', errors);
     if (errors.length) throw new ValidationError(errors);
@@ -294,7 +294,7 @@ const isObj = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v);
 
 export class ProgressValidator {
-  parse(raw: unknown): ProgressData {
+  public parse(raw: unknown): ProgressData {
     let data: Record<string, unknown>;
     if (isObj(raw)) data = raw;
     else throw new ValidationError([{ path: '', msg: `expected object, got ${typeOf(raw)}` }]);
@@ -343,7 +343,7 @@ export class ProgressValidator {
     };
   }
 
-  parseJson(json: string): ProgressData {
+  public parseJson(json: string): ProgressData {
     let data: unknown;
     try {
       data = JSON.parse(json);

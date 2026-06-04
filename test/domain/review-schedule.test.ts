@@ -9,7 +9,7 @@ test('schedule → due after interval; complete advances; negative stage clamps 
   assert.deepEqual(rs.due(p, '2026-05-30'), []);
   assert.deepEqual(rs.due(p, '2026-05-31'), ['bfs']);
   rs.complete(p, 'bfs', '2026-05-31');
-  assert.equal(p.reviewList[0]?.stage, 1);
+  assert.equal(p.getReviewList()[0]?.stage, 1);
 });
 test('tampered negative stage still becomes due (clamp lower bound)', () => {
   const p = new Progress({ schema: 'sunrise.progress/v1', items: {}, reviews: [{ itemId: 'x', lastDate: '2026-05-01', stage: -5 }], badges: {}, lastSurprise: null });

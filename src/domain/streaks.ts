@@ -2,7 +2,7 @@ import type { Progress } from './progress.ts';
 import { addDays, diffDays } from './dates.ts';
 
 export class Streaks {
-  current(progress: Progress, today: string): number {
+  public current(progress: Progress, today: string): number {
     const set = new Set(progress.completedDates());
     if (set.size === 0) return 0;
     let cursor: string;
@@ -13,7 +13,7 @@ export class Streaks {
     while (set.has(cursor)) { n++; cursor = addDays(cursor, -1); }
     return n;
   }
-  longest(progress: Progress): number {
+  public longest(progress: Progress): number {
     const dates = progress.completedDates();
     if (dates.length === 0) return 0;
     let best = 1, cur = 1;
@@ -24,7 +24,7 @@ export class Streaks {
     }
     return best;
   }
-  hasComeback(progress: Progress): boolean {
+  public hasComeback(progress: Progress): boolean {
     const dates = progress.completedDates();
     for (let i = 1; i < dates.length; i++) if (diffDays(dates[i - 1]!, dates[i]!) >= 2) return true;
     return false;

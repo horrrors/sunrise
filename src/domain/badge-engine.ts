@@ -18,25 +18,25 @@ const inHourRange = (h: number, from: number, to: number): boolean =>
   from <= to ? h >= from && h < to : h >= from || h < to;
 
 export class BadgeEngine {
-  #streaks: Streaks;
-  #stats: ProgressStats;
-  constructor(streaks: Streaks, stats: ProgressStats) { this.#streaks = streaks; this.#stats = stats; }
+  private streaks: Streaks;
+  private stats: ProgressStats;
+  constructor(streaks: Streaks, stats: ProgressStats) { this.streaks = streaks; this.stats = stats; }
 
-  #context(pack: Pack, progress: Progress): BadgeContext {
-    const overall = this.#stats.overall(pack, progress);
-    const byTrack = this.#stats.byTrack(pack, progress);
-    const byPhase = this.#stats.byPhase(pack, progress);
+  private context(pack: Pack, progress: Progress): BadgeContext {
+    const overall = this.stats.overall(pack, progress);
+    const byTrack = this.stats.byTrack(pack, progress);
+    const byPhase = this.stats.byPhase(pack, progress);
     const byId = new Map(pack.groups.flatMap((g) => g.items).map((it) => [it.id, it] as const));
     return {
-      longestStreak: this.#streaks.longest(progress),
+      longestStreak: this.streaks.longest(progress),
       daysDone: overall.done, total: overall.total, pct: overall.pct,
       reflections: progress.reflectionCount(),
-      groupsComplete: this.#stats.completedGroups(pack, progress),
-      hasComeback: this.#streaks.hasComeback(progress),
-      tracks: this.#stats.tracks(pack),
+      groupsComplete: this.stats.completedGroups(pack, progress),
+      hasComeback: this.streaks.hasComeback(progress),
+      tracks: this.stats.tracks(pack),
       dates: progress.completedDates(),
       hours: progress.completedHours(),
-      tasks: (track) => this.#stats.countTasks(pack, progress, track),
+      tasks: (track) => this.stats.countTasks(pack, progress, track),
       trackDone: (track) => byTrack[track]?.done ?? 0,
       trackPct: (track) => byTrack[track]?.pct ?? 0,
       phasePct: (phase) => byPhase[phase]?.pct ?? 0,
@@ -44,7 +44,7 @@ export class BadgeEngine {
     };
   }
 
-  #passes(rule: BadgeRule, c: BadgeContext): boolean {
+  private passes(rule: BadgeRule, c: BadgeContext): boolean {
     switch (rule.type) {
       case 'streak': return c.longestStreak >= rule.gte;
       case 'days-done': return c.daysDone >= rule.gte;
@@ -64,7 +64,7 @@ export class BadgeEngine {
     }
   }
 
-  #dedupe(rules: readonly BadgeRule[]): BadgeRule[] {
+  private dedupe(rules: readonly BadgeRule[]): BadgeRule[] {
     const idx = new Map<string, number>();
     const out: BadgeRule[] = [];
     for (const r of rules) {
@@ -75,20 +75,20 @@ export class BadgeEngine {
     return out;
   }
 
-  evaluate(pack: Pack, progress: Progress, rules: readonly BadgeRule[]): BadgeStatus[] {
-    const ctx = this.#context(pack, progress);
-    return this.#dedupe(rules).map((r) => ({
+  public evaluate(pack: Pack, progress: Progress, rules: readonly BadgeRule[]): BadgeStatus[] {
+    const ctx = this.context(pack, progress);
+    return this.dedupe(rules).map((r) => ({
       id: r.id,
-      unlocked: progress.isBadgeOwned(r.id) || this.#passes(r, ctx),
+      unlocked: progress.isBadgeOwned(r.id) || this.passes(r, ctx),
       at: progress.badgeAt(r.id),
     }));
   }
 
-  sync(pack: Pack, progress: Progress, rules: readonly BadgeRule[], today: string): string[] {
-    const ctx = this.#context(pack, progress);
+  public sync(pack: Pack, progress: Progress, rules: readonly BadgeRule[], today: string): string[] {
+    const ctx = this.context(pack, progress);
     const unlocked: string[] = [];
-    for (const r of this.#dedupe(rules)) {
-      if (!progress.isBadgeOwned(r.id) && this.#passes(r, ctx)) {
+    for (const r of this.dedupe(rules)) {
+      if (!progress.isBadgeOwned(r.id) && this.passes(r, ctx)) {
         progress.awardBadge(r.id, today);
         unlocked.push(r.id);
       }
