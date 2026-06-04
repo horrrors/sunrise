@@ -23,6 +23,7 @@ import {
   DEFAULT_MONTHS,
   DEFAULT_MOTTOS,
 } from '../../src/domain/builtins.ts';
+import { ImportError } from '../../src/domain/errors.ts';
 
 const PACK: Pack = {
   schema: 'sunrise.pack/v1',
@@ -99,4 +100,120 @@ test('export → import round-trips', () => {
   t.toggleTask('t1', false);
   t.importProgress(json);
   assert.equal(t.todayCard().tasks[0]!.done, true);
+});
+
+test('calendar shape: 42 cells, non-empty title, today flagged', () => {
+  const { t } = makeTracker();
+  const vm = t.calendar(0);
+  assert.equal(vm.cells.length, 42);
+  assert.equal(typeof vm.title, 'string');
+  assert.ok(vm.title.length > 0);
+  assert.ok(vm.cells.some((c) => c.today)); // clock.today = '2026-05-30'
+});
+
+test('importProgress throws ImportError on bad JSON', () => {
+  const { t } = makeTracker();
+  assert.throws(
+    () => t.importProgress('{bad json'),
+    (e: unknown) => e instanceof ImportError,
+  );
+});
+
+test('surprise branch fires with zero Random', () => {
+  const store = new Map<string, Progress>();
+  const progressStore: ProgressStore = {
+    load: (id) => store.get(id) ?? Progress.empty(),
+    save: (id, p) => void store.set(id, p),
+  };
+  let session: Session = {};
+  const sessionStore: SessionStore = { load: () => session, save: (s) => void (session = s) };
+  const packWithSurprises: Pack = {
+    ...PACK,
+    surprises: ['nice work'],
+  };
+  const packs: PackSource = { packs: () => [packWithSurprises] };
+  const themes: ThemeSource = { themes: () => [THEME] };
+  const clock: Clock = { today: () => '2026-05-30', hour: () => 14 };
+  const random: Random = { next: () => 0 }; // 0 < 0.12 gate
+  const t = new Tracker({
+    packs,
+    themes,
+    progressStore,
+    sessionStore,
+    clock,
+    random,
+    streaks: new Streaks(),
+    stats: new ProgressStats(),
+    reviews: new ReviewSchedule(),
+    badges: new BadgeEngine(new Streaks(), new ProgressStats()),
+    defaultUi: DEFAULT_UI,
+    genericBadges: GENERIC_BADGES,
+    defaultDow: DEFAULT_DOW,
+    defaultStreakWords: DEFAULT_STREAK_WORDS,
+    defaultMonths: DEFAULT_MONTHS,
+    defaultMottos: DEFAULT_MOTTOS,
+  });
+  t.init();
+  const res = t.toggleTask('t1', true);
+  assert.equal(res.surprise, 'nice work');
+});
+
+test('selectPack reloads per-pack progress + resets current item', () => {
+  const PACK2: Pack = {
+    schema: 'sunrise.pack/v1',
+    id: 'p2',
+    name: 'P2',
+    version: '1.0.0',
+    tracks: [{ id: 'dsa', label: 'DSA' }],
+    groups: [
+      {
+        id: 'g2',
+        title: 'W',
+        items: [{ id: 'p2i1', track: 'dsa', title: 'B', tasks: [{ id: 't1', text: 'y' }] }],
+      },
+    ],
+  };
+  const store = new Map<string, Progress>();
+  const progressStore: ProgressStore = {
+    load: (id) => store.get(id) ?? Progress.empty(),
+    save: (id, p) => void store.set(id, p),
+  };
+  let session: Session = {};
+  const sessionStore: SessionStore = { load: () => session, save: (s) => void (session = s) };
+  const packs: PackSource = { packs: () => [PACK, PACK2] };
+  const themes: ThemeSource = { themes: () => [THEME] };
+  const clock: Clock = { today: () => '2026-05-30', hour: () => 14 };
+  const random: Random = { next: () => 0.99 };
+  const t = new Tracker({
+    packs,
+    themes,
+    progressStore,
+    sessionStore,
+    clock,
+    random,
+    streaks: new Streaks(),
+    stats: new ProgressStats(),
+    reviews: new ReviewSchedule(),
+    badges: new BadgeEngine(new Streaks(), new ProgressStats()),
+    defaultUi: DEFAULT_UI,
+    genericBadges: GENERIC_BADGES,
+    defaultDow: DEFAULT_DOW,
+    defaultStreakWords: DEFAULT_STREAK_WORDS,
+    defaultMonths: DEFAULT_MONTHS,
+    defaultMottos: DEFAULT_MOTTOS,
+  });
+  t.init();
+
+  // Complete the item in pack 1
+  t.toggleTask('t1', true);
+  assert.ok(t.todayCard().complete);
+
+  // Switch to pack 2 — current item should reset to pack 2's first item
+  t.selectPack('p2');
+  assert.equal(t.todayCard().itemId, 'p2i1');
+  assert.ok(!t.todayCard().complete); // pack 2 progress is independent
+
+  // Switch back — pack 1 progress persisted
+  t.selectPack('p');
+  assert.ok(t.todayCard().complete);
 });

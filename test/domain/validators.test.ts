@@ -95,3 +95,45 @@ test('parse rejects bad JSON via parseProgressJson', () => {
     (e: unknown) => e instanceof ValidationError || (e as Error).name === 'ImportError',
   );
 });
+
+test('badge missing required param: streak without gte → issue path badges[0].gte', () => {
+  const v = new PackValidator();
+  const bad = clone(PACK) as Record<string, unknown>;
+  bad.badges = [{ id: 'b', title: 'B', type: 'streak' }]; // missing gte
+  assert.throws(
+    () => v.parse(bad),
+    (e: unknown) =>
+      e instanceof ValidationError && e.issues.some((i) => i.path === 'badges[0].gte'),
+  );
+});
+
+test('weekday badge with non-number[] days → issue path badges[0].days', () => {
+  const v = new PackValidator();
+  const bad = clone(PACK) as Record<string, unknown>;
+  bad.badges = [{ id: 'b', title: 'B', type: 'weekday', days: 'sat' }]; // should be number[]
+  assert.throws(
+    () => v.parse(bad),
+    (e: unknown) =>
+      e instanceof ValidationError && e.issues.some((i) => i.path === 'badges[0].days'),
+  );
+});
+
+test('duplicate task id within an item → issue mentioning duplicate task id', () => {
+  const v = new PackValidator();
+  const bad = clone(PACK);
+  bad.groups[0]!.items[0]!.tasks.push({ id: 't1', text: 'y' });
+  assert.throws(
+    () => v.parse(bad),
+    (e: unknown) =>
+      e instanceof ValidationError && e.issues.some((i) => /duplicate task id/.test(i.msg)),
+  );
+});
+
+test('ProgressValidator: reviews entry with wrong shape → issue path reviews[0]', () => {
+  const v = new ProgressValidator();
+  assert.throws(
+    () => v.parse({ items: {}, reviews: ['oops'] }),
+    (e: unknown) =>
+      e instanceof ValidationError && e.issues.some((i) => i.path === 'reviews[0]'),
+  );
+});

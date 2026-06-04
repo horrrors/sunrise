@@ -130,10 +130,8 @@ export class Tracker {
     const item = this.#itemOf(this.#currentItemId);
     const wasComplete = this.#progress.isItemComplete(item);
     this.#progress.setTaskDone(item, taskId, done, this.#deps.clock.today(), this.#deps.clock.hour());
+    if (!wasComplete && this.#progress.isItemComplete(item)) return this.#onItemCompleted();
     this.#save();
-    if (!wasComplete && this.#progress.isItemComplete(item)) {
-      return this.#onItemCompleted();
-    }
     return { unlockedBadges: [] };
   }
 
