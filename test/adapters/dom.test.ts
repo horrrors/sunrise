@@ -291,6 +291,50 @@ test('guidance spoiler (task-hint) renders for a guidance task', async () => {
   assert.ok((registry['taskList']!.innerHTML || '').includes('task-hint'), 'task-hint rendered');
 });
 
+test('pack switch re-applies track colors and lang', async () => {
+  const h = harness();
+  await registerDevRoadmap(h.registryPlugin);
+
+  // Register a second minimal pack with a distinct locale and a track with color.
+  const pack2 = {
+    schema: 'sunrise.pack/v1',
+    id: 'p2',
+    name: 'Pack 2',
+    version: '1.0.0',
+    locale: 'en',
+    tracks: [{ id: 'x', label: 'X', color: '#0a0' }],
+    groups: [
+      {
+        id: 'g',
+        title: 'W',
+        items: [
+          { id: 'p2i1', track: 'x', title: 'B', tasks: [{ id: 't1', text: 'y' }] },
+        ],
+      },
+    ],
+  };
+  h.registryPlugin.registerPack(pack2);
+
+  h.tracker.init();
+  const ctrl = new DomController(h.tracker, h.renderer);
+  ctrl.start();
+
+  // Install spies after start() so initial apply doesn't inflate counts.
+  let colors = 0;
+  let langs = 0;
+  (h.renderer as unknown as Record<string, unknown>).applyTrackColors = () => { colors++; };
+  (h.renderer as unknown as Record<string, unknown>).setLang = () => { langs++; };
+
+  // Fire pack switch to p2.
+  const packSel = h.registry['packSelect']!;
+  packSel.value = 'p2';
+  packSel.onchange!();
+
+  assert.ok(colors >= 1, 'applyTrackColors called on pack switch');
+  assert.ok(langs >= 1, 'setLang called on pack switch');
+  assert.equal(h.tracker.todayCard().itemId, 'p2i1', 'tracker reflects pack 2 item');
+});
+
 test('rest-day item renders the rest branch', async () => {
   const { registry, tracker } = await boot();
   const sel = tracker.selectors();

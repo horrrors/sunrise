@@ -174,6 +174,8 @@ export class DomController {
     if (pack) {
       pack.onchange = () => {
         this.#t.selectPack(pack.value);
+        this.#r.applyTrackColors(this.#t.trackColors());
+        this.#r.setLang(this.#t.locale());
         this.#renderAll();
       };
     }
