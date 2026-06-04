@@ -2,38 +2,38 @@
 (() => {
   // src/domain/progress.ts
   var Progress = class _Progress {
-    #items;
-    #reviews;
-    #badges;
-    #lastSurprise;
+    items;
+    reviews;
+    badges;
+    lastSurprise;
     constructor(data) {
-      this.#items = data.items;
-      this.#reviews = data.reviews;
-      this.#badges = data.badges;
-      this.#lastSurprise = data.lastSurprise;
+      this.items = data.items;
+      this.reviews = data.reviews;
+      this.badges = data.badges;
+      this.lastSurprise = data.lastSurprise;
     }
     static empty() {
       return new _Progress({ schema: "sunrise.progress/v1", items: {}, reviews: [], badges: {}, lastSurprise: null });
     }
     toJSON() {
-      return structuredClone({ schema: "sunrise.progress/v1", items: this.#items, reviews: this.#reviews, badges: this.#badges, lastSurprise: this.#lastSurprise });
+      return structuredClone({ schema: "sunrise.progress/v1", items: this.items, reviews: this.reviews, badges: this.badges, lastSurprise: this.lastSurprise });
     }
-    #ensure(itemId) {
-      let it = this.#items[itemId];
+    ensure(itemId) {
+      let it = this.items[itemId];
       if (!it) {
         it = { tasks: {}, reflection: "", completedAt: null, completedHour: null };
-        this.#items[itemId] = it;
+        this.items[itemId] = it;
       }
       return it;
     }
     isItemComplete(item) {
       if (item.rest || !item.tasks || item.tasks.length === 0) return false;
-      const st = this.#items[item.id];
+      const st = this.items[item.id];
       if (!st) return false;
       return item.tasks.every((t) => st.tasks?.[t.id] === true);
     }
     setTaskDone(item, taskId, done, today, hour) {
-      const st = this.#ensure(item.id);
+      const st = this.ensure(item.id);
       if (done) st.tasks[taskId] = true;
       else delete st.tasks[taskId];
       if (this.isItemComplete(item)) {
@@ -47,315 +47,69 @@
       }
     }
     setReflection(itemId, text) {
-      this.#ensure(itemId).reflection = text;
+      this.ensure(itemId).reflection = text;
     }
     reflection(itemId) {
-      return this.#items[itemId]?.reflection ?? "";
+      return this.items[itemId]?.reflection ?? "";
     }
     taskChecked(itemId, taskId) {
-      return this.#items[itemId]?.tasks?.[taskId] === true;
+      return this.items[itemId]?.tasks?.[taskId] === true;
     }
     completedDates() {
       const set = /* @__PURE__ */ new Set();
-      for (const id of Object.keys(this.#items)) {
-        const c = this.#items[id]?.completedAt;
+      for (const id of Object.keys(this.items)) {
+        const c = this.items[id]?.completedAt;
         if (c) set.add(c);
       }
       return [...set].sort();
     }
     completedHours() {
       const out = [];
-      for (const id of Object.keys(this.#items)) {
-        const it = this.#items[id];
+      for (const id of Object.keys(this.items)) {
+        const it = this.items[id];
         if (it && it.completedAt != null && it.completedHour != null) out.push(it.completedHour);
       }
       return out;
     }
     completedCount() {
-      return Object.keys(this.#items).filter((id) => this.#items[id]?.completedAt).length;
+      return Object.keys(this.items).filter((id) => this.items[id]?.completedAt).length;
     }
     reflectionCount() {
       let n = 0;
-      for (const id of Object.keys(this.#items)) {
-        const r = this.#items[id]?.reflection;
+      for (const id of Object.keys(this.items)) {
+        const r = this.items[id]?.reflection;
         if (r && r.trim()) n++;
       }
       return n;
     }
-    get reviewList() {
-      return this.#reviews;
+    getReviewList() {
+      return this.reviews;
     }
     scheduleReview(itemId, today) {
-      this.#reviews = this.#reviews.filter((r) => r.itemId !== itemId);
-      this.#reviews.push({ itemId, lastDate: today, stage: 0 });
+      this.reviews = this.reviews.filter((r) => r.itemId !== itemId);
+      this.reviews.push({ itemId, lastDate: today, stage: 0 });
     }
     advanceReview(itemId, today, maxStage) {
-      const r = this.#reviews.find((x) => x.itemId === itemId);
+      const r = this.reviews.find((x) => x.itemId === itemId);
       if (r) {
         r.lastDate = today;
         r.stage = Math.min(r.stage + 1, maxStage);
       }
     }
     ownedBadges() {
-      return this.#badges;
+      return this.badges;
     }
     isBadgeOwned(id) {
-      return this.#badges[id] !== void 0;
+      return this.badges[id] !== void 0;
     }
     awardBadge(id, at) {
-      if (!this.#badges[id]) this.#badges[id] = { at };
+      if (!this.badges[id]) this.badges[id] = { at };
     }
     badgeAt(id) {
-      return this.#badges[id]?.at ?? null;
-    }
-    get lastSurprise() {
-      return this.#lastSurprise;
+      return this.badges[id]?.at ?? null;
     }
     setLastSurprise(s) {
-      this.#lastSurprise = s;
-    }
-  };
-
-  // src/domain/dates.ts
-  function ms(s) {
-    const [y, m, d] = s.split("-").map(Number);
-    return Date.UTC(y, m - 1, d);
-  }
-  function addDays(s, n) {
-    const dt = new Date(ms(s));
-    dt.setUTCDate(dt.getUTCDate() + n);
-    return dt.toISOString().slice(0, 10);
-  }
-  function diffDays(a, b) {
-    return Math.round((ms(b) - ms(a)) / 864e5);
-  }
-  function weekdayMon(s) {
-    return (diffDays("2024-01-01", s) % 7 + 7) % 7;
-  }
-
-  // src/domain/streaks.ts
-  var Streaks = class {
-    current(progress, today) {
-      const set = new Set(progress.completedDates());
-      if (set.size === 0) return 0;
-      let cursor;
-      if (set.has(today)) cursor = today;
-      else if (set.has(addDays(today, -1))) cursor = addDays(today, -1);
-      else return 0;
-      let n = 0;
-      while (set.has(cursor)) {
-        n++;
-        cursor = addDays(cursor, -1);
-      }
-      return n;
-    }
-    longest(progress) {
-      const dates = progress.completedDates();
-      if (dates.length === 0) return 0;
-      let best = 1, cur = 1;
-      for (let i = 1; i < dates.length; i++) {
-        if (diffDays(dates[i - 1], dates[i]) === 1) cur++;
-        else cur = 1;
-        if (cur > best) best = cur;
-      }
-      return best;
-    }
-    hasComeback(progress) {
-      const dates = progress.completedDates();
-      for (let i = 1; i < dates.length; i++) if (diffDays(dates[i - 1], dates[i]) >= 2) return true;
-      return false;
-    }
-  };
-
-  // src/domain/progress-stats.ts
-  var pct = (done, total) => total ? Math.round(done / total * 100) : 0;
-  var ProgressStats = class {
-    #all(pack) {
-      return pack.groups.flatMap((g) => [...g.items]);
-    }
-    tracks(pack) {
-      const s = /* @__PURE__ */ new Set();
-      for (const it of this.#all(pack)) if (!it.rest) s.add(it.track);
-      return [...s];
-    }
-    overall(pack, progress) {
-      let done = 0, total = 0;
-      for (const it of this.#all(pack)) {
-        if (it.rest) continue;
-        total++;
-        if (progress.isItemComplete(it)) done++;
-      }
-      return { done, total, pct: pct(done, total) };
-    }
-    byTrack(pack, progress) {
-      const acc = {};
-      for (const it of this.#all(pack)) {
-        if (it.rest) continue;
-        this.#bump(acc, it.track, progress.isItemComplete(it));
-      }
-      return this.#finalize(acc);
-    }
-    byPhase(pack, progress) {
-      const acc = {};
-      for (const g of pack.groups) {
-        if (g.phase == null) continue;
-        for (const it of g.items) {
-          if (it.rest) continue;
-          this.#bump(acc, g.phase, progress.isItemComplete(it));
-        }
-      }
-      return this.#finalize(acc);
-    }
-    countTasks(pack, progress, track) {
-      let n = 0;
-      for (const it of this.#all(pack)) {
-        if (track && it.track !== track) continue;
-        for (const t of it.tasks ?? []) if (progress.taskChecked(it.id, t.id)) n++;
-      }
-      return n;
-    }
-    completedGroups(pack, progress) {
-      let n = 0;
-      for (const g of pack.groups) {
-        const work = g.items.filter((it) => !it.rest);
-        if (work.length && work.every((it) => progress.isItemComplete(it))) n++;
-      }
-      return n;
-    }
-    #bump(acc, key, done) {
-      const a = acc[key] ?? (acc[key] = { done: 0, total: 0, pct: 0 });
-      a.total++;
-      if (done) a.done++;
-    }
-    #finalize(acc) {
-      for (const k of Object.keys(acc)) {
-        const a = acc[k];
-        a.pct = pct(a.done, a.total);
-      }
-      return acc;
-    }
-  };
-
-  // src/domain/review-schedule.ts
-  var REVIEW_INTERVALS = [1, 3, 7, 16];
-  var MAX_STAGE = REVIEW_INTERVALS.length - 1;
-  var ReviewSchedule = class {
-    due(progress, today) {
-      return progress.reviewList.filter((r) => {
-        const stage = Math.min(Math.max(r.stage, 0), MAX_STAGE);
-        return diffDays(r.lastDate, today) >= REVIEW_INTERVALS[stage];
-      }).map((r) => r.itemId);
-    }
-    schedule(progress, itemId, today) {
-      progress.scheduleReview(itemId, today);
-    }
-    complete(progress, itemId, today) {
-      progress.advanceReview(itemId, today, MAX_STAGE);
-    }
-  };
-
-  // src/domain/badge-engine.ts
-  var inHourRange = (h, from, to) => from <= to ? h >= from && h < to : h >= from || h < to;
-  var BadgeEngine = class {
-    #streaks;
-    #stats;
-    constructor(streaks, stats) {
-      this.#streaks = streaks;
-      this.#stats = stats;
-    }
-    #context(pack, progress) {
-      const overall = this.#stats.overall(pack, progress);
-      const byTrack = this.#stats.byTrack(pack, progress);
-      const byPhase = this.#stats.byPhase(pack, progress);
-      const byId = new Map(pack.groups.flatMap((g) => g.items).map((it) => [it.id, it]));
-      return {
-        longestStreak: this.#streaks.longest(progress),
-        daysDone: overall.done,
-        total: overall.total,
-        pct: overall.pct,
-        reflections: progress.reflectionCount(),
-        groupsComplete: this.#stats.completedGroups(pack, progress),
-        hasComeback: this.#streaks.hasComeback(progress),
-        tracks: this.#stats.tracks(pack),
-        dates: progress.completedDates(),
-        hours: progress.completedHours(),
-        tasks: (track) => this.#stats.countTasks(pack, progress, track),
-        trackDone: (track) => byTrack[track]?.done ?? 0,
-        trackPct: (track) => byTrack[track]?.pct ?? 0,
-        phasePct: (phase) => byPhase[phase]?.pct ?? 0,
-        itemComplete: (id) => {
-          const it = byId.get(id);
-          return it ? progress.isItemComplete(it) : false;
-        }
-      };
-    }
-    #passes(rule, c) {
-      switch (rule.type) {
-        case "streak":
-          return c.longestStreak >= rule.gte;
-        case "days-done":
-          return c.daysDone >= rule.gte;
-        case "percent":
-          return c.pct >= rule.gte;
-        case "all-done":
-          return c.total > 0 && c.daysDone === c.total;
-        case "tasks-done":
-          return c.tasks(rule.track) >= rule.gte;
-        case "reflections":
-          return c.reflections >= rule.gte;
-        case "groups-complete":
-          return c.groupsComplete >= rule.gte;
-        case "track-complete":
-          return c.trackPct(rule.track) === 100;
-        case "phase-complete":
-          return c.phasePct(rule.phase) === 100;
-        case "item-complete":
-          return c.itemComplete(rule.item);
-        case "all-tracks":
-          return c.tracks.length > 0 && c.tracks.every((t) => c.trackDone(t) >= rule.eachGte);
-        case "weekday":
-          return c.dates.some((d) => rule.days.includes(weekdayMon(d) + 1));
-        case "hour-range":
-          return c.hours.some((h) => inHourRange(h, rule.from, rule.to));
-        case "comeback":
-          return c.hasComeback;
-        default: {
-          const _exhaustive = rule;
-          return _exhaustive;
-        }
-      }
-    }
-    #dedupe(rules) {
-      const idx = /* @__PURE__ */ new Map();
-      const out = [];
-      for (const r of rules) {
-        const at = idx.get(r.id);
-        if (at !== void 0) out[at] = r;
-        else {
-          idx.set(r.id, out.length);
-          out.push(r);
-        }
-      }
-      return out;
-    }
-    evaluate(pack, progress, rules) {
-      const ctx = this.#context(pack, progress);
-      return this.#dedupe(rules).map((r) => ({
-        id: r.id,
-        unlocked: progress.isBadgeOwned(r.id) || this.#passes(r, ctx),
-        at: progress.badgeAt(r.id)
-      }));
-    }
-    sync(pack, progress, rules, today) {
-      const ctx = this.#context(pack, progress);
-      const unlocked = [];
-      for (const r of this.#dedupe(rules)) {
-        if (!progress.isBadgeOwned(r.id) && this.#passes(r, ctx)) {
-          progress.awardBadge(r.id, today);
-          unlocked.push(r.id);
-        }
-      }
-      return unlocked;
+      this.lastSurprise = s;
     }
   };
 
@@ -674,177 +428,194 @@
     }
   };
 
+  // src/domain/dates.ts
+  function ms(s) {
+    const [y, m, d] = s.split("-").map(Number);
+    return Date.UTC(y, m - 1, d);
+  }
+  function addDays(s, n) {
+    const dt = new Date(ms(s));
+    dt.setUTCDate(dt.getUTCDate() + n);
+    return dt.toISOString().slice(0, 10);
+  }
+  function diffDays(a, b) {
+    return Math.round((ms(b) - ms(a)) / 864e5);
+  }
+  function weekdayMon(s) {
+    return (diffDays("2024-01-01", s) % 7 + 7) % 7;
+  }
+
   // src/domain/tracker.ts
   var SURPRISE_CHANCE = 0.12;
   var Tracker = class {
-    #deps;
-    #pack;
-    #progress;
-    #themeId = null;
-    #currentItemId = "";
-    #rules = [];
-    #allItems = [];
-    #groupById = {};
-    #mottos = [];
+    deps;
+    pack;
+    progress;
+    themeId = null;
+    currentItemId = "";
+    rules = [];
+    allItems = [];
+    groupById = {};
+    mottosList = [];
     constructor(deps) {
-      this.#deps = deps;
+      this.deps = deps;
     }
     // ----- lifecycle -----------------------------------------------------------
     init() {
-      const packs = this.#deps.packs.packs();
+      const packs = this.deps.packs.packs();
       if (packs.length === 0) throw new Error("no packs registered");
-      const sess = this.#deps.sessionStore.load();
+      const sess = this.deps.sessionStore.load();
       const pack = packs.find((p) => p.id === sess.activePackId) ?? packs[0];
-      this.#loadPack(pack.id);
-      const themes = this.#deps.themes.themes();
+      this.loadPack(pack.id);
+      const themes = this.deps.themes.themes();
       const theme = themes.find((t) => t.id === sess.themeId) ?? themes[0];
-      this.#themeId = theme ? theme.id : null;
-      this.#currentItemId = this.#defaultItemId();
+      this.themeId = theme ? theme.id : null;
+      this.currentItemId = this.defaultItemId();
     }
-    #loadPack(packId) {
-      const packs = this.#deps.packs.packs();
-      this.#pack = packs.find((p) => p.id === packId) ?? packs[0];
-      this.#progress = this.#deps.progressStore.load(this.#pack.id);
-      this.#rules = [...this.#deps.genericBadges, ...this.#pack.badges ?? []];
-      this.#allItems = this.#pack.groups.flatMap((g) => [...g.items]);
-      this.#groupById = {};
-      for (const g of this.#pack.groups) for (const it of g.items) this.#groupById[it.id] = g;
-      this.#mottos = this.#pack.mottos && this.#pack.mottos.length ? this.#pack.mottos : this.#deps.defaultMottos;
+    loadPack(packId) {
+      const packs = this.deps.packs.packs();
+      this.pack = packs.find((p) => p.id === packId) ?? packs[0];
+      this.progress = this.deps.progressStore.load(this.pack.id);
+      this.rules = [...this.deps.genericBadges, ...this.pack.badges ?? []];
+      this.allItems = this.pack.groups.flatMap((g) => [...g.items]);
+      this.groupById = {};
+      for (const g of this.pack.groups) for (const it of g.items) this.groupById[it.id] = g;
+      this.mottosList = this.pack.mottos && this.pack.mottos.length ? this.pack.mottos : this.deps.defaultMottos;
     }
-    #save() {
-      this.#deps.progressStore.save(this.#pack.id, this.#progress);
+    save() {
+      this.deps.progressStore.save(this.pack.id, this.progress);
     }
     // ----- helpers -------------------------------------------------------------
-    #ui(k) {
-      const fromPack = this.#pack.ui && this.#pack.ui[k];
+    uiText(k) {
+      const fromPack = this.pack.ui && this.pack.ui[k];
       if (fromPack != null) return fromPack;
-      return this.#deps.defaultUi[k] ?? "";
+      return this.deps.defaultUi[k] ?? "";
     }
-    #lbl(k, fallback) {
-      const l = this.#pack.settings && this.#pack.settings.labels;
+    lbl(k, fallback) {
+      const l = this.pack.settings && this.pack.settings.labels;
       const v = l && l[k];
-      return v != null ? v : this.#ui(fallback);
+      return v != null ? v : this.uiText(fallback);
     }
-    #itemOf(id) {
-      const it = this.#allItems.find((x) => x.id === id);
+    itemOf(id) {
+      const it = this.allItems.find((x) => x.id === id);
       if (!it) throw new Error(`unknown item "${id}"`);
       return it;
     }
-    #trackMeta(id) {
-      for (const t of this.#pack.tracks) if (t.id === id) return t;
+    trackMeta(id) {
+      for (const t of this.pack.tracks) if (t.id === id) return t;
       return { id, label: "", icon: "" };
     }
-    #defaultItemId() {
-      const open = this.#allItems.find((it) => !it.rest && !this.#progress.isItemComplete(it));
-      return (open ?? this.#allItems[this.#allItems.length - 1]).id;
+    defaultItemId() {
+      const open = this.allItems.find((it) => !it.rest && !this.progress.isItemComplete(it));
+      return (open ?? this.allItems[this.allItems.length - 1]).id;
     }
-    #itemIndex() {
-      return this.#allItems.findIndex((it) => it.id === this.#currentItemId);
+    itemIndex() {
+      return this.allItems.findIndex((it) => it.id === this.currentItemId);
     }
-    #groupOrdinal(id) {
-      return this.#pack.groups.indexOf(this.#groupById[id]) + 1;
+    groupOrdinal(id) {
+      return this.pack.groups.indexOf(this.groupById[id]) + 1;
     }
     // ----- intents -------------------------------------------------------------
     toggleTask(taskId, done) {
-      const item = this.#itemOf(this.#currentItemId);
-      const wasComplete = this.#progress.isItemComplete(item);
-      this.#progress.setTaskDone(item, taskId, done, this.#deps.clock.today(), this.#deps.clock.hour());
-      if (!wasComplete && this.#progress.isItemComplete(item)) return this.#onItemCompleted();
-      this.#save();
+      const item = this.itemOf(this.currentItemId);
+      const wasComplete = this.progress.isItemComplete(item);
+      this.progress.setTaskDone(item, taskId, done, this.deps.clock.today(), this.deps.clock.hour());
+      if (!wasComplete && this.progress.isItemComplete(item)) return this.onItemCompleted();
+      this.save();
       return { unlockedBadges: [] };
     }
-    #onItemCompleted() {
-      const today = this.#deps.clock.today();
-      const unlocked = this.#deps.badges.sync(this.#pack, this.#progress, this.#rules, today);
+    onItemCompleted() {
+      const today = this.deps.clock.today();
+      const unlocked = this.deps.badges.sync(this.pack, this.progress, this.rules, today);
       let surprise;
-      if (this.#deps.random.next() < SURPRISE_CHANCE) {
-        const pool = this.#pack.surprises ?? [];
-        const msg = pool.length ? pool[Math.floor(this.#deps.random.next() * pool.length)] : void 0;
+      if (this.deps.random.next() < SURPRISE_CHANCE) {
+        const pool = this.pack.surprises ?? [];
+        const msg = pool.length ? pool[Math.floor(this.deps.random.next() * pool.length)] : void 0;
         if (msg) {
-          this.#progress.setLastSurprise({ text: msg, at: today });
+          this.progress.setLastSurprise({ text: msg, at: today });
           surprise = msg;
         }
       }
-      this.#save();
+      this.save();
       return surprise === void 0 ? { unlockedBadges: unlocked } : { unlockedBadges: unlocked, surprise };
     }
     setReflection(text) {
-      this.#progress.setReflection(this.#currentItemId, text);
-      this.#save();
+      this.progress.setReflection(this.currentItemId, text);
+      this.save();
     }
     selectItem(id) {
-      this.#currentItemId = id;
+      this.currentItemId = id;
     }
     goToItem(delta) {
-      const i = this.#itemIndex();
-      const j = Math.min(Math.max(i + delta, 0), this.#allItems.length - 1);
-      if (j !== i) this.#currentItemId = this.#allItems[j].id;
+      const i = this.itemIndex();
+      const j = Math.min(Math.max(i + delta, 0), this.allItems.length - 1);
+      if (j !== i) this.currentItemId = this.allItems[j].id;
     }
     selectPack(id) {
-      const sess = this.#deps.sessionStore.load();
+      const sess = this.deps.sessionStore.load();
       sess.activePackId = id;
-      this.#deps.sessionStore.save(sess);
-      this.#loadPack(id);
-      this.#currentItemId = this.#defaultItemId();
+      this.deps.sessionStore.save(sess);
+      this.loadPack(id);
+      this.currentItemId = this.defaultItemId();
     }
     selectTheme(id) {
-      const sess = this.#deps.sessionStore.load();
+      const sess = this.deps.sessionStore.load();
       sess.themeId = id;
-      this.#deps.sessionStore.save(sess);
-      this.#themeId = id;
+      this.deps.sessionStore.save(sess);
+      this.themeId = id;
     }
     scheduleReviewForCurrent() {
-      const it = this.#itemOf(this.#currentItemId);
-      const g = this.#groupById[it.id];
+      const it = this.itemOf(this.currentItemId);
+      const g = this.groupById[it.id];
       const reviewId = g.id + "-" + (it.title || it.id);
-      this.#deps.reviews.schedule(this.#progress, reviewId, this.#deps.clock.today());
-      this.#save();
+      this.deps.reviews.schedule(this.progress, reviewId, this.deps.clock.today());
+      this.save();
     }
     importProgress(json) {
       const data = new ProgressValidator().parseJson(json);
-      this.#progress = new Progress(data);
-      this.#save();
-      this.#currentItemId = this.#defaultItemId();
+      this.progress = new Progress(data);
+      this.save();
+      this.currentItemId = this.defaultItemId();
     }
     exportProgress() {
-      return JSON.stringify(this.#progress.toJSON(), null, 2);
+      return JSON.stringify(this.progress.toJSON(), null, 2);
     }
     // ----- queries -------------------------------------------------------------
     selectors() {
-      const packs = this.#deps.packs.packs().map((p) => ({
+      const packs = this.deps.packs.packs().map((p) => ({
         id: p.id,
         label: p.name,
-        selected: p.id === this.#pack.id
+        selected: p.id === this.pack.id
       }));
-      const themes = this.#deps.themes.themes().map((t) => ({
+      const themes = this.deps.themes.themes().map((t) => ({
         id: t.id,
         label: t.name,
-        selected: t.id === this.#themeId
+        selected: t.id === this.themeId
       }));
-      const items = this.#allItems.map((it) => {
-        const g = this.#groupById[it.id];
-        const tl = it.rest ? this.#ui("restVert") : this.#trackMeta(it.track).label;
-        return { id: it.id, label: `${g.title} \xB7 ${tl}`, selected: it.id === this.#currentItemId };
+      const items = this.allItems.map((it) => {
+        const g = this.groupById[it.id];
+        const tl = it.rest ? this.uiText("restVert") : this.trackMeta(it.track).label;
+        return { id: it.id, label: `${g.title} \xB7 ${tl}`, selected: it.id === this.currentItemId };
       });
       return { packs, themes, items };
     }
     todayCard() {
-      const it = this.#itemOf(this.#currentItemId);
-      const m = this.#trackMeta(it.track);
-      const g = this.#groupById[it.id];
-      const cfg = this.#pack.settings ?? {};
-      const i = this.#itemIndex();
-      const notLast = i < this.#allItems.length - 1;
-      const phaseLabel = this.#ui("phaseLabel").replace("{p}", g.phase == null ? "" : g.phase).replace("{w}", String(this.#groupOrdinal(it.id)));
+      const it = this.itemOf(this.currentItemId);
+      const m = this.trackMeta(it.track);
+      const g = this.groupById[it.id];
+      const cfg = this.pack.settings ?? {};
+      const i = this.itemIndex();
+      const notLast = i < this.allItems.length - 1;
+      const phaseLabel = this.uiText("phaseLabel").replace("{p}", g.phase == null ? "" : g.phase).replace("{w}", String(this.groupOrdinal(it.id)));
       if (it.rest) {
-        const dueReviews = cfg.reviews ? this.#deps.reviews.due(this.#progress, this.#deps.clock.today()) : [];
+        const dueReviews = cfg.reviews ? this.deps.reviews.due(this.progress, this.deps.clock.today()) : [];
         return {
           itemId: it.id,
           rest: true,
           track: it.track,
           trackLabel: m.label,
           trackIcon: m.icon ?? "",
-          title: this.#ui("restTitle"),
+          title: this.uiText("restTitle"),
           phaseLabel,
           reflectPrompt: it.reflectPrompt,
           reflection: "",
@@ -857,12 +628,12 @@
           show: { warmup: false, reflection: false, review: false }
         };
       }
-      const complete = this.#progress.isItemComplete(it);
+      const complete = this.progress.isItemComplete(it);
       const tasks = (it.tasks ?? []).map((t) => ({
         id: t.id,
         text: t.text,
         ...t.guidance !== void 0 ? { guidance: t.guidance } : {},
-        done: this.#progress.taskChecked(it.id, t.id)
+        done: this.progress.taskChecked(it.id, t.id)
       }));
       const showWarmup = cfg.warmups !== false && it.warmup != null;
       const showReflection = cfg.reflections !== false;
@@ -877,7 +648,7 @@
         phaseLabel,
         warmup: it.warmup,
         reflectPrompt: it.reflectPrompt,
-        reflection: this.#progress.reflection(it.id),
+        reflection: this.progress.reflection(it.id),
         tasks,
         resources: (it.resources ?? []).map((r) => ({ label: r.label, note: r.note })),
         reviewable: showReview,
@@ -888,31 +659,31 @@
       };
     }
     dashboard() {
-      const overall = this.#deps.stats.overall(this.#pack, this.#progress);
-      const streak = this.#deps.streaks.current(this.#progress, this.#deps.clock.today());
-      const byPhase = this.#deps.stats.byPhase(this.#pack, this.#progress);
-      const byTrack = this.#deps.stats.byTrack(this.#pack, this.#progress);
-      const sw = this.#deps.defaultStreakWords;
+      const overall = this.deps.stats.overall(this.pack, this.progress);
+      const streak = this.deps.streaks.current(this.progress, this.deps.clock.today());
+      const byPhase = this.deps.stats.byPhase(this.pack, this.progress);
+      const byTrack = this.deps.stats.byTrack(this.pack, this.progress);
+      const sw = this.deps.defaultStreakWords;
       const streakWord = streak === 1 ? sw[0] ?? "" : streak >= 2 && streak <= 4 ? sw[1] ?? "" : sw[2] ?? "";
-      const phaseList = this.#pack.phases ?? [];
+      const phaseList = this.pack.phases ?? [];
       const phases = phaseList.length ? phaseList.map((ph) => ({
         id: ph.id,
-        title: ph.title || `${this.#lbl("phase", "phaseWord")} ${ph.id}`,
+        title: ph.title || `${this.lbl("phase", "phaseWord")} ${ph.id}`,
         stat: byPhase[ph.id] ?? { done: 0, total: 0, pct: 0 }
       })) : null;
-      const tracks = this.#pack.tracks.filter((t) => byTrack[t.id]).map((t) => ({ id: t.id, label: t.label, stat: byTrack[t.id] }));
+      const tracks = this.pack.tracks.filter((t) => byTrack[t.id]).map((t) => ({ id: t.id, label: t.label, stat: byTrack[t.id] }));
       return {
         overall,
         streak,
         streakWord,
         phases,
         tracks,
-        daysOfLabel: this.#ui("daysOf").replace("{n}", String(overall.total))
+        daysOfLabel: this.uiText("daysOf").replace("{n}", String(overall.total))
       };
     }
     calendar(monthOffset) {
-      const done = new Set(this.#progress.completedDates());
-      const today = this.#deps.clock.today();
+      const done = new Set(this.progress.completedDates());
+      const today = this.deps.clock.today();
       const [ys, ms2] = today.split("-");
       let y = Number(ys);
       let m = Number(ms2) + monthOffset;
@@ -936,17 +707,17 @@
           other: dd.slice(0, 7) !== first.slice(0, 7)
         });
       }
-      const months = this.#deps.defaultMonths;
+      const months = this.deps.defaultMonths;
       return {
         title: `${months[m - 1] ?? ""} ${y}`,
-        dow: [...this.#deps.defaultDow],
+        dow: [...this.deps.defaultDow],
         cells
       };
     }
     trophies() {
-      const all = this.#deps.badges.evaluate(this.#pack, this.#progress, this.#rules);
+      const all = this.deps.badges.evaluate(this.pack, this.progress, this.rules);
       return all.map((b) => {
-        const meta = this.#rules.find((r) => r.id === b.id);
+        const meta = this.rules.find((r) => r.id === b.id);
         return {
           id: b.id,
           title: meta?.title ?? b.id,
@@ -957,38 +728,266 @@
       });
     }
     comeback() {
-      const today = this.#deps.clock.today();
-      const b = this.#deps.badges.evaluate(this.#pack, this.#progress, this.#rules).find((x) => x.id === "comeback");
-      const streak = this.#deps.streaks.current(this.#progress, today);
+      const today = this.deps.clock.today();
+      const b = this.deps.badges.evaluate(this.pack, this.progress, this.rules).find((x) => x.id === "comeback");
+      const streak = this.deps.streaks.current(this.progress, today);
       const show = !!(b && b.unlocked && streak <= 2);
-      return { show, days: this.#progress.completedCount() };
+      return { show, days: this.progress.completedCount() };
     }
     trackColors() {
       const out = [];
-      for (const t of this.#pack.tracks) if (t.color) out.push({ id: t.id, color: t.color });
+      for (const t of this.pack.tracks) if (t.color) out.push({ id: t.id, color: t.color });
       return out;
     }
     mottos() {
-      return this.#mottos;
+      return this.mottosList;
     }
     ui(key) {
-      return this.#ui(key);
+      return this.uiText(key);
     }
     itemLabel() {
-      return this.#lbl("item", "weekAbbr");
+      return this.lbl("item", "weekAbbr");
     }
     activeThemeHref() {
-      const theme = this.#deps.themes.themes().find((t) => t.id === this.#themeId);
+      const theme = this.deps.themes.themes().find((t) => t.id === this.themeId);
       return theme ? theme.cssHref : null;
     }
     activeThemeId() {
-      return this.#themeId;
+      return this.themeId;
     }
     activePackId() {
-      return this.#pack.id;
+      return this.pack.id;
     }
     locale() {
-      return this.#pack.locale ?? "en";
+      return this.pack.locale ?? "en";
+    }
+  };
+
+  // src/domain/streaks.ts
+  var Streaks = class {
+    current(progress, today) {
+      const set = new Set(progress.completedDates());
+      if (set.size === 0) return 0;
+      let cursor;
+      if (set.has(today)) cursor = today;
+      else if (set.has(addDays(today, -1))) cursor = addDays(today, -1);
+      else return 0;
+      let n = 0;
+      while (set.has(cursor)) {
+        n++;
+        cursor = addDays(cursor, -1);
+      }
+      return n;
+    }
+    longest(progress) {
+      const dates = progress.completedDates();
+      if (dates.length === 0) return 0;
+      let best = 1;
+      let cur = 1;
+      for (let i = 1; i < dates.length; i++) {
+        if (diffDays(dates[i - 1], dates[i]) === 1) cur++;
+        else cur = 1;
+        if (cur > best) best = cur;
+      }
+      return best;
+    }
+    hasComeback(progress) {
+      const dates = progress.completedDates();
+      for (let i = 1; i < dates.length; i++) if (diffDays(dates[i - 1], dates[i]) >= 2) return true;
+      return false;
+    }
+  };
+
+  // src/domain/progress-stats.ts
+  var pct = (done, total) => total ? Math.round(done / total * 100) : 0;
+  var ProgressStats = class {
+    all(pack) {
+      return pack.groups.flatMap((g) => [...g.items]);
+    }
+    tracks(pack) {
+      const s = /* @__PURE__ */ new Set();
+      for (const it of this.all(pack)) if (!it.rest) s.add(it.track);
+      return [...s];
+    }
+    overall(pack, progress) {
+      let done = 0;
+      let total = 0;
+      for (const it of this.all(pack)) {
+        if (it.rest) continue;
+        total++;
+        if (progress.isItemComplete(it)) done++;
+      }
+      return { done, total, pct: pct(done, total) };
+    }
+    byTrack(pack, progress) {
+      const acc = {};
+      for (const it of this.all(pack)) {
+        if (it.rest) continue;
+        this.bump(acc, it.track, progress.isItemComplete(it));
+      }
+      return this.finalize(acc);
+    }
+    byPhase(pack, progress) {
+      const acc = {};
+      for (const g of pack.groups) {
+        if (g.phase == null) continue;
+        for (const it of g.items) {
+          if (it.rest) continue;
+          this.bump(acc, g.phase, progress.isItemComplete(it));
+        }
+      }
+      return this.finalize(acc);
+    }
+    countTasks(pack, progress, track) {
+      let n = 0;
+      for (const it of this.all(pack)) {
+        if (track && it.track !== track) continue;
+        for (const t of it.tasks ?? []) if (progress.taskChecked(it.id, t.id)) n++;
+      }
+      return n;
+    }
+    completedGroups(pack, progress) {
+      let n = 0;
+      for (const g of pack.groups) {
+        const work = g.items.filter((it) => !it.rest);
+        if (work.length && work.every((it) => progress.isItemComplete(it))) n++;
+      }
+      return n;
+    }
+    bump(acc, key, done) {
+      const a = acc[key] ?? (acc[key] = { done: 0, total: 0, pct: 0 });
+      a.total++;
+      if (done) a.done++;
+    }
+    finalize(acc) {
+      for (const k of Object.keys(acc)) {
+        const a = acc[k];
+        a.pct = pct(a.done, a.total);
+      }
+      return acc;
+    }
+  };
+
+  // src/domain/review-schedule.ts
+  var REVIEW_INTERVALS = [1, 3, 7, 16];
+  var MAX_STAGE = REVIEW_INTERVALS.length - 1;
+  var ReviewSchedule = class {
+    due(progress, today) {
+      return progress.getReviewList().filter((r) => {
+        const stage = Math.min(Math.max(r.stage, 0), MAX_STAGE);
+        return diffDays(r.lastDate, today) >= REVIEW_INTERVALS[stage];
+      }).map((r) => r.itemId);
+    }
+    schedule(progress, itemId, today) {
+      progress.scheduleReview(itemId, today);
+    }
+    complete(progress, itemId, today) {
+      progress.advanceReview(itemId, today, MAX_STAGE);
+    }
+  };
+
+  // src/domain/badge-engine.ts
+  var inHourRange = (h, from, to) => from <= to ? h >= from && h < to : h >= from || h < to;
+  var BadgeEngine = class {
+    streaks;
+    stats;
+    constructor(streaks, stats) {
+      this.streaks = streaks;
+      this.stats = stats;
+    }
+    context(pack, progress) {
+      const overall = this.stats.overall(pack, progress);
+      const byTrack = this.stats.byTrack(pack, progress);
+      const byPhase = this.stats.byPhase(pack, progress);
+      const byId = new Map(pack.groups.flatMap((g) => g.items).map((it) => [it.id, it]));
+      return {
+        longestStreak: this.streaks.longest(progress),
+        daysDone: overall.done,
+        total: overall.total,
+        pct: overall.pct,
+        reflections: progress.reflectionCount(),
+        groupsComplete: this.stats.completedGroups(pack, progress),
+        hasComeback: this.streaks.hasComeback(progress),
+        tracks: this.stats.tracks(pack),
+        dates: progress.completedDates(),
+        hours: progress.completedHours(),
+        tasks: (track) => this.stats.countTasks(pack, progress, track),
+        trackDone: (track) => byTrack[track]?.done ?? 0,
+        trackPct: (track) => byTrack[track]?.pct ?? 0,
+        phasePct: (phase) => byPhase[phase]?.pct ?? 0,
+        itemComplete: (id) => {
+          const it = byId.get(id);
+          return it ? progress.isItemComplete(it) : false;
+        }
+      };
+    }
+    passes(rule, c) {
+      switch (rule.type) {
+        case "streak":
+          return c.longestStreak >= rule.gte;
+        case "days-done":
+          return c.daysDone >= rule.gte;
+        case "percent":
+          return c.pct >= rule.gte;
+        case "all-done":
+          return c.total > 0 && c.daysDone === c.total;
+        case "tasks-done":
+          return c.tasks(rule.track) >= rule.gte;
+        case "reflections":
+          return c.reflections >= rule.gte;
+        case "groups-complete":
+          return c.groupsComplete >= rule.gte;
+        case "track-complete":
+          return c.trackPct(rule.track) === 100;
+        case "phase-complete":
+          return c.phasePct(rule.phase) === 100;
+        case "item-complete":
+          return c.itemComplete(rule.item);
+        case "all-tracks":
+          return c.tracks.length > 0 && c.tracks.every((t) => c.trackDone(t) >= rule.eachGte);
+        case "weekday":
+          return c.dates.some((d) => rule.days.includes(weekdayMon(d) + 1));
+        case "hour-range":
+          return c.hours.some((h) => inHourRange(h, rule.from, rule.to));
+        case "comeback":
+          return c.hasComeback;
+        default: {
+          const _exhaustive = rule;
+          return _exhaustive;
+        }
+      }
+    }
+    dedupe(rules) {
+      const idx = /* @__PURE__ */ new Map();
+      const out = [];
+      for (const r of rules) {
+        const at = idx.get(r.id);
+        if (at !== void 0) out[at] = r;
+        else {
+          idx.set(r.id, out.length);
+          out.push(r);
+        }
+      }
+      return out;
+    }
+    evaluate(pack, progress, rules) {
+      const ctx = this.context(pack, progress);
+      return this.dedupe(rules).map((r) => ({
+        id: r.id,
+        unlocked: progress.isBadgeOwned(r.id) || this.passes(r, ctx),
+        at: progress.badgeAt(r.id)
+      }));
+    }
+    sync(pack, progress, rules, today) {
+      const ctx = this.context(pack, progress);
+      const unlocked = [];
+      for (const r of this.dedupe(rules)) {
+        if (!progress.isBadgeOwned(r.id) && this.passes(r, ctx)) {
+          progress.awardBadge(r.id, today);
+          unlocked.push(r.id);
+        }
+      }
+      return unlocked;
     }
   };
 
@@ -1101,12 +1100,12 @@
   var LEGACY = "devRoadmapState.v1";
   var LEGACY_THEME = "sunriseTheme";
   var LocalStorageProgressStore = class {
-    #validator = new ProgressValidator();
+    validator = new ProgressValidator();
     load(packId) {
       try {
         const raw = localStorage.getItem(PREFIX + packId);
         if (!raw) return Progress.empty();
-        return new Progress(this.#validator.parse(JSON.parse(raw)));
+        return new Progress(this.validator.parse(JSON.parse(raw)));
       } catch {
         return Progress.empty();
       }
@@ -1155,41 +1154,41 @@
 
   // src/adapters/window-registry.ts
   var WindowPluginRegistry = class {
-    #packs = [];
-    #themes = [];
-    #rejected = [];
-    #packValidator = new PackValidator();
-    #themeValidator = new ThemeValidator();
+    packList = [];
+    themeList = [];
+    rejectedList = [];
+    packValidator = new PackValidator();
+    themeValidator = new ThemeValidator();
     packs() {
-      return [...this.#packs];
+      return [...this.packList];
     }
     themes() {
-      return [...this.#themes];
+      return [...this.themeList];
     }
     rejected() {
-      return [...this.#rejected];
+      return [...this.rejectedList];
     }
     addBuiltinThemes(themes) {
-      this.#themes.push(...themes);
+      this.themeList.push(...themes);
     }
     registerPack(raw) {
       try {
-        this.#packs.push(this.#packValidator.parse(raw));
+        this.packList.push(this.packValidator.parse(raw));
       } catch (e) {
-        this.#reject("pack", raw, e);
+        this.reject("pack", raw, e);
       }
     }
     registerTheme(raw) {
       try {
-        this.#themes.push(this.#themeValidator.parse(raw));
+        this.themeList.push(this.themeValidator.parse(raw));
       } catch (e) {
-        this.#reject("theme", raw, e);
+        this.reject("theme", raw, e);
       }
     }
-    #reject(kind, raw, e) {
+    reject(kind, raw, e) {
       const id = raw && typeof raw === "object" && "id" in raw && typeof raw.id === "string" ? raw.id : "(no id)";
       const issues = e instanceof ValidationError ? e.issues : [{ path: "", msg: String(e) }];
-      this.#rejected.push({ kind, id, issues });
+      this.rejectedList.push({ kind, id, issues });
       console.error(`[sunrise] ${kind} "${id}" rejected:`, issues);
     }
   };
@@ -1205,15 +1204,15 @@
     }
     // ----- selectors -----------------------------------------------------------
     renderSelectors(vm) {
-      this.#fillSelect("packSelect", vm.packs);
-      this.#fillSelect("themeSelect", vm.themes);
-      this.#fillSelect("daySelect", vm.items);
+      this.fillSelect("packSelect", vm.packs);
+      this.fillSelect("themeSelect", vm.themes);
+      this.fillSelect("daySelect", vm.items);
     }
-    #fillSelect(id, options) {
+    fillSelect(id, options) {
       const sel = this.$(id);
       if (!sel) return;
       sel.innerHTML = options.map(
-        (o) => '<option value="' + this.esc(o.id) + '"' + (o.selected ? " selected" : "") + ">" + this.esc(o.label) + "</option>"
+        (o) => `<option value="${this.esc(o.id)}"${o.selected ? " selected" : ""}>${this.esc(o.label)}</option>`
       ).join("");
     }
     // ----- today ---------------------------------------------------------------
@@ -1224,35 +1223,33 @@
       const phaseLabel = this.$("phaseLabel");
       if (phaseLabel) phaseLabel.textContent = vm.phaseLabel;
       if (vm.rest) {
-        el.innerHTML = '<div class="today-side"><span class="vert">' + this.esc(lbl.restVert) + '</span></div><div class="today-main"><h2 class="today-title">' + this.esc(vm.title) + '</h2><p class="warm"><span class="warm-i">\u263E</span> ' + this.esc(vm.reflectPrompt || "") + '</p><div class="rest-due">' + (vm.dueReviews.length ? this.esc(lbl.dueToday) + " \u2014 <b>" + this.esc(vm.dueReviews.join(" \xB7 ")) + "</b>" : this.esc(lbl.restToday)) + "</div>" + (vm.notLast ? '<button class="next-day-cta" id="nextDayCta" type="button">' + this.esc(lbl.nextDay) + "</button>" : "") + "</div>";
+        el.innerHTML = `<div class="today-side"><span class="vert">${this.esc(lbl.restVert)}</span></div><div class="today-main"><h2 class="today-title">${this.esc(vm.title)}</h2><p class="warm"><span class="warm-i">\u263E</span> ${this.esc(vm.reflectPrompt || "")}</p><div class="rest-due">${vm.dueReviews.length ? `${this.esc(lbl.dueToday)} \u2014 <b>${this.esc(vm.dueReviews.join(" \xB7 "))}</b>` : this.esc(lbl.restToday)}</div>` + (vm.notLast ? `<button class="next-day-cta" id="nextDayCta" type="button">${this.esc(lbl.nextDay)}</button>` : "") + `</div>`;
         return;
       }
-      el.innerHTML = '<div class="today-side"><span class="vert">' + this.esc(lbl.todayVert) + '</span></div><div class="today-main"><span class="trackpill"><span class="k">' + this.esc(vm.trackIcon) + "</span> " + this.esc(vm.trackLabel) + '</span><h2 class="today-title">' + this.esc(vm.title) + "</h2>" + (vm.show.warmup && vm.warmup ? '<div class="warm"><span class="warm-i">\u2726</span> <span class="muted">' + this.esc(lbl.warmup) + "</span> " + this.esc(vm.warmup) + "</div>" : "") + '<div class="tasks" id="taskList"></div>' + (vm.show.reflection ? '<div class="reflect-block"><label class="reflect-label" for="reflect"><span class="kanji">\u7701</span> ' + this.esc(lbl.reflect) + (vm.reflectPrompt ? " \u2014 " + this.esc(vm.reflectPrompt) : "") + '</label><textarea id="reflect" placeholder="' + this.esc(lbl.taskPlaceholder) + '">' + this.esc(vm.reflection || "") + "</textarea></div>" : "") + (vm.resources.length ? '<div class="res-row">' + vm.resources.map(
-        (r) => '<span class="chip"><b>' + this.esc(r.label) + "</b> " + this.esc(r.note) + "</span>"
-      ).join("") + "</div>" : "") + (vm.show.review ? '<button class="btn gold" id="markReview" type="button">' + this.esc(lbl.scheduleReview) + "</button>" : "") + (vm.complete && vm.notLast ? '<button class="next-day-cta" id="nextDayCta" type="button">' + this.esc(lbl.nextDay) + "</button>" : "") + "</div>";
+      el.innerHTML = `<div class="today-side"><span class="vert">${this.esc(lbl.todayVert)}</span></div><div class="today-main"><span class="trackpill"><span class="k">${this.esc(vm.trackIcon)}</span> ${this.esc(vm.trackLabel)}</span><h2 class="today-title">${this.esc(vm.title)}</h2>` + (vm.show.warmup && vm.warmup ? `<div class="warm"><span class="warm-i">\u2726</span> <span class="muted">${this.esc(lbl.warmup)}</span> ${this.esc(vm.warmup)}</div>` : "") + `<div class="tasks" id="taskList"></div>` + (vm.show.reflection ? `<div class="reflect-block"><label class="reflect-label" for="reflect"><span class="kanji">\u7701</span> ${this.esc(lbl.reflect)}${vm.reflectPrompt ? ` \u2014 ${this.esc(vm.reflectPrompt)}` : ""}</label><textarea id="reflect" placeholder="${this.esc(lbl.taskPlaceholder)}">${this.esc(vm.reflection || "")}</textarea></div>` : "") + (vm.resources.length ? `<div class="res-row">${vm.resources.map((r) => `<span class="chip"><b>${this.esc(r.label)}</b> ${this.esc(r.note)}</span>`).join("")}</div>` : "") + (vm.show.review ? `<button class="btn gold" id="markReview" type="button">${this.esc(lbl.scheduleReview)}</button>` : "") + (vm.complete && vm.notLast ? `<button class="next-day-cta" id="nextDayCta" type="button">${this.esc(lbl.nextDay)}</button>` : "") + `</div>`;
       const taskList = this.$("taskList");
       if (taskList) {
         taskList.innerHTML = vm.tasks.map((t, k) => {
-          const label = '<label class="task ' + (t.done ? "done" : "") + '" style="animation-delay:' + k * 55 + 'ms"><input type="checkbox" id="cb_' + this.esc(t.id) + '"' + (t.done ? " checked" : "") + '/><span class="box"></span><span class="task-text">' + this.esc(t.text) + "</span></label>";
+          const label = `<label class="task ${t.done ? "done" : ""}" style="animation-delay:${k * 55}ms"><input type="checkbox" id="cb_${this.esc(t.id)}"${t.done ? " checked" : ""}/><span class="box"></span><span class="task-text">${this.esc(t.text)}</span></label>`;
           if (!t.guidance) return label;
-          return '<div class="task-wrap">' + label + '<details class="task-hint"><summary>' + this.esc(lbl.hint) + '</summary><div class="task-hint-body">' + this.esc(t.guidance) + "</div></details></div>";
+          return `<div class="task-wrap">${label}<details class="task-hint"><summary>${this.esc(lbl.hint)}</summary><div class="task-hint-body">${this.esc(t.guidance)}</div></details></div>`;
         }).join("");
       }
     }
     // ----- dashboard -----------------------------------------------------------
-    #bar(p) {
-      return '<div class="bar"><i style="width:' + p + '%"></i></div>';
+    bar(p) {
+      return `<div class="bar"><i style="width:${p}%"></i></div>`;
     }
     renderDashboard(vm, lbl) {
       const dash = this.$("dashboard");
       if (!dash) return;
       const phaseRows = (vm.phases ?? []).map(
-        (ph) => '<div class="prow"><span class="lbl"><i></i>' + this.esc(ph.title) + '</span><span class="val">' + ph.stat.done + "/" + ph.stat.total + "</span></div>" + this.#bar(ph.stat.pct)
+        (ph) => `<div class="prow"><span class="lbl"><i></i>${this.esc(ph.title)}</span><span class="val">${ph.stat.done}/${ph.stat.total}</span></div>` + this.bar(ph.stat.pct)
       ).join("");
       const trackRows = vm.tracks.map(
-        (t) => '<div class="prow" data-track="' + this.esc(t.id) + '"><span class="lbl"><i></i>' + this.esc(t.label) + '</span><span class="val">' + t.stat.pct + '%</span></div><div class="bar" data-track="' + this.esc(t.id) + '"><i style="width:' + t.stat.pct + '%"></i></div>'
+        (t) => `<div class="prow" data-track="${this.esc(t.id)}"><span class="lbl"><i></i>${this.esc(t.label)}</span><span class="val">${t.stat.pct}%</span></div><div class="bar" data-track="${this.esc(t.id)}"><i style="width:${t.stat.pct}%"></i></div>`
       ).join("");
-      dash.innerHTML = '<div class="stat-card" data-kind="progress"><div class="eyebrow">' + this.esc(lbl.overallTitle) + '</div><div class="ring" style="--p:' + vm.overall.pct + '"><div><b>' + vm.overall.pct + "%</b><small>" + vm.overall.done + "/" + vm.overall.total + '</small></div></div><div class="stat-sub" style="text-align:center">' + this.esc(vm.daysOfLabel) + '</div></div><div class="stat-card" data-kind="streak"><div class="eyebrow">' + this.esc(lbl.streakTitle) + '</div><div class="flame">\u{1F525}</div><div class="streak-num">' + vm.streak + '</div><div class="stat-sub">' + this.esc(vm.streakWord) + " " + this.esc(lbl.inARow) + "</div></div>" + (vm.phases && vm.phases.length ? '<div class="stat-card" data-kind="phases"><div class="eyebrow">' + this.esc(lbl.phasesTitle) + "</div>" + phaseRows + "</div>" : "") + '<div class="stat-card" data-kind="tracks"><div class="eyebrow">' + this.esc(lbl.tracksTitle) + "</div>" + (trackRows || '<div class="muted">\u2014</div>') + "</div>";
+      dash.innerHTML = `<div class="stat-card" data-kind="progress"><div class="eyebrow">${this.esc(lbl.overallTitle)}</div><div class="ring" style="--p:${vm.overall.pct}"><div><b>${vm.overall.pct}%</b><small>${vm.overall.done}/${vm.overall.total}</small></div></div><div class="stat-sub" style="text-align:center">${this.esc(vm.daysOfLabel)}</div></div><div class="stat-card" data-kind="streak"><div class="eyebrow">${this.esc(lbl.streakTitle)}</div><div class="flame">\u{1F525}</div><div class="streak-num">${vm.streak}</div><div class="stat-sub">${this.esc(vm.streakWord)} ${this.esc(lbl.inARow)}</div></div>` + (vm.phases && vm.phases.length ? `<div class="stat-card" data-kind="phases"><div class="eyebrow">${this.esc(lbl.phasesTitle)}</div>${phaseRows}</div>` : "") + `<div class="stat-card" data-kind="tracks"><div class="eyebrow">${this.esc(lbl.tracksTitle)}</div>` + (trackRows || '<div class="muted">\u2014</div>') + `</div>`;
     }
     // ----- comeback ------------------------------------------------------------
     renderComeback(vm) {
@@ -1260,7 +1257,7 @@
       if (!cb) return;
       if (vm.show) {
         cb.style.display = "";
-        cb.innerHTML = "\u{1FA79} " + this.esc(vm.text);
+        cb.innerHTML = `\u{1FA79} ${this.esc(vm.text)}`;
       } else {
         cb.style.display = "none";
       }
@@ -1270,13 +1267,13 @@
       const grid = this.$("calGrid");
       if (!grid) return;
       const dh = this.$("calDow");
-      if (dh) dh.innerHTML = vm.dow.map((x) => "<span>" + this.esc(x) + "</span>").join("");
+      if (dh) dh.innerHTML = vm.dow.map((x) => `<span>${this.esc(x)}</span>`).join("");
       grid.innerHTML = vm.cells.map((c) => {
         let cls = "cday";
         if (c.other) cls += " other";
         if (c.done) cls += " done";
         if (c.today) cls += " today";
-        return '<span class="' + cls + '">' + c.day + "</span>";
+        return `<span class="${cls}">${c.day}</span>`;
       }).join("");
       const title = this.$("calTitle");
       if (title) title.textContent = vm.title;
@@ -1287,9 +1284,9 @@
       if (!host) return;
       const got = vm.filter((b) => b.unlocked).length;
       const title = this.$("trophiesTitle");
-      if (title) title.textContent = titleLabel + " \xB7 " + got + "/" + vm.length;
+      if (title) title.textContent = `${titleLabel} \xB7 ${got}/${vm.length}`;
       host.innerHTML = vm.map(
-        (b) => '<div class="badge ' + (b.unlocked ? "on" : "off") + '" data-tip="' + this.esc(b.title + " \u2014 " + (b.desc || "")) + '"><span class="bi">' + this.esc(b.icon || "\u2022") + '</span><span class="bt">' + this.esc(b.title) + "</span></div>"
+        (b) => `<div class="badge ${b.unlocked ? "on" : "off"}" data-tip="${this.esc(b.title + " \u2014 " + (b.desc || ""))}"><span class="bi">${this.esc(b.icon || "\u2022")}</span><span class="bt">${this.esc(b.title)}</span></div>`
       ).join("");
     }
     // ----- theme & track colors ------------------------------------------------
@@ -1300,7 +1297,7 @@
     }
     applyTrackColors(colors) {
       for (const c of colors) {
-        document.documentElement.style.setProperty("--track-" + c.id, c.color);
+        document.documentElement.style.setProperty(`--track-${c.id}`, c.color);
       }
     }
     setLang(lang) {
@@ -1358,38 +1355,38 @@
     badgeToast(newTrophyLabel, title, icon) {
       this.toast(
         "badge-toast",
-        '<span class="bt-i">' + this.esc(icon || "\u2022") + "</span><span>" + this.esc(newTrophyLabel) + " <b>" + this.esc(title) + "</b></span>"
+        `<span class="bt-i">${this.esc(icon || "\u2022")}</span><span>${this.esc(newTrophyLabel)} <b>${this.esc(title)}</b></span>`
       );
     }
     // ----- load-fail fallback --------------------------------------------------
     stub(message, reasons) {
-      const detail = reasons.length ? "<ul>" + reasons.map((x) => "<li>" + this.esc(x) + "</li>").join("") + "</ul>" : "";
-      document.body.innerHTML = '<div style="padding:24px;font:16px system-ui"><p>' + this.esc(message) + "</p>" + detail + "</div>";
+      const detail = reasons.length ? `<ul>${reasons.map((x) => `<li>${this.esc(x)}</li>`).join("")}</ul>` : "";
+      document.body.innerHTML = `<div style="padding:24px;font:16px system-ui"><p>${this.esc(message)}</p>${detail}</div>`;
     }
   };
 
   // src/adapters/dom-controller.ts
   var DomController = class {
-    #t;
-    #r;
-    #calOffset = 0;
+    t;
+    r;
+    calOffset = 0;
     constructor(tracker, renderer) {
-      this.#t = tracker;
-      this.#r = renderer;
+      this.t = tracker;
+      this.r = renderer;
     }
     start() {
-      this.#applyStaticLabels();
-      const href = this.#t.activeThemeHref();
-      if (href != null) this.#r.applyTheme(href, this.#t.activeThemeId() ?? "");
-      this.#r.applyTrackColors(this.#t.trackColors());
-      this.#r.setLang(this.#t.locale());
-      this.#wire();
-      this.#renderAll();
-      this.#startMotd();
+      this.applyStaticLabels();
+      const href = this.t.activeThemeHref();
+      if (href != null) this.r.applyTheme(href, this.t.activeThemeId() ?? "");
+      this.r.applyTrackColors(this.t.trackColors());
+      this.r.setLang(this.t.locale());
+      this.wire();
+      this.renderAll();
+      this.startMotd();
     }
     // ----- labels --------------------------------------------------------------
-    #labels() {
-      const u = (k) => this.#t.ui(k);
+    labels() {
+      const u = (k) => this.t.ui(k);
       return {
         todayVert: u("todayVert"),
         restVert: u("restVert"),
@@ -1410,10 +1407,10 @@
         newTrophy: u("newTrophy")
       };
     }
-    #applyStaticLabels() {
-      const u = (k) => this.#t.ui(k);
-      this.#r.setText("exportBtn", u("export"));
-      this.#r.setText("importBtn", u("import"));
+    applyStaticLabels() {
+      const u = (k) => this.t.ui(k);
+      this.r.setText("exportBtn", u("export"));
+      this.r.setText("importBtn", u("import"));
       const aria = [
         ["exportBtn", "export"],
         ["importBtn", "import"],
@@ -1422,176 +1419,176 @@
         ["prevDay", "prevDayAria"],
         ["nextDay", "nextDayAria"]
       ];
-      for (const [id, key] of aria) this.#r.setAttr(id, "aria-label", u(key));
-      this.#r.setAttr("packSelect", "aria-label", u("pack"));
-      this.#r.setAttr("themeSelect", "aria-label", u("theme"));
-      this.#r.setAttr("daySelect", "aria-label", this.#t.itemLabel());
-      this.#r.setText("summaryTitle", u("summaryTitle"));
-      this.#r.setText("todayTitle", u("todayTitle"));
+      for (const [id, key] of aria) this.r.setAttr(id, "aria-label", u(key));
+      this.r.setAttr("packSelect", "aria-label", u("pack"));
+      this.r.setAttr("themeSelect", "aria-label", u("theme"));
+      this.r.setAttr("daySelect", "aria-label", this.t.itemLabel());
+      this.r.setText("summaryTitle", u("summaryTitle"));
+      this.r.setText("todayTitle", u("todayTitle"));
     }
     // ----- render --------------------------------------------------------------
-    #renderAll() {
-      const lbl = this.#labels();
-      const today = this.#t.todayCard();
-      this.#r.renderSelectors(this.#t.selectors());
-      this.#r.renderToday(today, lbl);
-      this.#r.renderDashboard(this.#t.dashboard(), lbl);
-      this.#renderComeback();
-      this.#renderTrophies();
-      this.#bindTodayHandlers(today);
-      this.#syncDayNav();
+    renderAll() {
+      const lbl = this.labels();
+      const today = this.t.todayCard();
+      this.r.renderSelectors(this.t.selectors());
+      this.r.renderToday(today, lbl);
+      this.r.renderDashboard(this.t.dashboard(), lbl);
+      this.renderComeback();
+      this.renderTrophies();
+      this.bindTodayHandlers(today);
+      this.syncDayNav();
     }
-    #renderComeback() {
-      const cb = this.#t.comeback();
-      const text = this.#t.ui("comeback").replace("{n}", String(cb.days));
-      this.#r.renderComeback({ show: cb.show, text });
+    renderComeback() {
+      const cb = this.t.comeback();
+      const text = this.t.ui("comeback").replace("{n}", String(cb.days));
+      this.r.renderComeback({ show: cb.show, text });
     }
-    #renderTrophies() {
-      this.#r.renderTrophies(this.#t.trophies(), this.#t.ui("trophies"));
+    renderTrophies() {
+      this.r.renderTrophies(this.t.trophies(), this.t.ui("trophies"));
     }
-    #renderCalendar() {
-      this.#r.renderCalendar(this.#t.calendar(this.#calOffset));
+    renderCalendar() {
+      this.r.renderCalendar(this.t.calendar(this.calOffset));
     }
     // ----- today-card handlers (re-bound on every render) ----------------------
-    #bindTodayHandlers(vm) {
+    bindTodayHandlers(vm) {
       if (vm.rest) return;
       for (const t of vm.tasks) {
-        const cb = this.#r.$("cb_" + t.id);
+        const cb = this.r.$("cb_" + t.id);
         if (cb) {
           cb.onchange = (e) => {
             const checked = e.target.checked;
-            const was = this.#t.todayCard().complete;
-            const res = this.#t.toggleTask(t.id, checked);
-            if (!was && this.#t.todayCard().complete) {
-              this.#r.celebrate();
+            const was = this.t.todayCard().complete;
+            const res = this.t.toggleTask(t.id, checked);
+            if (!was && this.t.todayCard().complete) {
+              this.r.celebrate();
               if (res.unlockedBadges.length) {
-                const tro = this.#t.trophies().find((x) => x.id === res.unlockedBadges[0]);
-                if (tro) this.#r.badgeToast(this.#t.ui("newTrophy"), tro.title, tro.icon);
+                const tro = this.t.trophies().find((x) => x.id === res.unlockedBadges[0]);
+                if (tro) this.r.badgeToast(this.t.ui("newTrophy"), tro.title, tro.icon);
               }
-              if (res.surprise) this.#r.toast("toast", this.#r.esc(res.surprise));
+              if (res.surprise) this.r.toast("toast", this.r.esc(res.surprise));
             }
-            this.#renderAll();
+            this.renderAll();
           };
         }
       }
       if (vm.show.reflection) {
-        const reflect = this.#r.$("reflect");
+        const reflect = this.r.$("reflect");
         if (reflect) {
           reflect.oninput = (e) => {
-            this.#t.setReflection(e.target.value);
+            this.t.setReflection(e.target.value);
           };
         }
       }
       if (vm.show.review) {
-        const mr = this.#r.$("markReview");
+        const mr = this.r.$("markReview");
         if (mr) {
           mr.onclick = () => {
-            this.#t.scheduleReviewForCurrent();
-            this.#renderAll();
+            this.t.scheduleReviewForCurrent();
+            this.renderAll();
           };
         }
       }
     }
-    #syncDayNav() {
-      const sel = this.#t.selectors();
+    syncDayNav() {
+      const sel = this.t.selectors();
       const i = sel.items.findIndex((o) => o.selected);
-      const prev = this.#r.$("prevDay");
-      const next = this.#r.$("nextDay");
+      const prev = this.r.$("prevDay");
+      const next = this.r.$("nextDay");
       if (prev) prev.disabled = i <= 0;
       if (next) next.disabled = i >= sel.items.length - 1;
-      const cta = this.#r.$("nextDayCta");
-      if (cta) cta.onclick = () => this.#go(1);
+      const cta = this.r.$("nextDayCta");
+      if (cta) cta.onclick = () => this.go(1);
     }
-    #go(delta) {
-      this.#t.goToItem(delta);
-      this.#renderAll();
+    go(delta) {
+      this.t.goToItem(delta);
+      this.renderAll();
       try {
         window.scrollTo({ top: 0, behavior: "smooth" });
       } catch {
       }
     }
     // ----- wiring (port of app.js init()) --------------------------------------
-    #wire() {
-      const pack = this.#r.$("packSelect");
+    wire() {
+      const pack = this.r.$("packSelect");
       if (pack) {
         pack.onchange = () => {
-          this.#t.selectPack(pack.value);
-          this.#r.applyTrackColors(this.#t.trackColors());
-          this.#r.setLang(this.#t.locale());
-          this.#renderAll();
+          this.t.selectPack(pack.value);
+          this.r.applyTrackColors(this.t.trackColors());
+          this.r.setLang(this.t.locale());
+          this.renderAll();
         };
       }
-      const theme = this.#r.$("themeSelect");
+      const theme = this.r.$("themeSelect");
       if (theme) {
         theme.onchange = () => {
-          this.#t.selectTheme(theme.value);
-          const href = this.#t.activeThemeHref();
-          if (href != null) this.#r.applyTheme(href, theme.value);
+          this.t.selectTheme(theme.value);
+          const href = this.t.activeThemeHref();
+          if (href != null) this.r.applyTheme(href, theme.value);
         };
       }
-      const day = this.#r.$("daySelect");
+      const day = this.r.$("daySelect");
       if (day) {
         day.onchange = () => {
-          this.#t.selectItem(day.value);
-          this.#renderAll();
+          this.t.selectItem(day.value);
+          this.renderAll();
         };
       }
-      const calBtn = this.#r.$("calBtn");
+      const calBtn = this.r.$("calBtn");
       if (calBtn) {
         calBtn.onclick = () => {
-          this.#calOffset = 0;
-          this.#renderCalendar();
-          this.#open("calModal");
+          this.calOffset = 0;
+          this.renderCalendar();
+          this.open("calModal");
         };
       }
-      this.#bindClose("calClose", "calModal");
-      const calPrev = this.#r.$("calPrev");
+      this.bindClose("calClose", "calModal");
+      const calPrev = this.r.$("calPrev");
       if (calPrev) {
         calPrev.onclick = () => {
-          this.#calOffset--;
-          this.#renderCalendar();
+          this.calOffset--;
+          this.renderCalendar();
         };
       }
-      const calNext = this.#r.$("calNext");
+      const calNext = this.r.$("calNext");
       if (calNext) {
         calNext.onclick = () => {
-          this.#calOffset++;
-          this.#renderCalendar();
+          this.calOffset++;
+          this.renderCalendar();
         };
       }
-      this.#bindBackdrop("calModal");
-      const trBtn = this.#r.$("trophiesBtn");
+      this.bindBackdrop("calModal");
+      const trBtn = this.r.$("trophiesBtn");
       if (trBtn) {
         trBtn.onclick = () => {
-          this.#renderTrophies();
-          this.#open("trophiesModal");
+          this.renderTrophies();
+          this.open("trophiesModal");
         };
       }
-      this.#bindClose("trophiesClose", "trophiesModal");
-      this.#bindBackdrop("trophiesModal");
+      this.bindClose("trophiesClose", "trophiesModal");
+      this.bindBackdrop("trophiesModal");
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
           const m = document.querySelector(".modal.open");
           if (m) m.classList.remove("open");
         }
       });
-      const prev = this.#r.$("prevDay");
-      if (prev) prev.onclick = () => this.#go(-1);
-      const next = this.#r.$("nextDay");
-      if (next) next.onclick = () => this.#go(1);
-      const exportBtn = this.#r.$("exportBtn");
+      const prev = this.r.$("prevDay");
+      if (prev) prev.onclick = () => this.go(-1);
+      const next = this.r.$("nextDay");
+      if (next) next.onclick = () => this.go(1);
+      const exportBtn = this.r.$("exportBtn");
       if (exportBtn) {
         exportBtn.onclick = () => {
-          const blob = new Blob([this.#t.exportProgress()], { type: "application/json" });
+          const blob = new Blob([this.t.exportProgress()], { type: "application/json" });
           const a = document.createElement("a");
           a.href = URL.createObjectURL(blob);
-          a.download = this.#t.activePackId() + "-progress.json";
+          a.download = this.t.activePackId() + "-progress.json";
           a.click();
           URL.revokeObjectURL(a.href);
         };
       }
-      const importBtn = this.#r.$("importBtn");
-      const importFile = this.#r.$("importFile");
+      const importBtn = this.r.$("importBtn");
+      const importFile = this.r.$("importFile");
       if (importBtn && importFile) {
         importBtn.onclick = () => importFile.click();
         importFile.onchange = (e) => {
@@ -1600,12 +1597,12 @@
           const rd = new FileReader();
           rd.onload = () => {
             try {
-              this.#t.importProgress(String(rd.result));
-              this.#renderAll();
-              alert(this.#t.ui("importOk"));
+              this.t.importProgress(String(rd.result));
+              this.renderAll();
+              alert(this.t.ui("importOk"));
             } catch (err) {
               if (err instanceof ImportError || err instanceof ValidationError) {
-                alert(this.#t.ui("importFail").replace("{e}", err.message));
+                alert(this.t.ui("importFail").replace("{e}", err.message));
               } else {
                 throw err;
               }
@@ -1616,21 +1613,21 @@
         };
       }
     }
-    #open(id) {
-      const el = this.#r.$(id);
+    open(id) {
+      const el = this.r.$(id);
       if (el) el.classList.add("open");
     }
-    #bindClose(btnId, modalId) {
-      const btn = this.#r.$(btnId);
+    bindClose(btnId, modalId) {
+      const btn = this.r.$(btnId);
       if (btn) {
         btn.onclick = () => {
-          const m = this.#r.$(modalId);
+          const m = this.r.$(modalId);
           if (m) m.classList.remove("open");
         };
       }
     }
-    #bindBackdrop(modalId) {
-      const m = this.#r.$(modalId);
+    bindBackdrop(modalId) {
+      const m = this.r.$(modalId);
       if (m) {
         m.onclick = (e) => {
           if (e.target.id === modalId) m.classList.remove("open");
@@ -1638,14 +1635,14 @@
       }
     }
     // ----- motd ----------------------------------------------------------------
-    #startMotd() {
-      const mottos = this.#t.mottos();
+    startMotd() {
+      const mottos = this.t.mottos();
       if (!mottos.length) return;
-      this.#r.setText("motd", mottos[0]);
+      this.r.setText("motd", mottos[0]);
       if (mottos.length > 1) {
         let i = 0;
         setInterval(() => {
-          const el = this.#r.$("motd");
+          const el = this.r.$("motd");
           if (!el) return;
           el.classList.add("motd-out");
           setTimeout(() => {

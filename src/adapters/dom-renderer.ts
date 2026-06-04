@@ -38,13 +38,7 @@ export class DomRenderer {
     sel.innerHTML = options
       .map(
         (o) =>
-          '<option value="' +
-          this.esc(o.id) +
-          '"' +
-          (o.selected ? ' selected' : '') +
-          '>' +
-          this.esc(o.label) +
-          '</option>',
+          `<option value="${this.esc(o.id)}"${o.selected ? ' selected' : ''}>${this.esc(o.label)}</option>`,
       )
       .join('');
   }
@@ -60,110 +54,61 @@ export class DomRenderer {
 
     if (vm.rest) {
       el.innerHTML =
-        '<div class="today-side"><span class="vert">' +
-        this.esc(lbl.restVert) +
-        '</span></div><div class="today-main">' +
-        '<h2 class="today-title">' +
-        this.esc(vm.title) +
-        '</h2>' +
-        '<p class="warm"><span class="warm-i">☾</span> ' +
-        this.esc(vm.reflectPrompt || '') +
-        '</p>' +
-        '<div class="rest-due">' +
-        (vm.dueReviews.length
-          ? this.esc(lbl.dueToday) + ' — <b>' + this.esc(vm.dueReviews.join(' · ')) + '</b>'
-          : this.esc(lbl.restToday)) +
-        '</div>' +
+        `<div class="today-side"><span class="vert">${this.esc(lbl.restVert)}</span></div>` +
+        `<div class="today-main">` +
+        `<h2 class="today-title">${this.esc(vm.title)}</h2>` +
+        `<p class="warm"><span class="warm-i">☾</span> ${this.esc(vm.reflectPrompt || '')}</p>` +
+        `<div class="rest-due">${
+          vm.dueReviews.length
+            ? `${this.esc(lbl.dueToday)} — <b>${this.esc(vm.dueReviews.join(' · '))}</b>`
+            : this.esc(lbl.restToday)
+        }</div>` +
         (vm.notLast
-          ? '<button class="next-day-cta" id="nextDayCta" type="button">' +
-            this.esc(lbl.nextDay) +
-            '</button>'
+          ? `<button class="next-day-cta" id="nextDayCta" type="button">${this.esc(lbl.nextDay)}</button>`
           : '') +
-        '</div>';
+        `</div>`;
       return;
     }
 
     el.innerHTML =
-      '<div class="today-side"><span class="vert">' +
-      this.esc(lbl.todayVert) +
-      '</span></div><div class="today-main">' +
-      '<span class="trackpill"><span class="k">' +
-      this.esc(vm.trackIcon) +
-      '</span> ' +
-      this.esc(vm.trackLabel) +
-      '</span>' +
-      '<h2 class="today-title">' +
-      this.esc(vm.title) +
-      '</h2>' +
+      `<div class="today-side"><span class="vert">${this.esc(lbl.todayVert)}</span></div>` +
+      `<div class="today-main">` +
+      `<span class="trackpill"><span class="k">${this.esc(vm.trackIcon)}</span> ${this.esc(vm.trackLabel)}</span>` +
+      `<h2 class="today-title">${this.esc(vm.title)}</h2>` +
       (vm.show.warmup && vm.warmup
-        ? '<div class="warm"><span class="warm-i">✦</span> <span class="muted">' +
-          this.esc(lbl.warmup) +
-          '</span> ' +
-          this.esc(vm.warmup) +
-          '</div>'
+        ? `<div class="warm"><span class="warm-i">✦</span> <span class="muted">${this.esc(lbl.warmup)}</span> ${this.esc(vm.warmup)}</div>`
         : '') +
-      '<div class="tasks" id="taskList"></div>' +
+      `<div class="tasks" id="taskList"></div>` +
       (vm.show.reflection
-        ? '<div class="reflect-block"><label class="reflect-label" for="reflect"><span class="kanji">省</span> ' +
-          this.esc(lbl.reflect) +
-          (vm.reflectPrompt ? ' — ' + this.esc(vm.reflectPrompt) : '') +
-          '</label><textarea id="reflect" placeholder="' +
-          this.esc(lbl.taskPlaceholder) +
-          '">' +
-          this.esc(vm.reflection || '') +
-          '</textarea></div>'
+        ? `<div class="reflect-block"><label class="reflect-label" for="reflect"><span class="kanji">省</span> ${this.esc(lbl.reflect)}${vm.reflectPrompt ? ` — ${this.esc(vm.reflectPrompt)}` : ''}</label>` +
+          `<textarea id="reflect" placeholder="${this.esc(lbl.taskPlaceholder)}">${this.esc(vm.reflection || '')}</textarea></div>`
         : '') +
       (vm.resources.length
-        ? '<div class="res-row">' +
-          vm.resources
-            .map(
-              (r) =>
-                '<span class="chip"><b>' +
-                this.esc(r.label) +
-                '</b> ' +
-                this.esc(r.note) +
-                '</span>',
-            )
-            .join('') +
-          '</div>'
+        ? `<div class="res-row">${vm.resources
+            .map((r) => `<span class="chip"><b>${this.esc(r.label)}</b> ${this.esc(r.note)}</span>`)
+            .join('')}</div>`
         : '') +
       (vm.show.review
-        ? '<button class="btn gold" id="markReview" type="button">' +
-          this.esc(lbl.scheduleReview) +
-          '</button>'
+        ? `<button class="btn gold" id="markReview" type="button">${this.esc(lbl.scheduleReview)}</button>`
         : '') +
       (vm.complete && vm.notLast
-        ? '<button class="next-day-cta" id="nextDayCta" type="button">' +
-          this.esc(lbl.nextDay) +
-          '</button>'
+        ? `<button class="next-day-cta" id="nextDayCta" type="button">${this.esc(lbl.nextDay)}</button>`
         : '') +
-      '</div>';
+      `</div>`;
 
     const taskList = this.$('taskList');
     if (taskList) {
       taskList.innerHTML = vm.tasks
         .map((t, k) => {
           const label =
-            '<label class="task ' +
-            (t.done ? 'done' : '') +
-            '" style="animation-delay:' +
-            k * 55 +
-            'ms"><input type="checkbox" id="cb_' +
-            this.esc(t.id) +
-            '"' +
-            (t.done ? ' checked' : '') +
-            '/><span class="box"></span><span class="task-text">' +
-            this.esc(t.text) +
-            '</span></label>';
+            `<label class="task ${t.done ? 'done' : ''}" style="animation-delay:${k * 55}ms">` +
+            `<input type="checkbox" id="cb_${this.esc(t.id)}"${t.done ? ' checked' : ''}/>` +
+            `<span class="box"></span><span class="task-text">${this.esc(t.text)}</span></label>`;
           if (!t.guidance) return label;
           return (
-            '<div class="task-wrap">' +
-            label +
-            '<details class="task-hint"><summary>' +
-            this.esc(lbl.hint) +
-            '</summary><div class="task-hint-body">' +
-            this.esc(t.guidance) +
-            '</div></details></div>'
+            `<div class="task-wrap">${label}` +
+            `<details class="task-hint"><summary>${this.esc(lbl.hint)}</summary>` +
+            `<div class="task-hint-body">${this.esc(t.guidance)}</div></details></div>`
           );
         })
         .join('');
@@ -173,7 +118,7 @@ export class DomRenderer {
   // ----- dashboard -----------------------------------------------------------
 
   private bar(p: number): string {
-    return '<div class="bar"><i style="width:' + p + '%"></i></div>';
+    return `<div class="bar"><i style="width:${p}%"></i></div>`;
   }
 
   public renderDashboard(vm: DashboardVM, lbl: RenderLabels): void {
@@ -182,67 +127,33 @@ export class DomRenderer {
     const phaseRows = (vm.phases ?? [])
       .map(
         (ph) =>
-          '<div class="prow"><span class="lbl"><i></i>' +
-          this.esc(ph.title) +
-          '</span><span class="val">' +
-          ph.stat.done +
-          '/' +
-          ph.stat.total +
-          '</span></div>' +
+          `<div class="prow"><span class="lbl"><i></i>${this.esc(ph.title)}</span>` +
+          `<span class="val">${ph.stat.done}/${ph.stat.total}</span></div>` +
           this.bar(ph.stat.pct),
       )
       .join('');
     const trackRows = vm.tracks
       .map(
         (t) =>
-          '<div class="prow" data-track="' +
-          this.esc(t.id) +
-          '"><span class="lbl"><i></i>' +
-          this.esc(t.label) +
-          '</span><span class="val">' +
-          t.stat.pct +
-          '%</span></div><div class="bar" data-track="' +
-          this.esc(t.id) +
-          '"><i style="width:' +
-          t.stat.pct +
-          '%"></i></div>',
+          `<div class="prow" data-track="${this.esc(t.id)}"><span class="lbl"><i></i>${this.esc(t.label)}</span>` +
+          `<span class="val">${t.stat.pct}%</span></div>` +
+          `<div class="bar" data-track="${this.esc(t.id)}"><i style="width:${t.stat.pct}%"></i></div>`,
       )
       .join('');
     dash.innerHTML =
-      '<div class="stat-card" data-kind="progress"><div class="eyebrow">' +
-      this.esc(lbl.overallTitle) +
-      '</div><div class="ring" style="--p:' +
-      vm.overall.pct +
-      '"><div><b>' +
-      vm.overall.pct +
-      '%</b><small>' +
-      vm.overall.done +
-      '/' +
-      vm.overall.total +
-      '</small></div></div><div class="stat-sub" style="text-align:center">' +
-      this.esc(vm.daysOfLabel) +
-      '</div></div>' +
-      '<div class="stat-card" data-kind="streak"><div class="eyebrow">' +
-      this.esc(lbl.streakTitle) +
-      '</div><div class="flame">🔥</div><div class="streak-num">' +
-      vm.streak +
-      '</div><div class="stat-sub">' +
-      this.esc(vm.streakWord) +
-      ' ' +
-      this.esc(lbl.inARow) +
-      '</div></div>' +
+      `<div class="stat-card" data-kind="progress"><div class="eyebrow">${this.esc(lbl.overallTitle)}</div>` +
+      `<div class="ring" style="--p:${vm.overall.pct}"><div><b>${vm.overall.pct}%</b>` +
+      `<small>${vm.overall.done}/${vm.overall.total}</small></div></div>` +
+      `<div class="stat-sub" style="text-align:center">${this.esc(vm.daysOfLabel)}</div></div>` +
+      `<div class="stat-card" data-kind="streak"><div class="eyebrow">${this.esc(lbl.streakTitle)}</div>` +
+      `<div class="flame">🔥</div><div class="streak-num">${vm.streak}</div>` +
+      `<div class="stat-sub">${this.esc(vm.streakWord)} ${this.esc(lbl.inARow)}</div></div>` +
       (vm.phases && vm.phases.length
-        ? '<div class="stat-card" data-kind="phases"><div class="eyebrow">' +
-          this.esc(lbl.phasesTitle) +
-          '</div>' +
-          phaseRows +
-          '</div>'
+        ? `<div class="stat-card" data-kind="phases"><div class="eyebrow">${this.esc(lbl.phasesTitle)}</div>${phaseRows}</div>`
         : '') +
-      '<div class="stat-card" data-kind="tracks"><div class="eyebrow">' +
-      this.esc(lbl.tracksTitle) +
-      '</div>' +
+      `<div class="stat-card" data-kind="tracks"><div class="eyebrow">${this.esc(lbl.tracksTitle)}</div>` +
       (trackRows || '<div class="muted">—</div>') +
-      '</div>';
+      `</div>`;
   }
 
   // ----- comeback ------------------------------------------------------------
@@ -252,7 +163,7 @@ export class DomRenderer {
     if (!cb) return;
     if (vm.show) {
       cb.style.display = '';
-      cb.innerHTML = '🩹 ' + this.esc(vm.text);
+      cb.innerHTML = `🩹 ${this.esc(vm.text)}`;
     } else {
       cb.style.display = 'none';
     }
@@ -264,14 +175,14 @@ export class DomRenderer {
     const grid = this.$('calGrid');
     if (!grid) return;
     const dh = this.$('calDow');
-    if (dh) dh.innerHTML = vm.dow.map((x) => '<span>' + this.esc(x) + '</span>').join('');
+    if (dh) dh.innerHTML = vm.dow.map((x) => `<span>${this.esc(x)}</span>`).join('');
     grid.innerHTML = vm.cells
       .map((c) => {
         let cls = 'cday';
         if (c.other) cls += ' other';
         if (c.done) cls += ' done';
         if (c.today) cls += ' today';
-        return '<span class="' + cls + '">' + c.day + '</span>';
+        return `<span class="${cls}">${c.day}</span>`;
       })
       .join('');
     const title = this.$('calTitle');
@@ -285,19 +196,13 @@ export class DomRenderer {
     if (!host) return;
     const got = vm.filter((b) => b.unlocked).length;
     const title = this.$('trophiesTitle');
-    if (title) title.textContent = titleLabel + ' · ' + got + '/' + vm.length;
+    if (title) title.textContent = `${titleLabel} · ${got}/${vm.length}`;
     host.innerHTML = vm
       .map(
         (b) =>
-          '<div class="badge ' +
-          (b.unlocked ? 'on' : 'off') +
-          '" data-tip="' +
-          this.esc(b.title + ' — ' + (b.desc || '')) +
-          '"><span class="bi">' +
-          this.esc(b.icon || '•') +
-          '</span><span class="bt">' +
-          this.esc(b.title) +
-          '</span></div>',
+          `<div class="badge ${b.unlocked ? 'on' : 'off'}" data-tip="${this.esc(b.title + ' — ' + (b.desc || ''))}">` +
+          `<span class="bi">${this.esc(b.icon || '•')}</span>` +
+          `<span class="bt">${this.esc(b.title)}</span></div>`,
       )
       .join('');
   }
@@ -312,7 +217,7 @@ export class DomRenderer {
 
   public applyTrackColors(colors: TrackColor[]): void {
     for (const c of colors) {
-      document.documentElement.style.setProperty('--track-' + c.id, c.color);
+      document.documentElement.style.setProperty(`--track-${c.id}`, c.color);
     }
   }
 
@@ -378,13 +283,8 @@ export class DomRenderer {
   public badgeToast(newTrophyLabel: string, title: string, icon: string): void {
     this.toast(
       'badge-toast',
-      '<span class="bt-i">' +
-        this.esc(icon || '•') +
-        '</span><span>' +
-        this.esc(newTrophyLabel) +
-        ' <b>' +
-        this.esc(title) +
-        '</b></span>',
+      `<span class="bt-i">${this.esc(icon || '•')}</span>` +
+        `<span>${this.esc(newTrophyLabel)} <b>${this.esc(title)}</b></span>`,
     );
   }
 
@@ -392,13 +292,9 @@ export class DomRenderer {
 
   public stub(message: string, reasons: string[]): void {
     const detail = reasons.length
-      ? '<ul>' + reasons.map((x) => '<li>' + this.esc(x) + '</li>').join('') + '</ul>'
+      ? `<ul>${reasons.map((x) => `<li>${this.esc(x)}</li>`).join('')}</ul>`
       : '';
     document.body.innerHTML =
-      '<div style="padding:24px;font:16px system-ui"><p>' +
-      this.esc(message) +
-      '</p>' +
-      detail +
-      '</div>';
+      `<div style="padding:24px;font:16px system-ui"><p>${this.esc(message)}</p>${detail}</div>`;
   }
 }

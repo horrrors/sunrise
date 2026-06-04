@@ -12,20 +12,31 @@ export class ProgressStats {
     return [...s];
   }
   public overall(pack: Pack, progress: Progress): Stat {
-    let done = 0, total = 0;
-    for (const it of this.all(pack)) { if (it.rest) continue; total++; if (progress.isItemComplete(it)) done++; }
+    let done = 0;
+    let total = 0;
+    for (const it of this.all(pack)) {
+      if (it.rest) continue;
+      total++;
+      if (progress.isItemComplete(it)) done++;
+    }
     return { done, total, pct: pct(done, total) };
   }
   public byTrack(pack: Pack, progress: Progress): Record<string, Stat> {
     const acc: Record<string, Stat> = {};
-    for (const it of this.all(pack)) { if (it.rest) continue; this.bump(acc, it.track, progress.isItemComplete(it)); }
+    for (const it of this.all(pack)) {
+      if (it.rest) continue;
+      this.bump(acc, it.track, progress.isItemComplete(it));
+    }
     return this.finalize(acc);
   }
   public byPhase(pack: Pack, progress: Progress): Record<string, Stat> {
     const acc: Record<string, Stat> = {};
     for (const g of pack.groups) {
       if (g.phase == null) continue;
-      for (const it of g.items) { if (it.rest) continue; this.bump(acc, g.phase, progress.isItemComplete(it)); }
+      for (const it of g.items) {
+        if (it.rest) continue;
+        this.bump(acc, g.phase, progress.isItemComplete(it));
+      }
     }
     return this.finalize(acc);
   }
@@ -47,10 +58,14 @@ export class ProgressStats {
   }
   private bump(acc: Record<string, Stat>, key: string, done: boolean): void {
     const a = acc[key] ?? (acc[key] = { done: 0, total: 0, pct: 0 });
-    a.total++; if (done) a.done++;
+    a.total++;
+    if (done) a.done++;
   }
   private finalize(acc: Record<string, Stat>): Record<string, Stat> {
-    for (const k of Object.keys(acc)) { const a = acc[k]!; a.pct = pct(a.done, a.total); }
+    for (const k of Object.keys(acc)) {
+      const a = acc[k]!;
+      a.pct = pct(a.done, a.total);
+    }
     return acc;
   }
 }
