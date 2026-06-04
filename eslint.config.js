@@ -9,7 +9,10 @@ export default tseslint.config(
     rules: {
       // the domain ring must stay browser-agnostic
       'no-restricted-globals': ['error', 'window', 'document', 'localStorage', 'Date'],
-      'no-restricted-properties': ['error', { object: 'Math', property: 'random', message: 'Use the Random port.' }],
+      'no-restricted-properties': [
+        'error',
+        { object: 'Math', property: 'random', message: 'Use the Random port.' },
+      ],
     },
   },
   { ignores: ['dist/', 'node_modules/', 'data/', 'themes/', 'logic.js', 'app.js', 'core/'] },

@@ -1,0 +1,11 @@
+node_modules/
+dist/
+package-lock.json
+logic.js
+app.js
+index.html
+core/
+data/
+themes/
+*.md
+docs/
