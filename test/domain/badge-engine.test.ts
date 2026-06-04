@@ -1,0 +1,65 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { BadgeEngine } from '../../src/domain/badge-engine.ts';
+import { Streaks } from '../../src/domain/streaks.ts';
+import { ProgressStats } from '../../src/domain/progress-stats.ts';
+import { Progress } from '../../src/domain/progress.ts';
+import type { Pack, Item } from '../../src/domain/entities.ts';
+import type { BadgeRule } from '../../src/domain/badge-rule.ts';
+
+const PACK: Pack = {
+  schema: 'sunrise.pack/v1', id: 't', name: 'T', version: '1.0.0',
+  tracks: [{ id: 'dsa', label: 'DSA' }, { id: 'js', label: 'JS' }],
+  phases: [{ id: 'p1', title: 'P1' }],
+  groups: [{ id: 'g1', title: 'G1', phase: 'p1', items: [
+    { id: 'i1', track: 'dsa', tasks: [{ id: 't1', text: 'x' }] },
+    { id: 'i2', track: 'js', tasks: [{ id: 't1', text: 'x' }] },
+  ] }],
+};
+const itemOf = (id: string): Item => PACK.groups.flatMap((g) => g.items).find((i) => i.id === id)!;
+function engine(): BadgeEngine { return new BadgeEngine(new Streaks(), new ProgressStats()); }
+function done(ids: string[], hour = 12): Progress {
+  const p = Progress.empty();
+  for (const id of ids) { const it = itemOf(id); p.setTaskDone(it, 't1', true, '2026-05-30', hour); }
+  return p;
+}
+
+test('generic + pack rules evaluate', () => {
+  const rules: BadgeRule[] = [
+    { id: 'first', type: 'days-done', gte: 1, title: 'F' },
+    { id: 'fin', type: 'all-done', title: 'Fin' },
+    { id: 'owl', type: 'hour-range', from: 22, to: 5, title: 'O' },
+    { id: 'wknd', type: 'weekday', days: [6, 7], title: 'W' },
+    { id: 'poly', type: 'all-tracks', eachGte: 1, title: 'P' },
+    { id: 'dsam', type: 'track-complete', track: 'dsa', title: 'D' },
+    { id: 'cap', type: 'item-complete', item: 'i2', title: 'C' },
+  ];
+  const p = done(['i1'], 23); // Saturday 2026-05-30, 23:00, dsa done
+  const by = Object.fromEntries(engine().evaluate(PACK, p, rules).map((b) => [b.id, b.unlocked]));
+  assert.equal(by['first'], true);
+  assert.equal(by['fin'], false);   // i2 not done
+  assert.equal(by['owl'], true);    // 23 in [22,5)
+  assert.equal(by['wknd'], true);   // Saturday
+  assert.equal(by['poly'], false);  // js track not touched
+  assert.equal(by['dsam'], true);   // dsa 100%
+  assert.equal(by['cap'], false);   // i2 not complete
+});
+test('sync awards once; evaluate keeps owned unlocked + at after work undone', () => {
+  const e = engine();
+  const rules: BadgeRule[] = [{ id: 'first', type: 'days-done', gte: 1, title: 'F' }];
+  const p = done(['i1']);
+  assert.deepEqual(e.sync(PACK, p, rules, '2026-05-30'), ['first']);
+  assert.deepEqual(e.sync(PACK, p, rules, '2026-05-31'), []); // idempotent
+  const undone = new Progress({ schema: 'sunrise.progress/v1', items: {}, reviews: [], badges: p.toJSON().badges, lastSurprise: null });
+  const b = e.evaluate(PACK, undone, rules).find((x) => x.id === 'first')!;
+  assert.equal(b.unlocked, true);     // sticky
+  assert.equal(b.at, '2026-05-30');   // preserved
+});
+test('later rule with same id wins (dedupe keeps last)', () => {
+  const rules: BadgeRule[] = [
+    { id: 'first', type: 'days-done', gte: 1, title: 'F' },
+    { id: 'first', type: 'days-done', gte: 99, title: 'F2' },
+  ];
+  const by = engine().evaluate(PACK, done(['i1']), rules).find((b) => b.id === 'first')!;
+  assert.equal(by.unlocked, false); // gte:99 wins
+});
