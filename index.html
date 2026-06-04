@@ -5,7 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Sunrise · 日の出</title>
 <!-- canonical default for optional section titles; themes override (e.g. bonus = bold blocks) -->
-<style>.section-title{font:600 12px ui-monospace,SFMono-Regular,monospace;letter-spacing:.18em;text-transform:uppercase;opacity:.5;margin:20px 2px 10px}</style>
+<style>.section-title{font:600 12px ui-monospace,SFMono-Regular,monospace;letter-spacing:.18em;text-transform:uppercase;opacity:.5;margin:20px 2px 10px}
+/* canonical default for the behavioral-tick spoiler; inherits theme color/font, themes may override */
+.task-wrap{display:flex;flex-direction:column;gap:8px}
+.task-hint{font-size:13px;margin-left:6px}
+.task-hint>summary{cursor:pointer;list-style:none;opacity:.55;font-weight:600;letter-spacing:.02em;display:inline-flex;align-items:center;gap:6px;width:fit-content}
+.task-hint>summary::-webkit-details-marker{display:none}
+.task-hint>summary::before{content:"\25B8";font-size:11px}
+.task-hint[open]>summary::before{content:"\25BE"}
+.task-hint[open]>summary{margin-bottom:6px}
+.task-hint-body{font-size:13px;line-height:1.55;opacity:.78;border-left:2px solid currentColor;padding-left:10px;margin-left:3px}</style>
 <link id="themeCss" rel="stylesheet" href="themes/bonus.css" />
 </head>
 <body>

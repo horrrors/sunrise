@@ -56,7 +56,12 @@
       (d.track === 'dsa' ? '<button class="btn gold" id="markReview" type="button">' + esc(ui('scheduleReview')) + '</button>' : '') +
       ((dayComplete && notLast) ? '<button class="next-day-cta" id="nextDayCta" type="button">' + esc(ui('nextDay')) + '</button>' : '') +
       '</div>';
-    $('taskList').innerHTML = d.tasks.map(function (t, k){ var done = !!(st.tasks && st.tasks[t.id]); return '<label class="task ' + (done ? 'done' : '') + '" style="animation-delay:' + (k * 55) + 'ms"><input type="checkbox" id="cb_' + t.id + '"' + (done ? ' checked' : '') + '/><span class="box"></span><span class="task-text">' + esc(t.text) + '</span></label>'; }).join('');
+    $('taskList').innerHTML = d.tasks.map(function (t, k){
+      var done = !!(st.tasks && st.tasks[t.id]);
+      var label = '<label class="task ' + (done ? 'done' : '') + '" style="animation-delay:' + (k * 55) + 'ms"><input type="checkbox" id="cb_' + t.id + '"' + (done ? ' checked' : '') + '/><span class="box"></span><span class="task-text">' + esc(t.text) + '</span></label>';
+      if (!t.guidance) return label;
+      return '<div class="task-wrap">' + label + '<details class="task-hint"><summary>' + esc(ui('hint')) + '</summary><div class="task-hint-body">' + esc(t.guidance) + '</div></details></div>';
+    }).join('');
     d.tasks.forEach(function (t){ $('cb_' + t.id).onchange = function (e){ var was = L.isDayComplete(C, state, currentDayId); state = L.setTaskDone(C, state, currentDayId, t.id, e.target.checked, todayStr(), new Date().getHours()); if (!was && L.isDayComplete(C, state, currentDayId)) onDayCompleted(); saveState(); renderAll(); }; });
     $('reflect').oninput = function (e){ state = L.setReflection(state, currentDayId, e.target.value); saveState(); };
     if (d.track === 'dsa') $('markReview').onclick = function (){ state = L.scheduleReview(state, 'w' + d.week + '-' + d.title, todayStr()); saveState(); renderAll(); };
