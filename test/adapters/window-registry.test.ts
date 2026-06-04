@@ -134,3 +134,13 @@ test('packs() and themes() return read-only snapshot (arrays)', () => {
   assert.equal(Array.isArray(packs), true);
   assert.equal(packs.length, 1);
 });
+
+test('packs() returns a snapshot that does not mutate when more packs register later', () => {
+  const reg = new WindowPluginRegistry();
+  reg.registerPack(VALID_PACK);
+  const snapshot = reg.packs();
+  assert.equal(snapshot.length, 1);
+  reg.registerPack({ ...VALID_PACK, id: 'p2' });
+  assert.equal(snapshot.length, 1);        // snapshot unchanged
+  assert.equal(reg.packs().length, 2);     // fresh call reflects the new pack
+});

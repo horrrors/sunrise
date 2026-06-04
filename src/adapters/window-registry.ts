@@ -16,9 +16,9 @@ export class WindowPluginRegistry implements PackSource, ThemeSource {
   #packValidator = new PackValidator();
   #themeValidator = new ThemeValidator();
 
-  packs(): readonly Pack[] { return this.#packs; }
-  themes(): readonly Theme[] { return this.#themes; }
-  rejected(): readonly Rejection[] { return this.#rejected; }
+  packs(): readonly Pack[] { return [...this.#packs]; }
+  themes(): readonly Theme[] { return [...this.#themes]; }
+  rejected(): readonly Rejection[] { return [...this.#rejected]; }
 
   addBuiltinThemes(themes: readonly Theme[]): void { this.#themes.push(...themes); }
 
