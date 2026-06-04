@@ -21,7 +21,7 @@
     const item = getItem(pack, id);
     if (!item || item.rest || _tasks(item).length === 0) return false;
     const st = progress.items[id]; if (!st) return false;
-    return _tasks(item).every((t) => st.tasks[t.id]);
+    return _tasks(item).every((t) => st.tasks && st.tasks[t.id]);
   }
   function setTaskDone(pack, progress, id, taskId, done, today, hour){
     const items = { ...progress.items }; const it = _ensure(items, id); it.tasks = { ...it.tasks };

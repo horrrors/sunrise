@@ -78,3 +78,13 @@ test('syncBadges records new unlocks; later rules with same id override; idempot
   const r3 = L.syncBadges(PACK, r2.progress, '2026-05-31', [{ id:'first', type:'days-done', gte:1, title:'F' }]);
   assert.equal(r3.unlocked.length, 0);
 });
+test('evaluateBadges keeps an owned badge unlocked + preserves its at, even if the rule no longer passes', () => {
+  const rules = [{ id:'first', type:'days-done', gte:1, title:'F' }];
+  let p = done(PACK, ['i1']);                       // 1 item complete -> "first" should unlock
+  const r = L.syncBadges(PACK, p, '2026-05-30', rules);
+  assert.equal(r.progress.badges['first'].at, '2026-05-30');
+  const undone = { items:{}, reviews:[], badges:r.progress.badges }; // work undone, badge still owned
+  const e = L.evaluateBadges(PACK, undone, '2026-06-01', rules).find((b) => b.id === 'first');
+  assert.equal(e.unlocked, true);                   // stays unlocked (sticky)
+  assert.equal(e.at, '2026-05-30');                 // original unlock date preserved
+});
