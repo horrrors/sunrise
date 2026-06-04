@@ -123,7 +123,12 @@
   function renderAll(){ renderPackSelect(); renderItemSelect(); renderToday(); renderDashboard(); renderComeback(); renderTrophies(); }
 
   function init(){
-    if (!L || !S.packs || !packs.length){ document.body.innerHTML = '<p style="padding:24px;font:16px system-ui">Failed to load plugins. Check that core/*.js, logic.js, and data/* sit next to index.html.</p>'; return; }
+    if (!L || !S.packs || !packs.length){
+      var rej = (S._rejected || []).map(function (r){ return r.kind + ' "' + r.id + '": ' + r.errors.map(function (e){ return e.path + ' ' + e.msg; }).join(', '); });
+      var detail = rej.length ? '<ul>' + rej.map(function (x){ return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '';
+      document.body.innerHTML = '<div style="padding:24px;font:16px system-ui"><p>Failed to load plugins. Check that core/*.js, logic.js, and data/* sit next to index.html.</p>' + detail + '</div>';
+      return;
+    }
     ST.migrate(store);
     var sess = ST.loadSession(store);
     selectPack((packs.find(function (p){ return p.id === sess.activePackId; }) || packs[0]).id);

@@ -1,4 +1,7 @@
 // scripts/reshape-curriculum.js  — one-off transform; run with `node scripts/reshape-curriculum.js`
+// NOTE: one-off generator — NO LONGER RUNNABLE. Its inputs (data/curriculum.js,
+// data/content.js) were removed once the curriculum became data/packs/dev-roadmap.js.
+// Kept for provenance only; the pack is now maintained directly. Do not re-run.
 'use strict';
 const fs = require('fs');
 const path = require('path');
