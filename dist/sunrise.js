@@ -428,23 +428,6 @@
     }
   };
 
-  // src/domain/dates.ts
-  function ms(s) {
-    const [y, m, d] = s.split("-").map(Number);
-    return Date.UTC(y, m - 1, d);
-  }
-  function addDays(s, n) {
-    const dt = new Date(ms(s));
-    dt.setUTCDate(dt.getUTCDate() + n);
-    return dt.toISOString().slice(0, 10);
-  }
-  function diffDays(a, b) {
-    return Math.round((ms(b) - ms(a)) / 864e5);
-  }
-  function weekdayMon(s) {
-    return (diffDays("2024-01-01", s) % 7 + 7) % 7;
-  }
-
   // src/domain/tracker.ts
   var SURPRISE_CHANCE = 0.12;
   var Tracker = class {
@@ -681,38 +664,29 @@
         daysOfLabel: this.uiText("daysOf").replace("{n}", String(overall.total))
       };
     }
-    calendar(monthOffset) {
-      const done = new Set(this.progress.completedDates());
-      const today = this.deps.clock.today();
-      const [ys, ms2] = today.split("-");
-      let y = Number(ys);
-      let m = Number(ms2) + monthOffset;
-      while (m < 1) {
-        m += 12;
-        y--;
-      }
-      while (m > 12) {
-        m -= 12;
-        y++;
-      }
-      const first = `${y}-${m < 10 ? "0" : ""}${m}-01`;
-      const start = addDays(first, -weekdayMon(first));
-      const cells = [];
-      for (let k = 0; k < 42; k++) {
-        const dd = addDays(start, k);
-        cells.push({
-          day: Number(dd.slice(8, 10)),
-          done: done.has(dd),
-          today: dd === today,
-          other: dd.slice(0, 7) !== first.slice(0, 7)
-        });
-      }
-      const months = this.deps.defaultMonths;
-      return {
-        title: `${months[m - 1] ?? ""} ${y}`,
-        dow: [...this.deps.defaultDow],
-        cells
-      };
+    cardMap() {
+      let done = 0;
+      let total = 0;
+      const groups = this.pack.groups.map((g) => ({
+        id: g.id,
+        title: g.title,
+        items: g.items.map((it) => {
+          const rest = !!it.rest;
+          const isDone = this.progress.isItemComplete(it);
+          if (!rest) {
+            total++;
+            if (isDone) done++;
+          }
+          return {
+            id: it.id,
+            title: it.title ?? "",
+            done: isDone,
+            rest,
+            current: it.id === this.currentItemId
+          };
+        })
+      }));
+      return { done, total, groups };
     }
     trophies() {
       const all = this.deps.badges.evaluate(this.pack, this.progress, this.rules);
@@ -762,6 +736,23 @@
       return this.pack.locale ?? "en";
     }
   };
+
+  // src/domain/dates.ts
+  function ms(s) {
+    const [y, m, d] = s.split("-").map(Number);
+    return Date.UTC(y, m - 1, d);
+  }
+  function addDays(s, n) {
+    const dt = new Date(ms(s));
+    dt.setUTCDate(dt.getUTCDate() + n);
+    return dt.toISOString().slice(0, 10);
+  }
+  function diffDays(a, b) {
+    return Math.round((ms(b) - ms(a)) / 864e5);
+  }
+  function weekdayMon(s) {
+    return (diffDays("2024-01-01", s) % 7 + 7) % 7;
+  }
 
   // src/domain/streaks.ts
   var Streaks = class {
@@ -1000,6 +991,7 @@
     export: "\u042D\u043A\u0441\u043F\u043E\u0440\u0442",
     import: "\u0418\u043C\u043F\u043E\u0440\u0442",
     calendar: "\u041A\u0430\u043B\u0435\u043D\u0434\u0430\u0440\u044C",
+    cardMap: "\u041A\u0430\u0440\u0442\u0430 \u043F\u0440\u043E\u0433\u0440\u0435\u0441\u0441\u0430",
     trophies: "\u0422\u0440\u043E\u0444\u0435\u0438",
     nextDay: "\u0421\u043B\u0435\u0434\u0443\u044E\u0449\u0438\u0439 \u0434\u0435\u043D\u044C \u2192",
     scheduleReview: "\uFF0B \u0417\u0430\u043F\u043B\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043F\u043E\u0432\u0442\u043E\u0440",
@@ -1028,22 +1020,7 @@
     pack: "\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u0430",
     hint: "\u0427\u0442\u043E \u0441\u0447\u0438\u0442\u0430\u0435\u0442\u0441\u044F \u0441\u0438\u043B\u044C\u043D\u044B\u043C \u043E\u0442\u0432\u0435\u0442\u043E\u043C"
   };
-  var DEFAULT_DOW = ["\u041F\u043D", "\u0412\u0442", "\u0421\u0440", "\u0427\u0442", "\u041F\u0442", "\u0421\u0431", "\u0412\u0441"];
   var DEFAULT_STREAK_WORDS = ["\u0434\u0435\u043D\u044C", "\u0434\u043D\u044F", "\u0434\u043D\u0435\u0439"];
-  var DEFAULT_MONTHS = [
-    "\u042F\u043D\u0432\u0430\u0440\u044C",
-    "\u0424\u0435\u0432\u0440\u0430\u043B\u044C",
-    "\u041C\u0430\u0440\u0442",
-    "\u0410\u043F\u0440\u0435\u043B\u044C",
-    "\u041C\u0430\u0439",
-    "\u0418\u044E\u043D\u044C",
-    "\u0418\u044E\u043B\u044C",
-    "\u0410\u0432\u0433\u0443\u0441\u0442",
-    "\u0421\u0435\u043D\u0442\u044F\u0431\u0440\u044C",
-    "\u041E\u043A\u0442\u044F\u0431\u0440\u044C",
-    "\u041D\u043E\u044F\u0431\u0440\u044C",
-    "\u0414\u0435\u043A\u0430\u0431\u0440\u044C"
-  ];
   var DEFAULT_MOTTOS = ["\u4E00\u6B69\u4E00\u6B69 \xB7 \u0448\u0430\u0433 \u0437\u0430 \u0448\u0430\u0433\u043E\u043C"];
   var GENERIC_BADGES = [
     { id: "first-light", type: "days-done", gte: 1, title: "First Light", desc: "\u041F\u0435\u0440\u0432\u044B\u0439 \u043F\u043E\u043B\u043D\u043E\u0441\u0442\u044C\u044E \u0437\u0430\u043A\u0440\u044B\u0442\u044B\u0439 \u0434\u0435\u043D\u044C", icon: "\u{1F305}" },
@@ -1262,21 +1239,22 @@
         cb.style.display = "none";
       }
     }
-    // ----- calendar ------------------------------------------------------------
-    renderCalendar(vm) {
-      const grid = this.$("calGrid");
-      if (!grid) return;
-      const dh = this.$("calDow");
-      if (dh) dh.innerHTML = vm.dow.map((x) => `<span>${this.esc(x)}</span>`).join("");
-      grid.innerHTML = vm.cells.map((c) => {
-        let cls = "cday";
-        if (c.other) cls += " other";
-        if (c.done) cls += " done";
-        if (c.today) cls += " today";
-        return `<span class="${cls}">${c.day}</span>`;
-      }).join("");
-      const title = this.$("calTitle");
-      if (title) title.textContent = vm.title;
+    // ----- card map ------------------------------------------------------------
+    renderCardMap(vm, titleLabel) {
+      const host = this.$("cardMapGrid");
+      if (!host) return;
+      const title = this.$("cardMapTitle");
+      if (title) title.textContent = `${titleLabel} \xB7 ${vm.done}/${vm.total}`;
+      host.innerHTML = vm.groups.map(
+        (g) => `<div class="cm-row"><span class="cm-rlabel">${this.esc(g.title)}</span><div class="cm-cells">` + g.items.map((it) => {
+          let cls = "cm-card";
+          if (it.rest) cls += " rest";
+          else if (it.done) cls += " done";
+          if (it.current) cls += " current";
+          const tip = it.title ? ` data-tip="${this.esc(it.title)}"` : "";
+          return `<span class="${cls}" data-id="${this.esc(it.id)}"${tip}></span>`;
+        }).join("") + `</div></div>`
+      ).join("");
     }
     // ----- trophies ------------------------------------------------------------
     renderTrophies(vm, titleLabel) {
@@ -1369,7 +1347,6 @@
   var DomController = class {
     t;
     r;
-    calOffset = 0;
     constructor(tracker, renderer) {
       this.t = tracker;
       this.r = renderer;
@@ -1409,12 +1386,10 @@
     }
     applyStaticLabels() {
       const u = (k) => this.t.ui(k);
-      this.r.setText("exportBtn", u("export"));
-      this.r.setText("importBtn", u("import"));
       const aria = [
         ["exportBtn", "export"],
         ["importBtn", "import"],
-        ["calBtn", "calendar"],
+        ["cardMapBtn", "cardMap"],
         ["trophiesBtn", "trophies"],
         ["prevDay", "prevDayAria"],
         ["nextDay", "nextDayAria"]
@@ -1446,8 +1421,8 @@
     renderTrophies() {
       this.r.renderTrophies(this.t.trophies(), this.t.ui("trophies"));
     }
-    renderCalendar() {
-      this.r.renderCalendar(this.t.calendar(this.calOffset));
+    renderCardMap() {
+      this.r.renderCardMap(this.t.cardMap(), this.t.ui("cardMap"));
     }
     // ----- today-card handlers (re-bound on every render) ----------------------
     bindTodayHandlers(vm) {
@@ -1533,30 +1508,26 @@
           this.renderAll();
         };
       }
-      const calBtn = this.r.$("calBtn");
-      if (calBtn) {
-        calBtn.onclick = () => {
-          this.calOffset = 0;
-          this.renderCalendar();
-          this.open("calModal");
+      const cardMapBtn = this.r.$("cardMapBtn");
+      if (cardMapBtn) {
+        cardMapBtn.onclick = () => {
+          this.renderCardMap();
+          this.open("cardMapModal");
         };
       }
-      this.bindClose("calClose", "calModal");
-      const calPrev = this.r.$("calPrev");
-      if (calPrev) {
-        calPrev.onclick = () => {
-          this.calOffset--;
-          this.renderCalendar();
+      this.bindClose("cardMapClose", "cardMapModal");
+      this.bindBackdrop("cardMapModal");
+      const cardMapGrid = this.r.$("cardMapGrid");
+      if (cardMapGrid) {
+        cardMapGrid.onclick = (e) => {
+          const id = e.target.dataset?.id;
+          if (!id) return;
+          this.t.selectItem(id);
+          const m = this.r.$("cardMapModal");
+          if (m) m.classList.remove("open");
+          this.renderAll();
         };
       }
-      const calNext = this.r.$("calNext");
-      if (calNext) {
-        calNext.onclick = () => {
-          this.calOffset++;
-          this.renderCalendar();
-        };
-      }
-      this.bindBackdrop("calModal");
       const trBtn = this.r.$("trophiesBtn");
       if (trBtn) {
         trBtn.onclick = () => {
@@ -1681,9 +1652,7 @@
         badges: new BadgeEngine(streaks, stats),
         defaultUi: DEFAULT_UI,
         genericBadges: GENERIC_BADGES,
-        defaultDow: DEFAULT_DOW,
         defaultStreakWords: DEFAULT_STREAK_WORDS,
-        defaultMonths: DEFAULT_MONTHS,
         defaultMottos: DEFAULT_MOTTOS
       });
       tracker.init();

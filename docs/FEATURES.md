@@ -16,7 +16,7 @@ What the app does today, grouped by area. Each line is one feature with a one-se
 ## Momentum & gamification
 
 - **Streaks** — current streak (consecutive days ending today/yesterday) and longest-ever streak, computed on UTC dates.
-- **Calendar** — a month grid marking every completed day, with prev/next month navigation.
+- **Card map** — a compact grid of every card in the pack, grouped by week, marking which are done vs not; click a card to jump straight to it.
 - **30 trophies** — achievements across streaks, total days, tasks done, reflections written, track/phase mastery, weekend/night-owl/early-lark timing, "comeback after a gap", and finishing. **Once earned, they stay earned.**
 - **Confetti** — fires when you complete a day.
 - **Trophy toast** — a pop-up when you unlock a new badge.
