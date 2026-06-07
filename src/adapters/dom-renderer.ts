@@ -3,6 +3,7 @@ import type {
   TodayVM,
   DashboardVM,
   CalendarVM,
+  CardMapVM,
   TrophyVM,
   TrackColor,
 } from '../domain/types/view-models.ts';
@@ -187,6 +188,33 @@ export class DomRenderer {
       .join('');
     const title = this.$('calTitle');
     if (title) title.textContent = vm.title;
+  }
+
+  // ----- card map ------------------------------------------------------------
+
+  public renderCardMap(vm: CardMapVM, titleLabel: string): void {
+    const host = this.$('cardMapGrid');
+    if (!host) return;
+    const title = this.$('cardMapTitle');
+    if (title) title.textContent = `${titleLabel} · ${vm.done}/${vm.total}`;
+    host.innerHTML = vm.groups
+      .map(
+        (g) =>
+          `<div class="cm-row"><span class="cm-rlabel">${this.esc(g.title)}</span>` +
+          `<div class="cm-cells">` +
+          g.items
+            .map((it) => {
+              let cls = 'cm-card';
+              if (it.rest) cls += ' rest';
+              else if (it.done) cls += ' done';
+              if (it.current) cls += ' current';
+              const tip = it.title ? ` data-tip="${this.esc(it.title)}"` : '';
+              return `<span class="${cls}" data-id="${this.esc(it.id)}"${tip}></span>`;
+            })
+            .join('') +
+          `</div></div>`,
+      )
+      .join('');
   }
 
   // ----- trophies ------------------------------------------------------------

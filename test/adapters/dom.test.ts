@@ -135,6 +135,8 @@ function harness(seed?: { store?: Record<string, string> }): Harness {
     'calClose',
     'calDow',
     'calGrid',
+    'cardMapGrid',
+    'cardMapTitle',
     'trophiesModal',
     'trophiesTitle',
     'trophiesClose',
@@ -350,4 +352,14 @@ test('rest-day item renders the rest branch', async () => {
   registry['daySelect']!.value = restId!;
   registry['daySelect']!.onchange!();
   assert.ok((registry['todayCard']!.innerHTML || '').includes('rest-due'), 'rest branch rendered');
+});
+
+test('renderCardMap renders rows + cells with data-id', async () => {
+  const { registry, tracker, renderer } = await boot();
+  renderer.renderCardMap(tracker.cardMap(), 'Map');
+  const html = registry['cardMapGrid']!.innerHTML || '';
+  assert.ok(html.includes('cm-card'), 'cells render: ' + html.slice(0, 80));
+  assert.ok(html.includes('data-id="'), 'cells carry data-id');
+  assert.ok(html.includes('cm-row'), 'group rows render');
+  assert.ok(html.includes('current'), 'current card flagged');
 });
