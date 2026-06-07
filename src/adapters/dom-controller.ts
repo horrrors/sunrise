@@ -13,8 +13,6 @@ import { ImportError, ValidationError } from '../domain/errors.ts';
 export class DomController {
   private t: Tracker;
   private r: DomRenderer;
-  private calOffset = 0;
-
   constructor(tracker: Tracker, renderer: DomRenderer) {
     this.t = tracker;
     this.r = renderer;
@@ -58,12 +56,10 @@ export class DomController {
 
   private applyStaticLabels(): void {
     const u = (k: string): string => this.t.ui(k);
-    this.r.setText('exportBtn', u('export'));
-    this.r.setText('importBtn', u('import'));
     const aria: [string, string][] = [
       ['exportBtn', 'export'],
       ['importBtn', 'import'],
-      ['calBtn', 'calendar'],
+      ['cardMapBtn', 'cardMap'],
       ['trophiesBtn', 'trophies'],
       ['prevDay', 'prevDayAria'],
       ['nextDay', 'nextDayAria'],
@@ -100,8 +96,8 @@ export class DomController {
     this.r.renderTrophies(this.t.trophies(), this.t.ui('trophies'));
   }
 
-  private renderCalendar(): void {
-    this.r.renderCalendar(this.t.calendar(this.calOffset));
+  private renderCardMap(): void {
+    this.r.renderCardMap(this.t.cardMap(), this.t.ui('cardMap'));
   }
 
   // ----- today-card handlers (re-bound on every render) ----------------------
@@ -196,30 +192,26 @@ export class DomController {
       };
     }
 
-    const calBtn = this.r.$('calBtn');
-    if (calBtn) {
-      (calBtn as HTMLElement).onclick = () => {
-        this.calOffset = 0;
-        this.renderCalendar();
-        this.open('calModal');
+    const cardMapBtn = this.r.$('cardMapBtn');
+    if (cardMapBtn) {
+      (cardMapBtn as HTMLElement).onclick = () => {
+        this.renderCardMap();
+        this.open('cardMapModal');
       };
     }
-    this.bindClose('calClose', 'calModal');
-    const calPrev = this.r.$('calPrev');
-    if (calPrev) {
-      (calPrev as HTMLElement).onclick = () => {
-        this.calOffset--;
-        this.renderCalendar();
+    this.bindClose('cardMapClose', 'cardMapModal');
+    this.bindBackdrop('cardMapModal');
+    const cardMapGrid = this.r.$('cardMapGrid');
+    if (cardMapGrid) {
+      (cardMapGrid as HTMLElement).onclick = (e) => {
+        const id = (e.target as HTMLElement).dataset?.id;
+        if (!id) return;
+        this.t.selectItem(id);
+        const m = this.r.$('cardMapModal');
+        if (m) m.classList.remove('open');
+        this.renderAll();
       };
     }
-    const calNext = this.r.$('calNext');
-    if (calNext) {
-      (calNext as HTMLElement).onclick = () => {
-        this.calOffset++;
-        this.renderCalendar();
-      };
-    }
-    this.bindBackdrop('calModal');
 
     const trBtn = this.r.$('trophiesBtn');
     if (trBtn) {

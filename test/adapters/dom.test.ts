@@ -43,14 +43,15 @@ class FakeEl {
   checked = false;
   style = { setProperty(): void {}, removeProperty(): void {} };
   dataset: Record<string, string> = {};
-  classList = {
-    add(): void {},
-    remove(): void {},
-    toggle(): void {},
-    contains(): boolean {
-      return false;
-    },
-  };
+  classList = (() => {
+    const s = new Set<string>();
+    return {
+      add: (c: string): void => void s.add(c),
+      remove: (c: string): void => void s.delete(c),
+      toggle: (c: string): void => void (s.has(c) ? s.delete(c) : s.add(c)),
+      contains: (c: string): boolean => s.has(c),
+    };
+  })();
   onchange: ((e?: unknown) => void) | null = null;
   onclick: ((e?: unknown) => void) | null = null;
   oninput: ((e?: unknown) => void) | null = null;
@@ -115,7 +116,6 @@ function harness(seed?: { store?: Record<string, string> }): Harness {
     'packSelect',
     'themeSelect',
     'daySelect',
-    'calBtn',
     'trophiesBtn',
     'exportBtn',
     'importBtn',
@@ -128,13 +128,9 @@ function harness(seed?: { store?: Record<string, string> }): Harness {
     'todayCard',
     'nextDay',
     'motd',
-    'calModal',
-    'calPrev',
-    'calTitle',
-    'calNext',
-    'calClose',
-    'calDow',
-    'calGrid',
+    'cardMapBtn',
+    'cardMapModal',
+    'cardMapClose',
     'cardMapGrid',
     'cardMapTitle',
     'trophiesModal',
@@ -256,10 +252,25 @@ test('trophies render 30 tiles', async () => {
   assert.equal(tiles, 30, 'trophy tiles: ' + tiles);
 });
 
-test('calendar renders cday cells', async () => {
-  const { registry } = await boot();
-  registry['calBtn']!.onclick!();
-  assert.ok((registry['calGrid']!.innerHTML || '').includes('cday'), 'calendar grid');
+test('card map: opens, renders cards, click navigates + closes modal', async () => {
+  const { registry, tracker } = await boot();
+  registry['cardMapBtn']!.onclick!();
+  assert.equal(registry['cardMapModal']!.classList.contains('open'), true, 'modal open before navigate');
+  const grid = registry['cardMapGrid']!;
+  assert.ok((grid.innerHTML || '').includes('cm-card'), 'cards rendered');
+
+  const ids = tracker.cardMap().groups.flatMap((g) => g.items.map((i) => i.id));
+  const currentId = tracker.todayCard().itemId;
+  const targetId = ids.find((id) => id !== currentId)!;
+  assert.ok(targetId, 'pack has more than one item');
+
+  grid.onclick!({ target: { dataset: { id: targetId } } });
+  assert.equal(tracker.todayCard().itemId, targetId, 'navigated to clicked card');
+  assert.equal(
+    registry['cardMapModal']!.classList.contains('open'),
+    false,
+    'modal closed on navigate',
+  );
 });
 
 test('completing the active item persists first-light', async () => {
