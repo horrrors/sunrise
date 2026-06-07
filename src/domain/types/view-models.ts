@@ -43,6 +43,23 @@ export interface CalendarVM {
   dow: string[];
   cells: { day: number; done: boolean; today: boolean; other: boolean }[];
 }
+export interface CardMapItemVM {
+  id: string;
+  title: string;
+  done: boolean;
+  rest: boolean;
+  current: boolean;
+}
+export interface CardMapGroupVM {
+  id: string;
+  title: string;
+  items: CardMapItemVM[];
+}
+export interface CardMapVM {
+  done: number;
+  total: number;
+  groups: CardMapGroupVM[];
+}
 export interface TrophyVM {
   id: string;
   title: string;

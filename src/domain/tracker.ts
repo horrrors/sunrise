@@ -8,6 +8,7 @@ import type {
   TodayVM,
   DashboardVM,
   CalendarVM,
+  CardMapVM,
   TrophyVM,
   SelectorsVM,
   CompleteResult,
@@ -284,6 +285,31 @@ export class Tracker {
       tracks,
       daysOfLabel: this.uiText('daysOf').replace('{n}', String(overall.total)),
     };
+  }
+
+  public cardMap(): CardMapVM {
+    let done = 0;
+    let total = 0;
+    const groups = this.pack.groups.map((g) => ({
+      id: g.id,
+      title: g.title,
+      items: g.items.map((it) => {
+        const rest = !!it.rest;
+        const isDone = this.progress.isItemComplete(it);
+        if (!rest) {
+          total++;
+          if (isDone) done++;
+        }
+        return {
+          id: it.id,
+          title: it.title ?? '',
+          done: isDone,
+          rest,
+          current: it.id === this.currentItemId,
+        };
+      }),
+    }));
+    return { done, total, groups };
   }
 
   public calendar(monthOffset: number): CalendarVM {

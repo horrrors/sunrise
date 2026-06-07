@@ -217,3 +217,73 @@ test('selectPack reloads per-pack progress + resets current item', () => {
   t.selectPack('p');
   assert.ok(t.todayCard().complete);
 });
+
+test('cardMap: groups, current flag, rest excluded from counts', () => {
+  const CARD_PACK: Pack = {
+    schema: 'sunrise.pack/v1',
+    id: 'cm',
+    name: 'CM',
+    version: '1.0.0',
+    tracks: [{ id: 'dsa', label: 'DSA' }],
+    groups: [
+      {
+        id: 'g1',
+        title: 'Week 1',
+        items: [
+          { id: 'a1', track: 'dsa', title: 'A1', tasks: [{ id: 't1', text: 'x' }] },
+          { id: 'rest1', track: 'dsa', rest: true },
+        ],
+      },
+      {
+        id: 'g2',
+        title: 'Week 2',
+        items: [{ id: 'b1', track: 'dsa', title: 'B1', tasks: [{ id: 't2', text: 'y' }] }],
+      },
+    ],
+  };
+  const store = new Map<string, Progress>();
+  const progressStore: ProgressStore = {
+    load: (id) => store.get(id) ?? Progress.empty(),
+    save: (id, p) => void store.set(id, p),
+  };
+  let session: Session = {};
+  const sessionStore: SessionStore = { load: () => session, save: (s) => void (session = s) };
+  const packs: PackSource = { packs: () => [CARD_PACK] };
+  const themes: ThemeSource = { themes: () => [THEME] };
+  const clock: Clock = { today: () => '2026-05-30', hour: () => 14 };
+  const random: Random = { next: () => 0.99 };
+  const t = new Tracker({
+    packs,
+    themes,
+    progressStore,
+    sessionStore,
+    clock,
+    random,
+    streaks: new Streaks(),
+    stats: new ProgressStats(),
+    reviews: new ReviewSchedule(),
+    badges: new BadgeEngine(new Streaks(), new ProgressStats()),
+    defaultUi: DEFAULT_UI,
+    genericBadges: GENERIC_BADGES,
+    defaultDow: DEFAULT_DOW,
+    defaultStreakWords: DEFAULT_STREAK_WORDS,
+    defaultMonths: DEFAULT_MONTHS,
+    defaultMottos: DEFAULT_MOTTOS,
+  });
+  t.init();
+
+  let vm = t.cardMap();
+  assert.equal(vm.groups.length, 2);
+  assert.equal(vm.groups[0]!.title, 'Week 1');
+  assert.equal(vm.groups[0]!.items.length, 2);
+  assert.equal(vm.total, 2, 'rest excluded from total'); // a1, b1
+  assert.equal(vm.done, 0);
+  assert.equal(vm.groups[0]!.items[0]!.id, 'a1');
+  assert.equal(vm.groups[0]!.items[0]!.current, true, 'a1 is the default current item');
+  assert.equal(vm.groups[0]!.items[1]!.rest, true, 'rest flagged');
+
+  t.toggleTask('t1', true); // completes a1 (the current item)
+  vm = t.cardMap();
+  assert.equal(vm.done, 1);
+  assert.equal(vm.groups[0]!.items[0]!.done, true);
+});
