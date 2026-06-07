@@ -102,14 +102,6 @@ test('export → import round-trips', () => {
   assert.equal(t.todayCard().tasks[0]!.done, true);
 });
 
-test('calendar shape: 42 cells, non-empty title, today flagged', () => {
-  const { t } = makeTracker();
-  const vm = t.calendar(0);
-  assert.equal(vm.cells.length, 42);
-  assert.equal(typeof vm.title, 'string');
-  assert.ok(vm.title.length > 0);
-  assert.ok(vm.cells.some((c) => c.today)); // clock.today = '2026-05-30'
-});
 
 test('importProgress throws ImportError on bad JSON', () => {
   const { t } = makeTracker();

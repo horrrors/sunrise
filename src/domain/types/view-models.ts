@@ -38,11 +38,6 @@ export interface DashboardVM {
   tracks: { id: string; label: string; stat: Stat }[];
   daysOfLabel: string;
 }
-export interface CalendarVM {
-  title: string;
-  dow: string[];
-  cells: { day: number; done: boolean; today: boolean; other: boolean }[];
-}
 export interface CardMapItemVM {
   id: string;
   title: string;

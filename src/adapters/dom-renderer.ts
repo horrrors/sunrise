@@ -2,7 +2,6 @@ import type {
   SelectorsVM,
   TodayVM,
   DashboardVM,
-  CalendarVM,
   CardMapVM,
   TrophyVM,
   TrackColor,
@@ -168,26 +167,6 @@ export class DomRenderer {
     } else {
       cb.style.display = 'none';
     }
-  }
-
-  // ----- calendar ------------------------------------------------------------
-
-  public renderCalendar(vm: CalendarVM): void {
-    const grid = this.$('calGrid');
-    if (!grid) return;
-    const dh = this.$('calDow');
-    if (dh) dh.innerHTML = vm.dow.map((x) => `<span>${this.esc(x)}</span>`).join('');
-    grid.innerHTML = vm.cells
-      .map((c) => {
-        let cls = 'cday';
-        if (c.other) cls += ' other';
-        if (c.done) cls += ' done';
-        if (c.today) cls += ' today';
-        return `<span class="${cls}">${c.day}</span>`;
-      })
-      .join('');
-    const title = this.$('calTitle');
-    if (title) title.textContent = vm.title;
   }
 
   // ----- card map ------------------------------------------------------------

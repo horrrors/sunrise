@@ -3,11 +3,9 @@ import type { BadgeRule } from './types/badge-rule.ts';
 import type { TrackerDeps } from './types/tracker.ts';
 import { Progress } from './progress.ts';
 import { ProgressValidator } from './validators.ts';
-import { addDays, weekdayMon } from './dates.ts';
 import type {
   TodayVM,
   DashboardVM,
-  CalendarVM,
   CardMapVM,
   TrophyVM,
   SelectorsVM,
@@ -310,40 +308,6 @@ export class Tracker {
       }),
     }));
     return { done, total, groups };
-  }
-
-  public calendar(monthOffset: number): CalendarVM {
-    const done = new Set(this.progress.completedDates());
-    const today = this.deps.clock.today();
-    const [ys, ms] = today.split('-');
-    let y = Number(ys);
-    let m = Number(ms) + monthOffset;
-    while (m < 1) {
-      m += 12;
-      y--;
-    }
-    while (m > 12) {
-      m -= 12;
-      y++;
-    }
-    const first = `${y}-${m < 10 ? '0' : ''}${m}-01`;
-    const start = addDays(first, -weekdayMon(first));
-    const cells: CalendarVM['cells'] = [];
-    for (let k = 0; k < 42; k++) {
-      const dd = addDays(start, k);
-      cells.push({
-        day: Number(dd.slice(8, 10)),
-        done: done.has(dd),
-        today: dd === today,
-        other: dd.slice(0, 7) !== first.slice(0, 7),
-      });
-    }
-    const months = this.deps.defaultMonths;
-    return {
-      title: `${months[m - 1] ?? ''} ${y}`,
-      dow: [...this.deps.defaultDow],
-      cells,
-    };
   }
 
   public trophies(): TrophyVM[] {
