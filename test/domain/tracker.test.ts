@@ -18,9 +18,7 @@ import type {
 import {
   DEFAULT_UI,
   GENERIC_BADGES,
-  DEFAULT_DOW,
   DEFAULT_STREAK_WORDS,
-  DEFAULT_MONTHS,
   DEFAULT_MOTTOS,
 } from '../../src/domain/builtins.ts';
 import { ImportError } from '../../src/domain/errors.ts';
@@ -72,9 +70,7 @@ function makeTracker() {
     badges: new BadgeEngine(new Streaks(), new ProgressStats()),
     defaultUi: DEFAULT_UI,
     genericBadges: GENERIC_BADGES,
-    defaultDow: DEFAULT_DOW,
     defaultStreakWords: DEFAULT_STREAK_WORDS,
-    defaultMonths: DEFAULT_MONTHS,
     defaultMottos: DEFAULT_MOTTOS,
   });
   t.init();
@@ -101,7 +97,6 @@ test('export → import round-trips', () => {
   t.importProgress(json);
   assert.equal(t.todayCard().tasks[0]!.done, true);
 });
-
 
 test('importProgress throws ImportError on bad JSON', () => {
   const { t } = makeTracker();
@@ -140,9 +135,7 @@ test('surprise branch fires with zero Random', () => {
     badges: new BadgeEngine(new Streaks(), new ProgressStats()),
     defaultUi: DEFAULT_UI,
     genericBadges: GENERIC_BADGES,
-    defaultDow: DEFAULT_DOW,
     defaultStreakWords: DEFAULT_STREAK_WORDS,
-    defaultMonths: DEFAULT_MONTHS,
     defaultMottos: DEFAULT_MOTTOS,
   });
   t.init();
@@ -189,9 +182,7 @@ test('selectPack reloads per-pack progress + resets current item', () => {
     badges: new BadgeEngine(new Streaks(), new ProgressStats()),
     defaultUi: DEFAULT_UI,
     genericBadges: GENERIC_BADGES,
-    defaultDow: DEFAULT_DOW,
     defaultStreakWords: DEFAULT_STREAK_WORDS,
-    defaultMonths: DEFAULT_MONTHS,
     defaultMottos: DEFAULT_MOTTOS,
   });
   t.init();
@@ -257,9 +248,7 @@ test('cardMap: groups, current flag, rest excluded from counts', () => {
     badges: new BadgeEngine(new Streaks(), new ProgressStats()),
     defaultUi: DEFAULT_UI,
     genericBadges: GENERIC_BADGES,
-    defaultDow: DEFAULT_DOW,
     defaultStreakWords: DEFAULT_STREAK_WORDS,
-    defaultMonths: DEFAULT_MONTHS,
     defaultMottos: DEFAULT_MOTTOS,
   });
   t.init();

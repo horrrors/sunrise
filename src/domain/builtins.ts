@@ -41,22 +41,7 @@ export const DEFAULT_UI: Record<string, string> = {
   hint: 'Что считается сильным ответом',
 };
 
-export const DEFAULT_DOW: readonly string[] = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 export const DEFAULT_STREAK_WORDS: readonly string[] = ['день', 'дня', 'дней'];
-export const DEFAULT_MONTHS: readonly string[] = [
-  'Январь',
-  'Февраль',
-  'Март',
-  'Апрель',
-  'Май',
-  'Июнь',
-  'Июль',
-  'Август',
-  'Сентябрь',
-  'Октябрь',
-  'Ноябрь',
-  'Декабрь',
-];
 export const DEFAULT_MOTTOS: readonly string[] = ['一歩一歩 · шаг за шагом'];
 
 // GENERIC, pack-agnostic badge rules (a pack may override by reusing the same id).

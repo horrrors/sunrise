@@ -7,9 +7,7 @@ import { ReviewSchedule } from '../../src/domain/review-schedule.ts';
 import { BadgeEngine } from '../../src/domain/badge-engine.ts';
 import {
   DEFAULT_UI,
-  DEFAULT_DOW,
   DEFAULT_STREAK_WORDS,
-  DEFAULT_MONTHS,
   DEFAULT_MOTTOS,
   GENERIC_BADGES,
   BUILTIN_THEMES,
@@ -187,9 +185,7 @@ function harness(seed?: { store?: Record<string, string> }): Harness {
     badges: new BadgeEngine(streaks, stats),
     defaultUi: DEFAULT_UI,
     genericBadges: GENERIC_BADGES,
-    defaultDow: DEFAULT_DOW,
     defaultStreakWords: DEFAULT_STREAK_WORDS,
-    defaultMonths: DEFAULT_MONTHS,
     defaultMottos: DEFAULT_MOTTOS,
   });
 

@@ -4,7 +4,7 @@ import { ProgressStats } from './domain/progress-stats.ts';
 import { ReviewSchedule } from './domain/review-schedule.ts';
 import { BadgeEngine } from './domain/badge-engine.ts';
 import {
-  DEFAULT_UI, DEFAULT_DOW, DEFAULT_STREAK_WORDS, DEFAULT_MONTHS, DEFAULT_MOTTOS, GENERIC_BADGES, BUILTIN_THEMES,
+  DEFAULT_UI, DEFAULT_STREAK_WORDS, DEFAULT_MOTTOS, GENERIC_BADGES, BUILTIN_THEMES,
 } from './domain/builtins.ts';
 import { SystemClock } from './adapters/system-clock.ts';
 import { MathRandom } from './adapters/math-random.ts';
@@ -34,7 +34,7 @@ function boot(): void {
       clock: new SystemClock(), random: new MathRandom(),
       streaks, stats, reviews: new ReviewSchedule(), badges: new BadgeEngine(streaks, stats),
       defaultUi: DEFAULT_UI, genericBadges: GENERIC_BADGES,
-      defaultDow: DEFAULT_DOW, defaultStreakWords: DEFAULT_STREAK_WORDS, defaultMonths: DEFAULT_MONTHS, defaultMottos: DEFAULT_MOTTOS,
+      defaultStreakWords: DEFAULT_STREAK_WORDS, defaultMottos: DEFAULT_MOTTOS,
     });
     tracker.init(); // throws if no packs registered
     new DomController(tracker, renderer).start();

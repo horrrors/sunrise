@@ -25,8 +25,6 @@ export interface TrackerDeps {
   badges: BadgeEngine;
   defaultUi: Record<string, string>;
   genericBadges: readonly BadgeRule[];
-  defaultDow: readonly string[];
   defaultStreakWords: readonly string[];
-  defaultMonths: readonly string[];
   defaultMottos: readonly string[];
 }
