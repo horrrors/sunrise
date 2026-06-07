@@ -11,6 +11,7 @@ export const DEFAULT_UI: Record<string, string> = {
   export: 'Экспорт',
   import: 'Импорт',
   calendar: 'Календарь',
+  cardMap: 'Карта прогресса',
   trophies: 'Трофеи',
   nextDay: 'Следующий день →',
   scheduleReview: '＋ Запланировать повтор',

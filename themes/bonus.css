@@ -214,7 +214,7 @@ select option{ background:var(--paper); color:var(--ink); }
 .btn.gold:hover{ background:var(--alarm); color:var(--paper); }
 
 /* keep icon buttons in the toolbar (emoji) readable */
-#calBtn, #trophiesBtn{ font-size:16px; padding:8px 11px; }
+#cardMapBtn, #trophiesBtn, #exportBtn, #importBtn{ font-size:16px; padding:8px 11px; }
 
 /* ----------------------------------------------------------------------------
    LAYOUT
@@ -823,22 +823,14 @@ textarea:focus{
 }
 @keyframes panelIn{ from{ opacity:0; transform:translateY(-14px) rotate(-1deg); } to{ opacity:1; transform:translateY(0) rotate(0); } }
 
-/* --- Calendar --- */
-.cal-head, .tr-head{
+/* --- Modal heads (shared) --- */
+.tr-head{
   display:flex;
   align-items:center;
   gap:10px;
   margin-bottom:16px;
+  justify-content:space-between;
 }
-.cal-head{ justify-content:space-between; }
-.cal-head > div, #calTitle{
-  font-family:var(--display);
-  font-size:18px;
-  color:var(--ink);
-  flex:1;
-  text-align:center;
-}
-.cal-head button,
 .tr-head button{
   font-family:var(--display);
   font-size:16px;
@@ -853,68 +845,66 @@ textarea:focus{
   flex:none;
   transition:transform .08s ease, box-shadow .08s ease, background .12s ease;
 }
-.cal-head button:hover,
 .tr-head button:hover{ transform:translate(-2px,-2px); box-shadow:5px 5px 0 var(--ink); background:var(--alarm); color:var(--paper); }
-#calClose, #trophiesClose{ background:var(--alarm); color:var(--paper); }
-#calClose:hover, #trophiesClose:hover{ background:var(--ink); }
+#cardMapClose, #trophiesClose{ background:var(--alarm); color:var(--paper); }
+#cardMapClose:hover, #trophiesClose:hover{ background:var(--ink); }
 
-.cal-dow{
-  display:grid;
-  grid-template-columns:repeat(7,1fr);
-  gap:6px;
-  margin-bottom:8px;
-}
-.cal-dow span{
-  text-align:center;
+/* --- Card map --- */
+.cm-grid{ display:flex; flex-direction:column; gap:12px; }
+.cm-row{ display:flex; flex-direction:column; gap:6px; }
+.cm-rlabel{
   font-family:var(--mono);
   font-weight:700;
-  font-size:12px;
-  color:#6b6353;
+  font-size:11px;
   text-transform:uppercase;
+  letter-spacing:.08em;
+  color:#6b6353;
 }
-
-.cal-grid{
-  display:grid;
-  grid-template-columns:repeat(7,1fr);
-  gap:6px;
-}
-.cday{
-  aspect-ratio:1;
-  display:grid;
-  place-items:center;
-  font-family:var(--mono);
-  font-weight:700;
-  font-size:14px;
-  color:var(--ink);
-  background:var(--paper-2);
+.cm-cells{ display:flex; flex-wrap:wrap; gap:6px; }
+.cm-card{
+  position:relative;
+  width:24px; height:24px;
   border:2px solid var(--ink);
   border-radius:var(--r);
+  background:var(--paper-2);
+  cursor:pointer;
+  transition:transform .08s ease, box-shadow .08s ease;
 }
-.cday.other{ opacity:.32; }
-.cday.done{
-  background:var(--cobalt);
+.cm-card:hover{ transform:translate(-2px,-2px); box-shadow:3px 3px 0 var(--ink); z-index:2; }
+.cm-card.done{ background:var(--cobalt); box-shadow:2px 2px 0 var(--ink); }
+.cm-card.rest{ border-style:dashed; background:transparent; opacity:.5; }
+.cm-card.current{ outline:3px solid var(--yellow); outline-offset:2px; }
+.cm-card[data-tip]:hover::after{
+  content:attr(data-tip);
+  position:absolute;
+  bottom:calc(100% + 10px);
+  left:50%;
+  transform:translateX(-50%);
+  width:max-content;
+  max-width:220px;
+  font-family:var(--body);
+  font-weight:600;
+  font-size:12px;
+  line-height:1.35;
+  text-align:left;
   color:var(--paper);
-  box-shadow:2px 2px 0 var(--ink);
-}
-.cday.today{
-  background:var(--yellow);
-  outline:3px solid var(--ink);
-  outline-offset:-3px;
-}
-.cday.done.today{
-  background:var(--alarm);
-  color:var(--paper);
+  background:var(--ink);
+  border:var(--bw) solid var(--ink);
+  border-radius:var(--r);
+  padding:8px 11px;
+  box-shadow:var(--shadow-sm);
+  z-index:5;
+  pointer-events:none;
+  white-space:normal;
 }
 
 /* --- Trophies --- */
-#trophiesTitle{
+#trophiesTitle, #cardMapTitle{
   font-family:var(--display);
   font-size:18px;
   color:var(--ink);
   flex:1;
 }
-.tr-head{ justify-content:space-between; }
-
 .tr-grid{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(96px,1fr));
