@@ -453,7 +453,7 @@
       const themes = this.deps.themes.themes();
       const theme = themes.find((t) => t.id === sess.themeId) ?? themes[0];
       this.themeId = theme ? theme.id : null;
-      this.currentItemId = this.defaultItemId();
+      this.currentItemId = this.resumeItemId();
     }
     loadPack(packId) {
       const packs = this.deps.packs.packs();
@@ -488,9 +488,23 @@
       for (const t of this.pack.tracks) if (t.id === id) return t;
       return { id, label: "", icon: "" };
     }
-    defaultItemId() {
-      const open = this.allItems.find((it) => !it.rest && !this.progress.isItemComplete(it));
-      return (open ?? this.allItems[this.allItems.length - 1]).id;
+    // The card to open on load: the first unfinished card at or after the stored
+    // cursor (so a partial card resumes; a finished one advances to the next). No
+    // valid cursor → scan from the start (first unfinished). Forward-only — an
+    // earlier skip is never auto-reopened; the card map is for revisiting those.
+    resumeItemId() {
+      const storedId = this.deps.sessionStore.load().cursors?.[this.pack.id];
+      const at = storedId ? this.allItems.findIndex((it) => it.id === storedId) : -1;
+      for (let j = at >= 0 ? at : 0; j < this.allItems.length; j++) {
+        const it = this.allItems[j];
+        if (!it.rest && !this.progress.isItemComplete(it)) return it.id;
+      }
+      return this.allItems[this.allItems.length - 1].id;
+    }
+    persistCursor() {
+      const sess = this.deps.sessionStore.load();
+      sess.cursors = { ...sess.cursors ?? {}, [this.pack.id]: this.currentItemId };
+      this.deps.sessionStore.save(sess);
     }
     itemIndex() {
       return this.allItems.findIndex((it) => it.id === this.currentItemId);
@@ -528,18 +542,22 @@
     }
     selectItem(id) {
       this.currentItemId = id;
+      this.persistCursor();
     }
     goToItem(delta) {
       const i = this.itemIndex();
       const j = Math.min(Math.max(i + delta, 0), this.allItems.length - 1);
-      if (j !== i) this.currentItemId = this.allItems[j].id;
+      if (j !== i) {
+        this.currentItemId = this.allItems[j].id;
+        this.persistCursor();
+      }
     }
     selectPack(id) {
       const sess = this.deps.sessionStore.load();
       sess.activePackId = id;
       this.deps.sessionStore.save(sess);
       this.loadPack(id);
-      this.currentItemId = this.defaultItemId();
+      this.currentItemId = this.resumeItemId();
     }
     selectTheme(id) {
       const sess = this.deps.sessionStore.load();
@@ -558,7 +576,7 @@
       const data = new ProgressValidator().parseJson(json);
       this.progress = new Progress(data);
       this.save();
-      this.currentItemId = this.defaultItemId();
+      this.currentItemId = this.resumeItemId();
     }
     exportProgress() {
       return JSON.stringify(this.progress.toJSON(), null, 2);
@@ -1018,7 +1036,15 @@
     nextDayAria: "\u0421\u043B\u0435\u0434\u0443\u044E\u0449\u0438\u0439 \u0434\u0435\u043D\u044C",
     theme: "\u0422\u0435\u043C\u0430",
     pack: "\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u0430",
-    hint: "\u0427\u0442\u043E \u0441\u0447\u0438\u0442\u0430\u0435\u0442\u0441\u044F \u0441\u0438\u043B\u044C\u043D\u044B\u043C \u043E\u0442\u0432\u0435\u0442\u043E\u043C"
+    hint: "\u0427\u0442\u043E \u0441\u0447\u0438\u0442\u0430\u0435\u0442\u0441\u044F \u0441\u0438\u043B\u044C\u043D\u044B\u043C \u043E\u0442\u0432\u0435\u0442\u043E\u043C",
+    shortcuts: "\u0413\u043E\u0440\u044F\u0447\u0438\u0435 \u043A\u043B\u0430\u0432\u0438\u0448\u0438",
+    scDay: "\u041F\u0440\u0435\u0434\u044B\u0434\u0443\u0449\u0438\u0439 / \u0441\u043B\u0435\u0434\u0443\u044E\u0449\u0438\u0439 \u0434\u0435\u043D\u044C",
+    scTick: "\u041F\u0435\u0440\u0435\u0445\u043E\u0434 \u043C\u0435\u0436\u0434\u0443 \u0437\u0430\u0434\u0430\u0447\u0430\u043C\u0438",
+    scMark: "\u041E\u0442\u043C\u0435\u0442\u0438\u0442\u044C \u0437\u0430\u0434\u0430\u0447\u0443",
+    scMap: "\u041A\u0430\u0440\u0442\u0430 \u043F\u0440\u043E\u0433\u0440\u0435\u0441\u0441\u0430",
+    scTrophies: "\u0422\u0440\u043E\u0444\u0435\u0438",
+    scHelp: "\u042D\u0442\u0430 \u043F\u043E\u0434\u0441\u043A\u0430\u0437\u043A\u0430",
+    scClose: "\u0417\u0430\u043A\u0440\u044B\u0442\u044C \u043E\u043A\u043D\u043E"
   };
   var DEFAULT_STREAK_WORDS = ["\u0434\u0435\u043D\u044C", "\u0434\u043D\u044F", "\u0434\u043D\u0435\u0439"];
   var DEFAULT_MOTTOS = ["\u4E00\u6B69\u4E00\u6B69 \xB7 \u0448\u0430\u0433 \u0437\u0430 \u0448\u0430\u0433\u043E\u043C"];
@@ -1179,6 +1205,27 @@
     $(id) {
       return document.getElementById(id);
     }
+    // ----- keyboard focus (the only place that touches activeElement/focus) ----
+    focusTask(taskId) {
+      const el = this.$("cb_" + taskId);
+      if (el && typeof el.focus === "function") el.focus();
+    }
+    activeTaskId() {
+      const a = document.activeElement;
+      const id = a?.id ?? "";
+      return id.startsWith("cb_") ? id.slice(3) : null;
+    }
+    isTypingTarget() {
+      const a = document.activeElement;
+      if (!a) return false;
+      const tag = a.tagName;
+      if (tag === "TEXTAREA" || tag === "SELECT") return true;
+      if (tag === "INPUT") {
+        const t = a.type;
+        return t !== "checkbox" && t !== "radio" && t !== "button";
+      }
+      return false;
+    }
     // ----- selectors -----------------------------------------------------------
     renderSelectors(vm) {
       this.fillSelect("packSelect", vm.packs);
@@ -1267,6 +1314,16 @@
         (b) => `<div class="badge ${b.unlocked ? "on" : "off"}" data-tip="${this.esc(b.title + " \u2014 " + (b.desc || ""))}"><span class="bi">${this.esc(b.icon || "\u2022")}</span><span class="bt">${this.esc(b.title)}</span></div>`
       ).join("");
     }
+    // ----- shortcuts help ------------------------------------------------------
+    renderShortcuts(rows, titleLabel) {
+      const host = this.$("shortcutsGrid");
+      if (!host) return;
+      const title = this.$("shortcutsTitle");
+      if (title) title.textContent = titleLabel;
+      host.innerHTML = rows.map(
+        (r) => `<div class="sc-row"><kbd class="sc-keys">${this.esc(r.keys)}</kbd><span class="sc-desc">${this.esc(r.label)}</span></div>`
+      ).join("");
+    }
     // ----- theme & track colors ------------------------------------------------
     applyTheme(href, id) {
       const link = this.$("themeCss");
@@ -1347,6 +1404,7 @@
   var DomController = class {
     t;
     r;
+    activeModal = null;
     constructor(tracker, renderer) {
       this.t = tracker;
       this.r = renderer;
@@ -1424,26 +1482,28 @@
     renderCardMap() {
       this.r.renderCardMap(this.t.cardMap(), this.t.ui("cardMap"));
     }
+    renderShortcuts() {
+      const u = (k) => this.t.ui(k);
+      this.r.renderShortcuts(
+        [
+          { keys: "\u2190 / \u2192", label: u("scDay") },
+          { keys: "\u2191 / \u2193", label: u("scTick") },
+          { keys: "Enter", label: u("scMark") },
+          { keys: "M", label: u("scMap") },
+          { keys: "T", label: u("scTrophies") },
+          { keys: "?", label: u("scHelp") },
+          { keys: "Esc", label: u("scClose") }
+        ],
+        u("shortcuts")
+      );
+    }
     // ----- today-card handlers (re-bound on every render) ----------------------
     bindTodayHandlers(vm) {
       if (vm.rest) return;
       for (const t of vm.tasks) {
         const cb = this.r.$("cb_" + t.id);
         if (cb) {
-          cb.onchange = (e) => {
-            const checked = e.target.checked;
-            const was = this.t.todayCard().complete;
-            const res = this.t.toggleTask(t.id, checked);
-            if (!was && this.t.todayCard().complete) {
-              this.r.celebrate();
-              if (res.unlockedBadges.length) {
-                const tro = this.t.trophies().find((x) => x.id === res.unlockedBadges[0]);
-                if (tro) this.r.badgeToast(this.t.ui("newTrophy"), tro.title, tro.icon);
-              }
-              if (res.surprise) this.r.toast("toast", this.r.esc(res.surprise));
-            }
-            this.renderAll();
-          };
+          cb.onchange = (e) => this.toggleTick(t.id, e.target.checked);
         }
       }
       if (vm.show.reflection) {
@@ -1464,6 +1524,20 @@
         }
       }
     }
+    toggleTick(taskId, checked) {
+      const was = this.t.todayCard().complete;
+      const res = this.t.toggleTask(taskId, checked);
+      if (!was && this.t.todayCard().complete) {
+        this.r.celebrate();
+        if (res.unlockedBadges.length) {
+          const tro = this.t.trophies().find((x) => x.id === res.unlockedBadges[0]);
+          if (tro) this.r.badgeToast(this.t.ui("newTrophy"), tro.title, tro.icon);
+        }
+        if (res.surprise) this.r.toast("toast", this.r.esc(res.surprise));
+      }
+      this.renderAll();
+      this.r.focusTask(taskId);
+    }
     syncDayNav() {
       const sel = this.t.selectors();
       const i = sel.items.findIndex((o) => o.selected);
@@ -1481,6 +1555,71 @@
         window.scrollTo({ top: 0, behavior: "smooth" });
       } catch {
       }
+    }
+    // ----- keyboard ------------------------------------------------------------
+    handleKeydown(e) {
+      const key = e.key;
+      if (key === "Escape") {
+        if (this.activeModal) this.closeActiveModal();
+        return;
+      }
+      if (this.activeModal) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (this.r.isTypingTarget()) return;
+      switch (key) {
+        case "ArrowLeft":
+          this.go(-1);
+          e.preventDefault();
+          break;
+        case "ArrowRight":
+          this.go(1);
+          e.preventDefault();
+          break;
+        case "ArrowDown":
+          this.moveTickFocus(1);
+          e.preventDefault();
+          break;
+        case "ArrowUp":
+          this.moveTickFocus(-1);
+          e.preventDefault();
+          break;
+        case "Enter": {
+          const id = this.r.activeTaskId();
+          if (id) {
+            this.toggleTick(id, !this.tickDone(id));
+            e.preventDefault();
+          }
+          break;
+        }
+        case "?":
+          this.renderShortcuts();
+          this.open("shortcutsModal");
+          break;
+        default: {
+          const k = key.toLowerCase();
+          if (k === "m") {
+            this.renderCardMap();
+            this.open("cardMapModal");
+          } else if (k === "t") {
+            this.renderTrophies();
+            this.open("trophiesModal");
+          }
+        }
+      }
+    }
+    tickDone(taskId) {
+      return this.t.todayCard().tasks.find((t) => t.id === taskId)?.done ?? false;
+    }
+    moveTickFocus(delta) {
+      const card = this.t.todayCard();
+      if (card.rest) return;
+      const ids = card.tasks.map((t) => t.id);
+      if (!ids.length) return;
+      const cur = this.r.activeTaskId();
+      let i = cur ? ids.indexOf(cur) : -1;
+      if (i < 0) i = delta > 0 ? 0 : ids.length - 1;
+      else i = Math.min(Math.max(i + delta, 0), ids.length - 1);
+      this.r.focusTask(ids[i]);
     }
     // ----- wiring (port of app.js init()) --------------------------------------
     wire() {
@@ -1523,8 +1662,7 @@
           const id = e.target.dataset?.id;
           if (!id) return;
           this.t.selectItem(id);
-          const m = this.r.$("cardMapModal");
-          if (m) m.classList.remove("open");
+          this.closeActiveModal();
           this.renderAll();
         };
       }
@@ -1537,12 +1675,9 @@
       }
       this.bindClose("trophiesClose", "trophiesModal");
       this.bindBackdrop("trophiesModal");
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          const m = document.querySelector(".modal.open");
-          if (m) m.classList.remove("open");
-        }
-      });
+      this.bindClose("shortcutsClose", "shortcutsModal");
+      this.bindBackdrop("shortcutsModal");
+      document.addEventListener("keydown", (e) => this.handleKeydown(e));
       const prev = this.r.$("prevDay");
       if (prev) prev.onclick = () => this.go(-1);
       const next = this.r.$("nextDay");
@@ -1585,15 +1720,24 @@
       }
     }
     open(id) {
+      if (this.activeModal && this.activeModal !== id) this.closeActiveModal();
       const el = this.r.$(id);
-      if (el) el.classList.add("open");
+      if (el) {
+        el.classList.add("open");
+        this.activeModal = id;
+      }
+    }
+    closeActiveModal() {
+      if (!this.activeModal) return;
+      const el = this.r.$(this.activeModal);
+      if (el) el.classList.remove("open");
+      this.activeModal = null;
     }
     bindClose(btnId, modalId) {
       const btn = this.r.$(btnId);
       if (btn) {
         btn.onclick = () => {
-          const m = this.r.$(modalId);
-          if (m) m.classList.remove("open");
+          if (this.activeModal === modalId) this.closeActiveModal();
         };
       }
     }
@@ -1601,7 +1745,7 @@
       const m = this.r.$(modalId);
       if (m) {
         m.onclick = (e) => {
-          if (e.target.id === modalId) m.classList.remove("open");
+          if (e.target.id === modalId) this.closeActiveModal();
         };
       }
     }

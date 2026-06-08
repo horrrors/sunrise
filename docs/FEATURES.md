@@ -10,6 +10,7 @@ What the app does today, grouped by area. Each line is one feature with a one-se
 - **Warm-up line** — an optional priming prompt shown above the day's tasks.
 - **Resources** — optional reference chips (label + note) attached to a day.
 - **Day navigation** — prev/next arrows, a "next day →" button when a day is done, and a dropdown to jump to any day.
+- **Keyboard navigation** — `←/→` change day, `↑/↓` move between the day's tasks, `Enter` marks the focused task, `M`/`T`/`?` open card map / trophies / a shortcuts overlay, and `Esc` closes any dialog.
 - **Per-pack progress** — progress (checks, streaks, trophies) is stored **separately per content pack**, so two different programs keep independent histories.
 - **Saved automatically** — all progress persists to `localStorage`; nothing is lost on reload.
 
