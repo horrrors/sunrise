@@ -398,3 +398,10 @@ test('renderer: isTypingTarget true for select, false when nothing focused', asy
   registry['daySelect']!.focus();
   assert.equal(renderer.isTypingTarget(), true, 'select focused -> typing');
 });
+
+test('toggling a tick via onchange restores focus to it', async () => {
+  const { registry, tracker, renderer } = await boot();
+  const id = tracker.todayCard().tasks[0]!.id;
+  registry['cb_' + id]!.onchange!({ target: { checked: true } });
+  assert.equal(renderer.activeTaskId(), id, 'focus restored to toggled tick');
+});

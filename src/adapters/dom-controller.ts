@@ -107,21 +107,7 @@ export class DomController {
     for (const t of vm.tasks) {
       const cb = this.r.$('cb_' + t.id) as HTMLInputElement | null;
       if (cb) {
-        cb.onchange = (e) => {
-          const checked = (e.target as HTMLInputElement).checked;
-          const was = this.t.todayCard().complete;
-          const res = this.t.toggleTask(t.id, checked);
-          // Fire effects only on the not-complete → complete transition (parity).
-          if (!was && this.t.todayCard().complete) {
-            this.r.celebrate();
-            if (res.unlockedBadges.length) {
-              const tro = this.t.trophies().find((x) => x.id === res.unlockedBadges[0]);
-              if (tro) this.r.badgeToast(this.t.ui('newTrophy'), tro.title, tro.icon);
-            }
-            if (res.surprise) this.r.toast('toast', this.r.esc(res.surprise));
-          }
-          this.renderAll();
-        };
+        cb.onchange = (e) => this.toggleTick(t.id, (e.target as HTMLInputElement).checked);
       }
     }
     if (vm.show.reflection) {
@@ -141,6 +127,22 @@ export class DomController {
         };
       }
     }
+  }
+
+  private toggleTick(taskId: string, checked: boolean): void {
+    const was = this.t.todayCard().complete;
+    const res = this.t.toggleTask(taskId, checked);
+    // Fire effects only on the not-complete → complete transition (parity).
+    if (!was && this.t.todayCard().complete) {
+      this.r.celebrate();
+      if (res.unlockedBadges.length) {
+        const tro = this.t.trophies().find((x) => x.id === res.unlockedBadges[0]);
+        if (tro) this.r.badgeToast(this.t.ui('newTrophy'), tro.title, tro.icon);
+      }
+      if (res.surprise) this.r.toast('toast', this.r.esc(res.surprise));
+    }
+    this.renderAll();
+    this.r.focusTask(taskId);
   }
 
   private syncDayNav(): void {
