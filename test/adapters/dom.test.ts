@@ -445,3 +445,30 @@ test('typing target and modifier keys suppress navigation', async () => {
   controller!.handleKeydown(ev('ArrowRight', { ctrlKey: true }));
   assert.equal(tracker.todayCard().itemId, items[0], 'ignored with modifier');
 });
+
+test('ArrowDown/Up move tick focus and clamp at the ends', async () => {
+  const { registry, controller, renderer, tracker } = await boot();
+
+  // Switch to an item with at least two ticks (rendered via the day-select path).
+  let multi: string | undefined;
+  for (const o of tracker.selectors().items) {
+    tracker.selectItem(o.id);
+    if (tracker.todayCard().tasks.length >= 2) {
+      multi = o.id;
+      break;
+    }
+  }
+  assert.ok(multi, 'fixture has an item with >= 2 ticks');
+  registry['daySelect']!.value = multi!;
+  registry['daySelect']!.onchange!();
+
+  const ids = tracker.todayCard().tasks.map((t) => t.id);
+  controller!.handleKeydown(ev('ArrowDown'));
+  assert.equal(renderer.activeTaskId(), ids[0], 'down with nothing focused -> first');
+  controller!.handleKeydown(ev('ArrowDown'));
+  assert.equal(renderer.activeTaskId(), ids[1], 'down -> second');
+  controller!.handleKeydown(ev('ArrowUp'));
+  assert.equal(renderer.activeTaskId(), ids[0], 'up -> first');
+  controller!.handleKeydown(ev('ArrowUp'));
+  assert.equal(renderer.activeTaskId(), ids[0], 'up clamps at top');
+});

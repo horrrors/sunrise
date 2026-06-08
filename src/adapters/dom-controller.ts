@@ -188,7 +188,27 @@ export class DomController {
         this.go(1);
         e.preventDefault();
         break;
+      case 'ArrowDown':
+        this.moveTickFocus(1);
+        e.preventDefault();
+        break;
+      case 'ArrowUp':
+        this.moveTickFocus(-1);
+        e.preventDefault();
+        break;
     }
+  }
+
+  private moveTickFocus(delta: number): void {
+    const card = this.t.todayCard();
+    if (card.rest) return;
+    const ids = card.tasks.map((t) => t.id);
+    if (!ids.length) return;
+    const cur = this.r.activeTaskId();
+    let i = cur ? ids.indexOf(cur) : -1;
+    if (i < 0) i = delta > 0 ? 0 : ids.length - 1;
+    else i = Math.min(Math.max(i + delta, 0), ids.length - 1);
+    this.r.focusTask(ids[i]!);
   }
 
   // ----- wiring (port of app.js init()) --------------------------------------
