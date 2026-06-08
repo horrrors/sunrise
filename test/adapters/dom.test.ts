@@ -472,3 +472,23 @@ test('ArrowDown/Up move tick focus and clamp at the ends', async () => {
   controller!.handleKeydown(ev('ArrowUp'));
   assert.equal(renderer.activeTaskId(), ids[0], 'up clamps at top');
 });
+
+test('Enter toggles the focused tick and keeps focus', async () => {
+  const { controller, renderer, tracker } = await boot();
+  const id = tracker.todayCard().tasks[0]!.id;
+  renderer.focusTask(id);
+  controller!.handleKeydown(ev('Enter'));
+  assert.equal(tracker.todayCard().tasks.find((t) => t.id === id)!.done, true, 'tick marked');
+  assert.equal(renderer.activeTaskId(), id, 'focus stays on the tick');
+});
+
+test('Enter through all ticks completes the item and persists', async () => {
+  const { controller, renderer, tracker, store } = await boot();
+  const packId = tracker.activePackId();
+  for (const t of tracker.todayCard().tasks) {
+    renderer.focusTask(t.id);
+    controller!.handleKeydown(ev('Enter'));
+  }
+  const saved = JSON.parse(store['sunrise.progress.' + packId]!);
+  assert.ok(saved.badges && saved.badges['first-light'], 'first-light persisted via Enter');
+});

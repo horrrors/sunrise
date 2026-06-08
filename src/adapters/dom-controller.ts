@@ -196,7 +196,19 @@ export class DomController {
         this.moveTickFocus(-1);
         e.preventDefault();
         break;
+      case 'Enter': {
+        const id = this.r.activeTaskId();
+        if (id) {
+          this.toggleTick(id, !this.tickDone(id));
+          e.preventDefault();
+        }
+        break;
+      }
     }
+  }
+
+  private tickDone(taskId: string): boolean {
+    return this.t.todayCard().tasks.find((t) => t.id === taskId)?.done ?? false;
   }
 
   private moveTickFocus(delta: number): void {
