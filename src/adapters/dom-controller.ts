@@ -13,6 +13,7 @@ import { ImportError, ValidationError } from '../domain/errors.ts';
 export class DomController {
   private t: Tracker;
   private r: DomRenderer;
+  private activeModal: string | null = null;
   constructor(tracker: Tracker, renderer: DomRenderer) {
     this.t = tracker;
     this.r = renderer;
@@ -166,6 +167,30 @@ export class DomController {
     }
   }
 
+  // ----- keyboard ------------------------------------------------------------
+
+  public handleKeydown(e: KeyboardEvent): void {
+    const key = e.key;
+    if (key === 'Escape') {
+      if (this.activeModal) this.closeActiveModal();
+      return;
+    }
+    if (this.activeModal) return; // modal open → only Esc acts
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (this.r.isTypingTarget()) return;
+
+    switch (key) {
+      case 'ArrowLeft':
+        this.go(-1);
+        e.preventDefault();
+        break;
+      case 'ArrowRight':
+        this.go(1);
+        e.preventDefault();
+        break;
+    }
+  }
+
   // ----- wiring (port of app.js init()) --------------------------------------
 
   private wire(): void {
@@ -209,8 +234,7 @@ export class DomController {
         const id = (e.target as HTMLElement).dataset?.id;
         if (!id) return;
         this.t.selectItem(id);
-        const m = this.r.$('cardMapModal');
-        if (m) m.classList.remove('open');
+        this.closeActiveModal();
         this.renderAll();
       };
     }
@@ -225,12 +249,7 @@ export class DomController {
     this.bindClose('trophiesClose', 'trophiesModal');
     this.bindBackdrop('trophiesModal');
 
-    document.addEventListener('keydown', (e) => {
-      if ((e as KeyboardEvent).key === 'Escape') {
-        const m = document.querySelector('.modal.open');
-        if (m) m.classList.remove('open');
-      }
-    });
+    document.addEventListener('keydown', (e) => this.handleKeydown(e as KeyboardEvent));
 
     const prev = this.r.$('prevDay');
     if (prev) (prev as HTMLElement).onclick = () => this.go(-1);
@@ -276,16 +295,26 @@ export class DomController {
   }
 
   private open(id: string): void {
+    if (this.activeModal && this.activeModal !== id) this.closeActiveModal();
     const el = this.r.$(id);
-    if (el) el.classList.add('open');
+    if (el) {
+      el.classList.add('open');
+      this.activeModal = id;
+    }
+  }
+
+  private closeActiveModal(): void {
+    if (!this.activeModal) return;
+    const el = this.r.$(this.activeModal);
+    if (el) el.classList.remove('open');
+    this.activeModal = null;
   }
 
   private bindClose(btnId: string, modalId: string): void {
     const btn = this.r.$(btnId);
     if (btn) {
       (btn as HTMLElement).onclick = () => {
-        const m = this.r.$(modalId);
-        if (m) m.classList.remove('open');
+        if (this.activeModal === modalId) this.closeActiveModal();
       };
     }
   }
@@ -294,7 +323,7 @@ export class DomController {
     const m = this.r.$(modalId);
     if (m) {
       (m as HTMLElement).onclick = (e) => {
-        if ((e.target as HTMLElement).id === modalId) m.classList.remove('open');
+        if ((e.target as HTMLElement).id === modalId) this.closeActiveModal();
       };
     }
   }

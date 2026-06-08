@@ -405,3 +405,43 @@ test('toggling a tick via onchange restores focus to it', async () => {
   registry['cb_' + id]!.onchange!({ target: { checked: true } });
   assert.equal(renderer.activeTaskId(), id, 'focus restored to toggled tick');
 });
+
+test('ArrowLeft/Right navigate days and clamp at both ends', async () => {
+  const { controller, tracker } = await boot();
+  const items = tracker.selectors().items.map((o) => o.id);
+  assert.ok(items.length > 1, 'pack has multiple items');
+
+  tracker.selectItem(items[0]!);
+  controller!.handleKeydown(ev('ArrowLeft'));
+  assert.equal(tracker.todayCard().itemId, items[0], 'clamps at start');
+
+  controller!.handleKeydown(ev('ArrowRight'));
+  assert.equal(tracker.todayCard().itemId, items[1], 'right advances');
+
+  tracker.selectItem(items[items.length - 1]!);
+  controller!.handleKeydown(ev('ArrowRight'));
+  assert.equal(tracker.todayCard().itemId, items[items.length - 1], 'clamps at end');
+});
+
+test('Escape closes the open modal', async () => {
+  const { registry, controller } = await boot();
+  registry['cardMapBtn']!.onclick!();
+  assert.equal(registry['cardMapModal']!.classList.contains('open'), true);
+  controller!.handleKeydown(ev('Escape'));
+  assert.equal(registry['cardMapModal']!.classList.contains('open'), false);
+});
+
+test('typing target and modifier keys suppress navigation', async () => {
+  const { registry, controller, tracker } = await boot();
+  const items = tracker.selectors().items.map((o) => o.id);
+  tracker.selectItem(items[0]!);
+
+  registry['daySelect']!.tagName = 'SELECT';
+  registry['daySelect']!.focus();
+  controller!.handleKeydown(ev('ArrowRight'));
+  assert.equal(tracker.todayCard().itemId, items[0], 'ignored while typing');
+
+  (globalThis as { document?: { activeElement?: unknown } }).document!.activeElement = null;
+  controller!.handleKeydown(ev('ArrowRight', { ctrlKey: true }));
+  assert.equal(tracker.todayCard().itemId, items[0], 'ignored with modifier');
+});
