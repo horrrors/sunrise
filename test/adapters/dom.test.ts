@@ -381,3 +381,20 @@ test('renderCardMap renders rows + cells with data-id', async () => {
   assert.ok(html.includes('cm-row'), 'group rows render');
   assert.ok(html.includes('current'), 'current card flagged');
 });
+
+test('renderer: focusTask / activeTaskId round-trip', async () => {
+  const { registry, renderer } = await boot();
+  const cbId = Object.keys(registry).find((id) => /^cb_/.test(id));
+  assert.ok(cbId, 'today card rendered at least one tick');
+  const taskId = cbId!.slice(3);
+  renderer.focusTask(taskId);
+  assert.equal(renderer.activeTaskId(), taskId, 'activeTaskId reflects focused tick');
+});
+
+test('renderer: isTypingTarget true for select, false when nothing focused', async () => {
+  const { registry, renderer } = await boot();
+  assert.equal(renderer.isTypingTarget(), false, 'nothing focused -> not typing');
+  registry['daySelect']!.tagName = 'SELECT';
+  registry['daySelect']!.focus();
+  assert.equal(renderer.isTypingTarget(), true, 'select focused -> typing');
+});

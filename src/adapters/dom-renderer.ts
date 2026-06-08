@@ -24,6 +24,31 @@ export class DomRenderer {
     return document.getElementById(id);
   }
 
+  // ----- keyboard focus (the only place that touches activeElement/focus) ----
+
+  public focusTask(taskId: string): void {
+    const el = this.$('cb_' + taskId) as HTMLElement | null;
+    if (el && typeof el.focus === 'function') el.focus();
+  }
+
+  public activeTaskId(): string | null {
+    const a = document.activeElement as HTMLElement | null;
+    const id = a?.id ?? '';
+    return id.startsWith('cb_') ? id.slice(3) : null;
+  }
+
+  public isTypingTarget(): boolean {
+    const a = document.activeElement as HTMLElement | null;
+    if (!a) return false;
+    const tag = a.tagName;
+    if (tag === 'TEXTAREA' || tag === 'SELECT') return true;
+    if (tag === 'INPUT') {
+      const t = (a as HTMLInputElement).type;
+      return t !== 'checkbox' && t !== 'radio' && t !== 'button';
+    }
+    return false;
+  }
+
   // ----- selectors -----------------------------------------------------------
 
   public renderSelectors(vm: SelectorsVM): void {
