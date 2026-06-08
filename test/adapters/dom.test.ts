@@ -512,3 +512,20 @@ test('single-key shortcuts open the right modals', async () => {
   assert.equal(registry['shortcutsModal']!.classList.contains('open'), true, '? opens help');
   assert.ok((registry['shortcutsGrid']!.innerHTML || '').includes('sc-row'), 'help rows render');
 });
+
+test('keyboard day-nav keeps scroll position; buttons still scroll to top', async () => {
+  const { registry, controller, tracker } = await boot();
+  const items = tracker.selectors().items.map((o) => o.id);
+  tracker.selectItem(items[0]!);
+
+  let scrolls = 0;
+  (globalThis as { window?: { scrollTo: () => void } }).window!.scrollTo = () => {
+    scrolls++;
+  };
+
+  controller!.handleKeydown(ev('ArrowRight'));
+  assert.equal(scrolls, 0, 'arrow nav does not scroll the page');
+
+  registry['nextDay']!.onclick!();
+  assert.equal(scrolls, 1, 'the prev/next button still scrolls to top');
+});

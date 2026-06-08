@@ -1208,7 +1208,7 @@
     // ----- keyboard focus (the only place that touches activeElement/focus) ----
     focusTask(taskId) {
       const el = this.$("cb_" + taskId);
-      if (el && typeof el.focus === "function") el.focus();
+      if (el && typeof el.focus === "function") el.focus({ preventScroll: true });
     }
     activeTaskId() {
       const a = document.activeElement;
@@ -1548,9 +1548,10 @@
       const cta = this.r.$("nextDayCta");
       if (cta) cta.onclick = () => this.go(1);
     }
-    go(delta) {
+    go(delta, scroll = true) {
       this.t.goToItem(delta);
       this.renderAll();
+      if (!scroll) return;
       try {
         window.scrollTo({ top: 0, behavior: "smooth" });
       } catch {
@@ -1568,11 +1569,11 @@
       if (this.r.isTypingTarget()) return;
       switch (key) {
         case "ArrowLeft":
-          this.go(-1);
+          this.go(-1, false);
           e.preventDefault();
           break;
         case "ArrowRight":
-          this.go(1);
+          this.go(1, false);
           e.preventDefault();
           break;
         case "ArrowDown":

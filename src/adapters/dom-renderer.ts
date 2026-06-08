@@ -28,7 +28,7 @@ export class DomRenderer {
 
   public focusTask(taskId: string): void {
     const el = this.$('cb_' + taskId) as HTMLElement | null;
-    if (el && typeof el.focus === 'function') el.focus();
+    if (el && typeof el.focus === 'function') el.focus({ preventScroll: true });
   }
 
   public activeTaskId(): string | null {

@@ -173,9 +173,10 @@ export class DomController {
     if (cta) (cta as HTMLElement).onclick = () => this.go(1);
   }
 
-  private go(delta: number): void {
+  private go(delta: number, scroll = true): void {
     this.t.goToItem(delta);
     this.renderAll();
+    if (!scroll) return; // keyboard nav keeps the current scroll position
     try {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch {
@@ -197,11 +198,11 @@ export class DomController {
 
     switch (key) {
       case 'ArrowLeft':
-        this.go(-1);
+        this.go(-1, false);
         e.preventDefault();
         break;
       case 'ArrowRight':
-        this.go(1);
+        this.go(1, false);
         e.preventDefault();
         break;
       case 'ArrowDown':
