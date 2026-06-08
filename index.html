@@ -29,7 +29,9 @@
 .sc-grid{display:flex;flex-direction:column;gap:8px}
 .sc-row{display:flex;align-items:center;gap:12px}
 .sc-keys{flex:0 0 auto;min-width:84px;font:600 12px ui-monospace,SFMono-Regular,monospace}
-.sc-desc{opacity:.8}</style>
+.sc-desc{opacity:.8}
+/* keyboard focus — clear, theme-independent highlight on the focused task row */
+#taskList .task:has(input:focus-visible){outline:3px solid var(--yellow,#f6c343);outline-offset:3px;border-radius:var(--r,8px)}</style>
 <link id="themeCss" rel="stylesheet" href="themes/bonus.css" />
 </head>
 <body>
