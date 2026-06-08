@@ -32,6 +32,8 @@ interface Registry {
 
 class FakeEl {
   id: string;
+  tagName = 'DIV';
+  type = '';
   _html = '';
   value = '';
   files: unknown[] = [];
@@ -95,6 +97,9 @@ class FakeEl {
   }
   addEventListener(): void {}
   click(): void {}
+  focus(): void {
+    (globalThis as { document?: { activeElement?: unknown } }).document!.activeElement = this;
+  }
 }
 
 interface Harness {
@@ -102,6 +107,7 @@ interface Harness {
   store: Record<string, string>;
   tracker: Tracker;
   renderer: DomRenderer;
+  controller?: DomController;
   registryPlugin: WindowPluginRegistry;
 }
 
@@ -149,6 +155,7 @@ function harness(seed?: { store?: Record<string, string> }): Harness {
     addEventListener: (): void => {},
     documentElement: new FakeEl('html', registry),
     body: new FakeEl('body', registry),
+    activeElement: null as FakeEl | null,
   };
   g['localStorage'] = {
     getItem: (k: string): string | null => (k in store ? store[k]! : null),
@@ -220,13 +227,17 @@ async function boot(seed?: { store?: Record<string, string> }): Promise<Harness>
   const h = harness(seed);
   await registerDevRoadmap(h.registryPlugin);
   h.tracker.init();
-  new DomController(h.tracker, h.renderer).start();
+  h.controller = new DomController(h.tracker, h.renderer);
+  h.controller.start();
   return h;
 }
 
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
+
+const ev = (key: string, extra: Record<string, unknown> = {}): KeyboardEvent =>
+  ({ key, preventDefault() {}, ...extra }) as unknown as KeyboardEvent;
 
 test('boots: selectors render <option>s', async () => {
   const { registry, tracker } = await boot();
