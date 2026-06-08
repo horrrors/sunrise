@@ -39,6 +39,14 @@ export const DEFAULT_UI: Record<string, string> = {
   theme: 'Тема',
   pack: 'Программа',
   hint: 'Что считается сильным ответом',
+  shortcuts: 'Горячие клавиши',
+  scDay: 'Предыдущий / следующий день',
+  scTick: 'Переход между задачами',
+  scMark: 'Отметить задачу',
+  scMap: 'Карта прогресса',
+  scTrophies: 'Трофеи',
+  scHelp: 'Эта подсказка',
+  scClose: 'Закрыть окно',
 };
 
 export const DEFAULT_STREAK_WORDS: readonly string[] = ['день', 'дня', 'дней'];

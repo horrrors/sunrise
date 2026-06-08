@@ -239,6 +239,22 @@ export class DomRenderer {
       .join('');
   }
 
+  // ----- shortcuts help ------------------------------------------------------
+
+  public renderShortcuts(rows: { keys: string; label: string }[], titleLabel: string): void {
+    const host = this.$('shortcutsGrid');
+    if (!host) return;
+    const title = this.$('shortcutsTitle');
+    if (title) title.textContent = titleLabel;
+    host.innerHTML = rows
+      .map(
+        (r) =>
+          `<div class="sc-row"><kbd class="sc-keys">${this.esc(r.keys)}</kbd>` +
+          `<span class="sc-desc">${this.esc(r.label)}</span></div>`,
+      )
+      .join('');
+  }
+
   // ----- theme & track colors ------------------------------------------------
 
   public applyTheme(href: string, id: string): void {

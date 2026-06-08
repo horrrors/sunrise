@@ -141,6 +141,10 @@ function harness(seed?: { store?: Record<string, string> }): Harness {
     'trophiesTitle',
     'trophiesClose',
     'trophiesGrid',
+    'shortcutsModal',
+    'shortcutsTitle',
+    'shortcutsClose',
+    'shortcutsGrid',
     'fx',
     'themeCss',
   ];
@@ -491,4 +495,20 @@ test('Enter through all ticks completes the item and persists', async () => {
   }
   const saved = JSON.parse(store['sunrise.progress.' + packId]!);
   assert.ok(saved.badges && saved.badges['first-light'], 'first-light persisted via Enter');
+});
+
+test('single-key shortcuts open the right modals', async () => {
+  const { registry, controller } = await boot();
+
+  controller!.handleKeydown(ev('m'));
+  assert.equal(registry['cardMapModal']!.classList.contains('open'), true, 'm opens card map');
+  controller!.handleKeydown(ev('Escape'));
+
+  controller!.handleKeydown(ev('t'));
+  assert.equal(registry['trophiesModal']!.classList.contains('open'), true, 't opens trophies');
+  controller!.handleKeydown(ev('Escape'));
+
+  controller!.handleKeydown(ev('?'));
+  assert.equal(registry['shortcutsModal']!.classList.contains('open'), true, '? opens help');
+  assert.ok((registry['shortcutsGrid']!.innerHTML || '').includes('sc-row'), 'help rows render');
 });

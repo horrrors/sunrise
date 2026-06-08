@@ -101,6 +101,22 @@ export class DomController {
     this.r.renderCardMap(this.t.cardMap(), this.t.ui('cardMap'));
   }
 
+  private renderShortcuts(): void {
+    const u = (k: string): string => this.t.ui(k);
+    this.r.renderShortcuts(
+      [
+        { keys: '← / →', label: u('scDay') },
+        { keys: '↑ / ↓', label: u('scTick') },
+        { keys: 'Enter', label: u('scMark') },
+        { keys: 'M', label: u('scMap') },
+        { keys: 'T', label: u('scTrophies') },
+        { keys: '?', label: u('scHelp') },
+        { keys: 'Esc', label: u('scClose') },
+      ],
+      u('shortcuts'),
+    );
+  }
+
   // ----- today-card handlers (re-bound on every render) ----------------------
 
   private bindTodayHandlers(vm: TodayVM): void {
@@ -204,6 +220,20 @@ export class DomController {
         }
         break;
       }
+      case '?':
+        this.renderShortcuts();
+        this.open('shortcutsModal');
+        break;
+      default: {
+        const k = key.toLowerCase();
+        if (k === 'm') {
+          this.renderCardMap();
+          this.open('cardMapModal');
+        } else if (k === 't') {
+          this.renderTrophies();
+          this.open('trophiesModal');
+        }
+      }
     }
   }
 
@@ -280,6 +310,9 @@ export class DomController {
     }
     this.bindClose('trophiesClose', 'trophiesModal');
     this.bindBackdrop('trophiesModal');
+
+    this.bindClose('shortcutsClose', 'shortcutsModal');
+    this.bindBackdrop('shortcutsModal');
 
     document.addEventListener('keydown', (e) => this.handleKeydown(e as KeyboardEvent));
 

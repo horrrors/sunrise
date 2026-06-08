@@ -13,7 +13,23 @@
 .task-hint>summary::before{content:"\25B8";font-size:11px}
 .task-hint[open]>summary::before{content:"\25BE"}
 .task-hint[open]>summary{margin-bottom:6px}
-.task-hint-body{font-size:13px;line-height:1.55;opacity:.78;border-left:2px solid currentColor;padding-left:10px;margin-left:3px}</style>
+.task-hint-body{font-size:13px;line-height:1.55;opacity:.78;border-left:2px solid currentColor;padding-left:10px;margin-left:3px}
+/* card map — canonical baseline so the grid is visible in every theme; themes may override */
+.cm-grid{display:flex;flex-direction:column;gap:12px}
+.cm-row{display:flex;flex-direction:column;gap:6px}
+.cm-rlabel{font:700 11px ui-monospace,SFMono-Regular,monospace;letter-spacing:.08em;text-transform:uppercase;opacity:.55}
+.cm-cells{display:flex;flex-wrap:wrap;gap:6px}
+.cm-card{position:relative;box-sizing:border-box;width:24px;height:24px;border:2px solid var(--ink,#222);border-radius:var(--r,6px);background:var(--paper-2,#e7e3d8);cursor:pointer;transition:transform .08s ease}
+.cm-card:hover{transform:translate(-2px,-2px)}
+.cm-card.done{background:var(--cobalt,#2b6cb0)}
+.cm-card.rest{border-style:dashed;background:transparent;opacity:.5}
+.cm-card.current{outline:3px solid var(--yellow,#f6c343);outline-offset:2px}
+.cm-card[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:max-content;max-width:220px;font:600 12px system-ui,sans-serif;line-height:1.35;color:#fff;background:#1a1a1a;border-radius:6px;padding:7px 10px;z-index:5;pointer-events:none;white-space:normal}
+/* shortcuts overlay — theme-independent list */
+.sc-grid{display:flex;flex-direction:column;gap:8px}
+.sc-row{display:flex;align-items:center;gap:12px}
+.sc-keys{flex:0 0 auto;min-width:84px;font:600 12px ui-monospace,SFMono-Regular,monospace}
+.sc-desc{opacity:.8}</style>
 <link id="themeCss" rel="stylesheet" href="themes/bonus.css" />
 </head>
 <body>
@@ -23,10 +39,10 @@
     <label class="field"><select id="packSelect"></select></label>
     <label class="field"><select id="themeSelect"></select></label>
     <label class="field"><select id="daySelect"></select></label>
-    <button class="btn ghost" id="calBtn" type="button">📅</button>
+    <button class="btn ghost" id="cardMapBtn" type="button">🗺️</button>
     <button class="btn ghost" id="trophiesBtn" type="button">🏆</button>
-    <button class="btn ghost" id="exportBtn" type="button"></button>
-    <button class="btn ghost" id="importBtn" type="button"></button>
+    <button class="btn ghost" id="exportBtn" type="button">📤</button>
+    <button class="btn ghost" id="importBtn" type="button">📥</button>
     <input type="file" id="importFile" accept="application/json" hidden />
   </div>
 </header>
@@ -43,11 +59,10 @@
 </main>
 <div class="foot"><span id="motd"></span></div>
 
-<div class="modal" id="calModal" role="dialog" aria-modal="true" aria-labelledby="calTitle">
-  <div class="modal-panel cal-panel">
-    <div class="cal-head"><button id="calPrev" type="button">‹</button><div id="calTitle"></div><button id="calNext" type="button">›</button><button id="calClose" type="button">✕</button></div>
-    <div class="cal-dow" id="calDow"></div>
-    <div class="cal-grid" id="calGrid"></div>
+<div class="modal" id="cardMapModal" role="dialog" aria-modal="true" aria-labelledby="cardMapTitle">
+  <div class="modal-panel cardmap-panel">
+    <div class="tr-head"><div id="cardMapTitle"></div><button id="cardMapClose" type="button">✕</button></div>
+    <div class="cm-grid" id="cardMapGrid"></div>
   </div>
 </div>
 <div class="modal" id="trophiesModal" role="dialog" aria-modal="true" aria-labelledby="trophiesTitle">
@@ -56,9 +71,29 @@
     <div class="tr-grid" id="trophiesGrid"></div>
   </div>
 </div>
+<div class="modal" id="shortcutsModal" role="dialog" aria-modal="true" aria-labelledby="shortcutsTitle">
+  <div class="modal-panel sc-panel">
+    <div class="tr-head"><div id="shortcutsTitle"></div><button id="shortcutsClose" type="button">✕</button></div>
+    <div class="sc-grid" id="shortcutsGrid"></div>
+  </div>
+</div>
 <div id="fx" aria-hidden="true"></div>
 
 <script src="dist/sunrise.js"></script>
 <script src="data/packs/dev-roadmap.js"></script>
+<script>
+  if (window.SUNRISE) {
+    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "dawn",      name: "Dawn · Рассвет",  version: "1.0.0", cssHref: "themes/dawn.css" });
+    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "arcade",    name: "Arcade · 8-bit",  version: "1.0.0", cssHref: "themes/arcade.css" });
+    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "solarpunk", name: "Solarpunk · Сад", version: "1.0.0", cssHref: "themes/solarpunk.css" });
+    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "swiss",     name: "Swiss · Сетка",     version: "1.0.0", cssHref: "themes/swiss.css" });
+    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "bauhaus",   name: "Bauhaus · 1919",    version: "1.0.0", cssHref: "themes/bauhaus.css" });
+    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "blueprint", name: "Blueprint · Чертёж", version: "1.0.0", cssHref: "themes/blueprint.css" });
+    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "memphis",   name: "Memphis · 1984",    version: "1.0.0", cssHref: "themes/memphis.css" });
+    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "arcade-animated", name: "Arcade · 8-bit Animated", version: "1.0.0", cssHref: "themes/arcade-animated.css" });
+    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "arcade-animated-v2", name: "Arcade · 8-bit Animated v2", version: "1.0.0", cssHref: "themes/arcade-animated-v2.css" });
+    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "aurora-noir", name: "Aurora Noir · Сияние", version: "1.0.0", cssHref: "themes/aurora-noir.css" });
+  }
+</script>
 </body>
 </html>
