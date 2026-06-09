@@ -61,8 +61,6 @@
   --t-rest:#8e8aa3;      /* muted    */
 }
 
-*{ box-sizing:border-box; }
-
 html{ scroll-behavior:smooth; }
 
 body{
@@ -429,7 +427,6 @@ body{
 }
 @keyframes taskIn{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:translateY(0); } }
 .task:hover{ border-color:var(--tk); background:#fff; transform:translateX(2px); }
-.task input{ position:absolute; opacity:0; width:0; height:0; pointer-events:none; }
 
 /* custom checkbox */
 .box{
@@ -716,8 +713,4 @@ textarea:focus{
   .today-side{ width:44px; }
   .toolbar{ width:100%; }
   .toolbar .field select{ max-width:none; }
-}
-
-@media (prefers-reduced-motion:reduce){
-  *{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; scroll-behavior:auto !important; }
 }

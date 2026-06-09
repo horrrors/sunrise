@@ -56,4 +56,4 @@ export interface Theme {
   readonly version: string;
   readonly cssHref: string;
 }
-export interface Session { activePackId?: string; themeId?: string; }
+export interface Session { activePackId?: string; themeId?: string; cursors?: Record<string, string>; }

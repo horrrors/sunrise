@@ -1,0 +1,939 @@
+/* ============================================================
+   SUNRISE · "bauhaus" theme — Bauhaus · 1919
+   Form follows function. Primary colours, pure geometry, black grid.
+   LIGHT theme. Playful but DISCIPLINED — composed primary blocks,
+   geometric shape accents (circle/triangle/square), black hairlines.
+   CSS only, layered over canonical index.html + app.js markup.
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap');
+
+:root[data-theme="bauhaus"]{
+  /* paper + ink */
+  --paper:     #f3efe4;   /* warm cream */
+  --paper-2:   #ece6d6;   /* slightly deeper cream for fields */
+  --card:      #fbf9f2;   /* near-white card */
+  --ink:       #141414;   /* black */
+  --ink-dim:   #5e5a50;   /* warm grey */
+  --muted:     #8a8578;   /* dimmer warm grey */
+
+  /* primaries */
+  --red:    #e2402b;
+  --blue:   #1f4ea8;
+  --yellow: #f2c200;
+  --black:  #141414;
+
+  /* tints (disciplined, derived from primaries) */
+  --red-tint:    #f0a79c;
+  --blue-tint:   #9db4d8;
+  --yellow-tint: #f7df88;
+
+  --line:      #141414;          /* structural hairline */
+  --line-soft: rgba(20,20,20,.14);
+
+  --r: 0px;                       /* Bauhaus = hard corners by default */
+  --r-round: 999px;
+  --bw: 2px;                      /* structural border weight */
+
+  --fast: .16s cubic-bezier(.2,.9,.2,1);
+  --slow: .42s cubic-bezier(.2,.9,.2,1);
+  --snap: .34s cubic-bezier(.16,1.1,.3,1);
+
+  --font-display: 'Jost', 'Futura', 'Century Gothic', sans-serif;
+  --font-ui:      'Jost', 'Futura', 'Century Gothic', sans-serif;
+  --font-mono:    'Space Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* track accents — mapped across primaries + black + tints */
+  --track-dsa:       #e2402b;  /* red    */
+  --track-js:        #f2c200;  /* yellow */
+  --track-ts:        #1f4ea8;  /* blue   */
+  --track-node:      #141414;  /* black  */
+  --track-sysdesign: #e2402b;  /* red    */
+  --track-patterns:  #1f4ea8;  /* blue   */
+  --track-distsys:   #f2c200;  /* yellow */
+  --track-db:        #1f4ea8;  /* blue   */
+  --track-cs:        #141414;  /* black  */
+  --track-rest:      #8a8578;  /* warm grey */
+}
+
+/* ====================== BASE / RESET ====================== */
+:root[data-theme="bauhaus"] body{
+  margin:0;
+  min-height:100vh;
+  font-family:var(--font-ui);
+  color:var(--ink);
+  background-color:var(--paper);
+  /* faint geometric texture: a square grid + two big primary shapes */
+  background-image:
+    radial-gradient(circle at 88% 8%, rgba(31,78,168,.07) 0 16%, transparent 17%),
+    radial-gradient(circle at 6% 96%, rgba(226,64,43,.06) 0 14%, transparent 15%),
+    linear-gradient(rgba(20,20,20,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20,20,20,.035) 1px, transparent 1px);
+  background-size:auto, auto, 40px 40px, 40px 40px;
+  background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;
+  letter-spacing:.2px;
+  position:relative;
+}
+
+:root[data-theme="bauhaus"] ::selection{ background:var(--yellow); color:var(--ink); }
+:root[data-theme="bauhaus"] ::-webkit-scrollbar{ width:12px; height:12px; }
+:root[data-theme="bauhaus"] ::-webkit-scrollbar-track{ background:var(--paper-2); }
+:root[data-theme="bauhaus"] ::-webkit-scrollbar-thumb{ background:var(--ink); border:3px solid var(--paper-2); }
+
+/* ====================== HEADER ====================== */
+:root[data-theme="bauhaus"] .app-header{
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:14px;
+  padding:16px clamp(16px,4vw,40px);
+  background:var(--paper);
+  border-bottom:3px solid var(--ink);
+  position:sticky; top:0; z-index:50;
+}
+/* primary stripe under the black rule — red | yellow | blue */
+:root[data-theme="bauhaus"] .app-header::after{
+  content:""; position:absolute; left:0; right:0; bottom:-6px; height:3px;
+  background:linear-gradient(90deg,
+    var(--red) 0 33.33%, var(--yellow) 33.33% 66.66%, var(--blue) 66.66% 100%);
+}
+
+:root[data-theme="bauhaus"] .brand{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+/* brand mark = a yellow circle holding the kanji */
+:root[data-theme="bauhaus"] .brand-mark{
+  font-family:var(--font-ui); font-weight:700;
+  font-size:15px; line-height:1;
+  color:var(--ink);
+  width:38px; height:38px; flex:0 0 auto;
+  display:grid; place-items:center;
+  background:var(--yellow);
+  border:var(--bw) solid var(--ink);
+  border-radius:50%;
+}
+:root[data-theme="bauhaus"] .brand-name{
+  font-family:var(--font-display); font-weight:900;
+  font-size:30px; line-height:.9;
+  letter-spacing:4px; text-transform:uppercase;
+  color:var(--ink);
+}
+:root[data-theme="bauhaus"] .brand-sub{
+  font-family:var(--font-mono); font-weight:700;
+  font-size:10.5px; letter-spacing:2px; text-transform:uppercase;
+  color:var(--paper);
+  background:var(--blue);
+  padding:4px 9px;
+  border:var(--bw) solid var(--ink);
+}
+:root[data-theme="bauhaus"] .brand-sub:empty{ display:none; }
+
+:root[data-theme="bauhaus"] .toolbar{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
+:root[data-theme="bauhaus"] .field{ display:inline-flex; }
+:root[data-theme="bauhaus"] select{
+  appearance:none; -webkit-appearance:none;
+  font-family:var(--font-mono); font-weight:700; font-size:12px;
+  color:var(--ink);
+  background:var(--card)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='8' viewBox='0 0 10 8'%3E%3Cpath d='M1 1l4 5 4-5' stroke='%23141414' stroke-width='2' fill='none'/%3E%3C/svg%3E")
+    no-repeat right 11px center;
+  border:var(--bw) solid var(--ink);
+  border-radius:0;
+  padding:9px 30px 9px 12px;
+  cursor:pointer;
+  transition:box-shadow var(--fast), transform var(--fast);
+  max-width:62vw;
+}
+:root[data-theme="bauhaus"] select:hover{ box-shadow:4px 4px 0 var(--ink); transform:translate(-1px,-1px); }
+:root[data-theme="bauhaus"] select:focus{ outline:none; box-shadow:4px 4px 0 var(--blue); }
+:root[data-theme="bauhaus"] select option{ background:var(--card); color:var(--ink); }
+
+:root[data-theme="bauhaus"] .btn{
+  font-family:var(--font-display); font-weight:700; font-size:13px;
+  letter-spacing:.8px;
+  color:var(--ink);
+  background:var(--card);
+  border:var(--bw) solid var(--ink);
+  border-radius:0;
+  padding:8px 13px;
+  cursor:pointer;
+  transition:transform var(--fast), box-shadow var(--fast), background var(--fast), color var(--fast);
+}
+:root[data-theme="bauhaus"] .btn:hover{
+  transform:translate(-2px,-2px);
+  box-shadow:4px 4px 0 var(--ink);
+}
+:root[data-theme="bauhaus"] .btn:active{ transform:translate(0,0); box-shadow:1px 1px 0 var(--ink); }
+:root[data-theme="bauhaus"] .btn.ghost{ background:var(--paper); }
+:root[data-theme="bauhaus"] .btn.ghost:hover{ background:var(--yellow); }
+:root[data-theme="bauhaus"] #calBtn:hover{ background:var(--red); }
+:root[data-theme="bauhaus"] #trophiesBtn:hover{ background:var(--yellow); }
+:root[data-theme="bauhaus"] #exportBtn:hover{ background:var(--blue); color:var(--paper); }
+:root[data-theme="bauhaus"] #importBtn:hover{ background:var(--blue); color:var(--paper); }
+
+:root[data-theme="bauhaus"] .btn.gold{
+  background:var(--yellow);
+  color:var(--ink);
+  border:var(--bw) solid var(--ink);
+  font-family:var(--font-display); font-weight:800; letter-spacing:1px;
+  text-transform:uppercase;
+  padding:12px 22px;
+  margin-top:12px;
+  box-shadow:4px 4px 0 var(--ink);
+}
+:root[data-theme="bauhaus"] .btn.gold:hover{
+  transform:translate(-2px,-2px); box-shadow:6px 6px 0 var(--ink);
+  background:var(--red); color:var(--paper);
+}
+:root[data-theme="bauhaus"] .btn.gold:active{ transform:translate(2px,2px); box-shadow:0 0 0 var(--ink); }
+
+/* ====================== LAYOUT ====================== */
+:root[data-theme="bauhaus"] .wrap{
+  max-width:1100px; margin:0 auto;
+  padding:clamp(20px,4vw,40px) clamp(14px,4vw,40px) 24px;
+}
+
+:root[data-theme="bauhaus"] .section-title{
+  font-family:var(--font-mono); font-weight:700;
+  font-size:12px; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--ink); opacity:1;
+  margin:26px 2px 14px;
+  padding-left:22px;
+  position:relative;
+}
+/* square bullet before each section title */
+:root[data-theme="bauhaus"] .section-title::before{
+  content:""; position:absolute; left:0; top:50%; transform:translateY(-50%);
+  width:12px; height:12px; background:var(--red);
+  border:2px solid var(--ink);
+}
+:root[data-theme="bauhaus"] #todayTitle::before{ background:var(--blue); }
+
+:root[data-theme="bauhaus"] .dash{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:18px;
+  margin-bottom:26px;
+}
+
+/* ====================== STAT CARDS ====================== */
+:root[data-theme="bauhaus"] .stat-card{
+  position:relative;
+  background:var(--card);
+  border:var(--bw) solid var(--ink);
+  border-radius:0;
+  padding:18px 18px 22px;
+  overflow:hidden;
+  box-shadow:6px 6px 0 var(--ink);
+  transition:transform var(--fast), box-shadow var(--fast);
+  animation:bau-reveal .5s both;
+}
+/* staggered page-load reveal */
+:root[data-theme="bauhaus"] .stat-card:nth-child(1){ animation-delay:.02s; }
+:root[data-theme="bauhaus"] .stat-card:nth-child(2){ animation-delay:.10s; }
+:root[data-theme="bauhaus"] .stat-card:nth-child(3){ animation-delay:.18s; }
+:root[data-theme="bauhaus"] .stat-card:nth-child(4){ animation-delay:.26s; }
+:root[data-theme="bauhaus"] .stat-card:hover{ transform:translate(-2px,-2px); box-shadow:9px 9px 0 var(--ink); }
+
+/* each kind leans one primary via a top color block */
+:root[data-theme="bauhaus"] .stat-card::before{
+  content:""; position:absolute; top:0; left:0; right:0; height:8px;
+  background:var(--ink);
+}
+:root[data-theme="bauhaus"] .stat-card[data-kind="progress"]::before{ background:var(--blue); }
+:root[data-theme="bauhaus"] .stat-card[data-kind="streak"]::before{ background:var(--red); }
+:root[data-theme="bauhaus"] .stat-card[data-kind="phases"]::before{ background:var(--yellow); }
+:root[data-theme="bauhaus"] .stat-card[data-kind="tracks"]::before{ background:var(--ink); }
+
+/* faint geometric watermark in the corner of each card */
+:root[data-theme="bauhaus"] .stat-card[data-kind="streak"]::after{
+  content:""; position:absolute; right:-22px; bottom:-22px;
+  width:90px; height:90px; border-radius:50%;
+  background:var(--red-tint); opacity:.35; z-index:0;
+}
+:root[data-theme="bauhaus"] .stat-card[data-kind="phases"]::after{
+  content:""; position:absolute; right:-18px; bottom:-18px;
+  width:0; height:0; border-left:46px solid transparent; border-right:46px solid transparent;
+  border-bottom:80px solid var(--yellow-tint); opacity:.4; z-index:0;
+}
+:root[data-theme="bauhaus"] .stat-card > *{ position:relative; z-index:1; }
+
+:root[data-theme="bauhaus"] .eyebrow{
+  font-family:var(--font-mono); font-weight:700;
+  font-size:10.5px; letter-spacing:3px;
+  text-transform:uppercase; color:var(--ink-dim);
+  margin:6px 0 14px;
+  display:inline-flex; align-items:center; gap:7px;
+}
+/* triangular marker before eyebrow */
+:root[data-theme="bauhaus"] .eyebrow::before{
+  content:""; flex:0 0 auto;
+  width:0; height:0;
+  border-top:5px solid transparent; border-bottom:5px solid transparent;
+  border-left:8px solid var(--ink);
+}
+:root[data-theme="bauhaus"] .stat-card[data-kind="progress"] .eyebrow::before{ border-left-color:var(--blue); }
+:root[data-theme="bauhaus"] .stat-card[data-kind="streak"] .eyebrow::before{ border-left-color:var(--red); }
+:root[data-theme="bauhaus"] .stat-card[data-kind="phases"] .eyebrow::before{ border-left-color:var(--yellow); }
+
+/* progress ring — the Bauhaus CIRCLE: bold blue conic over black rail */
+:root[data-theme="bauhaus"] .ring{
+  --p:0;
+  position:relative;
+  width:152px; height:152px; margin:8px auto 16px;
+  border-radius:50%;
+  display:grid; place-items:center;
+  background:
+    radial-gradient(closest-side, var(--card) 0 66%, transparent 67% 100%),
+    conic-gradient(var(--blue) calc(var(--p)*1%), var(--ink) 0);
+  border:var(--bw) solid var(--ink);
+}
+/* quartered cross-hairs over the ring (Bauhaus geometry) */
+:root[data-theme="bauhaus"] .ring::before{
+  content:""; position:absolute; inset:0; border-radius:50%;
+  background:
+    linear-gradient(to right, transparent calc(50% - 1px), rgba(20,20,20,.28) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
+    linear-gradient(to bottom, transparent calc(50% - 1px), rgba(20,20,20,.28) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px));
+  -webkit-mask:radial-gradient(closest-side, transparent 0 66%, #000 67%);
+          mask:radial-gradient(closest-side, transparent 0 66%, #000 67%);
+  pointer-events:none;
+}
+:root[data-theme="bauhaus"] .ring > div{ text-align:center; }
+:root[data-theme="bauhaus"] .ring b{
+  display:block; font-family:var(--font-display); font-weight:900;
+  font-size:40px; line-height:1; color:var(--ink);
+}
+:root[data-theme="bauhaus"] .ring small{
+  display:block; font-family:var(--font-mono); font-size:11px; font-weight:700;
+  color:var(--ink-dim); margin-top:4px;
+}
+
+/* streak — huge geometric number */
+:root[data-theme="bauhaus"] .flame{
+  font-size:36px; text-align:center; line-height:1; margin:4px 0;
+  animation:bau-pulse 2.6s ease-in-out infinite;
+}
+:root[data-theme="bauhaus"] .streak-num{
+  font-family:var(--font-display); font-weight:900;
+  font-size:72px; line-height:.85; text-align:center;
+  color:var(--red);
+  letter-spacing:-2px;
+}
+:root[data-theme="bauhaus"] .stat-sub{
+  font-family:var(--font-mono); font-size:11px; color:var(--ink-dim);
+  margin-top:8px; text-align:center;
+}
+:root[data-theme="bauhaus"] .stat-card[data-kind="phases"] .stat-sub,
+:root[data-theme="bauhaus"] .stat-card[data-kind="tracks"] .stat-sub,
+:root[data-theme="bauhaus"] .stat-card[data-kind="progress"] .stat-sub{ text-align:left; }
+
+/* phase / track rows */
+:root[data-theme="bauhaus"] .prow{
+  display:flex; align-items:center; justify-content:space-between;
+  font-family:var(--font-ui); font-weight:600; font-size:13px;
+  margin:14px 0 5px;
+}
+:root[data-theme="bauhaus"] .lbl{ display:inline-flex; align-items:center; gap:8px; color:var(--ink); }
+/* square marker by default */
+:root[data-theme="bauhaus"] .lbl > i{
+  width:11px; height:11px; flex:0 0 auto;
+  background:var(--ink);
+  border:1.5px solid var(--ink);
+}
+:root[data-theme="bauhaus"] .val{
+  font-family:var(--font-mono); font-weight:700; font-size:12px; color:var(--ink);
+}
+
+:root[data-theme="bauhaus"] .bar{
+  height:12px; border-radius:0;
+  background:var(--paper-2);
+  border:var(--bw) solid var(--ink);
+  overflow:hidden;
+}
+:root[data-theme="bauhaus"] .bar > i{
+  display:block; height:100%;
+  background:var(--ink);
+  transition:width var(--slow);
+}
+
+:root[data-theme="bauhaus"] .muted{
+  color:var(--muted); font-family:var(--font-mono); font-size:12px;
+}
+
+/* ====================== TRACK COLORS ====================== */
+/* bar fills + prow square markers per track */
+:root[data-theme="bauhaus"] .bar[data-track="dsa"]>i{ background:var(--track-dsa,#e2402b); }
+:root[data-theme="bauhaus"] .bar[data-track="js"]>i{ background:var(--track-js,#f2c200); }
+:root[data-theme="bauhaus"] .bar[data-track="ts"]>i{ background:var(--track-ts,#1f4ea8); }
+:root[data-theme="bauhaus"] .bar[data-track="node"]>i{ background:var(--track-node,#141414); }
+:root[data-theme="bauhaus"] .bar[data-track="sysdesign"]>i{ background:var(--track-sysdesign,#e2402b); }
+:root[data-theme="bauhaus"] .bar[data-track="patterns"]>i{ background:var(--track-patterns,#1f4ea8); }
+:root[data-theme="bauhaus"] .bar[data-track="distsys"]>i{ background:var(--track-distsys,#f2c200); }
+:root[data-theme="bauhaus"] .bar[data-track="db"]>i{ background:var(--track-db,#1f4ea8); }
+:root[data-theme="bauhaus"] .bar[data-track="cs"]>i{ background:var(--track-cs,#141414); }
+
+:root[data-theme="bauhaus"] .prow[data-track="dsa"] .lbl>i{ background:var(--track-dsa,#e2402b); }
+:root[data-theme="bauhaus"] .prow[data-track="js"] .lbl>i{ background:var(--track-js,#f2c200); }
+:root[data-theme="bauhaus"] .prow[data-track="ts"] .lbl>i{ background:var(--track-ts,#1f4ea8); }
+:root[data-theme="bauhaus"] .prow[data-track="node"] .lbl>i{ background:var(--track-node,#141414); }
+:root[data-theme="bauhaus"] .prow[data-track="sysdesign"] .lbl>i{ background:var(--track-sysdesign,#e2402b); }
+:root[data-theme="bauhaus"] .prow[data-track="patterns"] .lbl>i{ background:var(--track-patterns,#1f4ea8); }
+:root[data-theme="bauhaus"] .prow[data-track="distsys"] .lbl>i{ background:var(--track-distsys,#f2c200); }
+:root[data-theme="bauhaus"] .prow[data-track="db"] .lbl>i{ background:var(--track-db,#1f4ea8); }
+:root[data-theme="bauhaus"] .prow[data-track="cs"] .lbl>i{ background:var(--track-cs,#141414); }
+/* track markers vary shape a touch: blue tracks = circle, yellow = triangle */
+:root[data-theme="bauhaus"] .prow[data-track="ts"] .lbl>i,
+:root[data-theme="bauhaus"] .prow[data-track="patterns"] .lbl>i,
+:root[data-theme="bauhaus"] .prow[data-track="db"] .lbl>i{ border-radius:50%; }
+
+/* neutral bare [data-track] default */
+:root[data-theme="bauhaus"] .bar[data-track]>i{ background:var(--track-rest,#8a8578); }
+:root[data-theme="bauhaus"] .prow[data-track] .lbl>i{ background:var(--track-rest,#8a8578); }
+/* (specific tracks above override this neutral default) */
+:root[data-theme="bauhaus"] .bar[data-track="dsa"]>i,
+:root[data-theme="bauhaus"] .bar[data-track="js"]>i,
+:root[data-theme="bauhaus"] .bar[data-track="ts"]>i,
+:root[data-theme="bauhaus"] .bar[data-track="node"]>i,
+:root[data-theme="bauhaus"] .bar[data-track="sysdesign"]>i,
+:root[data-theme="bauhaus"] .bar[data-track="patterns"]>i,
+:root[data-theme="bauhaus"] .bar[data-track="distsys"]>i,
+:root[data-theme="bauhaus"] .bar[data-track="db"]>i,
+:root[data-theme="bauhaus"] .bar[data-track="cs"]>i{ /* explicit, win over neutral */ }
+
+/* ====================== DAY RAIL ====================== */
+:root[data-theme="bauhaus"] .day-rail{
+  display:flex; align-items:stretch;
+  gap:16px;
+}
+:root[data-theme="bauhaus"] .today-wrap{ flex:1 1 auto; min-width:0; }
+:root[data-theme="bauhaus"] .day-nav{
+  flex:0 0 auto;
+  align-self:center;
+  font-family:var(--font-display); font-weight:800; font-size:26px; line-height:1;
+  width:54px; height:54px;
+  display:grid; place-items:center;
+  color:var(--paper);
+  background:var(--ink);
+  border:var(--bw) solid var(--ink); border-radius:50%;
+  cursor:pointer;
+  transition:transform var(--fast), background var(--fast), box-shadow var(--fast);
+}
+:root[data-theme="bauhaus"] .day-prev:hover:not(:disabled){ background:var(--red); transform:translateX(-3px); box-shadow:3px 3px 0 var(--ink); }
+:root[data-theme="bauhaus"] .day-next:hover:not(:disabled){ background:var(--blue); transform:translateX(3px); box-shadow:3px 3px 0 var(--ink); }
+:root[data-theme="bauhaus"] .day-nav:disabled{ opacity:.25; cursor:not-allowed; }
+
+/* ====================== DAY CARD ====================== */
+:root[data-theme="bauhaus"] .today{
+  position:relative;
+  display:flex;
+  background:var(--card);
+  border:var(--bw) solid var(--ink);
+  border-radius:0;
+  overflow:hidden;
+  box-shadow:8px 8px 0 var(--ink);
+  animation:bau-reveal .55s .12s both;
+}
+
+:root[data-theme="bauhaus"] .today-side{
+  flex:0 0 56px;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--yellow);
+  border-right:var(--bw) solid var(--ink);
+}
+:root[data-theme="bauhaus"] .vert{
+  writing-mode:vertical-rl; text-orientation:mixed;
+  font-family:var(--font-mono); font-weight:700;
+  font-size:11px; letter-spacing:4px;
+  text-transform:uppercase; color:var(--ink);
+}
+:root[data-theme="bauhaus"] .today-main{
+  flex:1; min-width:0;
+  padding:clamp(20px,3vw,32px);
+}
+
+/* the day card's left side block recolors by track */
+:root[data-theme="bauhaus"] .today[data-track="dsa"] .today-side{ background:var(--track-dsa,#e2402b); }
+:root[data-theme="bauhaus"] .today[data-track="js"] .today-side{ background:var(--track-js,#f2c200); }
+:root[data-theme="bauhaus"] .today[data-track="ts"] .today-side{ background:var(--track-ts,#1f4ea8); }
+:root[data-theme="bauhaus"] .today[data-track="node"] .today-side{ background:var(--track-node,#141414); }
+:root[data-theme="bauhaus"] .today[data-track="sysdesign"] .today-side{ background:var(--track-sysdesign,#e2402b); }
+:root[data-theme="bauhaus"] .today[data-track="patterns"] .today-side{ background:var(--track-patterns,#1f4ea8); }
+:root[data-theme="bauhaus"] .today[data-track="distsys"] .today-side{ background:var(--track-distsys,#f2c200); }
+:root[data-theme="bauhaus"] .today[data-track="db"] .today-side{ background:var(--track-db,#1f4ea8); }
+:root[data-theme="bauhaus"] .today[data-track="cs"] .today-side{ background:var(--track-cs,#141414); }
+:root[data-theme="bauhaus"] .today[data-track="rest"] .today-side{ background:var(--track-rest,#8a8578); }
+/* blue/black sides need light vert text */
+:root[data-theme="bauhaus"] .today[data-track="ts"] .vert,
+:root[data-theme="bauhaus"] .today[data-track="node"] .vert,
+:root[data-theme="bauhaus"] .today[data-track="patterns"] .vert,
+:root[data-theme="bauhaus"] .today[data-track="db"] .vert,
+:root[data-theme="bauhaus"] .today[data-track="cs"] .vert,
+:root[data-theme="bauhaus"] .today[data-track="rest"] .vert{ color:var(--paper); }
+
+/* track pill */
+:root[data-theme="bauhaus"] .trackpill{
+  display:inline-flex; align-items:center; gap:9px;
+  font-family:var(--font-mono); font-weight:700; font-size:12px; letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--ink);
+  background:var(--paper);
+  border:var(--bw) solid var(--ink);
+  border-radius:0;
+  padding:5px 13px 5px 5px;
+}
+:root[data-theme="bauhaus"] .trackpill .k{
+  display:grid; place-items:center;
+  width:26px; height:26px; border-radius:50%;
+  font-family:var(--font-display); font-weight:800; font-size:14px;
+  background:var(--ink); color:var(--paper);
+  border:1px solid var(--ink);
+}
+/* pill key dot colored by track */
+:root[data-theme="bauhaus"] .today[data-track="dsa"] .trackpill .k{ background:var(--track-dsa,#e2402b); color:var(--paper); }
+:root[data-theme="bauhaus"] .today[data-track="js"] .trackpill .k{ background:var(--track-js,#f2c200); color:var(--ink); }
+:root[data-theme="bauhaus"] .today[data-track="ts"] .trackpill .k{ background:var(--track-ts,#1f4ea8); color:var(--paper); }
+:root[data-theme="bauhaus"] .today[data-track="node"] .trackpill .k{ background:var(--track-node,#141414); color:var(--paper); }
+:root[data-theme="bauhaus"] .today[data-track="sysdesign"] .trackpill .k{ background:var(--track-sysdesign,#e2402b); color:var(--paper); }
+:root[data-theme="bauhaus"] .today[data-track="patterns"] .trackpill .k{ background:var(--track-patterns,#1f4ea8); color:var(--paper); }
+:root[data-theme="bauhaus"] .today[data-track="distsys"] .trackpill .k{ background:var(--track-distsys,#f2c200); color:var(--ink); }
+:root[data-theme="bauhaus"] .today[data-track="db"] .trackpill .k{ background:var(--track-db,#1f4ea8); color:var(--paper); }
+:root[data-theme="bauhaus"] .today[data-track="cs"] .trackpill .k{ background:var(--track-cs,#141414); color:var(--paper); }
+:root[data-theme="bauhaus"] .today[data-track="rest"] .trackpill .k{ background:var(--track-rest,#8a8578); color:var(--paper); }
+
+:root[data-theme="bauhaus"] .today-title{
+  font-family:var(--font-display); font-weight:800;
+  font-size:clamp(26px,4vw,38px); line-height:1.05;
+  letter-spacing:-.5px;
+  margin:16px 0 12px;
+  color:var(--ink);
+}
+
+/* warmup */
+:root[data-theme="bauhaus"] .warm{
+  display:flex; gap:11px; align-items:flex-start;
+  font-family:var(--font-ui); font-size:14px; line-height:1.55; color:var(--ink-dim);
+  background:var(--paper);
+  border-left:6px solid var(--blue);
+  border-top:var(--bw) solid var(--ink);
+  border-right:var(--bw) solid var(--ink);
+  border-bottom:var(--bw) solid var(--ink);
+  border-radius:0;
+  padding:12px 15px; margin:6px 0 18px;
+}
+:root[data-theme="bauhaus"] .warm-i{ color:var(--blue); flex:0 0 auto; font-weight:800; }
+:root[data-theme="bauhaus"] .warm .muted{
+  color:var(--ink); text-transform:uppercase; letter-spacing:1px;
+  font-family:var(--font-mono); font-weight:700; font-size:11px;
+}
+
+:root[data-theme="bauhaus"] .rest-due{
+  font-family:var(--font-mono); font-size:13px; color:var(--ink-dim);
+  background:var(--paper);
+  border:var(--bw) dashed var(--ink);
+  border-radius:0; padding:15px; margin:6px 0 16px;
+}
+:root[data-theme="bauhaus"] .rest-due b{ color:var(--red); font-weight:700; }
+
+/* ====================== TASKS ====================== */
+:root[data-theme="bauhaus"] .tasks{ display:flex; flex-direction:column; gap:10px; margin:6px 0 18px; }
+:root[data-theme="bauhaus"] .task{
+  display:flex; align-items:flex-start; gap:13px;
+  padding:12px 14px;
+  background:var(--paper);
+  border:var(--bw) solid var(--ink);
+  border-radius:0;
+  cursor:pointer;
+  user-select:text;
+  transition:transform var(--fast), box-shadow var(--fast), background var(--fast);
+  animation:bau-slide .4s both;
+}
+:root[data-theme="bauhaus"] .task:hover{ transform:translateX(3px); box-shadow:-3px 3px 0 var(--ink); background:var(--card); }
+
+/* custom checkbox = a square */
+:root[data-theme="bauhaus"] .box{
+  flex:0 0 auto;
+  width:22px; height:22px; margin-top:1px;
+  border:var(--bw) solid var(--ink);
+  border-radius:0;
+  background:var(--card);
+  display:grid; place-items:center;
+  position:relative;
+  transition:background var(--fast), transform var(--fast);
+}
+:root[data-theme="bauhaus"] .box::after{
+  content:""; width:11px; height:6px;
+  border-left:3px solid var(--paper); border-bottom:3px solid var(--paper);
+  transform:rotate(-45deg) scale(.4) translate(0,-1px);
+  opacity:0;
+  transition:opacity var(--fast), transform var(--fast);
+}
+:root[data-theme="bauhaus"] .task:hover .box{ background:var(--yellow); }
+:root[data-theme="bauhaus"] .task.done .box{ background:var(--blue); }
+:root[data-theme="bauhaus"] .task.done .box::after{ opacity:1; transform:rotate(-45deg) scale(1) translate(0,-1px); }
+
+:root[data-theme="bauhaus"] .task-text{
+  font-family:var(--font-ui); font-size:14.5px; line-height:1.5; color:var(--ink);
+  transition:color var(--fast);
+}
+:root[data-theme="bauhaus"] .task.done .task-text{
+  color:var(--muted); text-decoration:line-through; text-decoration-color:var(--red);
+}
+
+/* task with guidance */
+:root[data-theme="bauhaus"] .task-wrap{ display:flex; flex-direction:column; gap:8px; }
+:root[data-theme="bauhaus"] .task-hint{ font-size:13px; margin-left:8px; }
+:root[data-theme="bauhaus"] .task-hint > summary{
+  cursor:pointer; list-style:none;
+  font-family:var(--font-mono); font-weight:700; font-size:11.5px;
+  letter-spacing:.04em; text-transform:uppercase;
+  color:var(--ink-dim);
+  display:inline-flex; align-items:center; gap:7px; width:fit-content;
+}
+:root[data-theme="bauhaus"] .task-hint > summary::-webkit-details-marker{ display:none; }
+:root[data-theme="bauhaus"] .task-hint > summary::before{
+  content:""; width:0; height:0;
+  border-top:5px solid transparent; border-bottom:5px solid transparent;
+  border-left:7px solid var(--red);
+  transition:transform var(--fast);
+}
+:root[data-theme="bauhaus"] .task-hint[open] > summary::before{ transform:rotate(90deg); }
+:root[data-theme="bauhaus"] .task-hint[open] > summary{ margin-bottom:6px; }
+:root[data-theme="bauhaus"] .task-hint-body{
+  font-family:var(--font-ui); font-size:13px; line-height:1.55; color:var(--ink-dim);
+  border-left:3px solid var(--blue); padding-left:12px; margin-left:3px;
+}
+
+/* ====================== REFLECTION ====================== */
+:root[data-theme="bauhaus"] .reflect-block{ margin:8px 0 18px; }
+:root[data-theme="bauhaus"] .reflect-label{
+  display:flex; align-items:center; gap:9px;
+  font-family:var(--font-mono); font-weight:700; font-size:12px;
+  letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink-dim);
+  margin-bottom:10px;
+}
+:root[data-theme="bauhaus"] .reflect-label .kanji,
+:root[data-theme="bauhaus"] .kanji{
+  font-family:var(--font-display); font-weight:800;
+  color:var(--paper); background:var(--red);
+  width:26px; height:26px; display:inline-grid; place-items:center;
+  border:var(--bw) solid var(--ink);
+  font-size:13px;
+}
+:root[data-theme="bauhaus"] textarea{
+  width:100%; min-height:88px; resize:vertical;
+  font-family:var(--font-mono); font-size:13px; line-height:1.6;
+  color:var(--ink);
+  background:var(--card);
+  border:var(--bw) solid var(--ink);
+  border-radius:0;
+  padding:12px 14px;
+  transition:box-shadow var(--fast);
+}
+:root[data-theme="bauhaus"] textarea::placeholder{ color:var(--muted); }
+:root[data-theme="bauhaus"] textarea:focus{ outline:none; box-shadow:4px 4px 0 var(--blue); }
+
+/* resources / chips */
+:root[data-theme="bauhaus"] .res-row{ display:flex; flex-wrap:wrap; gap:9px; margin:4px 0 16px; }
+:root[data-theme="bauhaus"] .chip{
+  font-family:var(--font-mono); font-weight:700; font-size:11.5px;
+  color:var(--ink);
+  background:var(--paper);
+  border:var(--bw) solid var(--ink);
+  border-radius:0;
+  padding:6px 12px;
+  transition:transform var(--fast), background var(--fast), box-shadow var(--fast);
+}
+:root[data-theme="bauhaus"] .chip:hover{ transform:translateY(-2px); background:var(--yellow); box-shadow:2px 2px 0 var(--ink); }
+:root[data-theme="bauhaus"] .chip b{ color:var(--blue); }
+
+/* next-day CTA */
+:root[data-theme="bauhaus"] .next-day-cta{
+  display:inline-block; margin-top:10px;
+  font-family:var(--font-display); font-weight:800; font-size:15px;
+  letter-spacing:1px; text-transform:uppercase;
+  color:var(--paper);
+  background:var(--blue);
+  border:var(--bw) solid var(--ink); border-radius:0;
+  padding:12px 24px; cursor:pointer;
+  box-shadow:4px 4px 0 var(--ink);
+  transition:transform var(--fast), box-shadow var(--fast), background var(--fast);
+}
+:root[data-theme="bauhaus"] .next-day-cta:hover{
+  transform:translate(-2px,-2px); box-shadow:6px 6px 0 var(--ink);
+  background:var(--red);
+}
+:root[data-theme="bauhaus"] .next-day-cta:active{ transform:translate(2px,2px); box-shadow:0 0 0 var(--ink); }
+
+/* comeback banner */
+:root[data-theme="bauhaus"] #comeback{
+  font-family:var(--font-mono); font-weight:700; font-size:13px; color:var(--ink);
+  background:var(--yellow);
+  border:var(--bw) solid var(--ink);
+  border-radius:0;
+  padding:13px 16px; margin-bottom:18px;
+}
+
+/* ====================== MODALS ====================== */
+:root[data-theme="bauhaus"] .modal{
+  display:none;
+  position:fixed; inset:0; z-index:200;
+  overflow-y:auto;
+  align-items:flex-start; justify-content:center;
+  padding:36px 16px;
+  background:
+    repeating-linear-gradient(45deg, rgba(20,20,20,.04) 0 10px, transparent 10px 20px),
+    rgba(243,239,228,.86);
+  backdrop-filter:blur(3px);
+}
+:root[data-theme="bauhaus"] .modal.open{ display:flex; }
+:root[data-theme="bauhaus"] .modal-panel{
+  position:relative;
+  overflow:visible;
+  max-width:min(560px,92vw);
+  margin:auto;
+  width:100%;
+  background:var(--card);
+  border:3px solid var(--ink);
+  border-radius:0;
+  padding:22px;
+  box-shadow:12px 12px 0 var(--ink);
+  animation:bau-pop .3s cubic-bezier(.16,1.1,.3,1);
+}
+/* corner geometry on panels */
+:root[data-theme="bauhaus"] .modal-panel::before{
+  content:""; position:absolute; top:-3px; right:-3px;
+  width:40px; height:40px; background:var(--yellow);
+  border:3px solid var(--ink);
+}
+:root[data-theme="bauhaus"] .tr-panel::before{ background:var(--red); border-radius:50%; }
+
+:root[data-theme="bauhaus"] .cal-head,
+:root[data-theme="bauhaus"] .tr-head{
+  display:flex; align-items:center; gap:10px;
+  margin-bottom:18px;
+  position:relative; z-index:1;
+}
+:root[data-theme="bauhaus"] .cal-head > div,
+:root[data-theme="bauhaus"] .tr-head > div{
+  flex:1;
+  font-family:var(--font-display); font-weight:800; font-size:19px;
+  letter-spacing:1px; text-transform:uppercase;
+  color:var(--ink); text-align:center;
+}
+:root[data-theme="bauhaus"] .tr-head > div{ text-align:left; }
+:root[data-theme="bauhaus"] .cal-head button,
+:root[data-theme="bauhaus"] .tr-head button{
+  font-family:var(--font-display); font-weight:800; font-size:16px;
+  width:38px; height:38px; display:grid; place-items:center;
+  color:var(--ink);
+  background:var(--paper);
+  border:var(--bw) solid var(--ink); border-radius:0;
+  cursor:pointer;
+  transition:transform var(--fast), background var(--fast), box-shadow var(--fast);
+}
+:root[data-theme="bauhaus"] .cal-head button:hover,
+:root[data-theme="bauhaus"] .tr-head button:hover{ background:var(--yellow); transform:translate(-1px,-1px); box-shadow:2px 2px 0 var(--ink); }
+
+/* calendar */
+:root[data-theme="bauhaus"] .cal-dow{
+  display:grid; grid-template-columns:repeat(7,1fr); gap:6px;
+  margin-bottom:8px;
+}
+:root[data-theme="bauhaus"] .cal-dow span{
+  text-align:center;
+  font-family:var(--font-mono); font-weight:700; font-size:10px; letter-spacing:1px;
+  text-transform:uppercase; color:var(--ink-dim);
+}
+:root[data-theme="bauhaus"] .cal-grid{
+  display:grid; grid-template-columns:repeat(7,1fr); gap:6px;
+}
+:root[data-theme="bauhaus"] .cday{
+  aspect-ratio:1;
+  display:grid; place-items:center;
+  font-family:var(--font-mono); font-weight:700; font-size:13px;
+  color:var(--ink);
+  background:var(--paper);
+  border:var(--bw) solid var(--ink);
+  border-radius:0;
+  transition:transform var(--fast), background var(--fast);
+}
+:root[data-theme="bauhaus"] .cday.other{ opacity:.3; border-style:dashed; }
+:root[data-theme="bauhaus"] .cday.done{
+  color:var(--paper); font-weight:700;
+  background:var(--blue);
+}
+:root[data-theme="bauhaus"] .cday.today{
+  background:var(--yellow); color:var(--ink);
+  box-shadow:inset 0 0 0 2px var(--ink);
+}
+:root[data-theme="bauhaus"] .cday.done.today{ background:var(--red); color:var(--paper); }
+:root[data-theme="bauhaus"] .cday:hover{ transform:translate(-1px,-1px); }
+
+/* trophies — geometric badge plates */
+:root[data-theme="bauhaus"] .tr-grid{
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(98px,1fr)); gap:14px;
+}
+:root[data-theme="bauhaus"] .badge{
+  position:relative;
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  text-align:center;
+  padding:15px 8px;
+  background:var(--paper);
+  border:var(--bw) solid var(--ink);
+  border-radius:0;
+  cursor:default;
+  transition:transform var(--fast), box-shadow var(--fast);
+}
+:root[data-theme="bauhaus"] .badge:hover{ transform:translate(-2px,-2px); z-index:5; box-shadow:4px 4px 0 var(--ink); }
+:root[data-theme="bauhaus"] .badge.on{ background:var(--yellow); }
+:root[data-theme="bauhaus"] .badge.on:nth-child(3n){ background:var(--red-tint); }
+:root[data-theme="bauhaus"] .badge.on:nth-child(3n+1){ background:var(--blue-tint); }
+:root[data-theme="bauhaus"] .badge.off{ opacity:.5; filter:grayscale(1); }
+:root[data-theme="bauhaus"] .badge .bi{ font-size:28px; line-height:1; }
+:root[data-theme="bauhaus"] .badge .bt{
+  font-family:var(--font-ui); font-weight:700; font-size:11px; line-height:1.25;
+  color:var(--ink);
+}
+:root[data-theme="bauhaus"] .badge.off .bt{ color:var(--muted); }
+
+/* badge tooltip */
+:root[data-theme="bauhaus"] .badge[data-tip]:hover::after{
+  content:attr(data-tip);
+  position:absolute; bottom:calc(100% + 9px); left:50%; transform:translateX(-50%);
+  z-index:20;
+  width:max-content; max-width:220px;
+  font-family:var(--font-mono); font-size:11px; line-height:1.45;
+  text-align:left; white-space:normal;
+  color:var(--paper);
+  background:var(--ink);
+  border:var(--bw) solid var(--ink);
+  border-radius:0;
+  padding:9px 11px;
+  box-shadow:4px 4px 0 rgba(20,20,20,.3);
+  pointer-events:none;
+}
+:root[data-theme="bauhaus"] .badge[data-tip]:hover::before{
+  content:""; position:absolute; bottom:calc(100% + 1px); left:50%; transform:translateX(-50%);
+  z-index:21;
+  border:7px solid transparent; border-top-color:var(--ink);
+  pointer-events:none;
+}
+
+/* ====================== EFFECTS (#fx) ====================== */
+:root[data-theme="bauhaus"] #fx{ position:fixed; inset:0; z-index:300; pointer-events:none; }
+
+/* screen flash */
+:root[data-theme="bauhaus"] .fx-flash{
+  position:fixed; inset:0;
+  background:radial-gradient(circle at 50% 45%, rgba(242,194,0,.45), transparent 60%);
+  animation:bau-flash .5s ease-out forwards;
+}
+
+/* confetti = primary geometric shapes tumbling */
+:root[data-theme="bauhaus"] .confetti-piece{
+  --i:0; --dx:0; --dy:1; --rot:360deg;
+  position:absolute; top:-16px; left:50%;
+  width:14px; height:14px;
+  background:var(--blue);
+  border:1.5px solid var(--ink);
+  opacity:1;
+  animation:bau-confetti 1.7s cubic-bezier(.25,.6,.4,1) forwards;
+  animation-delay:calc(var(--i) * 28ms);
+}
+/* cycle the three primaries */
+:root[data-theme="bauhaus"] .confetti-piece:nth-child(3n+1){ background:var(--red); }
+:root[data-theme="bauhaus"] .confetti-piece:nth-child(3n+2){ background:var(--yellow); }
+:root[data-theme="bauhaus"] .confetti-piece:nth-child(3n+3){ background:var(--blue); }
+/* cycle the three shapes: square / circle / triangle */
+:root[data-theme="bauhaus"] .confetti-piece:nth-child(3n+2){ border-radius:50%; }
+:root[data-theme="bauhaus"] .confetti-piece:nth-child(3n+3){
+  width:0; height:0; background:transparent !important; border:none;
+  border-left:8px solid transparent; border-right:8px solid transparent;
+  border-bottom:15px solid var(--blue);
+}
+
+/* toasts */
+:root[data-theme="bauhaus"] .toast,
+:root[data-theme="bauhaus"] .badge-toast{
+  position:fixed; right:22px; bottom:24px;
+  display:flex; align-items:center; gap:11px;
+  max-width:min(340px,86vw);
+  font-family:var(--font-ui); font-weight:700; font-size:13.5px;
+  color:var(--ink);
+  background:var(--card);
+  border:3px solid var(--ink);
+  border-radius:0;
+  padding:13px 16px;
+  box-shadow:6px 6px 0 var(--ink);
+  opacity:0; transform:translateY(16px);
+  transition:opacity var(--snap), transform var(--snap);
+  pointer-events:auto;
+}
+:root[data-theme="bauhaus"] .toast{ border-left:8px solid var(--blue); }
+:root[data-theme="bauhaus"] .badge-toast{ border-left:8px solid var(--yellow); }
+:root[data-theme="bauhaus"] .toast.show,
+:root[data-theme="bauhaus"] .badge-toast.show{ opacity:1; transform:translateY(0); }
+:root[data-theme="bauhaus"] .badge-toast b{ color:var(--red); }
+:root[data-theme="bauhaus"] .bt-i{ font-size:24px; line-height:1; }
+
+/* ====================== FOOTER ====================== */
+:root[data-theme="bauhaus"] .foot{
+  text-align:center;
+  padding:28px 16px 44px;
+  border-top:3px solid var(--ink);
+  margin-top:34px;
+  position:relative;
+}
+:root[data-theme="bauhaus"] .foot::before{
+  content:""; position:absolute; left:0; right:0; top:-6px; height:3px;
+  background:linear-gradient(90deg,
+    var(--blue) 0 33.33%, var(--yellow) 33.33% 66.66%, var(--red) 66.66% 100%);
+}
+:root[data-theme="bauhaus"] #motd{
+  font-family:var(--font-mono); font-weight:700; font-size:12.5px; letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--ink-dim);
+  opacity:1; transition:opacity .55s ease;
+}
+:root[data-theme="bauhaus"] #motd.motd-out{ opacity:0; }
+
+/* ====================== ANIMATIONS ====================== */
+@keyframes bau-reveal{
+  from{ opacity:0; transform:translateY(14px) scale(.985); }
+  to{ opacity:1; transform:translateY(0) scale(1); }
+}
+@keyframes bau-slide{
+  from{ opacity:0; transform:translateX(-12px); }
+  to{ opacity:1; transform:translateX(0); }
+}
+@keyframes bau-pop{
+  from{ opacity:0; transform:translateY(-14px) rotate(-1deg) scale(.97); }
+  to{ opacity:1; transform:translateY(0) rotate(0) scale(1); }
+}
+@keyframes bau-pulse{
+  0%,100%{ transform:scale(1); }
+  50%{ transform:scale(1.12); }
+}
+@keyframes bau-flash{
+  0%{ opacity:1; }
+  100%{ opacity:0; }
+}
+@keyframes bau-confetti{
+  0%{ transform:translate(0,0) rotate(0deg); opacity:1; }
+  100%{
+    transform:translate(calc(var(--dx) * 42vw), calc(60vh + var(--dy) * 45vh)) rotate(var(--rot));
+    opacity:0;
+  }
+}
+
+/* ====================== RESPONSIVE ====================== */
+@media (max-width:720px){
+  :root[data-theme="bauhaus"] .app-header{ flex-direction:column; align-items:flex-start; }
+  :root[data-theme="bauhaus"] .toolbar{ width:100%; }
+  :root[data-theme="bauhaus"] .dash{ grid-template-columns:repeat(2,1fr); gap:14px; }
+}
+@media (max-width:480px){
+  :root[data-theme="bauhaus"] .dash{ grid-template-columns:1fr; }
+  :root[data-theme="bauhaus"] .day-rail{ flex-direction:column; }
+  :root[data-theme="bauhaus"] .day-nav{ display:none; }
+  :root[data-theme="bauhaus"] .today{ flex-direction:column; }
+  :root[data-theme="bauhaus"] .today-side{ flex-basis:auto; border-right:none; border-bottom:var(--bw) solid var(--ink); padding:8px; }
+  :root[data-theme="bauhaus"] .vert{ writing-mode:horizontal-tb; }
+}

@@ -50,8 +50,6 @@
 }
 
 /* ====================== BASE / RESET ====================== */
-:root[data-theme="neon"] *{ box-sizing:border-box; }
-
 :root[data-theme="neon"] body{
   margin:0;
   min-height:100vh;
@@ -460,7 +458,6 @@
   animation:neon-rise .4s both;
 }
 :root[data-theme="neon"] .task:hover{ border-color:var(--cyan); transform:translateX(2px); }
-:root[data-theme="neon"] .task input{ position:absolute; opacity:0; width:0; height:0; }
 
 /* custom checkbox */
 :root[data-theme="neon"] .box{
@@ -774,11 +771,6 @@
 @keyframes neon-confetti{
   0%{ transform:translateY(0) rotate(0deg); opacity:1; }
   100%{ transform:translateY(105vh) rotate(720deg); opacity:0; }
-}
-
-/* accessibility: reduced motion */
-@media (prefers-reduced-motion: reduce){
-  :root[data-theme="neon"] *{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
 }
 
 /* responsive */

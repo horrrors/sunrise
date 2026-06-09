@@ -55,10 +55,6 @@
 /* ============================================================
    BASE
    ============================================================ */
-:root[data-theme="japanese"] *,
-:root[data-theme="japanese"] *::before,
-:root[data-theme="japanese"] *::after{ box-sizing:border-box; }
-
 :root[data-theme="japanese"] body{
   margin:0;
   font-family:var(--sans);
@@ -514,10 +510,6 @@
   border-color:var(--track, var(--ai));
   box-shadow:var(--shadow-sm);
 }
-/* hide native checkbox — draw .box instead */
-:root[data-theme="japanese"] .task input[type="checkbox"]{
-  position:absolute; opacity:0; width:0; height:0; pointer-events:none;
-}
 :root[data-theme="japanese"] .box{
   flex:0 0 auto;
   width:20px; height:20px; margin-top:1px;
@@ -947,13 +939,3 @@
   :root[data-theme="japanese"] .day-nav{ width:40px; height:40px; font-size:22px; }
 }
 
-/* accessibility: respect reduced-motion */
-@media (prefers-reduced-motion:reduce){
-  :root[data-theme="japanese"] *,
-  :root[data-theme="japanese"] *::before,
-  :root[data-theme="japanese"] *::after{
-    animation-duration:.001ms !important;
-    animation-iteration-count:1 !important;
-    transition-duration:.001ms !important;
-  }
-}

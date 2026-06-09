@@ -1,0 +1,935 @@
+/* ============================================================
+   SUNRISE · "solarpunk" theme — Solarpunk · Сад
+   Optimistic eco-future · art-nouveau botanical · warm sun + living green.
+   A garden as a growth metaphor: LIGHT, warm, hopeful.
+   CSS only, layered over canonical index.html + app.js markup.
+   This theme OWNS all layout (reset, grid, flex, modals, responsive).
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Marcellus&family=Faustina:ital,wght@0,400;0,500;0,600;1,400&family=Spline+Sans+Mono:wght@400;500;600&display=swap');
+
+:root[data-theme="solarpunk"]{
+  /* base palette — warm garden */
+  --cream:     #f3ead6;   /* warm paper bg */
+  --cream-lt:  #fbf6ea;   /* lighter card cream */
+  --cream-2:   #efe3c9;   /* sunk panel */
+  --leaf:      #3f7d4f;
+  --leaf-lt:   #5a9c66;
+  --moss:      #2a5d3a;
+  --gold:      #e0a93b;   /* warm sun = the .gold button */
+  --gold-deep: #c98e22;
+  --clay:      #c0653f;   /* terracotta */
+  --sky:       #4f93b8;
+  --berry:     #9a4a78;
+
+  --ink:       #21301f;   /* deep bark/moss */
+  --ink-dim:   #5b6b52;   /* dim */
+  --muted:     #8a9379;
+
+  --line:      rgba(63,125,79,.26);     /* leaf-green hairline */
+  --line-soft: rgba(63,125,79,.14);
+  --rule-gold: rgba(224,169,59,.6);
+
+  /* organic shadows */
+  --sh-soft:   0 10px 30px rgba(42,93,58,.12), 0 2px 8px rgba(42,93,58,.08);
+  --sh-lift:   0 18px 44px rgba(42,93,58,.18), 0 4px 12px rgba(42,93,58,.10);
+  --sh-sun:    0 0 24px rgba(224,169,59,.35);
+
+  /* organic radii (asymmetric leaf/petal feel) */
+  --r-leaf:    26px 10px 26px 10px;
+  --r-petal:   22px 22px 22px 6px;
+  --r:         16px;
+  --r-sm:      11px;
+
+  --fast: .2s cubic-bezier(.34,1.2,.5,1);
+  --slow: .5s cubic-bezier(.22,1,.36,1);
+  --grow: .6s cubic-bezier(.22,1,.36,1);
+
+  --font-display: 'Marcellus', 'Cormorant Garamond', Georgia, serif;
+  --font-ui:      'Faustina', Georgia, 'Times New Roman', serif;
+  --font-mono:    'Spline Sans Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* track accents — 9 botanical hues */
+  --track-dsa:       #3f7d4f;   /* leaf */
+  --track-js:        #e0a93b;   /* sun gold */
+  --track-ts:        #4f93b8;   /* sky */
+  --track-node:      #5a9c66;   /* fresh sprout */
+  --track-sysdesign: #c0653f;   /* clay */
+  --track-patterns:  #9a4a78;   /* berry */
+  --track-distsys:   #b8732e;   /* amber bark */
+  --track-db:        #2a5d3a;   /* moss */
+  --track-cs:        #7a8c3e;   /* olive */
+  --track-rest:      #8a9379;   /* dim sage */
+}
+
+/* ====================== BASE / RESET ====================== */
+:root[data-theme="solarpunk"] body{
+  margin:0;
+  min-height:100vh;
+  font-family:var(--font-ui);
+  color:var(--ink);
+  background:
+    /* soft radial SUN glow from the top */
+    radial-gradient(900px 520px at 50% -8%, rgba(224,169,59,.42), rgba(224,169,59,.10) 42%, transparent 64%),
+    radial-gradient(700px 600px at 88% 12%, rgba(90,156,102,.16), transparent 56%),
+    radial-gradient(640px 560px at 6% 30%, rgba(79,147,184,.10), transparent 58%),
+    linear-gradient(180deg, #f6eedb 0%, var(--cream) 38%, #efe4cb 100%);
+  background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;
+  letter-spacing:.1px;
+  position:relative;
+}
+
+/* faint botanical line pattern + paper grain overlay */
+:root[data-theme="solarpunk"] body::before{
+  content:"";
+  position:fixed; inset:0; z-index:0;
+  pointer-events:none;
+  background:
+    /* delicate organic vine arcs (pure gradients) */
+    radial-gradient(120px 120px at 12% 88%, transparent 58%, rgba(63,125,79,.05) 59% 60%, transparent 61%),
+    radial-gradient(160px 160px at 90% 80%, transparent 60%, rgba(63,125,79,.04) 61% 62%, transparent 63%),
+    /* paper grain via fine repeating diagonals */
+    repeating-linear-gradient(48deg, rgba(122,90,40,.018) 0 2px, transparent 2px 5px),
+    repeating-linear-gradient(-42deg, rgba(42,93,58,.015) 0 2px, transparent 2px 6px);
+  opacity:.9;
+}
+
+:root[data-theme="solarpunk"] .wrap,
+:root[data-theme="solarpunk"] .app-header,
+:root[data-theme="solarpunk"] .foot,
+:root[data-theme="solarpunk"] .modal,
+:root[data-theme="solarpunk"] #fx{ position:relative; z-index:1; }
+
+:root[data-theme="solarpunk"] ::selection{ background:rgba(224,169,59,.4); color:var(--moss); }
+:root[data-theme="solarpunk"] ::-webkit-scrollbar{ width:12px; height:12px; }
+:root[data-theme="solarpunk"] ::-webkit-scrollbar-track{ background:var(--cream-2); }
+:root[data-theme="solarpunk"] ::-webkit-scrollbar-thumb{
+  background:linear-gradient(var(--leaf),var(--moss));
+  border-radius:99px; border:3px solid var(--cream-2);
+}
+
+/* ====================== HEADER ====================== */
+:root[data-theme="solarpunk"] .app-header{
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:14px;
+  padding:18px clamp(16px,4vw,42px);
+  background:linear-gradient(180deg, rgba(251,246,234,.86), rgba(243,234,214,.55));
+  backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--line);
+  position:sticky; top:0; z-index:50;
+}
+/* art-nouveau gold rule with curved swell beneath the header */
+:root[data-theme="solarpunk"] .app-header::after{
+  content:""; position:absolute; left:0; right:0; bottom:-1px; height:2px;
+  background:linear-gradient(90deg, transparent, var(--gold-deep) 18%, var(--gold) 50%, var(--gold-deep) 82%, transparent);
+  opacity:.7;
+}
+
+:root[data-theme="solarpunk"] .brand{ display:flex; align-items:baseline; gap:13px; flex-wrap:wrap; }
+:root[data-theme="solarpunk"] .brand-mark{
+  font-family:var(--font-display);
+  font-size:26px; line-height:1;
+  color:var(--gold-deep);
+  text-shadow:0 1px 0 rgba(255,255,255,.5);
+}
+:root[data-theme="solarpunk"] .brand-name{
+  font-family:var(--font-display);
+  font-size:30px; line-height:1;
+  letter-spacing:4px;
+  color:var(--moss);
+  text-shadow:0 1px 0 rgba(255,255,255,.6);
+}
+:root[data-theme="solarpunk"] .brand-sub{
+  font-family:var(--font-mono);
+  font-size:10.5px; letter-spacing:2px; text-transform:uppercase;
+  color:var(--leaf);
+  padding:4px 11px;
+  background:rgba(63,125,79,.08);
+  border:1px solid var(--line);
+  border-radius:99px;
+}
+
+:root[data-theme="solarpunk"] .toolbar{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
+:root[data-theme="solarpunk"] .field{ display:inline-flex; }
+:root[data-theme="solarpunk"] select{
+  appearance:none; -webkit-appearance:none;
+  font-family:var(--font-mono); font-size:12px;
+  color:var(--ink);
+  background:var(--cream-lt)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%233f7d4f' stroke-width='1.6' fill='none'/%3E%3C/svg%3E")
+    no-repeat right 12px center;
+  border:1px solid var(--line);
+  border-radius:var(--r-sm);
+  padding:9px 30px 9px 13px;
+  cursor:pointer;
+  transition:border-color var(--fast), box-shadow var(--fast), background-color var(--fast);
+  max-width:62vw;
+}
+:root[data-theme="solarpunk"] select:hover{ border-color:var(--leaf); background-color:#fff; }
+:root[data-theme="solarpunk"] select:focus{ outline:none; border-color:var(--leaf); box-shadow:0 0 0 3px rgba(63,125,79,.18); }
+:root[data-theme="solarpunk"] select option{ background:var(--cream-lt); color:var(--ink); }
+
+:root[data-theme="solarpunk"] .btn{
+  font-family:var(--font-ui); font-weight:600; font-size:13px;
+  letter-spacing:.3px;
+  color:var(--moss);
+  background:var(--cream-lt);
+  border:1px solid var(--line);
+  border-radius:var(--r-sm);
+  padding:9px 13px;
+  cursor:pointer;
+  transition:transform var(--fast), box-shadow var(--fast), border-color var(--fast), color var(--fast), background var(--fast);
+}
+:root[data-theme="solarpunk"] .btn:hover{
+  transform:translateY(-1px);
+  border-color:var(--leaf); color:var(--leaf);
+  background:#fff;
+  box-shadow:var(--sh-soft);
+}
+:root[data-theme="solarpunk"] .btn:active{ transform:translateY(0); }
+:root[data-theme="solarpunk"] .btn.ghost{ background:transparent; }
+:root[data-theme="solarpunk"] .btn.ghost:hover{ background:rgba(251,246,234,.7); }
+
+/* the sun button */
+:root[data-theme="solarpunk"] .btn.gold{
+  font-family:var(--font-display); letter-spacing:1px; font-size:15px;
+  color:#3a2a08;
+  background:linear-gradient(135deg, #f3c869, var(--gold) 55%, var(--gold-deep));
+  border:1px solid var(--gold-deep);
+  padding:12px 24px;
+  margin-top:12px;
+  box-shadow:var(--sh-sun), 0 8px 18px rgba(201,142,34,.28);
+}
+:root[data-theme="solarpunk"] .btn.gold:hover{
+  transform:translateY(-2px);
+  color:#3a2a08;
+  border-color:var(--gold-deep);
+  box-shadow:0 0 30px rgba(224,169,59,.55), 0 12px 26px rgba(201,142,34,.34);
+}
+
+/* ====================== LAYOUT ====================== */
+:root[data-theme="solarpunk"] .wrap{
+  max-width:1100px; margin:0 auto;
+  padding:clamp(20px,4vw,40px) clamp(14px,4vw,42px) 24px;
+}
+
+:root[data-theme="solarpunk"] .section-title{
+  position:relative;
+  font-family:var(--font-mono);
+  font-size:11px; font-weight:600; letter-spacing:.22em;
+  text-transform:uppercase;
+  color:var(--leaf);
+  opacity:1;
+  margin:26px 2px 14px;
+  padding-bottom:9px;
+}
+/* thin art-nouveau gold rule under section titles */
+:root[data-theme="solarpunk"] .section-title::after{
+  content:""; position:absolute; left:0; bottom:0; width:64px; height:2px;
+  background:linear-gradient(90deg, var(--gold), var(--rule-gold) 70%, transparent);
+  border-radius:2px;
+}
+:root[data-theme="solarpunk"] .section-title::before{
+  content:"❧"; margin-right:9px; color:var(--gold-deep); opacity:.8; font-size:13px;
+}
+
+:root[data-theme="solarpunk"] .dash{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:18px;
+  margin-bottom:28px;
+}
+
+/* ====================== STAT CARDS ====================== */
+:root[data-theme="solarpunk"] .stat-card{
+  position:relative;
+  background:linear-gradient(165deg, var(--cream-lt), #f7efdd);
+  border:1px solid var(--line);
+  border-radius:var(--r-leaf);
+  padding:20px 20px 22px;
+  overflow:hidden;
+  box-shadow:var(--sh-soft);
+  opacity:0;
+  transform:translateY(14px) scale(.98);
+  animation:sp-grow-in var(--grow) forwards;
+  transition:transform var(--fast), box-shadow var(--fast), border-color var(--fast);
+}
+/* staggered grow-in on load */
+:root[data-theme="solarpunk"] .dash .stat-card:nth-child(1){ animation-delay:.05s; }
+:root[data-theme="solarpunk"] .dash .stat-card:nth-child(2){ animation-delay:.13s; }
+:root[data-theme="solarpunk"] .dash .stat-card:nth-child(3){ animation-delay:.21s; }
+:root[data-theme="solarpunk"] .dash .stat-card:nth-child(4){ animation-delay:.29s; }
+/* faint sun-corner glow */
+:root[data-theme="solarpunk"] .stat-card::before{
+  content:""; position:absolute; top:-40px; right:-40px;
+  width:120px; height:120px; border-radius:50%;
+  background:radial-gradient(circle, rgba(224,169,59,.18), transparent 70%);
+  pointer-events:none;
+}
+:root[data-theme="solarpunk"] .stat-card:hover{
+  transform:translateY(-4px);
+  border-color:rgba(63,125,79,.45);
+  box-shadow:var(--sh-lift);
+}
+
+:root[data-theme="solarpunk"] .eyebrow{
+  font-family:var(--font-mono); font-size:10px; letter-spacing:.24em;
+  text-transform:uppercase; color:var(--muted);
+  margin-bottom:14px;
+}
+:root[data-theme="solarpunk"] .stat-card[data-kind="progress"] .eyebrow{ color:var(--gold-deep); }
+:root[data-theme="solarpunk"] .stat-card[data-kind="streak"] .eyebrow{ color:var(--clay); }
+:root[data-theme="solarpunk"] .stat-card[data-kind="phases"] .eyebrow{ color:var(--leaf); }
+:root[data-theme="solarpunk"] .stat-card[data-kind="tracks"] .eyebrow{ color:var(--moss); }
+
+/* progress ring — a sun seen through foliage: green→gold over a warm rail */
+:root[data-theme="solarpunk"] .ring{
+  --p:0;
+  width:152px; height:152px; margin:8px auto 16px;
+  border-radius:50%;
+  display:grid; place-items:center;
+  background:
+    radial-gradient(closest-side, var(--cream-lt) 0 70%, transparent 71% 100%),
+    conic-gradient(from -90deg, var(--leaf), var(--leaf-lt) 30%, var(--gold) calc(var(--p)*1%), rgba(63,125,79,.12) 0);
+  box-shadow:0 0 26px rgba(224,169,59,.28), inset 0 0 16px rgba(63,125,79,.10);
+}
+:root[data-theme="solarpunk"] .ring::after{
+  content:""; position:absolute; width:152px; height:152px; border-radius:50%;
+  box-shadow:inset 0 0 0 1px rgba(63,125,79,.18);
+  pointer-events:none;
+}
+:root[data-theme="solarpunk"] .ring > div{ text-align:center; position:relative; }
+:root[data-theme="solarpunk"] .ring b{
+  display:block; font-family:var(--font-display); font-size:42px; line-height:1;
+  color:var(--moss);
+}
+:root[data-theme="solarpunk"] .ring small{
+  display:block; font-family:var(--font-mono); font-size:11px; color:var(--ink-dim); margin-top:5px;
+}
+
+/* streak — a growing sprout/sun */
+:root[data-theme="solarpunk"] .flame{
+  font-size:42px; text-align:center; line-height:1; margin:4px 0;
+  filter:drop-shadow(0 4px 8px rgba(201,142,34,.3));
+  transform-origin:50% 100%;
+  animation:sp-sway 4.5s ease-in-out infinite;
+}
+:root[data-theme="solarpunk"] .streak-num{
+  font-family:var(--font-display); font-size:58px; line-height:1; text-align:center;
+  color:var(--clay);
+}
+:root[data-theme="solarpunk"] .stat-sub{
+  font-family:var(--font-mono); font-size:11px; color:var(--ink-dim);
+  text-align:center; margin-top:7px;
+}
+:root[data-theme="solarpunk"] .stat-card[data-kind="phases"] .stat-sub,
+:root[data-theme="solarpunk"] .stat-card[data-kind="tracks"] .stat-sub{ text-align:left; }
+
+/* phase / track rows */
+:root[data-theme="solarpunk"] .prow{
+  display:flex; align-items:center; justify-content:space-between;
+  font-family:var(--font-ui); font-size:13.5px; margin:13px 0 6px;
+}
+:root[data-theme="solarpunk"] .lbl{ display:inline-flex; align-items:center; gap:9px; color:var(--ink-dim); }
+:root[data-theme="solarpunk"] .lbl > i{
+  width:9px; height:9px; flex:0 0 auto;
+  border-radius:50% 50% 50% 0;        /* tiny leaf dot */
+  transform:rotate(45deg);
+  background:var(--leaf);
+}
+:root[data-theme="solarpunk"] .val{
+  font-family:var(--font-mono); font-size:12px; color:var(--moss);
+}
+
+:root[data-theme="solarpunk"] .bar{
+  height:9px; border-radius:99px;
+  background:rgba(63,125,79,.12);
+  overflow:hidden;
+  border:1px solid rgba(63,125,79,.10);
+}
+:root[data-theme="solarpunk"] .bar > i{
+  display:block; height:100%;
+  background:linear-gradient(90deg, var(--moss), var(--leaf) 60%, var(--gold));
+  border-radius:99px;
+  transition:width var(--slow);
+}
+
+:root[data-theme="solarpunk"] .muted{ color:var(--muted); font-family:var(--font-mono); font-size:12px; }
+
+/* ====================== TRACK COLORS ====================== */
+/* bare default + each id paints leaf-dot, bar fill, pill, day-card accent */
+:root[data-theme="solarpunk"] [data-track] .lbl>i,
+:root[data-theme="solarpunk"] .bar[data-track]>i{ background:var(--track-rest); }
+
+:root[data-theme="solarpunk"] .prow[data-track="dsa"] .lbl>i,
+:root[data-theme="solarpunk"] .bar[data-track="dsa"]>i{ background:linear-gradient(90deg,var(--moss),var(--track-dsa,#3f7d4f)); }
+:root[data-theme="solarpunk"] .prow[data-track="js"] .lbl>i,
+:root[data-theme="solarpunk"] .bar[data-track="js"]>i{ background:linear-gradient(90deg,var(--gold-deep),var(--track-js,#e0a93b)); }
+:root[data-theme="solarpunk"] .prow[data-track="ts"] .lbl>i,
+:root[data-theme="solarpunk"] .bar[data-track="ts"]>i{ background:linear-gradient(90deg,#3a7392,var(--track-ts,#4f93b8)); }
+:root[data-theme="solarpunk"] .prow[data-track="node"] .lbl>i,
+:root[data-theme="solarpunk"] .bar[data-track="node"]>i{ background:linear-gradient(90deg,var(--leaf),var(--track-node,#5a9c66)); }
+:root[data-theme="solarpunk"] .prow[data-track="sysdesign"] .lbl>i,
+:root[data-theme="solarpunk"] .bar[data-track="sysdesign"]>i{ background:linear-gradient(90deg,#9c4e2e,var(--track-sysdesign,#c0653f)); }
+:root[data-theme="solarpunk"] .prow[data-track="patterns"] .lbl>i,
+:root[data-theme="solarpunk"] .bar[data-track="patterns"]>i{ background:linear-gradient(90deg,#7a3a5d,var(--track-patterns,#9a4a78)); }
+:root[data-theme="solarpunk"] .prow[data-track="distsys"] .lbl>i,
+:root[data-theme="solarpunk"] .bar[data-track="distsys"]>i{ background:linear-gradient(90deg,#945c22,var(--track-distsys,#b8732e)); }
+:root[data-theme="solarpunk"] .prow[data-track="db"] .lbl>i,
+:root[data-theme="solarpunk"] .bar[data-track="db"]>i{ background:linear-gradient(90deg,#1d4a2c,var(--track-db,#2a5d3a)); }
+:root[data-theme="solarpunk"] .prow[data-track="cs"] .lbl>i,
+:root[data-theme="solarpunk"] .bar[data-track="cs"]>i{ background:linear-gradient(90deg,#5f6e30,var(--track-cs,#7a8c3e)); }
+
+/* leaf-dots are solid-filled (override gradient on the tiny dot for clarity) */
+:root[data-theme="solarpunk"] .prow[data-track="dsa"] .lbl>i{ background:var(--track-dsa,#3f7d4f); }
+:root[data-theme="solarpunk"] .prow[data-track="js"] .lbl>i{ background:var(--track-js,#e0a93b); }
+:root[data-theme="solarpunk"] .prow[data-track="ts"] .lbl>i{ background:var(--track-ts,#4f93b8); }
+:root[data-theme="solarpunk"] .prow[data-track="node"] .lbl>i{ background:var(--track-node,#5a9c66); }
+:root[data-theme="solarpunk"] .prow[data-track="sysdesign"] .lbl>i{ background:var(--track-sysdesign,#c0653f); }
+:root[data-theme="solarpunk"] .prow[data-track="patterns"] .lbl>i{ background:var(--track-patterns,#9a4a78); }
+:root[data-theme="solarpunk"] .prow[data-track="distsys"] .lbl>i{ background:var(--track-distsys,#b8732e); }
+:root[data-theme="solarpunk"] .prow[data-track="db"] .lbl>i{ background:var(--track-db,#2a5d3a); }
+:root[data-theme="solarpunk"] .prow[data-track="cs"] .lbl>i{ background:var(--track-cs,#7a8c3e); }
+
+/* ====================== DAY RAIL ====================== */
+:root[data-theme="solarpunk"] .day-rail{
+  display:flex; align-items:center;
+  gap:16px;
+}
+:root[data-theme="solarpunk"] .day-nav{
+  flex:0 0 auto;
+  font-family:var(--font-display); font-size:26px; line-height:1;
+  width:50px; height:50px;
+  display:grid; place-items:center;
+  color:var(--leaf);
+  background:var(--cream-lt);
+  border:1px solid var(--line); border-radius:50%;
+  cursor:pointer;
+  box-shadow:var(--sh-soft);
+  transition:transform var(--fast), box-shadow var(--fast), color var(--fast), border-color var(--fast), background var(--fast);
+}
+:root[data-theme="solarpunk"] .day-nav:hover:not(:disabled){
+  transform:scale(1.08);
+  color:#fff; background:var(--leaf);
+  border-color:var(--moss);
+  box-shadow:var(--sh-lift);
+}
+:root[data-theme="solarpunk"] .day-nav:disabled{ opacity:.3; cursor:not-allowed; }
+
+/* ====================== DAY CARD ====================== */
+:root[data-theme="solarpunk"] .today-wrap{ flex:1 1 auto; min-width:0; }
+:root[data-theme="solarpunk"] .today{
+  position:relative;
+  display:flex;
+  background:linear-gradient(168deg, var(--cream-lt), #f6eedb);
+  border:1px solid var(--line);
+  border-radius:var(--r-petal);
+  overflow:hidden;
+  box-shadow:var(--sh-lift);
+  opacity:0;
+  animation:sp-grow-in var(--grow) .34s forwards;
+}
+/* organic top accent rule, tinted by track */
+:root[data-theme="solarpunk"] .today::after{
+  content:""; position:absolute; top:0; left:0; right:0; height:3px;
+  background:linear-gradient(90deg, var(--leaf), var(--gold) 60%, transparent);
+}
+
+:root[data-theme="solarpunk"] .today-side{
+  flex:0 0 56px;
+  display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(180deg, rgba(63,125,79,.10), rgba(224,169,59,.07));
+  border-right:1px solid var(--line-soft);
+}
+:root[data-theme="solarpunk"] .vert{
+  writing-mode:vertical-rl; text-orientation:mixed;
+  font-family:var(--font-mono); font-size:11px; letter-spacing:4px;
+  text-transform:uppercase; color:var(--leaf);
+}
+:root[data-theme="solarpunk"] .today-main{
+  flex:1; min-width:0;
+  padding:clamp(20px,3vw,32px);
+}
+
+/* track pill */
+:root[data-theme="solarpunk"] .trackpill{
+  display:inline-flex; align-items:center; gap:9px;
+  font-family:var(--font-mono); font-size:11.5px; letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--moss);
+  background:rgba(63,125,79,.07);
+  border:1px solid var(--line);
+  border-radius:99px;
+  padding:5px 14px 5px 5px;
+}
+:root[data-theme="solarpunk"] .trackpill .k{
+  display:grid; place-items:center;
+  width:26px; height:26px; border-radius:50%;
+  font-family:var(--font-display); font-weight:400; font-size:14px;
+  background:rgba(63,125,79,.14); color:var(--moss);
+}
+
+/* per-track pill + day-card accent (var with fallback so injected --track-<id> wins) */
+:root[data-theme="solarpunk"] .today[data-track] .trackpill{ border-color:var(--track-rest); color:var(--ink-dim); }
+:root[data-theme="solarpunk"] .today[data-track] .trackpill .k{ background:rgba(138,147,121,.18); color:var(--ink-dim); }
+:root[data-theme="solarpunk"] .today[data-track]::after{ background:linear-gradient(90deg, var(--track-rest), transparent); }
+
+:root[data-theme="solarpunk"] .today[data-track="dsa"] .trackpill{ border-color:var(--track-dsa,#3f7d4f); color:var(--track-dsa,#3f7d4f); }
+:root[data-theme="solarpunk"] .today[data-track="dsa"] .trackpill .k{ background:rgba(63,125,79,.16); color:var(--track-dsa,#3f7d4f); }
+:root[data-theme="solarpunk"] .today[data-track="dsa"]::after{ background:linear-gradient(90deg,var(--track-dsa,#3f7d4f),var(--gold) 70%,transparent); }
+
+:root[data-theme="solarpunk"] .today[data-track="js"] .trackpill{ border-color:var(--track-js,#e0a93b); color:var(--gold-deep); }
+:root[data-theme="solarpunk"] .today[data-track="js"] .trackpill .k{ background:rgba(224,169,59,.2); color:var(--gold-deep); }
+:root[data-theme="solarpunk"] .today[data-track="js"]::after{ background:linear-gradient(90deg,var(--track-js,#e0a93b),transparent); }
+
+:root[data-theme="solarpunk"] .today[data-track="ts"] .trackpill{ border-color:var(--track-ts,#4f93b8); color:var(--track-ts,#4f93b8); }
+:root[data-theme="solarpunk"] .today[data-track="ts"] .trackpill .k{ background:rgba(79,147,184,.18); color:var(--track-ts,#4f93b8); }
+:root[data-theme="solarpunk"] .today[data-track="ts"]::after{ background:linear-gradient(90deg,var(--track-ts,#4f93b8),transparent); }
+
+:root[data-theme="solarpunk"] .today[data-track="node"] .trackpill{ border-color:var(--track-node,#5a9c66); color:var(--track-node,#5a9c66); }
+:root[data-theme="solarpunk"] .today[data-track="node"] .trackpill .k{ background:rgba(90,156,102,.18); color:var(--track-node,#5a9c66); }
+:root[data-theme="solarpunk"] .today[data-track="node"]::after{ background:linear-gradient(90deg,var(--track-node,#5a9c66),transparent); }
+
+:root[data-theme="solarpunk"] .today[data-track="sysdesign"] .trackpill{ border-color:var(--track-sysdesign,#c0653f); color:var(--track-sysdesign,#c0653f); }
+:root[data-theme="solarpunk"] .today[data-track="sysdesign"] .trackpill .k{ background:rgba(192,101,63,.18); color:var(--track-sysdesign,#c0653f); }
+:root[data-theme="solarpunk"] .today[data-track="sysdesign"]::after{ background:linear-gradient(90deg,var(--track-sysdesign,#c0653f),transparent); }
+
+:root[data-theme="solarpunk"] .today[data-track="patterns"] .trackpill{ border-color:var(--track-patterns,#9a4a78); color:var(--track-patterns,#9a4a78); }
+:root[data-theme="solarpunk"] .today[data-track="patterns"] .trackpill .k{ background:rgba(154,74,120,.18); color:var(--track-patterns,#9a4a78); }
+:root[data-theme="solarpunk"] .today[data-track="patterns"]::after{ background:linear-gradient(90deg,var(--track-patterns,#9a4a78),transparent); }
+
+:root[data-theme="solarpunk"] .today[data-track="distsys"] .trackpill{ border-color:var(--track-distsys,#b8732e); color:var(--track-distsys,#b8732e); }
+:root[data-theme="solarpunk"] .today[data-track="distsys"] .trackpill .k{ background:rgba(184,115,46,.18); color:var(--track-distsys,#b8732e); }
+:root[data-theme="solarpunk"] .today[data-track="distsys"]::after{ background:linear-gradient(90deg,var(--track-distsys,#b8732e),transparent); }
+
+:root[data-theme="solarpunk"] .today[data-track="db"] .trackpill{ border-color:var(--track-db,#2a5d3a); color:var(--track-db,#2a5d3a); }
+:root[data-theme="solarpunk"] .today[data-track="db"] .trackpill .k{ background:rgba(42,93,58,.18); color:var(--track-db,#2a5d3a); }
+:root[data-theme="solarpunk"] .today[data-track="db"]::after{ background:linear-gradient(90deg,var(--track-db,#2a5d3a),transparent); }
+
+:root[data-theme="solarpunk"] .today[data-track="cs"] .trackpill{ border-color:var(--track-cs,#7a8c3e); color:var(--track-cs,#7a8c3e); }
+:root[data-theme="solarpunk"] .today[data-track="cs"] .trackpill .k{ background:rgba(122,140,62,.18); color:var(--track-cs,#7a8c3e); }
+:root[data-theme="solarpunk"] .today[data-track="cs"]::after{ background:linear-gradient(90deg,var(--track-cs,#7a8c3e),transparent); }
+
+:root[data-theme="solarpunk"] .today[data-track="rest"] .trackpill{ border-color:var(--track-rest,#8a9379); color:var(--ink-dim); }
+:root[data-theme="solarpunk"] .today[data-track="rest"] .trackpill .k{ background:rgba(138,147,121,.2); color:var(--ink-dim); }
+:root[data-theme="solarpunk"] .today[data-track="rest"]::after{ background:linear-gradient(90deg,var(--track-rest,#8a9379),transparent); }
+
+:root[data-theme="solarpunk"] .today-title{
+  font-family:var(--font-display); font-weight:400;
+  font-size:clamp(25px,4vw,36px); line-height:1.12;
+  letter-spacing:.4px;
+  margin:16px 0 11px;
+  color:var(--moss);
+}
+
+/* warmup / rest-prompt */
+:root[data-theme="solarpunk"] .warm{
+  display:flex; gap:11px; align-items:flex-start;
+  font-family:var(--font-ui); font-size:14.5px; line-height:1.6; color:var(--ink-dim);
+  background:rgba(224,169,59,.10);
+  border-left:3px solid var(--gold);
+  border-radius:0 var(--r-sm) var(--r-sm) 0;
+  padding:12px 15px; margin:6px 0 20px;
+}
+:root[data-theme="solarpunk"] .warm-i{ color:var(--gold-deep); flex:0 0 auto; font-size:16px; }
+:root[data-theme="solarpunk"] .warm .muted{ color:var(--leaf); text-transform:uppercase; letter-spacing:1px; font-size:11px; }
+
+:root[data-theme="solarpunk"] .rest-due{
+  font-family:var(--font-ui); font-size:14px; color:var(--ink-dim);
+  background:rgba(63,125,79,.07);
+  border:1px dashed rgba(63,125,79,.4);
+  border-radius:var(--r-sm); padding:15px; margin:6px 0 18px;
+}
+:root[data-theme="solarpunk"] .rest-due b{ color:var(--leaf); font-family:var(--font-display); }
+
+/* ====================== TASKS ====================== */
+:root[data-theme="solarpunk"] .tasks{ display:flex; flex-direction:column; gap:9px; margin:6px 0 20px; }
+:root[data-theme="solarpunk"] .task-wrap{ display:flex; flex-direction:column; gap:8px; }
+:root[data-theme="solarpunk"] .task{
+  display:flex; align-items:flex-start; gap:13px;
+  padding:13px 15px;
+  background:var(--cream-lt);
+  border:1px solid var(--line-soft);
+  border-radius:var(--r-sm);
+  cursor:pointer;
+  user-select:text;
+  transition:border-color var(--fast), background var(--fast), transform var(--fast), box-shadow var(--fast);
+  animation:sp-leaf-in .45s both;
+}
+:root[data-theme="solarpunk"] .task:hover{
+  border-color:var(--leaf);
+  background:#fff;
+  transform:translateX(3px);
+  box-shadow:var(--sh-soft);
+}
+/* custom checkbox — a seed that sprouts a check */
+:root[data-theme="solarpunk"] .box{
+  flex:0 0 auto;
+  width:22px; height:22px; margin-top:1px;
+  border:2px solid var(--muted);
+  border-radius:50% 50% 50% 4px;     /* leaf-shaped */
+  display:grid; place-items:center;
+  position:relative;
+  background:var(--cream);
+  transition:all var(--fast);
+}
+:root[data-theme="solarpunk"] .box::after{
+  content:"✓";
+  font-size:13px; font-weight:700; line-height:1;
+  color:var(--cream-lt);
+  opacity:0; transform:scale(.4) rotate(-12deg);
+  transition:opacity var(--fast), transform var(--fast);
+}
+:root[data-theme="solarpunk"] .task:hover .box{ border-color:var(--leaf); }
+:root[data-theme="solarpunk"] .task.done .box{
+  background:linear-gradient(135deg,var(--leaf),var(--moss));
+  border-color:var(--moss);
+  box-shadow:0 2px 8px rgba(42,93,58,.3);
+}
+:root[data-theme="solarpunk"] .task.done .box::after{ opacity:1; transform:scale(1) rotate(0); }
+
+:root[data-theme="solarpunk"] .task-text{
+  font-family:var(--font-ui); font-size:15px; line-height:1.5; color:var(--ink);
+  transition:color var(--fast);
+}
+:root[data-theme="solarpunk"] .task.done .task-text{
+  color:var(--muted); text-decoration:line-through; text-decoration-color:rgba(63,125,79,.55);
+}
+
+/* per-task guidance spoiler */
+:root[data-theme="solarpunk"] .task-hint{ font-family:var(--font-ui); font-size:13.5px; margin-left:8px; }
+:root[data-theme="solarpunk"] .task-hint > summary{
+  cursor:pointer; list-style:none;
+  color:var(--leaf); opacity:.85; font-weight:600; letter-spacing:.02em;
+  display:inline-flex; align-items:center; gap:6px; width:fit-content;
+}
+:root[data-theme="solarpunk"] .task-hint > summary::-webkit-details-marker{ display:none; }
+:root[data-theme="solarpunk"] .task-hint > summary::before{ content:"\25B8"; font-size:11px; }
+:root[data-theme="solarpunk"] .task-hint[open] > summary::before{ content:"\25BE"; }
+:root[data-theme="solarpunk"] .task-hint[open] > summary{ margin-bottom:7px; }
+:root[data-theme="solarpunk"] .task-hint-body{
+  font-size:13.5px; line-height:1.6; color:var(--ink-dim);
+  border-left:2px solid var(--gold); padding-left:12px; margin-left:4px;
+}
+
+/* ====================== REFLECTION ====================== */
+:root[data-theme="solarpunk"] .reflect-block{ margin:8px 0 20px; }
+:root[data-theme="solarpunk"] .reflect-label{
+  display:flex; align-items:center; gap:9px;
+  font-family:var(--font-ui); font-size:13.5px; color:var(--ink-dim);
+  margin-bottom:10px;
+}
+:root[data-theme="solarpunk"] .reflect-label .kanji,
+:root[data-theme="solarpunk"] .kanji{
+  font-family:var(--font-display); font-weight:400; font-size:16px;
+  color:var(--gold-deep);
+}
+:root[data-theme="solarpunk"] textarea{
+  width:100%; min-height:88px; resize:vertical;
+  font-family:var(--font-ui); font-size:14px; line-height:1.65;
+  color:var(--ink);
+  background:#fffdf7;
+  border:1px solid var(--line);
+  border-radius:var(--r-sm);
+  padding:13px 15px;
+  transition:border-color var(--fast), box-shadow var(--fast);
+}
+:root[data-theme="solarpunk"] textarea::placeholder{ color:var(--muted); }
+:root[data-theme="solarpunk"] textarea:focus{ outline:none; border-color:var(--leaf); box-shadow:0 0 0 3px rgba(63,125,79,.16); }
+
+/* resources / chips */
+:root[data-theme="solarpunk"] .res-row{ display:flex; flex-wrap:wrap; gap:9px; margin:4px 0 16px; }
+:root[data-theme="solarpunk"] .chip{
+  font-family:var(--font-mono); font-size:11.5px;
+  color:var(--ink-dim);
+  background:rgba(79,147,184,.08);
+  border:1px solid rgba(79,147,184,.32);
+  border-radius:99px;
+  padding:6px 13px;
+  transition:border-color var(--fast), color var(--fast), background var(--fast), transform var(--fast);
+}
+:root[data-theme="solarpunk"] .chip:hover{ border-color:var(--sky); color:var(--moss); background:rgba(79,147,184,.15); transform:translateY(-1px); }
+:root[data-theme="solarpunk"] .chip b{ color:var(--sky); }
+
+/* next-day CTA */
+:root[data-theme="solarpunk"] .next-day-cta{
+  display:inline-block; margin-top:10px;
+  font-family:var(--font-display); font-size:16px; letter-spacing:.6px;
+  color:var(--cream-lt);
+  background:linear-gradient(120deg,var(--leaf),var(--moss));
+  border:none; border-radius:var(--r-sm);
+  padding:13px 26px; cursor:pointer;
+  box-shadow:0 8px 20px rgba(42,93,58,.28);
+  transition:transform var(--fast), box-shadow var(--fast), filter var(--fast);
+}
+:root[data-theme="solarpunk"] .next-day-cta:hover{
+  transform:translateY(-2px); filter:brightness(1.06);
+  box-shadow:0 12px 28px rgba(42,93,58,.36), var(--sh-sun);
+}
+
+/* comeback banner */
+:root[data-theme="solarpunk"] #comeback{
+  font-family:var(--font-ui); font-size:14px; color:var(--moss);
+  background:rgba(224,169,59,.12);
+  border:1px solid rgba(224,169,59,.4);
+  border-radius:var(--r-sm);
+  padding:13px 17px; margin-bottom:18px;
+}
+
+/* ====================== MODALS ====================== */
+:root[data-theme="solarpunk"] .modal{
+  display:none;
+  position:fixed; inset:0; z-index:200;
+  overflow-y:auto;
+  align-items:flex-start; justify-content:center;
+  padding:32px 16px;
+  background:radial-gradient(900px 500px at 50% 0%, rgba(224,169,59,.18), transparent 60%), rgba(33,48,31,.5);
+  backdrop-filter:blur(5px);
+}
+:root[data-theme="solarpunk"] .modal.open{ display:flex; }
+:root[data-theme="solarpunk"] .modal-panel{
+  overflow:visible;
+  max-width:min(560px,92vw);
+  margin:auto;
+  width:100%;
+  background:linear-gradient(165deg, var(--cream-lt), #f6eedb);
+  border:1px solid var(--line);
+  border-radius:var(--r-leaf);
+  padding:22px;
+  box-shadow:0 0 0 1px rgba(224,169,59,.14), 0 28px 70px rgba(33,48,31,.35);
+  animation:sp-grow-in .35s cubic-bezier(.22,1,.36,1);
+}
+
+/* modal heads + buttons */
+:root[data-theme="solarpunk"] .cal-head,
+:root[data-theme="solarpunk"] .tr-head{
+  display:flex; align-items:center; gap:10px;
+  margin-bottom:18px;
+  padding-bottom:14px;
+  border-bottom:1px solid var(--line-soft);
+}
+:root[data-theme="solarpunk"] .cal-head > div,
+:root[data-theme="solarpunk"] .tr-head > div{
+  flex:1;
+  font-family:var(--font-display); font-size:20px; letter-spacing:1px;
+  color:var(--moss); text-align:center;
+}
+:root[data-theme="solarpunk"] .tr-head > div{ text-align:left; }
+:root[data-theme="solarpunk"] .cal-head button,
+:root[data-theme="solarpunk"] .tr-head button{
+  font-family:var(--font-mono); font-size:15px;
+  width:38px; height:38px; display:grid; place-items:center;
+  color:var(--leaf);
+  background:var(--cream);
+  border:1px solid var(--line); border-radius:50%;
+  cursor:pointer;
+  transition:color var(--fast), border-color var(--fast), background var(--fast), transform var(--fast);
+}
+:root[data-theme="solarpunk"] .cal-head button:hover,
+:root[data-theme="solarpunk"] .tr-head button:hover{ color:#fff; background:var(--leaf); border-color:var(--moss); transform:scale(1.06); }
+
+/* calendar */
+:root[data-theme="solarpunk"] .cal-dow{
+  display:grid; grid-template-columns:repeat(7,1fr); gap:7px;
+  margin-bottom:9px;
+}
+:root[data-theme="solarpunk"] .cal-dow span{
+  text-align:center;
+  font-family:var(--font-mono); font-size:10px; letter-spacing:1px;
+  text-transform:uppercase; color:var(--muted);
+}
+:root[data-theme="solarpunk"] .cal-grid{
+  display:grid; grid-template-columns:repeat(7,1fr); gap:7px;
+}
+:root[data-theme="solarpunk"] .cday{
+  aspect-ratio:1;
+  display:grid; place-items:center;
+  font-family:var(--font-mono); font-size:13px;
+  color:var(--ink-dim);
+  background:var(--cream);
+  border:1px solid var(--line-soft);
+  border-radius:50% 50% 50% 6px;     /* petal cell */
+  transition:transform var(--fast), box-shadow var(--fast), background var(--fast);
+}
+:root[data-theme="solarpunk"] .cday.other{ opacity:.35; }
+:root[data-theme="solarpunk"] .cday.done{
+  color:var(--cream-lt); font-weight:700;
+  background:linear-gradient(135deg,var(--leaf),var(--moss));
+  border-color:transparent;
+  box-shadow:0 3px 9px rgba(42,93,58,.28);
+}
+:root[data-theme="solarpunk"] .cday.today{
+  color:var(--gold-deep);
+  border-color:var(--gold);
+  box-shadow:0 0 0 2px rgba(224,169,59,.3);
+}
+:root[data-theme="solarpunk"] .cday.done.today{ color:var(--cream-lt); outline:2px solid var(--gold); outline-offset:1px; }
+:root[data-theme="solarpunk"] .cday:hover{ transform:scale(1.08); }
+
+/* trophies */
+:root[data-theme="solarpunk"] .tr-grid{
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(98px,1fr)); gap:13px;
+}
+:root[data-theme="solarpunk"] .badge{
+  position:relative;
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  text-align:center;
+  padding:15px 9px;
+  background:var(--cream);
+  border:1px solid var(--line-soft);
+  border-radius:var(--r-petal);
+  cursor:default;
+  transition:transform var(--fast), border-color var(--fast), box-shadow var(--fast);
+}
+:root[data-theme="solarpunk"] .badge:hover{ transform:translateY(-3px); z-index:5; }
+:root[data-theme="solarpunk"] .badge.on{
+  border-color:rgba(224,169,59,.55);
+  background:linear-gradient(165deg,#fff8e9,#f8efd8);
+  box-shadow:0 6px 16px rgba(224,169,59,.18);
+}
+:root[data-theme="solarpunk"] .badge.on:hover{ border-color:var(--gold); box-shadow:var(--sh-sun), 0 8px 20px rgba(224,169,59,.22); }
+:root[data-theme="solarpunk"] .badge.off{ opacity:.45; filter:grayscale(.6); }
+:root[data-theme="solarpunk"] .badge .bi{ font-size:30px; line-height:1; }
+:root[data-theme="solarpunk"] .badge.on .bi{ filter:drop-shadow(0 3px 6px rgba(201,142,34,.4)); }
+:root[data-theme="solarpunk"] .badge .bt{
+  font-family:var(--font-ui); font-weight:600; font-size:11.5px; line-height:1.3;
+  color:var(--ink-dim);
+}
+:root[data-theme="solarpunk"] .badge.on .bt{ color:var(--gold-deep); }
+
+/* badge tooltip */
+:root[data-theme="solarpunk"] .badge[data-tip]:hover::after{
+  content:attr(data-tip);
+  position:absolute; bottom:calc(100% + 9px); left:50%; transform:translateX(-50%);
+  z-index:20;
+  width:max-content; max-width:220px;
+  font-family:var(--font-ui); font-size:12px; line-height:1.5;
+  text-align:left; white-space:normal;
+  color:var(--cream-lt);
+  background:var(--moss);
+  border:1px solid var(--leaf);
+  border-radius:10px;
+  padding:9px 12px;
+  box-shadow:0 10px 26px rgba(33,48,31,.4);
+  pointer-events:none;
+}
+:root[data-theme="solarpunk"] .badge[data-tip]:hover::before{
+  content:""; position:absolute; bottom:calc(100% + 3px); left:50%; transform:translateX(-50%);
+  z-index:20;
+  border:6px solid transparent; border-top-color:var(--moss);
+  pointer-events:none;
+}
+
+/* ====================== EFFECTS (#fx) ====================== */
+:root[data-theme="solarpunk"] #fx{
+  position:fixed; inset:0; z-index:300; pointer-events:none;
+}
+
+/* sun-flash burst */
+:root[data-theme="solarpunk"] .fx-flash{
+  position:fixed; inset:0;
+  background:radial-gradient(600px 600px at 50% 40%, rgba(224,169,59,.45), transparent 65%);
+  animation:sp-flash .7s ease-out forwards;
+}
+
+/* confetti = falling LEAVES / PETALS */
+:root[data-theme="solarpunk"] .confetti-piece{
+  --i:0; --dx:0; --dy:1; --rot:0deg;
+  position:absolute; top:-16px; left:50%;
+  width:13px; height:9px;
+  background:var(--leaf);
+  border-radius:0 70% 0 70%;          /* leaf silhouette */
+  opacity:.95;
+  animation:sp-leaffall 2s cubic-bezier(.4,.1,.5,1) forwards;
+  animation-delay:calc(var(--i) * .045s);
+}
+:root[data-theme="solarpunk"] .confetti-piece:nth-child(4n){ background:var(--gold); border-radius:50% 50% 50% 0; width:11px; height:11px; }
+:root[data-theme="solarpunk"] .confetti-piece:nth-child(4n+1){ background:var(--leaf-lt); }
+:root[data-theme="solarpunk"] .confetti-piece:nth-child(4n+2){ background:var(--clay); border-radius:70% 0 70% 0; }
+:root[data-theme="solarpunk"] .confetti-piece:nth-child(4n+3){ background:var(--moss); }
+
+/* toasts */
+:root[data-theme="solarpunk"] .toast,
+:root[data-theme="solarpunk"] .badge-toast{
+  position:fixed; right:22px; bottom:26px;
+  display:flex; align-items:center; gap:11px;
+  max-width:min(340px,86vw);
+  font-family:var(--font-ui); font-size:14px; font-weight:500;
+  color:var(--ink);
+  background:linear-gradient(135deg, var(--cream-lt), #f6eedb);
+  border:1px solid var(--line);
+  border-radius:var(--r);
+  padding:14px 17px;
+  box-shadow:var(--sh-lift);
+  opacity:0; transform:translateY(16px) scale(.96);
+  transition:opacity var(--slow), transform var(--slow);
+  pointer-events:auto;
+}
+:root[data-theme="solarpunk"] .toast{ border-color:rgba(63,125,79,.4); border-left:4px solid var(--leaf); }
+:root[data-theme="solarpunk"] .badge-toast{ border-color:rgba(224,169,59,.5); border-left:4px solid var(--gold); }
+:root[data-theme="solarpunk"] .toast.show,
+:root[data-theme="solarpunk"] .badge-toast.show{ opacity:1; transform:translateY(0) scale(1); }
+:root[data-theme="solarpunk"] .badge-toast b{ color:var(--gold-deep); font-family:var(--font-display); }
+:root[data-theme="solarpunk"] .bt-i{ font-size:26px; line-height:1; filter:drop-shadow(0 2px 5px rgba(201,142,34,.4)); }
+
+/* ====================== FOOTER ====================== */
+:root[data-theme="solarpunk"] .foot{
+  text-align:center;
+  padding:28px 16px 44px;
+  border-top:1px solid var(--line-soft);
+  margin-top:34px;
+}
+:root[data-theme="solarpunk"] .foot::before{
+  content:"❧"; display:block; color:var(--gold-deep); opacity:.6; font-size:16px; margin-bottom:8px;
+}
+:root[data-theme="solarpunk"] #motd{
+  font-family:var(--font-ui); font-style:italic; font-size:14.5px; letter-spacing:.3px;
+  color:var(--ink-dim);
+  opacity:1; transition:opacity .55s ease;
+}
+:root[data-theme="solarpunk"] #motd.motd-out{ opacity:0; }
+
+/* ====================== ANIMATIONS ====================== */
+@keyframes sp-grow-in{
+  from{ opacity:0; transform:translateY(14px) scale(.98); }
+  to{ opacity:1; transform:translateY(0) scale(1); }
+}
+@keyframes sp-leaf-in{
+  from{ opacity:0; transform:translateX(-8px) rotate(-1.5deg); }
+  to{ opacity:1; transform:translateX(0) rotate(0); }
+}
+@keyframes sp-sway{
+  0%,100%{ transform:rotate(-4deg); }
+  50%{ transform:rotate(4deg); }
+}
+@keyframes sp-flash{
+  0%{ opacity:0; }
+  25%{ opacity:1; }
+  100%{ opacity:0; }
+}
+/* leaves rotate (--rot), drift (--dx) and fall (--dy), staggered via --i */
+@keyframes sp-leaffall{
+  0%{
+    transform:translate(0,0) rotate(0deg);
+    opacity:1;
+  }
+  100%{
+    transform:translate(calc(var(--dx) * 46vw), calc(60vh + var(--dy) * 50vh)) rotate(var(--rot));
+    opacity:0;
+  }
+}
+
+/* ====================== RESPONSIVE ====================== */
+@media (max-width:720px){
+  :root[data-theme="solarpunk"] .app-header{ flex-direction:column; align-items:stretch; }
+  :root[data-theme="solarpunk"] .toolbar{ justify-content:flex-start; }
+  :root[data-theme="solarpunk"] .dash{ grid-template-columns:repeat(2,1fr); gap:14px; }
+}
+@media (max-width:520px){
+  :root[data-theme="solarpunk"] .dash{ grid-template-columns:1fr; }
+  :root[data-theme="solarpunk"] .day-rail{ flex-wrap:wrap; }
+  :root[data-theme="solarpunk"] .day-nav{ display:none; }
+  :root[data-theme="solarpunk"] .today{ flex-direction:column; }
+  :root[data-theme="solarpunk"] .today-side{ flex-basis:auto; border-right:none; border-bottom:1px solid var(--line-soft); padding:9px; }
+  :root[data-theme="solarpunk"] .vert{ writing-mode:horizontal-tb; }
+}

@@ -1,0 +1,925 @@
+/* ============================================================
+   SUNRISE · "memphis" theme — Memphis Milano / 1984 postmodern
+   Playful, loud, clashing. LIGHT theme. Composed chaos:
+   terrazzo speckle, squiggles, zigzags, dot grids, blob shapes,
+   thick black outlines + hard coloured offset shadows.
+   CSS only, layered over canonical index.html + app.js markup.
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Shrikhand&family=Hanken+Grotesk:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
+
+:root[data-theme="memphis"]{
+  /* clashing brights */
+  --pink:    #ff5ca2;
+  --cyan:    #29d3d3;
+  --yellow:  #ffd23f;
+  --violet:  #7b5cff;
+  --black:   #141414;
+  --cream:   #fbf7f0;
+  --cream-2: #f3ecdf;
+
+  --ink:     #141414;
+  --ink-dim: #4a4540;
+  --muted:   #8a827a;
+
+  /* hard offset shadows (Memphis "sticker" pop) */
+  --shadow-pink:   5px 5px 0 var(--pink);
+  --shadow-cyan:   5px 5px 0 var(--cyan);
+  --shadow-yellow: 5px 5px 0 var(--yellow);
+  --shadow-violet: 5px 5px 0 var(--violet);
+  --shadow-black:  4px 4px 0 var(--black);
+
+  --r:    18px;
+  --r-sm: 11px;
+  --bord: 3px;
+
+  --bounce: .32s cubic-bezier(.34,1.56,.64,1);   /* overshoot */
+  --fast:   .18s cubic-bezier(.34,1.56,.64,1);
+  --slow:   .55s cubic-bezier(.34,1.56,.64,1);
+
+  --font-display: 'Shrikhand', 'Arial Black', Impact, system-ui, sans-serif;
+  --font-ui:      'Hanken Grotesk', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono:    'Space Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* 9 loud clashing track hues (fallbacks; app may override --track-<id> on <html>) */
+  --track-dsa:       #ff5ca2;
+  --track-js:        #ffd23f;
+  --track-ts:        #29d3d3;
+  --track-node:      #5fd068;
+  --track-sysdesign: #7b5cff;
+  --track-patterns:  #ff8c42;
+  --track-distsys:   #ff3b6b;
+  --track-db:        #2f9bff;
+  --track-cs:        #c44bff;
+  --track-neutral:   #8a827a;
+}
+
+/* ====================== BASE / RESET ====================== */
+:root[data-theme="memphis"] body{
+  margin:0;
+  min-height:100vh;
+  font-family:var(--font-ui);
+  color:var(--ink);
+  /* terrazzo / confetti speckle over warm cream */
+  background-color:var(--cream);
+  background-image:
+    radial-gradient(circle at 12% 18%, var(--pink) 0 5px, transparent 6px),
+    radial-gradient(circle at 78% 9%,  var(--cyan) 0 4px, transparent 5px),
+    radial-gradient(circle at 33% 62%, var(--yellow) 0 6px, transparent 7px),
+    radial-gradient(circle at 89% 47%, var(--violet) 0 4px, transparent 5px),
+    radial-gradient(circle at 54% 88%, var(--pink) 0 4px, transparent 5px),
+    radial-gradient(circle at 7% 79%,  var(--cyan) 0 5px, transparent 6px),
+    radial-gradient(circle at 96% 84%, var(--yellow) 0 4px, transparent 5px),
+    radial-gradient(circle at 44% 30%, var(--black) 0 3px, transparent 4px),
+    radial-gradient(circle at 66% 70%, var(--black) 0 3px, transparent 4px);
+  background-size:420px 420px, 520px 520px, 480px 480px, 360px 360px, 600px 600px, 540px 540px, 400px 400px, 300px 300px, 340px 340px;
+  background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;
+  position:relative;
+}
+
+:root[data-theme="memphis"] ::selection{ background:var(--yellow); color:var(--black); }
+:root[data-theme="memphis"] ::-webkit-scrollbar{ width:14px; height:14px; }
+:root[data-theme="memphis"] ::-webkit-scrollbar-track{ background:var(--cream-2); }
+:root[data-theme="memphis"] ::-webkit-scrollbar-thumb{
+  background:var(--pink);
+  border:3px solid var(--black);
+  border-radius:99px;
+}
+
+/* ====================== HEADER ====================== */
+:root[data-theme="memphis"] .app-header{
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:14px;
+  padding:16px clamp(14px,4vw,38px);
+  background:var(--cream);
+  border-bottom:var(--bord) solid var(--black);
+  position:sticky; top:0; z-index:50;
+}
+/* zigzag divider under the header */
+:root[data-theme="memphis"] .app-header::after{
+  content:""; position:absolute; left:0; right:0; bottom:calc(-1 * var(--bord) - 9px); height:11px;
+  background:
+    linear-gradient(135deg, var(--pink) 25%, transparent 25%) 0 0 / 22px 22px,
+    linear-gradient(225deg, var(--pink) 25%, transparent 25%) 0 0 / 22px 22px;
+  background-repeat:repeat-x;
+  pointer-events:none;
+}
+
+:root[data-theme="memphis"] .brand{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+:root[data-theme="memphis"] .brand-mark{
+  font-family:var(--font-display);
+  font-size:26px; line-height:1;
+  color:var(--cream);
+  background:var(--violet);
+  padding:7px 10px;
+  border:var(--bord) solid var(--black);
+  border-radius:50% 50% 50% 12px;   /* blob */
+  transform:rotate(-6deg);
+  box-shadow:var(--shadow-cyan);
+}
+:root[data-theme="memphis"] .brand-name{
+  font-family:var(--font-display);
+  font-size:clamp(26px,4.5vw,38px); line-height:.9;
+  letter-spacing:.5px;
+  color:var(--pink);
+  -webkit-text-stroke:2px var(--black);
+  text-shadow:3px 3px 0 var(--yellow);
+}
+:root[data-theme="memphis"] .brand-sub{
+  font-family:var(--font-mono); font-weight:700;
+  font-size:11px; letter-spacing:1.5px; text-transform:uppercase;
+  color:var(--black);
+  background:var(--cyan);
+  padding:4px 10px;
+  border:var(--bord) solid var(--black);
+  border-radius:99px;
+  transform:rotate(3deg);
+}
+:root[data-theme="memphis"] .brand-sub:empty{ display:none; }
+
+:root[data-theme="memphis"] .toolbar{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
+:root[data-theme="memphis"] .field{ display:inline-flex; }
+:root[data-theme="memphis"] select{
+  appearance:none; -webkit-appearance:none;
+  font-family:var(--font-mono); font-weight:700; font-size:12px;
+  color:var(--black);
+  background:var(--cream)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23141414' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")
+    no-repeat right 12px center;
+  border:var(--bord) solid var(--black);
+  border-radius:var(--r-sm);
+  padding:9px 32px 9px 13px;
+  cursor:pointer;
+  box-shadow:3px 3px 0 var(--black);
+  transition:transform var(--fast), box-shadow var(--fast);
+  max-width:62vw;
+}
+:root[data-theme="memphis"] select:hover{ transform:translate(-1px,-1px); box-shadow:4px 4px 0 var(--pink); }
+:root[data-theme="memphis"] select:focus{ outline:none; box-shadow:4px 4px 0 var(--cyan); }
+:root[data-theme="memphis"] select option{ background:var(--cream); color:var(--black); }
+
+:root[data-theme="memphis"] .btn{
+  font-family:var(--font-ui); font-weight:800; font-size:14px;
+  color:var(--black);
+  background:var(--yellow);
+  border:var(--bord) solid var(--black);
+  border-radius:var(--r-sm);
+  padding:8px 13px;
+  cursor:pointer;
+  box-shadow:3px 3px 0 var(--black);
+  transition:transform var(--fast), box-shadow var(--fast), background var(--fast);
+}
+:root[data-theme="memphis"] .btn:hover{ transform:translate(-2px,-2px) rotate(-2deg); box-shadow:5px 5px 0 var(--black); }
+:root[data-theme="memphis"] .btn:active{ transform:translate(1px,1px); box-shadow:2px 2px 0 var(--black); }
+:root[data-theme="memphis"] .btn.ghost{ background:var(--cream); }
+:root[data-theme="memphis"] .btn.ghost:hover{ background:var(--cyan); }
+:root[data-theme="memphis"] #calBtn:hover{ background:var(--pink); }
+:root[data-theme="memphis"] #trophiesBtn:hover{ background:var(--yellow); }
+:root[data-theme="memphis"] #exportBtn:hover{ background:var(--violet); color:var(--cream); }
+:root[data-theme="memphis"] #importBtn:hover{ background:var(--cyan); }
+
+/* gold = the celebratory "mark review" action */
+:root[data-theme="memphis"] .btn.gold{
+  font-family:var(--font-display); font-weight:400; font-size:15px; letter-spacing:.5px;
+  color:var(--black);
+  background:var(--yellow);
+  border:var(--bord) solid var(--black);
+  box-shadow:5px 5px 0 var(--pink);
+  padding:12px 22px;
+  margin-top:12px;
+}
+:root[data-theme="memphis"] .btn.gold:hover{ transform:translate(-2px,-2px) rotate(-1.5deg); box-shadow:7px 7px 0 var(--pink); }
+
+/* ====================== LAYOUT ====================== */
+:root[data-theme="memphis"] .wrap{
+  max-width:1120px; margin:0 auto;
+  padding:clamp(22px,4vw,40px) clamp(14px,4vw,40px) 24px;
+}
+
+:root[data-theme="memphis"] .section-title{
+  font-family:var(--font-mono); font-weight:700;
+  font-size:12px; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--black); opacity:1;
+  display:inline-block;
+  margin:26px 2px 14px;
+  padding:5px 12px;
+  background:var(--cyan);
+  border:var(--bord) solid var(--black);
+  border-radius:99px;
+  transform:rotate(-1.5deg);
+}
+:root[data-theme="memphis"] #todayTitle{ background:var(--pink); transform:rotate(1.5deg); }
+:root[data-theme="memphis"] .section-title:empty{ display:none; }
+
+:root[data-theme="memphis"] .dash{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:18px;
+  margin-bottom:30px;
+}
+
+/* ====================== STAT CARDS ====================== */
+:root[data-theme="memphis"] .stat-card{
+  position:relative;
+  background:var(--cream);
+  border:var(--bord) solid var(--black);
+  border-radius:var(--r);
+  padding:18px 18px 20px;
+  box-shadow:var(--shadow-black);
+  transition:transform var(--bounce), box-shadow var(--bounce);
+  animation:mem-pop .5s var(--bounce) both;
+}
+/* blob shape peeking behind each card (a Memphis bean) */
+:root[data-theme="memphis"] .stat-card::before{
+  content:""; position:absolute; z-index:-1;
+  width:64px; height:64px;
+  top:-18px; right:-14px;
+  background:var(--cyan);
+  border:var(--bord) solid var(--black);
+  border-radius:60% 40% 55% 45% / 55% 50% 50% 45%;
+  transform:rotate(12deg);
+}
+:root[data-theme="memphis"] .stat-card[data-kind="progress"]::before{ background:var(--pink); }
+:root[data-theme="memphis"] .stat-card[data-kind="streak"]::before{ background:var(--yellow); }
+:root[data-theme="memphis"] .stat-card[data-kind="phases"]::before{ background:var(--violet); }
+:root[data-theme="memphis"] .stat-card[data-kind="tracks"]::before{ background:var(--cyan); }
+:root[data-theme="memphis"] .stat-card:hover{ transform:translate(-3px,-3px) rotate(-1deg); box-shadow:8px 8px 0 var(--black); }
+/* stagger the load pop */
+:root[data-theme="memphis"] .stat-card:nth-child(1){ animation-delay:.05s; }
+:root[data-theme="memphis"] .stat-card:nth-child(2){ animation-delay:.13s; }
+:root[data-theme="memphis"] .stat-card:nth-child(3){ animation-delay:.21s; }
+:root[data-theme="memphis"] .stat-card:nth-child(4){ animation-delay:.29s; }
+
+:root[data-theme="memphis"] .eyebrow{
+  font-family:var(--font-mono); font-weight:700;
+  font-size:10.5px; letter-spacing:2.5px; text-transform:uppercase;
+  color:var(--black);
+  display:inline-block;
+  margin-bottom:14px;
+  padding:2px 8px;
+  background:var(--yellow);
+  border:2px solid var(--black);
+  border-radius:6px;
+  transform:rotate(-2deg);
+}
+:root[data-theme="memphis"] .stat-card[data-kind="progress"] .eyebrow{ background:var(--pink); }
+:root[data-theme="memphis"] .stat-card[data-kind="streak"] .eyebrow{ background:var(--cyan); }
+:root[data-theme="memphis"] .stat-card[data-kind="phases"] .eyebrow{ background:var(--yellow); }
+:root[data-theme="memphis"] .stat-card[data-kind="tracks"] .eyebrow{ background:var(--violet); color:var(--cream); }
+
+/* progress ring (conic on --p) over a dotted rail with a black outline */
+:root[data-theme="memphis"] .ring{
+  --p:0;
+  width:150px; height:150px; margin:8px auto 16px;
+  border-radius:50%;
+  display:grid; place-items:center;
+  position:relative;
+  background:
+    radial-gradient(closest-side, var(--cream) 0 68%, transparent 69% 100%),
+    conic-gradient(var(--pink) calc(var(--p)*1%), transparent 0),
+    radial-gradient(circle at center, var(--cyan) 1.5px, transparent 2px) center / 11px 11px;
+  border:var(--bord) solid var(--black);
+  box-shadow:5px 5px 0 var(--cyan);
+}
+:root[data-theme="memphis"] .ring > div{ text-align:center; }
+:root[data-theme="memphis"] .ring b{
+  display:block; font-family:var(--font-display); font-size:38px; line-height:1;
+  color:var(--violet);
+  -webkit-text-stroke:1.5px var(--black);
+}
+:root[data-theme="memphis"] .ring small{
+  display:block; font-family:var(--font-mono); font-weight:700; font-size:11px;
+  color:var(--ink-dim); margin-top:5px;
+}
+
+/* streak — huge number with a hard colour shadow */
+:root[data-theme="memphis"] .flame{
+  font-size:42px; text-align:center; line-height:1; margin:2px 0 4px;
+  animation:mem-wiggle 2.6s ease-in-out infinite;
+  transform-origin:bottom center;
+}
+:root[data-theme="memphis"] .streak-num{
+  font-family:var(--font-display); font-size:64px; line-height:.95; text-align:center;
+  color:var(--cyan);
+  -webkit-text-stroke:2.5px var(--black);
+  text-shadow:5px 5px 0 var(--pink);
+}
+:root[data-theme="memphis"] .stat-sub{
+  font-family:var(--font-mono); font-weight:700; font-size:11px; color:var(--ink-dim);
+  margin-top:8px; text-align:center;
+}
+
+/* phase / track rows */
+:root[data-theme="memphis"] .prow{
+  display:flex; align-items:center; justify-content:space-between;
+  font-size:13.5px; font-weight:700; margin:14px 0 6px;
+}
+:root[data-theme="memphis"] .lbl{ display:inline-flex; align-items:center; gap:9px; color:var(--ink); }
+:root[data-theme="memphis"] .lbl > i{
+  width:13px; height:13px; flex:0 0 auto;
+  background:var(--track-neutral);
+  border:2px solid var(--black);
+  border-radius:50%;
+}
+:root[data-theme="memphis"] .val{
+  font-family:var(--font-mono); font-weight:700; font-size:12.5px; color:var(--black);
+}
+
+:root[data-theme="memphis"] .bar{
+  height:14px; border-radius:99px;
+  background:var(--cream-2);
+  overflow:hidden;
+  border:var(--bord) solid var(--black);
+}
+:root[data-theme="memphis"] .bar > i{
+  display:block; height:100%;
+  background:var(--track-neutral);
+  border-radius:99px;
+  transition:width var(--slow);
+}
+
+:root[data-theme="memphis"] .muted{
+  color:var(--muted); font-family:var(--font-mono); font-weight:700; font-size:12px;
+}
+
+/* ====================== TRACK COLORS ====================== */
+/* dot + bar fill + pill + day-card accent painted via var(--track-<id>) with fallback */
+:root[data-theme="memphis"] .prow[data-track="dsa"] .lbl>i,
+:root[data-theme="memphis"] .bar[data-track="dsa"]>i{ background:var(--track-dsa,#ff5ca2); }
+:root[data-theme="memphis"] .prow[data-track="js"] .lbl>i,
+:root[data-theme="memphis"] .bar[data-track="js"]>i{ background:var(--track-js,#ffd23f); }
+:root[data-theme="memphis"] .prow[data-track="ts"] .lbl>i,
+:root[data-theme="memphis"] .bar[data-track="ts"]>i{ background:var(--track-ts,#29d3d3); }
+:root[data-theme="memphis"] .prow[data-track="node"] .lbl>i,
+:root[data-theme="memphis"] .bar[data-track="node"]>i{ background:var(--track-node,#5fd068); }
+:root[data-theme="memphis"] .prow[data-track="sysdesign"] .lbl>i,
+:root[data-theme="memphis"] .bar[data-track="sysdesign"]>i{ background:var(--track-sysdesign,#7b5cff); }
+:root[data-theme="memphis"] .prow[data-track="patterns"] .lbl>i,
+:root[data-theme="memphis"] .bar[data-track="patterns"]>i{ background:var(--track-patterns,#ff8c42); }
+:root[data-theme="memphis"] .prow[data-track="distsys"] .lbl>i,
+:root[data-theme="memphis"] .bar[data-track="distsys"]>i{ background:var(--track-distsys,#ff3b6b); }
+:root[data-theme="memphis"] .prow[data-track="db"] .lbl>i,
+:root[data-theme="memphis"] .bar[data-track="db"]>i{ background:var(--track-db,#2f9bff); }
+:root[data-theme="memphis"] .prow[data-track="cs"] .lbl>i,
+:root[data-theme="memphis"] .bar[data-track="cs"]>i{ background:var(--track-cs,#c44bff); }
+/* neutral bare default */
+:root[data-theme="memphis"] .prow[data-track] .lbl>i,
+:root[data-theme="memphis"] .bar[data-track]>i{ /* fallback handled per-track above; bare uses neutral */ }
+:root[data-theme="memphis"] .prow[data-track=""] .lbl>i,
+:root[data-theme="memphis"] .bar[data-track=""]>i{ background:var(--track-neutral,#8a827a); }
+
+/* ====================== DAY RAIL ====================== */
+:root[data-theme="memphis"] .day-rail{
+  display:flex; align-items:stretch; gap:16px;
+}
+:root[data-theme="memphis"] .day-nav{
+  font-family:var(--font-display); font-size:30px; line-height:1;
+  flex:0 0 auto;
+  width:56px;
+  display:grid; place-items:center;
+  color:var(--cream);
+  background:var(--violet);
+  border:var(--bord) solid var(--black);
+  border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;   /* egg blob */
+  cursor:pointer;
+  box-shadow:var(--shadow-black);
+  transition:transform var(--bounce), box-shadow var(--bounce), background var(--fast);
+}
+:root[data-theme="memphis"] .day-prev{ background:var(--pink); }
+:root[data-theme="memphis"] .day-next{ background:var(--cyan); }
+:root[data-theme="memphis"] .day-nav:hover:not(:disabled){ transform:translateY(-3px) rotate(-4deg); box-shadow:6px 8px 0 var(--black); }
+:root[data-theme="memphis"] .day-nav:active:not(:disabled){ transform:translateY(0); box-shadow:2px 2px 0 var(--black); }
+:root[data-theme="memphis"] .day-nav:disabled{ opacity:.3; cursor:not-allowed; box-shadow:none; }
+
+/* ====================== DAY CARD ====================== */
+:root[data-theme="memphis"] .today-wrap{ flex:1; min-width:0; }
+:root[data-theme="memphis"] .today{
+  position:relative;
+  display:flex;
+  background:var(--cream);
+  border:var(--bord) solid var(--black);
+  border-radius:var(--r);
+  overflow:hidden;
+  box-shadow:8px 8px 0 var(--track-neutral,#8a827a);
+}
+/* day card shadow tinted by its track */
+:root[data-theme="memphis"] .today[data-track="dsa"]{ box-shadow:8px 8px 0 var(--track-dsa,#ff5ca2); }
+:root[data-theme="memphis"] .today[data-track="js"]{ box-shadow:8px 8px 0 var(--track-js,#ffd23f); }
+:root[data-theme="memphis"] .today[data-track="ts"]{ box-shadow:8px 8px 0 var(--track-ts,#29d3d3); }
+:root[data-theme="memphis"] .today[data-track="node"]{ box-shadow:8px 8px 0 var(--track-node,#5fd068); }
+:root[data-theme="memphis"] .today[data-track="sysdesign"]{ box-shadow:8px 8px 0 var(--track-sysdesign,#7b5cff); }
+:root[data-theme="memphis"] .today[data-track="patterns"]{ box-shadow:8px 8px 0 var(--track-patterns,#ff8c42); }
+:root[data-theme="memphis"] .today[data-track="distsys"]{ box-shadow:8px 8px 0 var(--track-distsys,#ff3b6b); }
+:root[data-theme="memphis"] .today[data-track="db"]{ box-shadow:8px 8px 0 var(--track-db,#2f9bff); }
+:root[data-theme="memphis"] .today[data-track="cs"]{ box-shadow:8px 8px 0 var(--track-cs,#c44bff); }
+
+:root[data-theme="memphis"] .today-side{
+  flex:0 0 58px;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--track-neutral,#8a827a);
+  border-right:var(--bord) solid var(--black);
+}
+:root[data-theme="memphis"] .today[data-track="dsa"] .today-side{ background:var(--track-dsa,#ff5ca2); }
+:root[data-theme="memphis"] .today[data-track="js"] .today-side{ background:var(--track-js,#ffd23f); }
+:root[data-theme="memphis"] .today[data-track="ts"] .today-side{ background:var(--track-ts,#29d3d3); }
+:root[data-theme="memphis"] .today[data-track="node"] .today-side{ background:var(--track-node,#5fd068); }
+:root[data-theme="memphis"] .today[data-track="sysdesign"] .today-side{ background:var(--track-sysdesign,#7b5cff); }
+:root[data-theme="memphis"] .today[data-track="patterns"] .today-side{ background:var(--track-patterns,#ff8c42); }
+:root[data-theme="memphis"] .today[data-track="distsys"] .today-side{ background:var(--track-distsys,#ff3b6b); }
+:root[data-theme="memphis"] .today[data-track="db"] .today-side{ background:var(--track-db,#2f9bff); }
+:root[data-theme="memphis"] .today[data-track="cs"] .today-side{ background:var(--track-cs,#c44bff); }
+:root[data-theme="memphis"] .vert{
+  writing-mode:vertical-rl; text-orientation:mixed;
+  font-family:var(--font-display); font-size:15px; letter-spacing:3px;
+  text-transform:uppercase; color:var(--black);
+}
+:root[data-theme="memphis"] .today-main{
+  flex:1; min-width:0;
+  padding:clamp(18px,3vw,30px);
+}
+
+/* track pill */
+:root[data-theme="memphis"] .trackpill{
+  display:inline-flex; align-items:center; gap:9px;
+  font-family:var(--font-mono); font-weight:700; font-size:12px; letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--black);
+  background:var(--cream);
+  border:var(--bord) solid var(--black);
+  border-radius:99px;
+  padding:5px 14px 5px 5px;
+  box-shadow:3px 3px 0 var(--black);
+  transform:rotate(-2deg);
+}
+:root[data-theme="memphis"] .trackpill .k{
+  display:grid; place-items:center;
+  width:26px; height:26px; border-radius:50%;
+  font-family:var(--font-display); font-size:13px;
+  color:var(--cream);
+  background:var(--track-neutral,#8a827a);
+  border:2px solid var(--black);
+}
+:root[data-theme="memphis"] .today[data-track="dsa"] .trackpill .k{ background:var(--track-dsa,#ff5ca2); }
+:root[data-theme="memphis"] .today[data-track="js"] .trackpill .k{ background:var(--track-js,#ffd23f); color:var(--black); }
+:root[data-theme="memphis"] .today[data-track="ts"] .trackpill .k{ background:var(--track-ts,#29d3d3); color:var(--black); }
+:root[data-theme="memphis"] .today[data-track="node"] .trackpill .k{ background:var(--track-node,#5fd068); color:var(--black); }
+:root[data-theme="memphis"] .today[data-track="sysdesign"] .trackpill .k{ background:var(--track-sysdesign,#7b5cff); }
+:root[data-theme="memphis"] .today[data-track="patterns"] .trackpill .k{ background:var(--track-patterns,#ff8c42); }
+:root[data-theme="memphis"] .today[data-track="distsys"] .trackpill .k{ background:var(--track-distsys,#ff3b6b); }
+:root[data-theme="memphis"] .today[data-track="db"] .trackpill .k{ background:var(--track-db,#2f9bff); }
+:root[data-theme="memphis"] .today[data-track="cs"] .trackpill .k{ background:var(--track-cs,#c44bff); }
+
+:root[data-theme="memphis"] .today-title{
+  font-family:var(--font-display); font-weight:400;
+  font-size:clamp(26px,4.4vw,40px); line-height:1.05;
+  letter-spacing:.3px;
+  margin:16px 0 12px;
+  color:var(--black);
+  text-shadow:3px 3px 0 var(--yellow);
+}
+
+/* warmup / rest-prompt */
+:root[data-theme="memphis"] .warm{
+  display:flex; gap:11px; align-items:flex-start;
+  font-size:14.5px; line-height:1.55; color:var(--ink-dim);
+  background:var(--cream-2);
+  border:var(--bord) solid var(--black);
+  border-radius:var(--r-sm);
+  padding:13px 15px; margin:6px 0 20px;
+}
+:root[data-theme="memphis"] .warm-i{ font-size:18px; flex:0 0 auto; }
+:root[data-theme="memphis"] .warm .muted{
+  color:var(--black); background:var(--yellow);
+  text-transform:uppercase; letter-spacing:1px; font-size:10.5px;
+  padding:1px 7px; border:2px solid var(--black); border-radius:99px;
+}
+
+:root[data-theme="memphis"] .rest-due{
+  font-family:var(--font-mono); font-weight:700; font-size:13.5px; color:var(--ink-dim);
+  background:var(--cream-2);
+  border:var(--bord) dashed var(--black);
+  border-radius:var(--r-sm); padding:15px; margin:6px 0 18px;
+}
+:root[data-theme="memphis"] .rest-due b{ color:var(--violet); }
+
+/* ====================== TASKS ====================== */
+:root[data-theme="memphis"] .tasks{ display:flex; flex-direction:column; gap:10px; margin:8px 0 20px; }
+:root[data-theme="memphis"] .task{
+  display:flex; align-items:flex-start; gap:13px;
+  padding:13px 15px;
+  background:var(--cream);
+  border:var(--bord) solid var(--black);
+  border-radius:var(--r-sm);
+  cursor:pointer;
+  user-select:text;
+  box-shadow:3px 3px 0 var(--black);
+  transition:transform var(--fast), box-shadow var(--fast), background var(--fast);
+  animation:mem-rise .42s var(--bounce) both;
+}
+:root[data-theme="memphis"] .task:hover{ transform:translate(-2px,-2px) rotate(-.6deg); box-shadow:5px 5px 0 var(--cyan); }
+:root[data-theme="memphis"] .task.done{ background:var(--cream-2); box-shadow:3px 3px 0 var(--track-neutral); }
+
+/* custom checkbox — chunky sticker box */
+:root[data-theme="memphis"] .box{
+  flex:0 0 auto;
+  width:24px; height:24px; margin-top:1px;
+  background:var(--cream);
+  border:var(--bord) solid var(--black);
+  border-radius:7px;
+  display:grid; place-items:center;
+  position:relative;
+  transition:transform var(--fast), background var(--fast);
+}
+:root[data-theme="memphis"] .box::after{
+  content:"✔";
+  font-size:15px; font-weight:900; line-height:1;
+  color:var(--black);
+  opacity:0; transform:scale(.3) rotate(-20deg);
+  transition:opacity var(--fast), transform var(--bounce);
+}
+:root[data-theme="memphis"] .task:hover .box{ background:var(--yellow); transform:rotate(-6deg); }
+:root[data-theme="memphis"] .task.done .box{ background:var(--pink); transform:rotate(0); }
+:root[data-theme="memphis"] .task.done .box::after{ opacity:1; transform:scale(1) rotate(0); }
+
+:root[data-theme="memphis"] .task-text{
+  font-size:14.5px; font-weight:600; line-height:1.5; color:var(--ink);
+  transition:color var(--fast);
+}
+:root[data-theme="memphis"] .task.done .task-text{
+  color:var(--muted); text-decoration:line-through; text-decoration-color:var(--pink); text-decoration-thickness:2px;
+}
+
+/* task with guidance spoiler */
+:root[data-theme="memphis"] .task-wrap{ display:flex; flex-direction:column; gap:9px; }
+:root[data-theme="memphis"] .task-hint{ font-size:13px; margin-left:8px; color:var(--violet); }
+:root[data-theme="memphis"] .task-hint > summary{
+  cursor:pointer; list-style:none;
+  font-family:var(--font-mono); font-weight:700; font-size:12px;
+  color:var(--violet); opacity:1;
+  display:inline-flex; align-items:center; gap:7px; width:fit-content;
+}
+:root[data-theme="memphis"] .task-hint > summary::-webkit-details-marker{ display:none; }
+:root[data-theme="memphis"] .task-hint > summary::before{ content:"\25B8"; font-size:11px; }
+:root[data-theme="memphis"] .task-hint[open] > summary::before{ content:"\25BE"; }
+:root[data-theme="memphis"] .task-hint[open] > summary{ margin-bottom:7px; }
+:root[data-theme="memphis"] .task-hint-body{
+  font-size:13.5px; line-height:1.55; color:var(--ink-dim);
+  border-left:var(--bord) solid var(--violet); padding-left:12px; margin-left:3px;
+}
+
+/* ====================== REFLECTION ====================== */
+:root[data-theme="memphis"] .reflect-block{ margin:10px 0 20px; }
+:root[data-theme="memphis"] .reflect-label{
+  display:flex; align-items:center; gap:9px;
+  font-size:13.5px; font-weight:700; color:var(--ink);
+  margin-bottom:10px;
+}
+:root[data-theme="memphis"] .reflect-label .kanji,
+:root[data-theme="memphis"] .kanji{
+  font-family:var(--font-display);
+  color:var(--cream); background:var(--violet);
+  padding:2px 8px; border:2px solid var(--black); border-radius:8px;
+  transform:rotate(-3deg);
+}
+:root[data-theme="memphis"] textarea{
+  width:100%; min-height:88px; resize:vertical;
+  font-family:var(--font-mono); font-size:13px; line-height:1.65;
+  color:var(--ink);
+  background:var(--cream);
+  border:var(--bord) solid var(--black);
+  border-radius:var(--r-sm);
+  padding:13px 15px;
+  box-shadow:inset 2px 2px 0 rgba(20,20,20,.06);
+  transition:box-shadow var(--fast);
+}
+:root[data-theme="memphis"] textarea::placeholder{ color:var(--muted); }
+:root[data-theme="memphis"] textarea:focus{ outline:none; box-shadow:4px 4px 0 var(--cyan); }
+
+/* resources / chips */
+:root[data-theme="memphis"] .res-row{ display:flex; flex-wrap:wrap; gap:9px; margin:6px 0 16px; }
+:root[data-theme="memphis"] .chip{
+  font-family:var(--font-mono); font-weight:700; font-size:11.5px;
+  color:var(--black);
+  background:var(--cyan);
+  border:2px solid var(--black);
+  border-radius:99px;
+  padding:6px 13px;
+  box-shadow:2px 2px 0 var(--black);
+  transition:transform var(--fast), box-shadow var(--fast), background var(--fast);
+}
+:root[data-theme="memphis"] .chip:nth-child(2n){ background:var(--yellow); }
+:root[data-theme="memphis"] .chip:nth-child(3n){ background:var(--pink); }
+:root[data-theme="memphis"] .chip:hover{ transform:translate(-1px,-1px) rotate(-2deg); box-shadow:3px 3px 0 var(--black); }
+:root[data-theme="memphis"] .chip b{ color:var(--violet); }
+
+/* next-day CTA */
+:root[data-theme="memphis"] .next-day-cta{
+  display:inline-block; margin-top:10px;
+  font-family:var(--font-display); font-size:15px; letter-spacing:.5px;
+  color:var(--cream);
+  background:var(--pink);
+  border:var(--bord) solid var(--black);
+  border-radius:var(--r-sm);
+  padding:12px 24px; cursor:pointer;
+  box-shadow:5px 5px 0 var(--black);
+  transition:transform var(--bounce), box-shadow var(--bounce);
+}
+:root[data-theme="memphis"] .next-day-cta:hover{ transform:translate(-2px,-2px) rotate(-1.5deg); box-shadow:7px 7px 0 var(--cyan); }
+:root[data-theme="memphis"] .next-day-cta:active{ transform:translate(2px,2px); box-shadow:2px 2px 0 var(--black); }
+
+/* comeback banner */
+:root[data-theme="memphis"] #comeback{
+  font-family:var(--font-mono); font-weight:700; font-size:13.5px; color:var(--black);
+  background:var(--yellow);
+  border:var(--bord) solid var(--black);
+  border-radius:var(--r-sm);
+  padding:13px 17px; margin-bottom:20px;
+  box-shadow:var(--shadow-black);
+}
+
+/* ====================== MODALS ====================== */
+:root[data-theme="memphis"] .modal{
+  display:none;
+  position:fixed; inset:0; z-index:200;
+  overflow-y:auto;
+  align-items:flex-start; justify-content:center;
+  padding:36px 16px;
+  /* dotted-grid scrim over a translucent wash */
+  background:
+    radial-gradient(circle at center, rgba(20,20,20,.28) 1.5px, transparent 2px) center / 16px 16px,
+    rgba(123,92,255,.32);
+  backdrop-filter:blur(3px);
+}
+:root[data-theme="memphis"] .modal.open{ display:flex; }
+:root[data-theme="memphis"] .modal-panel{
+  overflow:visible;
+  max-width:min(560px,92vw);
+  margin:auto;
+  width:100%;
+  background:var(--cream);
+  border:var(--bord) solid var(--black);
+  border-radius:var(--r);
+  padding:22px;
+  box-shadow:10px 10px 0 var(--pink), 0 0 0 var(--bord) var(--black);
+  animation:mem-pop .4s var(--bounce);
+}
+:root[data-theme="memphis"] .tr-panel{ box-shadow:10px 10px 0 var(--cyan), 0 0 0 var(--bord) var(--black); }
+
+/* modal heads */
+:root[data-theme="memphis"] .cal-head,
+:root[data-theme="memphis"] .tr-head{
+  display:flex; align-items:center; gap:10px;
+  margin-bottom:18px;
+}
+:root[data-theme="memphis"] .cal-head > div,
+:root[data-theme="memphis"] .tr-head > div{
+  flex:1;
+  font-family:var(--font-display); font-size:20px; letter-spacing:.5px;
+  color:var(--black); text-align:center;
+}
+:root[data-theme="memphis"] .tr-head > div{ text-align:left; }
+:root[data-theme="memphis"] .cal-head button,
+:root[data-theme="memphis"] .tr-head button{
+  font-family:var(--font-display); font-size:16px;
+  width:38px; height:38px; display:grid; place-items:center;
+  color:var(--black);
+  background:var(--yellow);
+  border:var(--bord) solid var(--black); border-radius:10px;
+  cursor:pointer;
+  box-shadow:2px 2px 0 var(--black);
+  transition:transform var(--fast), box-shadow var(--fast), background var(--fast);
+}
+:root[data-theme="memphis"] .cal-head button:hover,
+:root[data-theme="memphis"] .tr-head button:hover{ transform:translate(-1px,-1px) rotate(-3deg); box-shadow:3px 3px 0 var(--black); background:var(--cyan); }
+:root[data-theme="memphis"] #calClose:hover,
+:root[data-theme="memphis"] #trophiesClose:hover{ background:var(--pink); }
+
+/* calendar */
+:root[data-theme="memphis"] .cal-dow{
+  display:grid; grid-template-columns:repeat(7,1fr); gap:7px;
+  margin-bottom:9px;
+}
+:root[data-theme="memphis"] .cal-dow span{
+  text-align:center;
+  font-family:var(--font-mono); font-weight:700; font-size:10px; letter-spacing:1px;
+  text-transform:uppercase; color:var(--muted);
+}
+:root[data-theme="memphis"] .cal-grid{
+  display:grid; grid-template-columns:repeat(7,1fr); gap:7px;
+}
+:root[data-theme="memphis"] .cday{
+  aspect-ratio:1;
+  display:grid; place-items:center;
+  font-family:var(--font-mono); font-weight:700; font-size:13px;
+  color:var(--ink);
+  background:var(--cream);
+  border:2px solid var(--black);
+  border-radius:9px;
+  transition:transform var(--fast), box-shadow var(--fast);
+}
+:root[data-theme="memphis"] .cday.other{ opacity:.3; }
+:root[data-theme="memphis"] .cday.done{
+  color:var(--black); font-weight:700;
+  background:var(--cyan);
+  box-shadow:2px 2px 0 var(--black);
+}
+:root[data-theme="memphis"] .cday.today{
+  background:var(--yellow);
+  border-color:var(--black); box-shadow:3px 3px 0 var(--pink);
+}
+:root[data-theme="memphis"] .cday.done.today{ background:var(--pink); color:var(--cream); }
+:root[data-theme="memphis"] .cday:hover{ transform:scale(1.1) rotate(-4deg); }
+
+/* trophies — sticker badges */
+:root[data-theme="memphis"] .tr-grid{
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(98px,1fr)); gap:14px;
+}
+:root[data-theme="memphis"] .badge{
+  position:relative;
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  text-align:center;
+  padding:15px 8px;
+  background:var(--cream);
+  border:var(--bord) solid var(--black);
+  border-radius:var(--r-sm);
+  cursor:default;
+  box-shadow:3px 3px 0 var(--black);
+  transition:transform var(--bounce), box-shadow var(--bounce);
+}
+:root[data-theme="memphis"] .badge:hover{ transform:translateY(-3px); z-index:5; }
+:root[data-theme="memphis"] .badge.on{
+  background:var(--yellow);
+  transform:rotate(-3deg);
+  box-shadow:4px 4px 0 var(--pink);
+}
+:root[data-theme="memphis"] .badge.on:nth-child(3n){ background:var(--cyan); box-shadow:4px 4px 0 var(--violet); transform:rotate(3deg); }
+:root[data-theme="memphis"] .badge.on:nth-child(3n+1){ background:var(--pink); box-shadow:4px 4px 0 var(--cyan); }
+:root[data-theme="memphis"] .badge.on:hover{ transform:translateY(-3px) rotate(-2deg); box-shadow:6px 6px 0 var(--black); }
+:root[data-theme="memphis"] .badge.off{ opacity:.5; filter:grayscale(.85); }
+:root[data-theme="memphis"] .badge .bi{ font-size:30px; line-height:1; }
+:root[data-theme="memphis"] .badge .bt{
+  font-family:var(--font-ui); font-weight:800; font-size:11px; line-height:1.25;
+  color:var(--black);
+}
+
+/* badge tooltip */
+:root[data-theme="memphis"] .badge[data-tip]:hover::after{
+  content:attr(data-tip);
+  position:absolute; bottom:calc(100% + 10px); left:50%; transform:translateX(-50%);
+  z-index:20;
+  width:max-content; max-width:220px;
+  font-family:var(--font-mono); font-weight:700; font-size:11px; line-height:1.45;
+  text-align:left; white-space:normal;
+  color:var(--cream);
+  background:var(--black);
+  border:2px solid var(--black);
+  border-radius:9px;
+  padding:8px 11px;
+  box-shadow:4px 4px 0 var(--pink);
+  pointer-events:none;
+}
+:root[data-theme="memphis"] .badge[data-tip]:hover::before{
+  content:""; position:absolute; bottom:calc(100% + 4px); left:50%; transform:translateX(-50%);
+  z-index:20;
+  border:7px solid transparent; border-top-color:var(--black);
+  pointer-events:none;
+}
+
+/* ====================== EFFECTS (#fx) ====================== */
+:root[data-theme="memphis"] #fx{
+  position:fixed; inset:0; z-index:300; pointer-events:none;
+}
+
+/* full-screen flash on a big win */
+:root[data-theme="memphis"] .fx-flash{
+  position:fixed; inset:0;
+  background:radial-gradient(circle at center, rgba(255,210,63,.5), transparent 60%);
+  animation:mem-flash .5s ease-out forwards;
+}
+
+/* confetti — a MIX of Memphis shapes in clashing colours */
+:root[data-theme="memphis"] .confetti-piece{
+  --i:0; --dx:0; --dy:1; --rot:360deg;
+  position:absolute; top:-16px; left:50%;
+  width:14px; height:14px;
+  background:var(--pink);
+  border:2px solid var(--black);
+  animation:mem-confetti 1.7s cubic-bezier(.3,.6,.4,1) forwards;
+  animation-delay:calc(var(--i) * .035s);
+}
+/* clashing colours */
+:root[data-theme="memphis"] .confetti-piece:nth-child(4n+1){ background:var(--cyan); }
+:root[data-theme="memphis"] .confetti-piece:nth-child(4n+2){ background:var(--yellow); }
+:root[data-theme="memphis"] .confetti-piece:nth-child(4n+3){ background:var(--violet); }
+/* shape: dot */
+:root[data-theme="memphis"] .confetti-piece:nth-child(5n){ border-radius:50%; }
+/* shape: triangle */
+:root[data-theme="memphis"] .confetti-piece:nth-child(5n+1){
+  width:0; height:0; background:transparent !important; border:none;
+  border-left:8px solid transparent; border-right:8px solid transparent;
+  border-bottom:15px solid var(--pink);
+}
+:root[data-theme="memphis"] .confetti-piece:nth-child(5n+1):nth-child(4n+1){ border-bottom-color:var(--cyan); }
+:root[data-theme="memphis"] .confetti-piece:nth-child(5n+1):nth-child(4n+2){ border-bottom-color:var(--yellow); }
+/* shape: zigzag bar */
+:root[data-theme="memphis"] .confetti-piece:nth-child(5n+2){ width:16px; height:5px; border-radius:1px; }
+/* shape: squiggle/pill */
+:root[data-theme="memphis"] .confetti-piece:nth-child(5n+3){ width:18px; height:7px; border-radius:99px; }
+
+/* toasts */
+:root[data-theme="memphis"] .toast,
+:root[data-theme="memphis"] .badge-toast{
+  position:fixed; right:22px; bottom:26px;
+  display:flex; align-items:center; gap:11px;
+  max-width:min(340px,86vw);
+  font-family:var(--font-ui); font-size:14px; font-weight:800;
+  color:var(--black);
+  background:var(--cream);
+  border:var(--bord) solid var(--black);
+  border-radius:14px;
+  padding:14px 17px;
+  box-shadow:6px 6px 0 var(--pink);
+  opacity:0; transform:translateY(16px) rotate(-2deg) scale(.95);
+  transition:opacity var(--slow), transform var(--slow);
+  pointer-events:auto;
+}
+:root[data-theme="memphis"] .badge-toast{ box-shadow:6px 6px 0 var(--cyan); }
+:root[data-theme="memphis"] .toast.show,
+:root[data-theme="memphis"] .badge-toast.show{ opacity:1; transform:translateY(0) rotate(-1.5deg) scale(1); }
+:root[data-theme="memphis"] .badge-toast b{ color:var(--violet); }
+:root[data-theme="memphis"] .bt-i{ font-size:26px; line-height:1; }
+
+/* ====================== FOOTER ====================== */
+:root[data-theme="memphis"] .foot{
+  text-align:center;
+  padding:28px 16px 44px;
+  margin-top:34px;
+  position:relative;
+}
+/* squiggle divider above the footer */
+:root[data-theme="memphis"] .foot::before{
+  content:""; position:absolute; top:0; left:50%; transform:translateX(-50%);
+  width:min(420px,80vw); height:14px;
+  background:
+    radial-gradient(circle at 6px 11px, transparent 6px, var(--violet) 6px 8px, transparent 8px) 0 0 / 24px 14px;
+  background-repeat:repeat-x;
+  opacity:.9;
+}
+:root[data-theme="memphis"] #motd{
+  font-family:var(--font-mono); font-weight:700; font-size:12.5px; letter-spacing:.5px;
+  color:var(--black);
+  background:var(--cyan);
+  padding:7px 16px;
+  border:var(--bord) solid var(--black);
+  border-radius:99px;
+  display:inline-block;
+  box-shadow:3px 3px 0 var(--black);
+  transform:rotate(-1.5deg);
+  opacity:1; transition:opacity .55s ease, transform .55s ease;
+}
+:root[data-theme="memphis"] #motd.motd-out{ opacity:0; transform:rotate(-1.5deg) translateY(6px); }
+
+/* ====================== ANIMATIONS ====================== */
+@keyframes mem-pop{
+  0%{ opacity:0; transform:translateY(14px) scale(.92) rotate(-2deg); }
+  100%{ opacity:1; transform:translateY(0) scale(1) rotate(0); }
+}
+@keyframes mem-rise{
+  0%{ opacity:0; transform:translateX(-10px) rotate(-1deg); }
+  100%{ opacity:1; transform:translateX(0) rotate(0); }
+}
+@keyframes mem-wiggle{
+  0%,100%{ transform:rotate(-7deg); }
+  50%{ transform:rotate(7deg); }
+}
+@keyframes mem-flash{
+  0%{ opacity:0; }
+  30%{ opacity:1; }
+  100%{ opacity:0; }
+}
+@keyframes mem-confetti{
+  0%{ transform:translate(0,0) rotate(0deg); opacity:1; }
+  100%{
+    transform:translate(calc(var(--dx) * 46vw), calc(60vh + var(--dy) * 45vh)) rotate(var(--rot));
+    opacity:0;
+  }
+}
+
+/* ====================== RESPONSIVE ====================== */
+@media (max-width:980px){
+  :root[data-theme="memphis"] .dash{ grid-template-columns:repeat(2,1fr); }
+}
+@media (max-width:720px){
+  :root[data-theme="memphis"] .app-header{ flex-direction:column; align-items:flex-start; }
+  :root[data-theme="memphis"] .toolbar{ width:100%; }
+  :root[data-theme="memphis"] .dash{ grid-template-columns:1fr; }
+  :root[data-theme="memphis"] .day-rail{ flex-direction:column; }
+  :root[data-theme="memphis"] .day-nav{
+    width:100%; height:46px; border-radius:14px;
+  }
+  :root[data-theme="memphis"] .today{ flex-direction:column; }
+  :root[data-theme="memphis"] .today-side{
+    flex-basis:auto; border-right:none; border-bottom:var(--bord) solid var(--black); padding:8px;
+  }
+  :root[data-theme="memphis"] .vert{ writing-mode:horizontal-tb; }
+}

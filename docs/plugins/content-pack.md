@@ -1,6 +1,35 @@
-# Content Pack Authoring Guide (`sunrise.pack/v1`)
+# Sunrise Content Pack Authoring Guide (`sunrise.pack/v1`)
 
-A content pack is one declarative object registered via `SUNRISE.registerPack(pack)`. It is fully self-contained: it declares its own subject columns ("tracks"), its structure, its display settings, and (optionally) its achievements. You can author one from this doc alone.
+**How to use this file:** paste the whole document into an LLM, fill in the
+`{PLACEHOLDERS}` in the **Prompt** at the bottom, and it outputs a complete,
+ready-to-install content pack as one JS file. This file is the entire contract —
+you do not need the app source or any other doc.
+
+A content pack is one declarative object registered via `SUNRISE.registerPack(pack)`.
+It is fully self-contained: it declares its own subject columns ("tracks"), its
+structure (phases → groups → items → tasks), its display settings, and
+optionally its achievements. No code, no app changes beyond loading the file.
+
+Every registered pack is **validated**. An invalid one is rejected — with a
+precise reason logged to the console — and simply never appears; it cannot break
+the app.
+
+## Install
+
+A pack file is a self-registering IIFE. Save it as `data/packs/<id>.js` and add
+one `<script>` line to `index.html` **after** the app bundle:
+
+```html
+<script src="dist/sunrise.js"></script>
+<script src="data/packs/my-pack.js"></script>
+```
+
+```js
+(function (root) {
+  var pack = { /* …the pack object (see below)… */ };
+  if (root.SUNRISE && root.SUNRISE.registerPack) root.SUNRISE.registerPack(pack);
+})(typeof window !== 'undefined' ? window : globalThis);
+```
 
 ## Envelope
 
@@ -11,21 +40,34 @@ A content pack is one declarative object registered via `SUNRISE.registerPack(pa
 | `name` | string | ✅ | shown in the pack switcher |
 | `version` | string | ✅ | e.g. `"1.0.0"` |
 | `locale` | string | — | sets `<html lang>`, e.g. `"ru"`, `"en"`, `"ja"` |
-| `settings` | object | — | display/behaviour knobs (below) |
+| `settings` | object | — | display / behaviour knobs (below) |
 | `tracks` | array | ✅ (≥1) | the subject columns |
 | `phases` | array | — | optional top grouping for the dashboard "phases" card |
 | `groups` | array | ✅ (≥1) | ordered sections, each holding items |
 | `badges` | array | — | extra achievements (declarative rules) |
-| `ui` | object | — | overrides app-default UI strings (see **UI overrides** below) |
+| `ui` | object | — | overrides app-default UI strings (free-form `{key:string}`; see **UI overrides**) |
 | `mottos` | string[] | — | footer lines; falls back to app defaults |
 | `surprises` | string[] | — | occasional congratulation messages |
+
+All `id`s match `^[a-z0-9][a-z0-9-]*$` and must be **unique within their list**
+(track ids, phase ids, group ids, badge ids); **item ids are globally unique**
+across the whole pack, and **task ids are unique within their item**.
 
 ## `tracks[]` — the subject columns
 
 ```js
 { id:"dsa", label:"Algorithms", icon:"算", color:"#e23", reviewable:true }
 ```
-- `id` ✅, `label` ✅. `icon` optional (short glyph/emoji). `color` is an optional **hint**: the app applies it inline as `--track-<id>` so the pack looks right under any theme. This pack `color` takes precedence over a theme's `:root` `--track-<id>`; a theme that wants to control a track's color should style `[data-track="<id>"]` elements directly. `reviewable` optional — items on this track show a "schedule review" button (spaced repetition).
+
+- `id` ✅, `label` ✅. `icon` optional (short glyph/emoji).
+- `color` is an optional **hint**: the app applies it inline as `--track-<id>`
+  so the pack looks right under any theme, and this hint wins over a theme's own
+  `:root` `--track-<id>`. (A theme that wants to force a track color styles the
+  `[data-track="<id>"]` elements directly.)
+- `reviewable` optional — items on this track show a "schedule review" button
+  (spaced repetition), when `settings.reviews` is on.
+- **`rest` is a built-in track id** — you may use `track:"rest"` on rest items
+  without declaring it.
 
 ## `settings{}`
 
@@ -33,7 +75,11 @@ A content pack is one declarative object registered via `SUNRISE.registerPack(pa
 { labels:{ phase:"Phase", group:"Week", groupAbbr:"Wk", item:"Day" },
   reviews:true, reflections:true, warmups:true }
 ```
-- `labels` — display nouns for the hierarchy. `reviews`/`reflections`/`warmups` — feature toggles (default true).
+
+- `labels` — display nouns for the hierarchy.
+- `reflections` / `warmups` are **on unless you set them to `false`**.
+- `reviews` is **off unless you explicitly set `reviews:true`** — and the
+  schedule-review button only appears on items whose track is `reviewable`.
 
 ## `phases[]` / `groups[]` / `items[]`
 
@@ -50,12 +96,31 @@ groups: [
     ] }
 ]
 ```
-- An **item** is complete when all its `tasks` are checked. `rest:true` items are breathers — not counted toward progress, no tasks. `id`s must be globally unique within the pack. `phase` on a group must reference a declared phase id.
-- A task is `{ id, text, guidance? }`. Optional `guidance` renders as a collapsible hint under the checkbox (label from the app-default `ui.hint`) — use it for "what a strong answer looks like" notes.
+
+- A **group** needs `id` + `title` and at least one item; `phase` (if set) must
+  reference a declared phase id; `theme` is an optional subtitle.
+- An **item** is complete when all its `tasks` are checked. `title` is optional;
+  `warmup` / `reflectPrompt` / `resources` are optional.
+- **A non-rest item must have at least one task.** The schema doesn't enforce it,
+  but a task-less non-rest item can *never* be completed (yet still counts toward
+  the total), so it permanently caps progress below 100%. Only `rest:true` items
+  may omit tasks.
+- `rest:true` items are breathers — not counted toward progress and carry no
+  tasks; give them `track:"rest"`.
+- A **task** is `{ id, text, guidance? }` — both `id` and `text` are required;
+  `guidance` is optional and renders as a collapsible hint under the checkbox
+  (label from `ui.hint`) — use it for "what a strong answer looks like" notes.
+- A **resource** is `{ label, note }` (both required).
+- An item's `track` must reference a declared track id (or `"rest"`).
 
 ## `badges[]` — declarative achievement rules
 
-Each badge is data: `{ id, title, desc, icon, type, …params }`. No code. The app ships a generic set automatically (streaks, total days, reflections, weekend/night-owl/early-lark, perfect group, halfway, finisher, comeback); your pack only adds extras. To override a generic badge, reuse its `id`.
+Each badge is data: `{ id, title, desc, icon, type, …params }`. No code. The app
+ships a generic set automatically (streaks, total days, reflections,
+weekend / night-owl / early-lark, perfect group, halfway, finisher, comeback);
+your pack only adds extras. To override a generic badge, reuse its `id`.
+
+Required per type: `id`, `title`, `type`. (`desc`, `icon` optional.)
 
 | `type` | params | unlocks when |
 |---|---|---|
@@ -66,31 +131,40 @@ Each badge is data: `{ id, title, desc, icon, type, …params }`. No code. The a
 | `tasks-done` | `gte:number, track?:string` | tasks checked (optionally within a track) ≥ gte |
 | `reflections` | `gte:number` | non-empty reflections ≥ gte |
 | `groups-complete` | `gte:number` | fully-complete groups ≥ gte |
-| `track-complete` | `track:string` | a track is 100% complete |
-| `phase-complete` | `phase:string` | a phase is 100% complete |
-| `item-complete` | `item:string` | a specific item is complete |
+| `track-complete` | `track:string` | a (declared) track is 100% complete |
+| `phase-complete` | `phase:string` | a (declared) phase is 100% complete |
+| `item-complete` | `item:string` | a specific (declared) item is complete |
 | `all-tracks` | `eachGte:number` | every track has ≥ eachGte items done |
 | `weekday` | `days:number[]` | completed an item on a listed weekday (1=Mon … 7=Sun) |
 | `hour-range` | `from:number, to:number` | completed an item in the hour window (wraps if from>to) |
 | `comeback` | — | resumed after a ≥2-day gap |
 
-Example pack-specific badge:
+The `track` / `phase` / `item` referenced by `track-complete`, `tasks-done`,
+`phase-complete`, and `item-complete` must exist in the pack.
+
 ```js
 { id:"capstone", title:"Capstone", desc:"Final project done", icon:"🏛️", type:"item-complete", item:"g13i6" }
 ```
 
 ## UI overrides (`ui`)
 
-A pack may override any app-default UI string via a top-level `ui` object (falls back to the app defaults otherwise). The ones most worth setting per pack:
+A pack may override any app-default UI string via a top-level `ui` object (it is
+a free-form `{ key: string }` map; unknown keys are harmless, missing ones fall
+back to the app defaults). The ones most worth setting per pack:
 
-- `phaseLabel` — the small header label; supports `{p}` (the current group's phase id) and `{w}` (the current group's 1-based ordinal). The app default is empty, so set this if you want a header label, e.g. `"Phase {p} · Week {w}"`.
+- `phaseLabel` — the small header label; supports `{p}` (current group's phase
+  id) and `{w}` (current group's 1-based ordinal). The app default is empty, so
+  set this if you want a header label, e.g. `"Phase {p} · Week {w}"`.
 - `todayVert` / `restVert` — the vertical captions on the day card and rest card.
-- `hint` — the label on the per-task `guidance` spoiler (default: a localized "what counts as a strong answer").
-- `scheduleReview`, `restTitle`, `restToday`, `dueToday` — review/rest captions.
+- `hint` — label on the per-task `guidance` spoiler (default: a localized "what
+  counts as a strong answer").
+- `scheduleReview`, `restTitle`, `restToday`, `dueToday` — review / rest captions.
 
-Example: `ui: { phaseLabel:"Phase {p} · Week {w}", todayVert:"TODAY", restVert:"REST" }`
+```js
+ui: { phaseLabel:"Phase {p} · Week {w}", todayVert:"TODAY", restVert:"REST" }
+```
 
-## Complete minimal example
+## Complete minimal example (`data/packs/rust-core.js`)
 
 ```js
 (function (root){
@@ -113,10 +187,27 @@ Example: `ui: { phaseLabel:"Phase {p} · Week {w}", todayVert:"TODAY", restVert:
 })(typeof window !== 'undefined' ? window : globalThis);
 ```
 
-## Prompt template (paste into any LLM)
+## Prompt — fill the blanks, paste together with everything above
 
-> You are authoring a **Sunrise content pack** (contract `sunrise.pack/v1`). Follow this guide exactly: [paste this whole file]. Produce a pack about **{TOPIC}** with **{N}** groups of **{M}** items, using tracks **{TRACK LIST}**, locale **{LOCALE}**. Each non-rest item needs 2–4 concrete `tasks`. End each group with a `rest:true` item. Output **only** the `registerPack({…})` JS file, nothing else.
+> You are authoring a **Sunrise content pack** (contract `sunrise.pack/v1`). The
+> full contract — envelope, tracks, structure, badge rules, and UI overrides —
+> is in the document above. Follow it exactly.
+>
+> Produce a pack with id **{ID}** (a kebab-case slug matching
+> `^[a-z0-9][a-z0-9-]*$`) about **{TOPIC}**, with **{N}** groups of about
+> **{M}** items each, using tracks **{TRACK LIST}**, locale **{LOCALE}**.
+>
+> Rules: the pack object must include `schema:"sunrise.pack/v1"`, `id:"{ID}"`,
+> `name`, `version`, at least one track, and at least one group. Every non-rest
+> item has 2–4 concrete `tasks`; every task has both `id` and `text`; end each
+> group with a `rest:true` item on `track:"rest"`; all ids match
+> `^[a-z0-9][a-z0-9-]*$`, item ids are globally unique, task ids unique within
+> their item; any badge/track/phase/item it references must exist.
+>
+> Output **only** the self-registering `data/packs/{ID}.js` file (the IIFE that
+> calls `registerPack({…})`), nothing else.
 
 ## Versioning
 
-`schema:"sunrise.pack/v1"` is the current contract. The app rejects unknown versions with a clear message; future versions add a migrator.
+`schema:"sunrise.pack/v1"` is the current contract. The app rejects unknown
+versions with a clear message; future versions add a migrator.

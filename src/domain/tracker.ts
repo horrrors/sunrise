@@ -42,7 +42,7 @@ export class Tracker {
     const themes = this.deps.themes.themes();
     const theme = themes.find((t) => t.id === sess.themeId) ?? themes[0];
     this.themeId = theme ? theme.id : null;
-    this.currentItemId = this.defaultItemId();
+    this.currentItemId = this.resumeItemId();
   }
 
   private loadPack(packId: string): void {
@@ -82,9 +82,24 @@ export class Tracker {
     for (const t of this.pack.tracks) if (t.id === id) return t;
     return { id, label: '', icon: '' };
   }
-  private defaultItemId(): string {
-    const open = this.allItems.find((it) => !it.rest && !this.progress.isItemComplete(it));
-    return (open ?? this.allItems[this.allItems.length - 1]!).id;
+  // The card to open on load: the first unfinished card at or after the stored
+  // cursor (so a partial card resumes; a finished one advances to the next). No
+  // valid cursor → scan from the start (first unfinished). Forward-only — an
+  // earlier skip is never auto-reopened; the card map is for revisiting those.
+  private resumeItemId(): string {
+    const storedId = this.deps.sessionStore.load().cursors?.[this.pack.id];
+    const at = storedId ? this.allItems.findIndex((it) => it.id === storedId) : -1;
+    for (let j = at >= 0 ? at : 0; j < this.allItems.length; j++) {
+      const it = this.allItems[j]!;
+      if (!it.rest && !this.progress.isItemComplete(it)) return it.id;
+    }
+    return this.allItems[this.allItems.length - 1]!.id;
+  }
+
+  private persistCursor(): void {
+    const sess = this.deps.sessionStore.load();
+    sess.cursors = { ...(sess.cursors ?? {}), [this.pack.id]: this.currentItemId };
+    this.deps.sessionStore.save(sess);
   }
   private itemIndex(): number {
     return this.allItems.findIndex((it) => it.id === this.currentItemId);
@@ -127,12 +142,16 @@ export class Tracker {
 
   public selectItem(id: string): void {
     this.currentItemId = id;
+    this.persistCursor();
   }
 
   public goToItem(delta: number): void {
     const i = this.itemIndex();
     const j = Math.min(Math.max(i + delta, 0), this.allItems.length - 1);
-    if (j !== i) this.currentItemId = this.allItems[j]!.id;
+    if (j !== i) {
+      this.currentItemId = this.allItems[j]!.id;
+      this.persistCursor();
+    }
   }
 
   public selectPack(id: string): void {
@@ -140,7 +159,7 @@ export class Tracker {
     sess.activePackId = id;
     this.deps.sessionStore.save(sess);
     this.loadPack(id);
-    this.currentItemId = this.defaultItemId();
+    this.currentItemId = this.resumeItemId();
   }
 
   public selectTheme(id: string): void {
@@ -162,7 +181,7 @@ export class Tracker {
     const data = new ProgressValidator().parseJson(json);
     this.progress = new Progress(data);
     this.save();
-    this.currentItemId = this.defaultItemId();
+    this.currentItemId = this.resumeItemId();
   }
 
   public exportProgress(): string {

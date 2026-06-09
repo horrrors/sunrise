@@ -1,0 +1,961 @@
+/* ============================================================
+   SUNRISE · "blueprint" theme — engineering blueprint / drafting sheet
+   Чертёж. CSS only, layered over canonical index.html + app.js markup.
+   The whole tracker rendered as a precise technical drawing on a
+   navy graph-paper sheet: cyan ink, amber annotations, drafting marks.
+   This theme OWNS all layout (no base CSS ships with the app).
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Saira+Semi+Condensed:wght@600;700;800&display=swap');
+
+:root[data-theme="blueprint"]{
+  /* sheet base */
+  --bg:        #0a2a4a;
+  --bg-2:      #0d2b4e;
+  --bg-deep:   #07203a;
+  --sheet:     #0c2e52;
+  --sheet-2:   #0a2848;
+
+  /* grid lines (cyan graph paper) */
+  --grid-minor: rgba(54,197,255,.055);
+  --grid-major: rgba(54,197,255,.11);
+
+  /* ink */
+  --ink:      #cfe8ff;       /* pale blueprint cyan-white */
+  --ink-dim:  #8fb6da;
+  --muted:    #5c84a8;
+  --white:    #ffffff;
+
+  /* drafting accents */
+  --cyan:     #36c5ff;       /* primary accent */
+  --cyan-deep:#1c9fdb;
+  --amber:    #ffb000;       /* annotation / warning */
+  --line:     rgba(54,197,255,.32);   /* sheet borders */
+  --line-soft:rgba(54,197,255,.16);
+  --construct:rgba(207,232,255,.22);  /* construction (dashed) lines */
+
+  --r:   3px;        /* drafting = crisp, near-square corners */
+  --r-sm:2px;
+  --fast:.16s cubic-bezier(.4,0,.2,1);
+  --slow:.5s  cubic-bezier(.25,.46,.45,.94);
+
+  --font-display: 'Saira Semi Condensed','Arial Narrow',sans-serif;
+  --font-ui:      'IBM Plex Sans','Segoe UI',sans-serif;
+  --font-mono:    'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+
+  /* 9 instrument hues over navy */
+  --t-dsa:      #36c5ff;   /* cyan */
+  --t-js:       #ffb000;   /* amber */
+  --t-ts:       #5fd0ff;   /* light cyan */
+  --t-node:     #46d6a0;   /* teal-green */
+  --t-sysdesign:#ff5fae;   /* magenta annotation */
+  --t-patterns: #b18bff;   /* violet */
+  --t-distsys:  #ff7a45;   /* orange */
+  --t-db:       #2ad1d1;   /* teal */
+  --t-cs:       #9fe65a;   /* green */
+  --t-rest:     #6f93b4;   /* neutral graphite */
+}
+
+/* ====================== BASE / RESET ====================== */
+:root[data-theme="blueprint"] body{
+  margin:0;
+  min-height:100vh;
+  font-family:var(--font-ui);
+  color:var(--ink);
+  background-color:var(--bg);
+  background-image:
+    /* major grid (every 96px) */
+    repeating-linear-gradient(0deg,  var(--grid-major) 0 1px, transparent 1px 96px),
+    repeating-linear-gradient(90deg, var(--grid-major) 0 1px, transparent 1px 96px),
+    /* minor grid (every 24px) */
+    repeating-linear-gradient(0deg,  var(--grid-minor) 0 1px, transparent 1px 24px),
+    repeating-linear-gradient(90deg, var(--grid-minor) 0 1px, transparent 1px 24px),
+    /* soft slab gradient for depth */
+    radial-gradient(1200px 700px at 78% -8%, rgba(54,197,255,.10), transparent 60%),
+    radial-gradient(900px 600px at 8% 110%, rgba(255,176,0,.05), transparent 60%),
+    linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 55%, var(--bg-deep) 100%);
+  background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;
+  letter-spacing:.2px;
+  position:relative;
+}
+
+/* slow drafting scan sweep across the sheet */
+:root[data-theme="blueprint"] body::before{
+  content:"";
+  position:fixed; inset:0; z-index:9998; pointer-events:none;
+  background:linear-gradient(180deg, transparent 0%, rgba(54,197,255,.05) 48%, rgba(54,197,255,.09) 50%, rgba(54,197,255,.05) 52%, transparent 100%);
+  background-size:100% 240px;
+  background-repeat:no-repeat;
+  animation:bp-scan 9s linear infinite;
+}
+/* faint vignette to keep edges deep */
+:root[data-theme="blueprint"] body::after{
+  content:"";
+  position:fixed; inset:0; z-index:9997; pointer-events:none;
+  background:radial-gradient(135% 120% at 50% 50%, transparent 62%, rgba(4,16,32,.55) 100%);
+}
+
+:root[data-theme="blueprint"] ::selection{ background:rgba(54,197,255,.32); color:var(--white); }
+:root[data-theme="blueprint"] ::-webkit-scrollbar{ width:12px; height:12px; }
+:root[data-theme="blueprint"] ::-webkit-scrollbar-track{ background:var(--bg-deep); }
+:root[data-theme="blueprint"] ::-webkit-scrollbar-thumb{
+  background:var(--cyan-deep);
+  border:3px solid var(--bg-deep); border-radius:0;
+}
+:root[data-theme="blueprint"] ::-webkit-scrollbar-thumb:hover{ background:var(--cyan); }
+
+/* ====================== HEADER (title block) ====================== */
+:root[data-theme="blueprint"] .app-header{
+  position:sticky; top:0; z-index:50;
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:14px;
+  padding:16px clamp(16px,4vw,40px);
+  background:linear-gradient(180deg, rgba(10,40,72,.92), rgba(8,32,58,.7));
+  backdrop-filter:blur(7px);
+  border-bottom:1px solid var(--line);
+}
+/* engineer's double underline under the title block */
+:root[data-theme="blueprint"] .app-header::after{
+  content:""; position:absolute; left:0; right:0; bottom:-1px; height:1px;
+  background:repeating-linear-gradient(90deg, var(--cyan) 0 18px, transparent 18px 26px);
+  opacity:.6;
+}
+
+:root[data-theme="blueprint"] .brand{ display:flex; align-items:baseline; gap:13px; flex-wrap:wrap; }
+:root[data-theme="blueprint"] .brand-mark{
+  font-family:var(--font-display); font-weight:700;
+  font-size:26px; line-height:1; color:var(--amber);
+  text-shadow:0 0 14px rgba(255,176,0,.35);
+}
+:root[data-theme="blueprint"] .brand-name{
+  font-family:var(--font-display); font-weight:800;
+  font-size:30px; line-height:1; letter-spacing:5px;
+  color:var(--white);
+  text-shadow:0 0 16px rgba(54,197,255,.4);
+}
+:root[data-theme="blueprint"] .brand-sub{
+  font-family:var(--font-mono); font-weight:500;
+  font-size:10.5px; letter-spacing:2px; text-transform:uppercase;
+  color:var(--cyan);
+  padding:4px 9px;
+  border:1px solid var(--line);
+  border-radius:var(--r-sm);
+  position:relative;
+}
+:root[data-theme="blueprint"] .brand-sub::before{
+  content:"REV"; margin-right:7px; color:var(--muted); font-size:9px;
+}
+
+:root[data-theme="blueprint"] .toolbar{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+:root[data-theme="blueprint"] .field{ display:inline-flex; }
+:root[data-theme="blueprint"] select{
+  appearance:none; -webkit-appearance:none;
+  font-family:var(--font-mono); font-weight:500; font-size:12px;
+  color:var(--ink);
+  background:var(--sheet-2)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2336c5ff' stroke-width='1.4' fill='none'/%3E%3C/svg%3E")
+    no-repeat right 11px center;
+  border:1px solid var(--line);
+  border-radius:var(--r-sm);
+  padding:9px 30px 9px 12px;
+  cursor:pointer; max-width:62vw;
+  transition:border-color var(--fast), box-shadow var(--fast);
+}
+:root[data-theme="blueprint"] select:hover{ border-color:var(--cyan); }
+:root[data-theme="blueprint"] select:focus{ outline:none; border-color:var(--cyan); box-shadow:0 0 0 2px rgba(54,197,255,.22); }
+:root[data-theme="blueprint"] select option{ background:#0a2848; color:var(--ink); }
+
+:root[data-theme="blueprint"] .btn{
+  font-family:var(--font-mono); font-weight:600; font-size:12.5px;
+  letter-spacing:.5px;
+  color:var(--ink);
+  background:var(--sheet-2);
+  border:1px solid var(--line);
+  border-radius:var(--r-sm);
+  padding:9px 13px; cursor:pointer;
+  transition:transform var(--fast), box-shadow var(--fast), border-color var(--fast), color var(--fast), background var(--fast);
+}
+:root[data-theme="blueprint"] .btn:hover{
+  transform:translateY(-1px);
+  border-color:var(--cyan); color:var(--cyan);
+  box-shadow:0 0 0 1px rgba(54,197,255,.3), 0 4px 14px rgba(0,0,0,.3);
+}
+:root[data-theme="blueprint"] .btn:active{ transform:translateY(0); }
+:root[data-theme="blueprint"] .btn.ghost{ background:transparent; }
+:root[data-theme="blueprint"] .btn.gold{
+  font-family:var(--font-display); font-weight:700; font-size:14px; letter-spacing:1.5px;
+  text-transform:uppercase;
+  color:var(--bg-deep);
+  background:var(--amber);
+  border-color:var(--amber);
+  border-radius:var(--r-sm);
+  padding:11px 20px; margin-top:12px;
+  box-shadow:0 0 0 1px rgba(255,176,0,.4), 0 6px 18px rgba(255,176,0,.18);
+}
+:root[data-theme="blueprint"] .btn.gold:hover{
+  filter:brightness(1.08); transform:translateY(-2px);
+  box-shadow:0 0 0 1px rgba(255,176,0,.6), 0 10px 26px rgba(255,176,0,.28);
+  color:var(--bg-deep);
+}
+
+/* ====================== LAYOUT ====================== */
+:root[data-theme="blueprint"] .wrap{
+  max-width:1120px; margin:0 auto;
+  padding:clamp(18px,4vw,40px) clamp(14px,4vw,40px) 24px;
+}
+
+:root[data-theme="blueprint"] .section-title{
+  font-family:var(--font-mono); font-weight:600; font-size:11px;
+  letter-spacing:.22em; text-transform:uppercase;
+  color:var(--muted); opacity:1;
+  margin:26px 2px 12px;
+  display:flex; align-items:center; gap:10px;
+}
+/* dimension tick + extending construction line after the heading */
+:root[data-theme="blueprint"] .section-title::before{
+  content:"⌖"; color:var(--cyan); font-size:13px; opacity:.85;
+}
+:root[data-theme="blueprint"] .section-title::after{
+  content:""; flex:1; height:1px;
+  background:repeating-linear-gradient(90deg, var(--construct) 0 6px, transparent 6px 12px);
+}
+
+:root[data-theme="blueprint"] .dash{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:16px;
+  margin-bottom:8px;
+}
+
+/* ====================== STAT CARDS (drawing sheets) ====================== */
+:root[data-theme="blueprint"] .stat-card{
+  position:relative;
+  background:
+    linear-gradient(160deg, var(--sheet), var(--sheet-2));
+  border:1px solid var(--line);
+  border-radius:var(--r);
+  padding:18px 18px 20px;
+  overflow:hidden;
+  animation:bp-draw-in .55s both;
+  transition:transform var(--fast), box-shadow var(--fast), border-color var(--fast);
+}
+/* faint inner graph-paper on each sheet */
+:root[data-theme="blueprint"] .stat-card::before{
+  content:""; position:absolute; inset:0; pointer-events:none; opacity:.5;
+  background:
+    repeating-linear-gradient(0deg,  var(--grid-minor) 0 1px, transparent 1px 16px),
+    repeating-linear-gradient(90deg, var(--grid-minor) 0 1px, transparent 1px 16px);
+}
+/* corner registration crosshairs (top-left & bottom-right) */
+:root[data-theme="blueprint"] .stat-card::after{
+  content:""; position:absolute; inset:6px; pointer-events:none;
+  border-radius:1px;
+  background:
+    linear-gradient(var(--cyan),var(--cyan)) left 0 top 0 / 12px 1px no-repeat,
+    linear-gradient(var(--cyan),var(--cyan)) left 0 top 0 / 1px 12px no-repeat,
+    linear-gradient(var(--cyan),var(--cyan)) right 0 bottom 0 / 12px 1px no-repeat,
+    linear-gradient(var(--cyan),var(--cyan)) right 0 bottom 0 / 1px 12px no-repeat;
+  opacity:.5; transition:opacity var(--fast);
+}
+:root[data-theme="blueprint"] .stat-card:hover{
+  transform:translateY(-3px);
+  border-color:var(--cyan);
+  box-shadow:0 0 0 1px rgba(54,197,255,.25), 0 14px 38px rgba(2,12,26,.55);
+}
+:root[data-theme="blueprint"] .stat-card:hover::after{ opacity:1; }
+
+:root[data-theme="blueprint"] .stat-card > *{ position:relative; z-index:1; }
+
+:root[data-theme="blueprint"] .eyebrow{
+  font-family:var(--font-mono); font-weight:600; font-size:10px;
+  letter-spacing:.28em; text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:14px;
+  display:flex; align-items:center; gap:7px;
+}
+:root[data-theme="blueprint"] .eyebrow::before{
+  content:"§"; color:var(--cyan); font-size:11px; opacity:.7;
+}
+:root[data-theme="blueprint"] .stat-card[data-kind="progress"] .eyebrow{ color:var(--cyan); }
+:root[data-theme="blueprint"] .stat-card[data-kind="streak"]   .eyebrow{ color:var(--amber); }
+:root[data-theme="blueprint"] .stat-card[data-kind="phases"]   .eyebrow{ color:var(--t-db); }
+:root[data-theme="blueprint"] .stat-card[data-kind="tracks"]   .eyebrow{ color:var(--t-patterns); }
+
+/* ---- progress ring: technical gauge / protractor ---- */
+:root[data-theme="blueprint"] .ring{
+  --p:0;
+  position:relative;
+  width:152px; height:152px; margin:8px auto 14px;
+  border-radius:50%;
+  display:grid; place-items:center;
+  background:
+    radial-gradient(closest-side, var(--sheet) 0 68%, transparent 69% 100%),
+    conic-gradient(var(--cyan) calc(var(--p)*1%), rgba(54,197,255,.10) 0);
+  box-shadow:inset 0 0 0 1px rgba(54,197,255,.25);
+}
+/* degree tick ring around the gauge */
+:root[data-theme="blueprint"] .ring::before{
+  content:""; position:absolute; inset:-9px; border-radius:50%;
+  background:repeating-conic-gradient(var(--cyan) 0 1deg, transparent 1deg 5deg);
+  -webkit-mask:radial-gradient(closest-side, transparent 0 89%, #000 90% 100%);
+          mask:radial-gradient(closest-side, transparent 0 89%, #000 90% 100%);
+  opacity:.5;
+}
+/* crosshair needle pivot at center */
+:root[data-theme="blueprint"] .ring::after{
+  content:""; position:absolute; width:7px; height:7px; border-radius:50%;
+  border:1px solid var(--cyan); background:var(--sheet);
+}
+:root[data-theme="blueprint"] .ring > div{ text-align:center; position:relative; z-index:1; }
+:root[data-theme="blueprint"] .ring b{
+  display:block; font-family:var(--font-display); font-weight:800; font-size:40px; line-height:1;
+  color:var(--white); text-shadow:0 0 12px rgba(54,197,255,.4);
+}
+:root[data-theme="blueprint"] .ring b::after{ content:"%"; font-size:18px; color:var(--cyan); margin-left:1px; }
+:root[data-theme="blueprint"] .ring small{
+  display:block; font-family:var(--font-mono); font-size:10.5px; letter-spacing:1px;
+  color:var(--ink-dim); margin-top:3px;
+}
+
+/* ---- streak: counter stamp ---- */
+:root[data-theme="blueprint"] .flame{
+  font-size:32px; text-align:center; line-height:1; margin:4px 0 2px;
+  filter:drop-shadow(0 0 10px rgba(255,176,0,.55));
+}
+:root[data-theme="blueprint"] .streak-num{
+  font-family:var(--font-display); font-weight:800; font-size:60px; line-height:1;
+  text-align:center; color:var(--amber);
+  text-shadow:0 0 18px rgba(255,176,0,.3);
+  letter-spacing:1px;
+}
+:root[data-theme="blueprint"] .stat-sub{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.5px;
+  color:var(--ink-dim); margin-top:6px; text-align:center;
+}
+:root[data-theme="blueprint"] .stat-card[data-kind="progress"] .stat-sub{ text-align:left; }
+
+/* ---- phase / track rows ---- */
+:root[data-theme="blueprint"] .prow{
+  display:flex; align-items:center; justify-content:space-between;
+  font-family:var(--font-ui); font-size:12.5px;
+  margin:13px 0 5px;
+}
+:root[data-theme="blueprint"] .lbl{ display:inline-flex; align-items:center; gap:8px; color:var(--ink-dim); }
+:root[data-theme="blueprint"] .lbl > i{
+  width:9px; height:9px; flex:0 0 auto;
+  background:var(--cyan);
+  border:1px solid rgba(255,255,255,.25);
+  transform:rotate(45deg);          /* drafting diamond marker */
+}
+:root[data-theme="blueprint"] .val{
+  font-family:var(--font-mono); font-weight:600; font-size:11.5px; color:var(--ink);
+}
+
+/* ---- bar: dimension line w/ cyan fill + dashed overlay ---- */
+:root[data-theme="blueprint"] .bar{
+  position:relative;
+  height:9px;
+  background:rgba(54,197,255,.07);
+  border:1px solid var(--line-soft);
+  border-radius:var(--r-sm);
+  overflow:hidden;
+}
+:root[data-theme="blueprint"] .bar > i{
+  display:block; height:100%;
+  background:var(--cyan);
+  border-radius:1px;
+  position:relative;
+  transition:width var(--slow);
+}
+/* dashed dimension overlay on the fill */
+:root[data-theme="blueprint"] .bar > i::after{
+  content:""; position:absolute; inset:0;
+  background:repeating-linear-gradient(90deg, rgba(7,32,58,.55) 0 2px, transparent 2px 8px);
+}
+/* dimension end-cap arrows |◄  ►| */
+:root[data-theme="blueprint"] .bar::before,
+:root[data-theme="blueprint"] .bar::after{
+  content:""; position:absolute; top:50%; width:0; height:0;
+  border-top:3px solid transparent; border-bottom:3px solid transparent;
+  transform:translateY(-50%);
+}
+:root[data-theme="blueprint"] .bar::before{ left:1px; border-right:4px solid rgba(207,232,255,.4); }
+:root[data-theme="blueprint"] .bar::after{ right:1px; border-left:4px solid rgba(207,232,255,.4); }
+
+:root[data-theme="blueprint"] .muted{
+  color:var(--muted); font-family:var(--font-mono); font-size:11.5px; letter-spacing:.4px;
+}
+
+/* ====================== TRACK COLORS ====================== */
+:root[data-theme="blueprint"] .bar[data-track] > i{ background:var(--t-rest); }
+:root[data-theme="blueprint"] .prow[data-track] .lbl > i{ background:var(--t-rest); }
+
+:root[data-theme="blueprint"] .prow[data-track="dsa"] .lbl>i,
+:root[data-theme="blueprint"] .bar[data-track="dsa"]>i{ background:var(--track-dsa, var(--t-dsa)); }
+:root[data-theme="blueprint"] .prow[data-track="js"] .lbl>i,
+:root[data-theme="blueprint"] .bar[data-track="js"]>i{ background:var(--track-js, var(--t-js)); }
+:root[data-theme="blueprint"] .prow[data-track="ts"] .lbl>i,
+:root[data-theme="blueprint"] .bar[data-track="ts"]>i{ background:var(--track-ts, var(--t-ts)); }
+:root[data-theme="blueprint"] .prow[data-track="node"] .lbl>i,
+:root[data-theme="blueprint"] .bar[data-track="node"]>i{ background:var(--track-node, var(--t-node)); }
+:root[data-theme="blueprint"] .prow[data-track="sysdesign"] .lbl>i,
+:root[data-theme="blueprint"] .bar[data-track="sysdesign"]>i{ background:var(--track-sysdesign, var(--t-sysdesign)); }
+:root[data-theme="blueprint"] .prow[data-track="patterns"] .lbl>i,
+:root[data-theme="blueprint"] .bar[data-track="patterns"]>i{ background:var(--track-patterns, var(--t-patterns)); }
+:root[data-theme="blueprint"] .prow[data-track="distsys"] .lbl>i,
+:root[data-theme="blueprint"] .bar[data-track="distsys"]>i{ background:var(--track-distsys, var(--t-distsys)); }
+:root[data-theme="blueprint"] .prow[data-track="db"] .lbl>i,
+:root[data-theme="blueprint"] .bar[data-track="db"]>i{ background:var(--track-db, var(--t-db)); }
+:root[data-theme="blueprint"] .prow[data-track="cs"] .lbl>i,
+:root[data-theme="blueprint"] .bar[data-track="cs"]>i{ background:var(--track-cs, var(--t-cs)); }
+
+/* ====================== DAY RAIL ====================== */
+:root[data-theme="blueprint"] .day-rail{
+  display:flex; align-items:stretch; gap:14px;
+}
+:root[data-theme="blueprint"] .today-wrap{ flex:1; min-width:0; display:flex; }
+:root[data-theme="blueprint"] .day-nav{
+  flex:0 0 auto; align-self:center;
+  font-family:var(--font-display); font-weight:700; font-size:24px; line-height:1;
+  width:46px; height:46px;
+  display:grid; place-items:center;
+  color:var(--cyan);
+  background:var(--sheet-2);
+  border:1px solid var(--line); border-radius:var(--r);
+  cursor:pointer;
+  transition:transform var(--fast), box-shadow var(--fast), color var(--fast), border-color var(--fast);
+}
+:root[data-theme="blueprint"] .day-nav:hover:not(:disabled){
+  transform:scale(1.07); color:var(--white);
+  border-color:var(--cyan); box-shadow:0 0 0 2px rgba(54,197,255,.25);
+}
+:root[data-theme="blueprint"] .day-nav:disabled{ opacity:.25; cursor:not-allowed; }
+
+/* comeback banner — amber field note */
+:root[data-theme="blueprint"] #comeback{
+  font-family:var(--font-mono); font-size:12.5px; letter-spacing:.4px;
+  color:var(--amber);
+  background:rgba(255,176,0,.06);
+  border:1px dashed rgba(255,176,0,.4);
+  border-radius:var(--r); padding:12px 16px; margin:8px 0 16px;
+}
+
+/* ====================== DAY CARD (the active drawing) ====================== */
+:root[data-theme="blueprint"] .today{
+  position:relative; flex:1; min-width:0;
+  display:flex;
+  background:linear-gradient(165deg, var(--sheet), var(--sheet-2));
+  border:1px solid var(--line);
+  border-radius:var(--r);
+  overflow:hidden;
+  box-shadow:0 16px 50px rgba(2,12,26,.5);
+  animation:bp-draw-in .6s both;
+}
+/* inner graph paper on the big sheet */
+:root[data-theme="blueprint"] .today::before{
+  content:""; position:absolute; inset:0; pointer-events:none; opacity:.55; z-index:0;
+  background:
+    repeating-linear-gradient(0deg,  var(--grid-minor) 0 1px, transparent 1px 22px),
+    repeating-linear-gradient(90deg, var(--grid-minor) 0 1px, transparent 1px 22px);
+}
+/* track accent rule along the top */
+:root[data-theme="blueprint"] .today::after{
+  content:""; position:absolute; top:0; left:0; right:0; height:3px; z-index:2;
+  background:var(--track-rest, var(--t-rest));
+}
+
+:root[data-theme="blueprint"] .today-side{
+  position:relative; z-index:1;
+  flex:0 0 52px;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(54,197,255,.05);
+  border-right:1px dashed var(--line-soft);
+}
+:root[data-theme="blueprint"] .vert{
+  writing-mode:vertical-rl; text-orientation:mixed;
+  font-family:var(--font-mono); font-weight:600; font-size:10.5px; letter-spacing:5px;
+  text-transform:uppercase; color:var(--cyan);
+}
+:root[data-theme="blueprint"] .today-main{
+  position:relative; z-index:1;
+  flex:1; min-width:0;
+  padding:clamp(18px,3vw,30px);
+}
+
+/* track pill — component callout tag */
+:root[data-theme="blueprint"] .trackpill{
+  display:inline-flex; align-items:center; gap:8px;
+  font-family:var(--font-mono); font-weight:600; font-size:11px; letter-spacing:1.2px;
+  text-transform:uppercase; color:var(--ink);
+  border:1px solid var(--line);
+  border-radius:var(--r-sm);
+  padding:5px 11px 5px 5px;
+}
+:root[data-theme="blueprint"] .trackpill .k{
+  display:grid; place-items:center;
+  width:24px; height:24px; border-radius:var(--r-sm);
+  font-family:var(--font-display); font-weight:800; font-size:13px;
+  background:rgba(54,197,255,.14); color:var(--cyan);
+}
+
+/* track-driven accents on the day card. Always paint via var(--track-<id>) so
+   the app's INLINE --track-<id> on <html> wins, with our hue as the fallback. */
+:root[data-theme="blueprint"] .today[data-track="dsa"]::after{ background:var(--track-dsa, var(--t-dsa)); }
+:root[data-theme="blueprint"] .today[data-track="js"]::after{ background:var(--track-js, var(--t-js)); }
+:root[data-theme="blueprint"] .today[data-track="ts"]::after{ background:var(--track-ts, var(--t-ts)); }
+:root[data-theme="blueprint"] .today[data-track="node"]::after{ background:var(--track-node, var(--t-node)); }
+:root[data-theme="blueprint"] .today[data-track="sysdesign"]::after{ background:var(--track-sysdesign, var(--t-sysdesign)); }
+:root[data-theme="blueprint"] .today[data-track="patterns"]::after{ background:var(--track-patterns, var(--t-patterns)); }
+:root[data-theme="blueprint"] .today[data-track="distsys"]::after{ background:var(--track-distsys, var(--t-distsys)); }
+:root[data-theme="blueprint"] .today[data-track="db"]::after{ background:var(--track-db, var(--t-db)); }
+:root[data-theme="blueprint"] .today[data-track="cs"]::after{ background:var(--track-cs, var(--t-cs)); }
+:root[data-theme="blueprint"] .today[data-track="rest"]::after{ background:var(--track-rest, var(--t-rest)); }
+
+:root[data-theme="blueprint"] .today[data-track="dsa"] .trackpill{ border-color:var(--track-dsa, var(--t-dsa)); color:var(--track-dsa, var(--t-dsa)); }
+:root[data-theme="blueprint"] .today[data-track="dsa"] .trackpill .k{ background:rgba(54,197,255,.16); color:var(--track-dsa, var(--t-dsa)); }
+:root[data-theme="blueprint"] .today[data-track="js"] .trackpill{ border-color:var(--track-js, var(--t-js)); color:var(--track-js, var(--t-js)); }
+:root[data-theme="blueprint"] .today[data-track="js"] .trackpill .k{ background:rgba(255,176,0,.16); color:var(--track-js, var(--t-js)); }
+:root[data-theme="blueprint"] .today[data-track="ts"] .trackpill{ border-color:var(--track-ts, var(--t-ts)); color:var(--track-ts, var(--t-ts)); }
+:root[data-theme="blueprint"] .today[data-track="ts"] .trackpill .k{ background:rgba(95,208,255,.16); color:var(--track-ts, var(--t-ts)); }
+:root[data-theme="blueprint"] .today[data-track="node"] .trackpill{ border-color:var(--track-node, var(--t-node)); color:var(--track-node, var(--t-node)); }
+:root[data-theme="blueprint"] .today[data-track="node"] .trackpill .k{ background:rgba(70,214,160,.16); color:var(--track-node, var(--t-node)); }
+:root[data-theme="blueprint"] .today[data-track="sysdesign"] .trackpill{ border-color:var(--track-sysdesign, var(--t-sysdesign)); color:var(--track-sysdesign, var(--t-sysdesign)); }
+:root[data-theme="blueprint"] .today[data-track="sysdesign"] .trackpill .k{ background:rgba(255,95,174,.16); color:var(--track-sysdesign, var(--t-sysdesign)); }
+:root[data-theme="blueprint"] .today[data-track="patterns"] .trackpill{ border-color:var(--track-patterns, var(--t-patterns)); color:var(--track-patterns, var(--t-patterns)); }
+:root[data-theme="blueprint"] .today[data-track="patterns"] .trackpill .k{ background:rgba(177,139,255,.16); color:var(--track-patterns, var(--t-patterns)); }
+:root[data-theme="blueprint"] .today[data-track="distsys"] .trackpill{ border-color:var(--track-distsys, var(--t-distsys)); color:var(--track-distsys, var(--t-distsys)); }
+:root[data-theme="blueprint"] .today[data-track="distsys"] .trackpill .k{ background:rgba(255,122,69,.16); color:var(--track-distsys, var(--t-distsys)); }
+:root[data-theme="blueprint"] .today[data-track="db"] .trackpill{ border-color:var(--track-db, var(--t-db)); color:var(--track-db, var(--t-db)); }
+:root[data-theme="blueprint"] .today[data-track="db"] .trackpill .k{ background:rgba(42,209,209,.16); color:var(--track-db, var(--t-db)); }
+:root[data-theme="blueprint"] .today[data-track="cs"] .trackpill{ border-color:var(--track-cs, var(--t-cs)); color:var(--track-cs, var(--t-cs)); }
+:root[data-theme="blueprint"] .today[data-track="cs"] .trackpill .k{ background:rgba(159,230,90,.16); color:var(--track-cs, var(--t-cs)); }
+:root[data-theme="blueprint"] .today[data-track="rest"] .trackpill{ border-color:var(--track-rest, var(--t-rest)); color:var(--ink-dim); }
+:root[data-theme="blueprint"] .today[data-track="rest"] .trackpill .k{ background:rgba(111,147,180,.16); color:var(--ink-dim); }
+
+:root[data-theme="blueprint"] .today-title{
+  font-family:var(--font-display); font-weight:700;
+  font-size:clamp(24px,4vw,34px); line-height:1.08; letter-spacing:.5px;
+  margin:14px 0 10px; color:var(--white);
+  text-shadow:0 0 14px rgba(54,197,255,.22);
+}
+
+/* warmup — annotation note with leader line */
+:root[data-theme="blueprint"] .warm{
+  display:flex; gap:11px; align-items:flex-start;
+  font-family:var(--font-ui); font-size:14px; line-height:1.55; color:var(--ink-dim);
+  background:rgba(54,197,255,.04);
+  border-left:2px solid var(--cyan);
+  border-radius:0 var(--r) var(--r) 0;
+  padding:11px 14px; margin:6px 0 18px;
+}
+:root[data-theme="blueprint"] .warm-i{ color:var(--amber); flex:0 0 auto; font-style:normal; }
+:root[data-theme="blueprint"] .warm .muted{
+  color:var(--cyan); text-transform:uppercase; letter-spacing:1.5px; font-size:10.5px;
+}
+
+/* rest day note */
+:root[data-theme="blueprint"] .rest-due{
+  font-family:var(--font-mono); font-size:13px; color:var(--ink-dim);
+  background:rgba(255,176,0,.05);
+  border:1px dashed rgba(255,176,0,.4);
+  border-radius:var(--r); padding:14px; margin:6px 0 16px;
+}
+:root[data-theme="blueprint"] .rest-due b{ color:var(--amber); }
+
+/* ====================== TASKS (spec line items) ====================== */
+:root[data-theme="blueprint"] .tasks{ display:flex; flex-direction:column; gap:8px; margin:6px 0 18px; }
+:root[data-theme="blueprint"] .task-wrap{ display:flex; flex-direction:column; gap:8px; }
+:root[data-theme="blueprint"] .task{
+  display:flex; align-items:flex-start; gap:12px;
+  padding:11px 14px;
+  background:var(--sheet-2);
+  border:1px solid var(--line-soft);
+  border-radius:var(--r);
+  cursor:pointer; user-select:text;
+  transition:border-color var(--fast), background var(--fast), transform var(--fast);
+  animation:bp-rise .4s both;
+}
+:root[data-theme="blueprint"] .task:hover{ border-color:var(--cyan); transform:translateX(2px); background:rgba(54,197,255,.05); }
+
+/* custom checkbox — drafting check box */
+:root[data-theme="blueprint"] .box{
+  flex:0 0 auto;
+  width:19px; height:19px; margin-top:1px;
+  border:1.5px solid var(--muted);
+  border-radius:var(--r-sm);
+  display:grid; place-items:center; position:relative;
+  transition:all var(--fast);
+}
+:root[data-theme="blueprint"] .box::after{
+  content:"✓";
+  font-family:var(--font-mono); font-size:13px; font-weight:700; line-height:1;
+  color:var(--bg-deep);
+  opacity:0; transform:scale(.4);
+  transition:opacity var(--fast), transform var(--fast);
+}
+:root[data-theme="blueprint"] .task:hover .box{ border-color:var(--cyan); }
+:root[data-theme="blueprint"] .task.done .box{
+  background:var(--cyan); border-color:var(--cyan);
+  box-shadow:0 0 0 2px rgba(54,197,255,.2);
+}
+:root[data-theme="blueprint"] .task.done .box::after{ opacity:1; transform:scale(1); }
+
+:root[data-theme="blueprint"] .task-text{
+  font-family:var(--font-ui); font-size:14px; line-height:1.5; color:var(--ink);
+  transition:color var(--fast);
+}
+:root[data-theme="blueprint"] .task.done .task-text{
+  color:var(--muted); text-decoration:line-through; text-decoration-color:rgba(54,197,255,.65);
+}
+
+/* per-task guidance spoiler */
+:root[data-theme="blueprint"] .task-hint{ font-size:13px; margin-left:6px; }
+:root[data-theme="blueprint"] .task-hint > summary{
+  cursor:pointer; list-style:none;
+  font-family:var(--font-mono); font-size:11px; letter-spacing:1px; text-transform:uppercase;
+  color:var(--cyan); opacity:.8; font-weight:600;
+  display:inline-flex; align-items:center; gap:6px; width:fit-content;
+  transition:opacity var(--fast);
+}
+:root[data-theme="blueprint"] .task-hint > summary:hover{ opacity:1; }
+:root[data-theme="blueprint"] .task-hint > summary::-webkit-details-marker{ display:none; }
+:root[data-theme="blueprint"] .task-hint > summary::before{ content:"▸"; font-size:11px; }
+:root[data-theme="blueprint"] .task-hint[open] > summary::before{ content:"▾"; }
+:root[data-theme="blueprint"] .task-hint[open] > summary{ margin-bottom:6px; }
+:root[data-theme="blueprint"] .task-hint-body{
+  font-family:var(--font-ui); font-size:13px; line-height:1.55; color:var(--ink-dim);
+  border-left:2px dashed var(--construct); padding-left:11px; margin-left:3px;
+}
+
+/* ====================== REFLECTION ====================== */
+:root[data-theme="blueprint"] .reflect-block{ margin:8px 0 18px; }
+:root[data-theme="blueprint"] .reflect-label{
+  display:flex; align-items:center; gap:8px;
+  font-family:var(--font-mono); font-size:11px; letter-spacing:1px; text-transform:uppercase;
+  color:var(--ink-dim); margin-bottom:9px;
+}
+:root[data-theme="blueprint"] .reflect-label .kanji,
+:root[data-theme="blueprint"] .kanji{
+  font-family:var(--font-display); font-weight:800;
+  color:var(--amber);
+}
+:root[data-theme="blueprint"] textarea{
+  width:100%; min-height:84px; resize:vertical;
+  font-family:var(--font-mono); font-size:13px; line-height:1.6;
+  color:var(--ink);
+  background:var(--bg-deep);
+  border:1px solid var(--line);
+  border-radius:var(--r);
+  padding:12px 14px;
+  transition:border-color var(--fast), box-shadow var(--fast);
+  /* faint ruled lines like a notebook */
+  background-image:repeating-linear-gradient(0deg, transparent 0 25px, var(--grid-minor) 25px 26px);
+}
+:root[data-theme="blueprint"] textarea::placeholder{ color:var(--muted); }
+:root[data-theme="blueprint"] textarea:focus{ outline:none; border-color:var(--cyan); box-shadow:0 0 0 2px rgba(54,197,255,.22); }
+
+/* resources / chips — reference callouts */
+:root[data-theme="blueprint"] .res-row{ display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 14px; }
+:root[data-theme="blueprint"] .chip{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.3px;
+  color:var(--ink-dim);
+  background:rgba(54,197,255,.05);
+  border:1px solid var(--line-soft);
+  border-radius:var(--r-sm);
+  padding:6px 11px;
+  transition:border-color var(--fast), color var(--fast);
+}
+:root[data-theme="blueprint"] .chip:hover{ border-color:var(--cyan); color:var(--white); }
+:root[data-theme="blueprint"] .chip b{ color:var(--cyan); }
+
+/* next-day CTA */
+:root[data-theme="blueprint"] .next-day-cta{
+  display:inline-block; margin-top:8px;
+  font-family:var(--font-display); font-weight:700; font-size:14px; letter-spacing:1.5px;
+  text-transform:uppercase;
+  color:var(--bg-deep);
+  background:var(--cyan);
+  border:none; border-radius:var(--r-sm);
+  padding:11px 22px; cursor:pointer;
+  box-shadow:0 0 0 1px rgba(54,197,255,.4), 0 6px 18px rgba(54,197,255,.2);
+  transition:transform var(--fast), box-shadow var(--fast), filter var(--fast);
+}
+:root[data-theme="blueprint"] .next-day-cta:hover{
+  transform:translateY(-2px); filter:brightness(1.08);
+  box-shadow:0 0 0 1px rgba(54,197,255,.6), 0 10px 28px rgba(54,197,255,.32);
+}
+
+/* ====================== MODALS ====================== */
+:root[data-theme="blueprint"] .modal{
+  display:none;
+  position:fixed; inset:0; z-index:200;
+  overflow-y:auto;
+  align-items:flex-start; justify-content:center;
+  padding:32px 16px;
+  background:rgba(5,18,34,.8);
+  backdrop-filter:blur(5px);
+}
+:root[data-theme="blueprint"] .modal.open{ display:flex; }
+:root[data-theme="blueprint"] .modal-panel{
+  position:relative; overflow:visible;
+  max-width:min(560px,92vw); width:100%; margin:auto;
+  background:linear-gradient(165deg, var(--sheet), var(--sheet-2));
+  border:1px solid var(--line);
+  border-radius:var(--r);
+  padding:22px;
+  box-shadow:0 0 0 1px rgba(54,197,255,.14), 0 26px 70px rgba(2,12,26,.7);
+  animation:bp-pop .3s cubic-bezier(.25,.46,.45,.94);
+}
+/* corner crosshairs on the modal sheet */
+:root[data-theme="blueprint"] .modal-panel::before{
+  content:""; position:absolute; inset:7px; pointer-events:none;
+  background:
+    linear-gradient(var(--cyan),var(--cyan)) left 0 top 0 / 14px 1px no-repeat,
+    linear-gradient(var(--cyan),var(--cyan)) left 0 top 0 / 1px 14px no-repeat,
+    linear-gradient(var(--cyan),var(--cyan)) right 0 top 0 / 14px 1px no-repeat,
+    linear-gradient(var(--cyan),var(--cyan)) right 0 top 0 / 1px 14px no-repeat,
+    linear-gradient(var(--cyan),var(--cyan)) left 0 bottom 0 / 14px 1px no-repeat,
+    linear-gradient(var(--cyan),var(--cyan)) left 0 bottom 0 / 1px 14px no-repeat,
+    linear-gradient(var(--cyan),var(--cyan)) right 0 bottom 0 / 14px 1px no-repeat,
+    linear-gradient(var(--cyan),var(--cyan)) right 0 bottom 0 / 1px 14px no-repeat;
+  opacity:.55;
+}
+
+:root[data-theme="blueprint"] .cal-head,
+:root[data-theme="blueprint"] .tr-head{
+  position:relative; z-index:1;
+  display:flex; align-items:center; gap:10px; margin-bottom:16px;
+}
+:root[data-theme="blueprint"] .cal-head > div,
+:root[data-theme="blueprint"] .tr-head > div{
+  flex:1;
+  font-family:var(--font-display); font-weight:700; font-size:19px; letter-spacing:1.5px;
+  color:var(--white); text-align:center; text-transform:uppercase;
+}
+:root[data-theme="blueprint"] .tr-head > div{ text-align:left; }
+:root[data-theme="blueprint"] .cal-head button,
+:root[data-theme="blueprint"] .tr-head button{
+  font-family:var(--font-mono); font-size:15px;
+  width:36px; height:36px; display:grid; place-items:center;
+  color:var(--cyan);
+  background:var(--sheet-2);
+  border:1px solid var(--line); border-radius:var(--r-sm);
+  cursor:pointer;
+  transition:color var(--fast), border-color var(--fast), box-shadow var(--fast);
+}
+:root[data-theme="blueprint"] .cal-head button:hover,
+:root[data-theme="blueprint"] .tr-head button:hover{ color:var(--white); border-color:var(--cyan); box-shadow:0 0 0 2px rgba(54,197,255,.22); }
+
+/* calendar grid */
+:root[data-theme="blueprint"] .cal-dow{
+  position:relative; z-index:1;
+  display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:8px;
+}
+:root[data-theme="blueprint"] .cal-dow span{
+  text-align:center; font-family:var(--font-mono); font-size:10px; letter-spacing:1px;
+  text-transform:uppercase; color:var(--muted);
+}
+:root[data-theme="blueprint"] .cal-grid{
+  position:relative; z-index:1;
+  display:grid; grid-template-columns:repeat(7,1fr); gap:6px;
+}
+:root[data-theme="blueprint"] .cday{
+  aspect-ratio:1; display:grid; place-items:center;
+  font-family:var(--font-mono); font-size:13px;
+  color:var(--ink-dim);
+  background:var(--sheet-2);
+  border:1px solid var(--line-soft);
+  border-radius:var(--r-sm);
+  transition:transform var(--fast), box-shadow var(--fast), border-color var(--fast);
+}
+:root[data-theme="blueprint"] .cday.other{ opacity:.3; }
+:root[data-theme="blueprint"] .cday.done{
+  color:var(--bg-deep); font-weight:700;
+  background:var(--cyan); border-color:transparent;
+}
+:root[data-theme="blueprint"] .cday.today{
+  color:var(--amber); border-color:var(--amber);
+  box-shadow:0 0 0 1px rgba(255,176,0,.4);
+}
+:root[data-theme="blueprint"] .cday.done.today{ color:var(--bg-deep); outline:2px solid var(--amber); outline-offset:1px; }
+:root[data-theme="blueprint"] .cday:hover{ transform:scale(1.07); border-color:var(--cyan); }
+
+/* trophies — stamped approval seals */
+:root[data-theme="blueprint"] .tr-grid{
+  position:relative; z-index:1;
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:12px;
+}
+:root[data-theme="blueprint"] .badge{
+  position:relative;
+  display:flex; flex-direction:column; align-items:center; gap:7px; text-align:center;
+  padding:14px 8px;
+  background:var(--sheet-2);
+  border:1px solid var(--line-soft);
+  border-radius:var(--r);
+  cursor:default;
+  transition:transform var(--fast), border-color var(--fast), box-shadow var(--fast);
+}
+:root[data-theme="blueprint"] .badge:hover{ transform:translateY(-3px); z-index:5; }
+/* approved stamp — solid inked seal ring */
+:root[data-theme="blueprint"] .badge.on{
+  border:1px solid var(--amber);
+  box-shadow:inset 0 0 0 2px rgba(255,176,0,.25), 0 0 14px rgba(255,176,0,.12);
+}
+:root[data-theme="blueprint"] .badge.on::before{
+  content:"APPROVED";
+  position:absolute; top:6px; right:6px;
+  font-family:var(--font-mono); font-size:6.5px; font-weight:700; letter-spacing:.5px;
+  color:var(--amber); opacity:.7;
+  border:1px solid rgba(255,176,0,.5); border-radius:1px;
+  padding:1px 3px; transform:rotate(8deg);
+}
+:root[data-theme="blueprint"] .badge.on:hover{ box-shadow:inset 0 0 0 2px rgba(255,176,0,.4), 0 0 18px rgba(255,176,0,.25); }
+/* unapproved — faint outline only */
+:root[data-theme="blueprint"] .badge.off{ opacity:.4; border-style:dashed; filter:grayscale(.5); }
+:root[data-theme="blueprint"] .badge .bi{ font-size:28px; line-height:1; }
+:root[data-theme="blueprint"] .badge.on .bi{ filter:drop-shadow(0 0 8px rgba(255,176,0,.5)); }
+:root[data-theme="blueprint"] .badge .bt{
+  font-family:var(--font-mono); font-weight:600; font-size:10px; line-height:1.3; letter-spacing:.3px;
+  color:var(--ink-dim);
+}
+:root[data-theme="blueprint"] .badge.on .bt{ color:var(--amber); }
+
+/* badge tooltip — leader callout */
+:root[data-theme="blueprint"] .badge[data-tip]:hover::after{
+  content:attr(data-tip);
+  position:absolute; bottom:calc(100% + 9px); left:50%; transform:translateX(-50%);
+  z-index:20; width:max-content; max-width:220px;
+  font-family:var(--font-mono); font-size:11px; line-height:1.45;
+  text-align:left; white-space:normal;
+  color:var(--ink);
+  background:var(--bg-deep);
+  border:1px solid var(--cyan);
+  border-radius:var(--r);
+  padding:8px 11px;
+  box-shadow:0 0 0 1px rgba(54,197,255,.2), 0 8px 24px rgba(2,12,26,.7);
+  pointer-events:none;
+}
+
+/* ====================== EFFECTS (#fx) ====================== */
+:root[data-theme="blueprint"] #fx{ position:fixed; inset:0; z-index:300; pointer-events:none; }
+
+/* screen flash on milestone */
+:root[data-theme="blueprint"] .fx-flash{
+  position:fixed; inset:0;
+  background:radial-gradient(circle at 50% 40%, rgba(54,197,255,.28), transparent 60%);
+  animation:bp-flash .5s ease-out forwards;
+}
+
+/* confetti — tiny cyan PLUS / crosshair drafting marks tumbling */
+:root[data-theme="blueprint"] .confetti-piece{
+  --i:0; --dx:0; --dy:1; --rot:180deg;
+  position:absolute; top:-14px; left:50%;
+  width:11px; height:11px;
+  color:var(--cyan);
+  /* a plus / crosshair drawn with crossed gradients */
+  background:
+    linear-gradient(currentColor,currentColor) center / 100% 1.5px no-repeat,
+    linear-gradient(currentColor,currentColor) center / 1.5px 100% no-repeat;
+  opacity:0;
+  animation:bp-confetti 1.7s cubic-bezier(.3,.6,.4,1) forwards;
+  animation-delay:calc(var(--i) * 35ms);
+}
+:root[data-theme="blueprint"] .confetti-piece:nth-child(3n){ color:var(--amber); }
+:root[data-theme="blueprint"] .confetti-piece:nth-child(4n){ color:var(--white); }
+/* every 5th = a dashed segment instead of a plus */
+:root[data-theme="blueprint"] .confetti-piece:nth-child(5n){
+  width:16px; height:2px;
+  background:repeating-linear-gradient(90deg, currentColor 0 3px, transparent 3px 6px);
+}
+
+/* toasts — drafting note slips */
+:root[data-theme="blueprint"] .toast,
+:root[data-theme="blueprint"] .badge-toast{
+  position:fixed; right:20px; bottom:24px;
+  display:flex; align-items:center; gap:10px;
+  max-width:min(340px,86vw);
+  font-family:var(--font-mono); font-size:13px; font-weight:500;
+  color:var(--ink);
+  background:linear-gradient(135deg, #0c2e52, #0a2848);
+  border:1px solid var(--line);
+  border-radius:var(--r);
+  padding:13px 16px;
+  box-shadow:0 16px 40px rgba(2,12,26,.7), 0 0 0 1px rgba(54,197,255,.12);
+  opacity:0; transform:translateY(16px) scale(.97);
+  transition:opacity var(--slow), transform var(--slow);
+  pointer-events:auto;
+}
+:root[data-theme="blueprint"] .toast{ border-color:rgba(54,197,255,.4); }
+:root[data-theme="blueprint"] .badge-toast{ border-color:rgba(255,176,0,.45); }
+:root[data-theme="blueprint"] .toast.show,
+:root[data-theme="blueprint"] .badge-toast.show{ opacity:1; transform:translateY(0) scale(1); }
+:root[data-theme="blueprint"] .badge-toast b{ color:var(--amber); }
+:root[data-theme="blueprint"] .bt-i{ font-size:22px; line-height:1; filter:drop-shadow(0 0 8px rgba(255,176,0,.5)); }
+
+/* ====================== FOOTER ====================== */
+:root[data-theme="blueprint"] .foot{
+  text-align:center;
+  padding:26px 16px 42px;
+  border-top:1px solid var(--line-soft);
+  margin-top:30px;
+}
+:root[data-theme="blueprint"] #motd{
+  font-family:var(--font-mono); font-size:12px; letter-spacing:1px;
+  color:var(--cyan);
+  opacity:1; transition:opacity .55s ease;
+}
+:root[data-theme="blueprint"] #motd::before{ content:"// "; color:var(--muted); }
+:root[data-theme="blueprint"] #motd.motd-out{ opacity:0; }
+
+/* ====================== ANIMATIONS ====================== */
+/* plotter-draw reveal: line draws in from clipped, then settles */
+@keyframes bp-draw-in{
+  0%{ opacity:0; transform:translateY(10px); clip-path:inset(0 100% 0 0); }
+  60%{ opacity:1; clip-path:inset(0 0 0 0); }
+  100%{ opacity:1; transform:translateY(0); clip-path:inset(0 0 0 0); }
+}
+@keyframes bp-rise{
+  from{ opacity:0; transform:translateY(8px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+@keyframes bp-pop{
+  from{ opacity:0; transform:translateY(-10px) scale(.98); }
+  to{ opacity:1; transform:translateY(0) scale(1); }
+}
+@keyframes bp-scan{
+  0%{ background-position:0 -240px; }
+  100%{ background-position:0 110vh; }
+}
+@keyframes bp-flash{
+  0%{ opacity:.9; } 100%{ opacity:0; }
+}
+@keyframes bp-confetti{
+  0%{ opacity:1; transform:translate(0,0) rotate(0deg); }
+  100%{
+    opacity:0;
+    transform:translate(calc(var(--dx) * 42vw), calc(60vh + var(--dy) * 45vh)) rotate(var(--rot));
+  }
+}
+
+/* staggered page-load reveal across the stat-card grid */
+:root[data-theme="blueprint"] .stat-card:nth-child(1){ animation-delay:.04s; }
+:root[data-theme="blueprint"] .stat-card:nth-child(2){ animation-delay:.12s; }
+:root[data-theme="blueprint"] .stat-card:nth-child(3){ animation-delay:.20s; }
+:root[data-theme="blueprint"] .stat-card:nth-child(4){ animation-delay:.28s; }
+:root[data-theme="blueprint"] .stat-card:nth-child(5){ animation-delay:.36s; }
+:root[data-theme="blueprint"] .today{ animation-delay:.30s; }
+
+/* ====================== RESPONSIVE ====================== */
+@media (max-width:720px){
+  :root[data-theme="blueprint"] .dash{ grid-template-columns:repeat(2,1fr); }
+  :root[data-theme="blueprint"] .app-header{ flex-direction:column; align-items:stretch; }
+  :root[data-theme="blueprint"] .toolbar{ justify-content:flex-start; }
+}
+@media (max-width:560px){
+  :root[data-theme="blueprint"] .dash{ grid-template-columns:1fr; }
+  :root[data-theme="blueprint"] .day-rail{ flex-direction:column; }
+  :root[data-theme="blueprint"] .day-nav{ display:none; }
+  :root[data-theme="blueprint"] .today{ flex-direction:column; }
+  :root[data-theme="blueprint"] .today-side{ flex-basis:auto; border-right:none; border-bottom:1px dashed var(--line-soft); padding:8px; }
+  :root[data-theme="blueprint"] .vert{ writing-mode:horizontal-tb; }
+}

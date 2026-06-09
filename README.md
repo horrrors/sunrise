@@ -1,6 +1,6 @@
 # Sunrise · 日の出
 
-A personal **goal-achievement tracker** — a single, offline web app that turns any long-term goal or plan into one checkable day at a time, with streaks, trophies, and a calendar to keep momentum.
+A personal **goal-achievement tracker** — a single, offline web app that turns any long-term goal or plan into one checkable day at a time, with streaks, trophies, and a progress map to keep momentum.
 
 It runs by **double-clicking `index.html`** — no dev server, no runtime dependencies. The core is TypeScript, pre-built with esbuild into a committed `dist/sunrise.js` bundle. Content packs and themes stay plain `.js`/`.css` files that self-register at runtime — no rebuild needed to add them.
 
@@ -19,7 +19,7 @@ Your progress is saved to `localStorage`; export/import it as JSON from the tool
 ## Features
 
 - **One day at a time** — each day is a small set of tasks; a day completes when all its tasks are checked.
-- **Streaks & calendar** — current/longest streak (UTC), plus a month calendar marking completed days.
+- **Streaks & card map** — current/longest streak (UTC), plus a card map of the whole pack marking which cards are done.
 - **30 trophies** — streaks, totals, reflections, track/phase mastery, weekend/night-owl/early-lark, comeback, and more. Once earned, they stick.
 - **Per-day reflection** and an optional **"strong answer" guidance** spoiler under tasks.
 - **Spaced repetition** — schedule pattern reviews on review-eligible tracks; due items surface on rest days.
@@ -60,11 +60,10 @@ Two kinds, each a single self-registering `.js` file (themes pair with a `.css`)
 - **Content pack** — a self-contained knowledge base: its own tracks (subject columns), structure (groups → items → tasks), settings, and optional declarative badges.
 - **Theme** — a CSS skin + a tiny manifest, layered over the canonical hooks.
 
-The formats are designed to be **authored from documentation alone** — hand the relevant guide to an LLM (with no source access) and paste back the result. The validator keeps the docs and the runtime honest.
+Each format is documented in **one self-contained guide** — paste the whole file into an LLM (no source access needed), fill in the prompt at its bottom, and paste back the result. The validator keeps the docs and the runtime honest.
 
-- **[`docs/plugins/README.md`](docs/plugins/README.md)** — overview, loading, canonical DOM hooks
-- **[`docs/plugins/content-pack.md`](docs/plugins/content-pack.md)** — the content-pack contract + badge-rule reference + a paste-ready prompt
-- **[`docs/plugins/theme.md`](docs/plugins/theme.md)** — the theme contract + CSS-variable list
+- **[`docs/plugins/content-pack.md`](docs/plugins/content-pack.md)** — the full content-pack contract: envelope, structure, badge-rule reference, and a paste-ready prompt
+- **[`docs/plugins/theme.md`](docs/plugins/theme.md)** — the full theme contract: manifest, canonical DOM hooks, CSS variables, and a paste-ready prompt
 
 ## Project structure
 

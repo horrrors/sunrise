@@ -7,6 +7,7 @@ import { ProgressStats } from '../../src/domain/progress-stats.ts';
 import { ReviewSchedule } from '../../src/domain/review-schedule.ts';
 import { BadgeEngine } from '../../src/domain/badge-engine.ts';
 import type { Pack, Theme, Session } from '../../src/domain/types/entities.ts';
+import type { ItemProgress } from '../../src/domain/types/progress.ts';
 import type {
   ProgressStore,
   SessionStore,
@@ -267,4 +268,119 @@ test('cardMap: groups, current flag, rest excluded from counts', () => {
   vm = t.cardMap();
   assert.equal(vm.done, 1);
   assert.equal(vm.groups[0]!.items[0]!.done, true);
+});
+
+// --- resume cursor ---------------------------------------------------------
+
+const RESUME_PACK: Pack = {
+  schema: 'sunrise.pack/v1',
+  id: 'resume',
+  name: 'Resume',
+  version: '1.0.0',
+  tracks: [{ id: 'dsa', label: 'DSA' }],
+  groups: [
+    {
+      id: 'g1',
+      title: 'Week 1',
+      items: [
+        { id: 'c1', track: 'dsa', title: 'C1', tasks: [{ id: 't1', text: 'x' }] },
+        { id: 'c2', track: 'dsa', title: 'C2', tasks: [{ id: 't2', text: 'x' }] },
+        { id: 'c3', track: 'dsa', title: 'C3', tasks: [{ id: 't3', text: 'x' }] },
+      ],
+    },
+    {
+      id: 'g2',
+      title: 'Week 2',
+      items: [{ id: 'c4', track: 'dsa', title: 'C4', tasks: [{ id: 't4', text: 'x' }] }],
+    },
+  ],
+};
+const TASK_OF: Record<string, string> = { c1: 't1', c2: 't2', c3: 't3', c4: 't4' };
+
+function makeResumeTracker(opts: { session?: Session; complete?: string[] } = {}) {
+  const store = new Map<string, Progress>();
+  if (opts.complete && opts.complete.length) {
+    const items: Record<string, ItemProgress> = {};
+    for (const id of opts.complete) {
+      items[id] = {
+        tasks: { [TASK_OF[id]!]: true },
+        reflection: '',
+        completedAt: '2026-05-30',
+        completedHour: 14,
+      };
+    }
+    store.set(
+      'resume',
+      new Progress({ schema: 'sunrise.progress/v1', items, reviews: [], badges: {}, lastSurprise: null }),
+    );
+  }
+  const progressStore: ProgressStore = {
+    load: (id) => store.get(id) ?? Progress.empty(),
+    save: (id, p) => void store.set(id, p),
+  };
+  let session: Session = opts.session ?? {};
+  const sessionStore: SessionStore = { load: () => session, save: (s) => void (session = s) };
+  const packs: PackSource = { packs: () => [RESUME_PACK] };
+  const themes: ThemeSource = { themes: () => [THEME] };
+  const clock: Clock = { today: () => '2026-05-30', hour: () => 14 };
+  const random: Random = { next: () => 0.99 };
+  const t = new Tracker({
+    packs,
+    themes,
+    progressStore,
+    sessionStore,
+    clock,
+    random,
+    streaks: new Streaks(),
+    stats: new ProgressStats(),
+    reviews: new ReviewSchedule(),
+    badges: new BadgeEngine(new Streaks(), new ProgressStats()),
+    defaultUi: DEFAULT_UI,
+    genericBadges: GENERIC_BADGES,
+    defaultStreakWords: DEFAULT_STREAK_WORDS,
+    defaultMottos: DEFAULT_MOTTOS,
+  });
+  t.init();
+  return { t, getSession: () => session };
+}
+
+test('resume: cursor on a partial card reopens that card, not an earlier skip', () => {
+  // c1 left unfinished (an earlier skip); cursor parked on the also-unfinished c2.
+  const { t } = makeResumeTracker({ session: { cursors: { resume: 'c2' } } });
+  assert.equal(t.todayCard().itemId, 'c2');
+});
+
+test('resume: cursor on a finished card advances to the next unfinished card', () => {
+  // Parked on c2 which is now finished; c1 is an earlier skip → forward to c3.
+  const { t } = makeResumeTracker({ session: { cursors: { resume: 'c2' } }, complete: ['c2'] });
+  assert.equal(t.todayCard().itemId, 'c3');
+});
+
+test('resume: no cursor falls back to the first unfinished card (unchanged)', () => {
+  const { t } = makeResumeTracker();
+  assert.equal(t.todayCard().itemId, 'c1');
+});
+
+test('resume: stale cursor id (not in pack) falls back to first unfinished', () => {
+  const { t } = makeResumeTracker({ session: { cursors: { resume: 'ghost' } } });
+  assert.equal(t.todayCard().itemId, 'c1');
+});
+
+test('resume: everything ahead done → reopen on the last card', () => {
+  // Parked on c3; c3 and c4 done; c1 skipped earlier → forward-only → last card c4.
+  const { t } = makeResumeTracker({ session: { cursors: { resume: 'c3' } }, complete: ['c3', 'c4'] });
+  assert.equal(t.todayCard().itemId, 'c4');
+});
+
+test('selectItem persists the cursor to session', () => {
+  const { t, getSession } = makeResumeTracker();
+  t.selectItem('c3');
+  assert.equal(getSession().cursors?.['resume'], 'c3');
+});
+
+test('goToItem persists the cursor to session', () => {
+  const { t, getSession } = makeResumeTracker(); // resolves to c1
+  t.goToItem(1); // → c2
+  assert.equal(t.todayCard().itemId, 'c2');
+  assert.equal(getSession().cursors?.['resume'], 'c2');
 });

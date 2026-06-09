@@ -63,8 +63,6 @@
 /* ============================================================================
    BASE
    ========================================================================== */
-*, *::before, *::after { box-sizing: border-box; }
-
 html, body { height: 100%; }
 
 body {
@@ -676,8 +674,6 @@ select:focus-visible {
   background: rgba(255,255,255,.6);
   border-color: var(--line);
 }
-.task input { position: absolute; opacity: 0; width: 0; height: 0; }
-
 /* custom checkbox — brass border, emerald check */
 .box {
   flex: 0 0 auto;
@@ -1183,8 +1179,4 @@ textarea:focus {
   .today-side { width: auto; height: 40px; border-right: none; border-bottom: 1px solid var(--line); }
   .vert { writing-mode: horizontal-tb; transform: none; }
   .today::before { width: 100%; height: 4px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  * { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
 }

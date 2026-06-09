@@ -30,8 +30,12 @@
 .sc-row{display:flex;align-items:center;gap:12px}
 .sc-keys{flex:0 0 auto;min-width:84px;font:600 12px ui-monospace,SFMono-Regular,monospace}
 .sc-desc{opacity:.8}
-/* keyboard focus — clear, theme-independent highlight on the focused task row */
-#taskList .task:has(input:focus-visible){outline:3px solid var(--yellow,#f6c343);outline-offset:3px;border-radius:var(--r,8px)}</style>
+/* app baseline — mechanism every theme shares; themes set tokens / override behavior only */
+*,*::before,*::after{box-sizing:border-box}
+.task input{position:absolute;opacity:0;width:0;height:0;pointer-events:none}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
+/* keyboard focus highlight — theme sets the look via --focus-ring */
+#taskList .task:has(input:focus-visible){outline:var(--focus-ring,3px solid var(--accent,#f6c343));outline-offset:3px;border-radius:var(--r,8px)}</style>
 <link id="themeCss" rel="stylesheet" href="themes/bonus.css" />
 </head>
 <body>

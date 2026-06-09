@@ -50,8 +50,6 @@
 /* ----------------------------------------------------------------------------
    BASE
    ---------------------------------------------------------------------------- */
-*{ box-sizing:border-box; }
-
 html{ -webkit-text-size-adjust:100%; }
 
 body{
@@ -616,14 +614,6 @@ select option{ background:var(--paper); color:var(--ink); }
 }
 .task:hover{ transform:translate(-2px,-2px); box-shadow:5px 5px 0 var(--ink); background:#fffdf4; }
 
-/* hide native checkbox */
-.task input[type=checkbox]{
-  position:absolute;
-  opacity:0;
-  width:0; height:0;
-  margin:0;
-}
-
 /* custom checkbox box */
 .box{
   flex:none;
@@ -1111,15 +1101,6 @@ textarea:focus{
   }
   .brand-name{ text-shadow:2px 2px 0 var(--ink), 4px 4px 0 var(--cobalt); }
   select{ max-width:60vw; }
-}
-
-/* accessibility: reduced motion */
-@media (prefers-reduced-motion:reduce){
-  *, *::before, *::after{
-    animation-duration:.001ms !important;
-    animation-iteration-count:1 !important;
-    transition-duration:.001ms !important;
-  }
 }
 
 /* ============================================================================
