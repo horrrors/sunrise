@@ -17,7 +17,7 @@ hooks the app renders; it contains **no JavaScript and adds no DOM** of its own.
 > day-rail row, the today card, the dashboard grid, modal positioning, and
 > `box-sizing`. If you only set colors, elements collapse into the default block
 > flow and **overlap**. Treat the hooks below as a bare, unstyled skeleton you
-> must lay out from scratch. **§5 (Layout) is what keeps elements from colliding
+> must lay out from scratch. **§6 (Layout) is what keeps elements from colliding
 > — do not skip it.**
 
 ---
@@ -259,7 +259,7 @@ define them, or (cleaner) restyle `.cm-card` directly with your own tokens.
 
 | element | class added | meaning |
 |---|---|---|
-| `.modal` | `.open` | shown; **no `.open` = hidden** (you must hide it — §5) |
+| `.modal` | `.open` | shown; **no `.open` = hidden** (you must hide it — §6) |
 | `.task` (a `<label>`) | `.done` | all-checked / completed task |
 | `.cm-card` | `.done` / `.rest` / `.current` | card-map cell states; `.done`/`.rest` are mutually exclusive, `.current` combines with either |
 | `.badge` | `.on` / `.off` | unlocked / locked trophy |
@@ -274,11 +274,11 @@ define them, or (cleaner) restyle `.cm-card` directly with your own tokens.
   jump to the keyframe's `from` state (the app's baseline reduced-motion guard
   already covers the keyframe itself). Each `.confetti-piece` likewise gets an
   inline random `left` and `animation-delay` on top of its custom properties —
-  `left` only moves a *positioned* element (see the Effects recipe in §5).
+  `left` only moves a *positioned* element (see the Effects recipe in §6).
 - every dashboard `.bar > i` gets `style="width:<pct>%"` — **this inline width is
   what draws the progress-bar fill** (bars have no `--p`; the width is their only
   length source). Give `.bar` a fixed height + `overflow:hidden` and
-  `.bar > i { height:100% }` so the fill has a box (see §5).
+  `.bar > i { height:100% }` so the fill has a box (see §6).
 - `.ring` gets `style="--p:<n>"`; the progress `.stat-sub` gets inline
   `text-align:center`; `#comeback` ships `style="display:none"` and JS sets its
   `display` to `''`/`none`. Because these are inline, you **cannot** override
@@ -296,7 +296,9 @@ baseline block shipped with the app then re-lays **every** theme as a game HUD:
 - **One-line header** — `.app-header` collapses to a single compact bar.
 - **Bottom sheets** — `.toolbar` and `#dashboard` are hidden and become slide-up
   sheets. The app toggles `.toolbar.open` / `#dashboard.open` (mutually
-  exclusive); tapping outside or pressing `Esc` closes the open sheet.
+  exclusive); a sheet closes on `Esc`, on any toolbar action (pack/theme/day
+  pick, export, import), when a modal opens, or when its dock button is tapped
+  again.
 - **Hero today card** — `#todayCard` becomes the primary hero element, filling
   the visible area below the header.
 - **Fixed bottom dock** — a `nav#dock` is pinned to the screen bottom with
@@ -546,7 +548,7 @@ the `.task` label.
 These are the conventions the shipped themes share. Apply them or the result
 reads as flat/AI-generic.
 
-**Design tokens.** Define a small system on `:root[data-theme="…"]`. The §5
+**Design tokens.** Define a small system on `:root[data-theme="…"]`. The §6
 recipes assume these names — define them (rename freely if you also update the
 recipes): `--bg` (page), `--panel` (card surface), `--rail` (bar/ring track),
 `--line` (borders), `--ink` (text), `--accent` (primary), plus a **3-step shadow
