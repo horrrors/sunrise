@@ -135,9 +135,11 @@ are yours to neutralize.
                                                           each only when the item has it: -->
             <span class="trackpill"><span class="k"></span> Track name</span>
             <h2 class="today-title">…</h2>
-            <div class="warm"><span class="warm-i">✦</span> <span class="muted">Warm-up</span> text…
+            <div class="warm"><i class="tools-spacer"></i>  <!-- only if warmup; stacked: header line, text under -->
+              <div class="warm-head"><span class="warm-i">✦</span> <span class="muted">Warm-up</span></div>
+              <div class="warm-text">text…</div>
               <span class="task-tools"><button class="copy-btn" id="copyWarm">⧉</button><button class="copy-btn ai" id="copyaiWarm">✨</button></span>
-            </div>                                          <!-- only if warmup; tools = copy / AI-copy -->
+            </div>
             <div class="tasks" id="taskList"><!-- task rows, see below --></div>
             <div class="reflect-block"><label class="reflect-label" for="reflect"><span class="kanji">省</span> …</label><textarea id="reflect"></textarea></div>  <!-- only if reflection on -->
             <div class="res-row"><span class="chip"><b>label</b> note</span></div>   <!-- only if resources -->
@@ -202,6 +204,8 @@ triangle is already injected):
    chips at 60% opacity (full on hover/focus). [data-mobile]: same corner
    placement, 30px chips, always full opacity. Override only the look. */
 .warm{position:relative}
+.warm-head{display:flex;align-items:center;gap:7px;margin-bottom:6px}   /* «Warm-up» header line; text stacks under it */
+.warm-text{display:block}
 .task-tools{position:absolute;top:6px;right:6px;display:inline-flex;gap:5px;opacity:.6;transition:opacity .12s ease}
 .task-wrap:hover .task-tools,.task-wrap:focus-within .task-tools,.warm:hover>.task-tools,.warm:focus-within>.task-tools{opacity:1}
 .tools-spacer{float:right;width:72px;height:30px}
@@ -692,7 +696,7 @@ when it matters.
 - **Column:** `.wrap`, `.section-title` (h2; `#summaryTitle`, `#todayTitle`), `#comeback`
 - **Dashboard:** `.dash`, `.stat-card[data-kind="progress|streak|phases|tracks"]`, `.eyebrow`, `.ring`+`.ring>div>b`+`small`, `.stat-sub`, `.muted`, `.flame`, `.streak-num`, `.prow`(`.lbl>i`, `.val`) + sibling `.bar>i`, `[data-track]`
 - **Day rail:** `.day-rail`, `.day-nav.day-prev#prevDay` / `.day-nav.day-next#nextDay` (`[data-tip]`, baseline tooltip), `.today-wrap`, `.today#todayCard[data-track]`
-  - active item: `.today-side>.vert`, `.today-main`, `.trackpill`(span)`>.k`, `.today-title`(h2), `.warm`(div)`>.warm-i`+`.muted` (+ `.task-tools` with `#copyWarm`/`#copyaiWarm`), `.tasks#taskList`, `.reflect-block>.reflect-label[for=reflect]>.kanji` + `textarea#reflect`, `.res-row>.chip`(span)`>b`, `.next-day-cta#nextDayCta`
+  - active item: `.today-side>.vert`, `.today-main`, `.trackpill`(span)`>.k`, `.today-title`(h2), `.warm`(div)` > .warm-head(.warm-i+.muted) + .warm-text` (+ `.task-tools` with `#copyWarm`/`#copyaiWarm` — keep `.warm` block-stacked, don't row-flex it), `.tasks#taskList`, `.reflect-block>.reflect-label[for=reflect]>.kanji` + `textarea#reflect`, `.res-row>.chip`(span)`>b`, `.next-day-cta#nextDayCta`
   - task: `.task-wrap > label.task(.done)[style=animation-delay] (> input#cb_<id>` + `.box` + `.task-text > i.tools-spacer + text)` + `.task-tools > button.copy-btn#copy_<id> + button.copy-btn.ai#copyai_<id>`; with guidance also `+ details.task-hint > summary + .task-hint-body` (`.warm` likewise starts with `i.tools-spacer`)
   - rest item: `.warm`(p)`>.warm-i` (only with a reflect prompt), optional `.next-day-cta#nextDayCta`
 - **Footer:** `.foot > #motd(.motd-out)`

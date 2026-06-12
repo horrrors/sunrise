@@ -460,7 +460,6 @@
 
 /* warm-up / reflection prompt */
 :root[data-theme="japanese"] .warm{
-  display:flex; align-items:baseline; gap:8px;
   font-size:14.5px; color:var(--sumi-soft);
   background:rgba(138,154,91,.08);
   border-left:3px solid var(--matcha);

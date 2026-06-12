@@ -410,6 +410,12 @@ test('today card renders copy + AI-copy tools on tasks and warmup', async () => 
   // text wraps around the buttons instead of running under them
   assert.ok(/class="task-text"><i class="tools-spacer"/.test(tasks), 'spacer leads each task text');
   assert.ok(/class="warm"><i class="tools-spacer"/.test(card), 'spacer leads the warmup block');
+  // warmup is a stacked block: «Разминка» header line, then the text under it
+  assert.ok(
+    /<div class="warm-head"><span class="warm-i">✦<\/span> <span class="muted">/.test(card),
+    'warmup header line (.warm-head > .warm-i + .muted)',
+  );
+  assert.ok(card.includes('<div class="warm-text">'), 'warmup text block under the header');
 });
 
 test('copy buttons copy text / AI prompt via the clipboard seam, never toggle the task', async () => {

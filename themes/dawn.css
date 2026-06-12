@@ -481,7 +481,6 @@
 
 /* warmup / rest-prompt */
 :root[data-theme="dawn"] .warm{
-  display:flex; gap:11px; align-items:flex-start;
   font-size:14px; line-height:1.55; color:var(--ink-dim);
   background:rgba(255,224,138,.28);
   border-left:3px solid var(--amber);

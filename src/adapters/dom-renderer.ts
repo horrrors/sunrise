@@ -115,7 +115,7 @@ export class DomRenderer {
       `<span class="trackpill"><span class="k">${this.esc(vm.trackIcon)}</span> ${this.esc(vm.trackLabel)}</span>` +
       `<h2 class="today-title">${this.esc(vm.title)}</h2>` +
       (vm.show.warmup && vm.warmup
-        ? `<div class="warm">${spacer}<span class="warm-i">✦</span> <span class="muted">${this.esc(lbl.warmup)}</span> ${this.esc(vm.warmup)}${tools('copyWarm', 'copyaiWarm')}</div>`
+        ? `<div class="warm">${spacer}<div class="warm-head"><span class="warm-i">✦</span> <span class="muted">${this.esc(lbl.warmup)}</span></div><div class="warm-text">${this.esc(vm.warmup)}</div>${tools('copyWarm', 'copyaiWarm')}</div>`
         : '') +
       `<div class="tasks" id="taskList"></div>` +
       (vm.show.reflection

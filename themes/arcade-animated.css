@@ -505,7 +505,6 @@
 
 /* warmup */
 :root[data-theme="arcade-animated"] .warm{
-  display:flex; gap:10px; align-items:flex-start;
   font-size:16px; line-height:1.5; color:var(--ink-dim);
   background:#110735;
   border-left:4px solid var(--cyan);

@@ -532,7 +532,6 @@
 
 /* warmup — annotation note with leader line */
 :root[data-theme="blueprint"] .warm{
-  display:flex; gap:11px; align-items:flex-start;
   font-family:var(--font-ui); font-size:14px; line-height:1.55; color:var(--ink-dim);
   background:rgba(54,197,255,.04);
   border-left:2px solid var(--cyan);

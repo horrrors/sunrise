@@ -474,7 +474,6 @@
 
 /* warmup / rest-prompt */
 :root[data-theme="memphis"] .warm{
-  display:flex; gap:11px; align-items:flex-start;
   font-size:14.5px; line-height:1.55; color:var(--ink-dim);
   background:var(--cream-2);
   border:var(--bord) solid var(--black);

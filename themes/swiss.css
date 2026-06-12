@@ -381,7 +381,6 @@
 
 /* warm-up / rest prompt */
 :root[data-theme="swiss"] .warm{
-  display:flex; gap:11px; align-items:baseline;
   font-family:var(--font-ui); font-size:14px; line-height:1.55; color:var(--ink-dim);
   border-top:1px solid var(--rule);
   border-bottom:1px solid var(--rule);

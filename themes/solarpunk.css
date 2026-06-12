@@ -513,7 +513,6 @@
 
 /* warmup / rest-prompt */
 :root[data-theme="solarpunk"] .warm{
-  display:flex; gap:11px; align-items:flex-start;
   font-family:var(--font-ui); font-size:14.5px; line-height:1.6; color:var(--ink-dim);
   background:rgba(224,169,59,.10);
   border-left:3px solid var(--gold);

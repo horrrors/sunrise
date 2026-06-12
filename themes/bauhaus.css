@@ -494,7 +494,6 @@
 
 /* warmup */
 :root[data-theme="bauhaus"] .warm{
-  display:flex; gap:11px; align-items:flex-start;
   font-family:var(--font-ui); font-size:14px; line-height:1.55; color:var(--ink-dim);
   background:var(--paper);
   border-left:6px solid var(--blue);
