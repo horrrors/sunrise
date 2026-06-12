@@ -92,11 +92,6 @@ export class DomRenderer {
         (vm.reflectPrompt
           ? `<p class="warm"><span class="warm-i">☾</span> ${this.esc(vm.reflectPrompt)}</p>`
           : '') +
-        `<div class="rest-due">${
-          vm.dueReviews.length
-            ? `${this.esc(lbl.dueToday)} — <b>${this.esc(vm.dueReviews.join(' · '))}</b>`
-            : this.esc(lbl.restToday)
-        }</div>` +
         (vm.notLast
           ? `<button class="next-day-cta" id="nextDayCta" type="button">${this.esc(lbl.nextDay)}</button>`
           : '') +
@@ -121,9 +116,6 @@ export class DomRenderer {
         ? `<div class="res-row">${vm.resources
             .map((r) => `<span class="chip"><b>${this.esc(r.label)}</b> ${this.esc(r.note)}</span>`)
             .join('')}</div>`
-        : '') +
-      (vm.show.review
-        ? `<button class="btn gold" id="markReview" type="button">${this.esc(lbl.scheduleReview)}</button>`
         : '') +
       (vm.complete && vm.notLast
         ? `<button class="next-day-cta" id="nextDayCta" type="button">${this.esc(lbl.nextDay)}</button>`

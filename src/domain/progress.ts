@@ -1,26 +1,23 @@
 import type { Item } from './types/entities.ts';
-import type { ItemProgress, Review, ProgressData } from './types/progress.ts';
+import type { ItemProgress, ProgressData } from './types/progress.ts';
 
 export class Progress {
   private items: Record<string, ItemProgress>;
-  private reviews: Review[];
   private badges: Record<string, { at: string }>;
 
   constructor(data: ProgressData) {
     this.items = data.items;
-    this.reviews = data.reviews;
     this.badges = data.badges;
   }
 
   public static empty(): Progress {
-    return new Progress({ schema: 'sunrise.progress/v1', items: {}, reviews: [], badges: {} });
+    return new Progress({ schema: 'sunrise.progress/v1', items: {}, badges: {} });
   }
 
   public toJSON(): ProgressData {
     return structuredClone({
       schema: 'sunrise.progress/v1',
       items: this.items,
-      reviews: this.reviews,
       badges: this.badges,
     });
   }
@@ -109,14 +106,6 @@ export class Progress {
       }
     }
     return changed;
-  }
-
-  public getReviewList(): readonly Review[] {
-    return this.reviews;
-  }
-  public scheduleReview(itemId: string, today: string): void {
-    this.reviews = this.reviews.filter((r) => r.itemId !== itemId);
-    this.reviews.push({ itemId, lastDate: today });
   }
 
   public isBadgeOwned(id: string): boolean {

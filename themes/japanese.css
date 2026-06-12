@@ -185,19 +185,6 @@
   border-color:var(--ai);
 }
 
-:root[data-theme="japanese"] .btn.gold{
-  background:linear-gradient(160deg, var(--brass), var(--brass-deep));
-  color:#fff5e8;
-  border-color:transparent;
-  font-weight:600;
-  letter-spacing:.02em;
-  box-shadow:0 6px 16px -8px rgba(176,141,87,.7);
-}
-:root[data-theme="japanese"] .btn.gold:hover{
-  color:#fff;
-  box-shadow:0 10px 22px -10px rgba(176,141,87,.85);
-}
-
 /* ---------- main container ---------- */
 :root[data-theme="japanese"] .wrap{
   max-width:1080px;
@@ -608,16 +595,6 @@
   color:var(--ai); font-weight:600; margin-right:4px;
 }
 
-/* rest block (rest-due renders on a rest day) */
-:root[data-theme="japanese"] .rest-due{
-  font-size:14px; color:var(--sumi-soft);
-  background:rgba(27,58,91,.05);
-  border-radius:var(--r-md);
-  padding:12px 15px;
-  margin-bottom:18px;
-}
-:root[data-theme="japanese"] .rest-due b{ color:var(--vermilion); }
-
 /* CTA "next day" */
 :root[data-theme="japanese"] .next-day-cta{
   font-family:var(--sans);
@@ -928,5 +905,4 @@
   transition:opacity .55s ease;
 }
 :root[data-theme="japanese"] #motd.motd-out{ opacity:0; }
-
 

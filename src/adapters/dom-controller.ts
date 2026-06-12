@@ -42,11 +42,8 @@ export class DomController {
       warmup: u('warmup'),
       reflect: u('reflect'),
       taskPlaceholder: u('taskPlaceholder'),
-      scheduleReview: u('scheduleReview'),
       nextDay: u('nextDay'),
       hint: u('hint'),
-      dueToday: u('dueToday'),
-      restToday: u('restToday'),
       overallTitle: u('overallTitle'),
       streakTitle: u('streakTitle'),
       inARow: u('inARow'),
@@ -159,15 +156,6 @@ export class DomController {
       if (reflect) {
         reflect.oninput = (e) => {
           this.t.setReflection((e.target as HTMLTextAreaElement).value);
-        };
-      }
-    }
-    if (vm.show.review) {
-      const mr = this.r.$('markReview');
-      if (mr) {
-        (mr as HTMLElement).onclick = () => {
-          this.t.scheduleReviewForCurrent();
-          this.renderAll();
         };
       }
     }

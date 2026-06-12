@@ -139,13 +139,11 @@ are yours to neutralize.
             <div class="tasks" id="taskList"><!-- task rows, see below --></div>
             <div class="reflect-block"><label class="reflect-label" for="reflect"><span class="kanji">省</span> …</label><textarea id="reflect"></textarea></div>  <!-- only if reflection on -->
             <div class="res-row"><span class="chip"><b>label</b> note</span></div>   <!-- only if resources -->
-            <button class="btn gold" id="markReview">…</button>   <!-- only on reviewable tracks -->
             <button class="next-day-cta" id="nextDayCta">…</button>  <!-- only when complete AND not the last item -->
           </div>
           <!-- a REST day instead renders: .today-side>.vert, then .today-main with
                <h2 today-title>, an optional <p class="warm"><span class="warm-i">☾</span> prompt</p>
-               (NO .muted; only if the item has a reflect prompt), a <div class="rest-due"> block
-               (either "due today — <b>item titles</b>" or the plain rest text; no tasks/reflect),
+               (NO .muted; only if the item has a reflect prompt; no tasks/reflect),
                and the same optional .next-day-cta#nextDayCta button when not the last item. -->
         </article>
       </section>
@@ -673,13 +671,13 @@ longer write your own. For reference, the shipped guard is:
 Style **every** one of these (grouped by where they render). Tag in parentheses
 when it matters.
 
-- **Header:** `.app-header`, `.brand` (`.brand-mark`, `.brand-name`, `.brand-sub#phaseLabel`), `.toolbar`, `.field`, `select`, `.btn`, `.btn.ghost[data-tip]` (baseline tooltip), `.btn.gold`, `#importFile` (hidden)
+- **Header:** `.app-header`, `.brand` (`.brand-mark`, `.brand-name`, `.brand-sub#phaseLabel`), `.toolbar`, `.field`, `select`, `.btn`, `.btn.ghost[data-tip]` (baseline tooltip), `#importFile` (hidden)
 - **Column:** `.wrap`, `.section-title` (h2; `#summaryTitle`, `#todayTitle`), `#comeback`
 - **Dashboard:** `.dash`, `.stat-card[data-kind="progress|streak|phases|tracks"]`, `.eyebrow`, `.ring`+`.ring>div>b`+`small`, `.stat-sub`, `.muted`, `.flame`, `.streak-num`, `.prow`(`.lbl>i`, `.val`) + sibling `.bar>i`, `[data-track]`
 - **Day rail:** `.day-rail`, `.day-nav.day-prev#prevDay` / `.day-nav.day-next#nextDay` (`[data-tip]`, baseline tooltip), `.today-wrap`, `.today#todayCard[data-track]`
-  - active item: `.today-side>.vert`, `.today-main`, `.trackpill`(span)`>.k`, `.today-title`(h2), `.warm`(div)`>.warm-i`+`.muted`, `.tasks#taskList`, `.reflect-block>.reflect-label[for=reflect]>.kanji` + `textarea#reflect`, `.res-row>.chip`(span)`>b`, `.btn.gold#markReview`, `.next-day-cta#nextDayCta`
+  - active item: `.today-side>.vert`, `.today-main`, `.trackpill`(span)`>.k`, `.today-title`(h2), `.warm`(div)`>.warm-i`+`.muted`, `.tasks#taskList`, `.reflect-block>.reflect-label[for=reflect]>.kanji` + `textarea#reflect`, `.res-row>.chip`(span)`>b`, `.next-day-cta#nextDayCta`
   - task: `label.task(.done)[style=animation-delay] > input#cb_<id>` + `.box` + `.task-text`; with guidance: `.task-wrap > (label) + details.task-hint > summary + .task-hint-body`
-  - rest item: `.warm`(p)`>.warm-i` (only with a reflect prompt), `.rest-due` (due titles in `<b>` or plain rest text), optional `.next-day-cta#nextDayCta`
+  - rest item: `.warm`(p)`>.warm-i` (only with a reflect prompt), optional `.next-day-cta#nextDayCta`
 - **Footer:** `.foot > #motd(.motd-out)`
 - **Modals:** `.modal(.open)[role=dialog]` → `.modal-panel.cardmap-panel|.tr-panel|.sc-panel`, each headed by `.tr-head`
   - card map: `.tr-head`(`#cardMapTitle/#cardMapClose`), `.cm-grid#cardMapGrid > .cm-row > .cm-rlabel + .cm-cells > .cm-card(.done|.rest|.current)[data-id][data-tip]` — baseline-functional, override look only

@@ -188,21 +188,6 @@
 }
 :root[data-theme="blueprint"] .btn:active{ transform:translateY(0); }
 :root[data-theme="blueprint"] .btn.ghost{ background:transparent; }
-:root[data-theme="blueprint"] .btn.gold{
-  font-family:var(--font-display); font-weight:700; font-size:14px; letter-spacing:1.5px;
-  text-transform:uppercase;
-  color:var(--bg-deep);
-  background:var(--amber);
-  border-color:var(--amber);
-  border-radius:var(--r-sm);
-  padding:11px 20px; margin-top:12px;
-  box-shadow:0 0 0 1px rgba(255,176,0,.4), 0 6px 18px rgba(255,176,0,.18);
-}
-:root[data-theme="blueprint"] .btn.gold:hover{
-  filter:brightness(1.08); transform:translateY(-2px);
-  box-shadow:0 0 0 1px rgba(255,176,0,.6), 0 10px 26px rgba(255,176,0,.28);
-  color:var(--bg-deep);
-}
 
 /* ====================== LAYOUT ====================== */
 :root[data-theme="blueprint"] .wrap{
@@ -558,15 +543,6 @@
 :root[data-theme="blueprint"] .warm .muted{
   color:var(--cyan); text-transform:uppercase; letter-spacing:1.5px; font-size:10.5px;
 }
-
-/* rest day note */
-:root[data-theme="blueprint"] .rest-due{
-  font-family:var(--font-mono); font-size:13px; color:var(--ink-dim);
-  background:rgba(255,176,0,.05);
-  border:1px dashed rgba(255,176,0,.4);
-  border-radius:var(--r); padding:14px; margin:6px 0 16px;
-}
-:root[data-theme="blueprint"] .rest-due b{ color:var(--amber); }
 
 /* ====================== TASKS (spec line items) ====================== */
 :root[data-theme="blueprint"] .tasks{ display:flex; flex-direction:column; gap:8px; margin:6px 0 18px; }

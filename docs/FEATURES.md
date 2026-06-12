@@ -25,11 +25,6 @@ What the app does today, grouped by area. Each line is one feature with a one-se
 - **Rotating mottos** — a footer line that cycles through the pack's mottos every few seconds.
 - **Comeback banner** — a gentle "welcome back" prompt after you return from a break.
 
-## Spaced repetition
-
-- **Schedule a review** — on review-eligible tracks, mark a topic for spaced repetition (intervals 1 / 3 / 7 / 16 days).
-- **Due reviews** — items due for review surface on rest days.
-
 ## Content & plugins
 
 - **Content packs** — the whole roadmap is a swappable "pack": it declares its own subject **tracks**, **structure** (phases → groups → items → tasks), **settings**, and **badges**. The bundled pack is a 13-week software-engineering curriculum, but a pack can be any plan (a language, fitness, a reading list…).

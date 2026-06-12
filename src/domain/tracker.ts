@@ -182,11 +182,6 @@ export class Tracker {
     this.themeId = id;
   }
 
-  public scheduleReviewForCurrent(): void {
-    this.deps.reviews.schedule(this.progress, this.currentItemId, this.deps.clock.today());
-    this.save();
-  }
-
   public importProgress(json: string): void {
     let raw: unknown;
     try {
@@ -247,14 +242,6 @@ export class Tracker {
       .replace('{w}', String(this.groupOrdinal(it.id)));
 
     if (it.rest) {
-      // Reviews are stored by item id; display titles. Ids from older versions
-      // (group+title composites) won't resolve and are shown as stored.
-      const dueReviews = cfg.reviews
-        ? this.deps.reviews.due(this.progress, this.deps.clock.today()).map((id) => {
-            const item = this.allItems.find((x) => x.id === id);
-            return item ? (item.title ?? id) : id;
-          })
-        : [];
       return {
         itemId: it.id,
         rest: true,
@@ -267,10 +254,9 @@ export class Tracker {
         reflection: '',
         tasks: [],
         resources: [],
-        dueReviews,
         complete: false,
         notLast,
-        show: { warmup: false, reflection: false, review: false },
+        show: { warmup: false, reflection: false },
       };
     }
 
@@ -283,7 +269,6 @@ export class Tracker {
     }));
     const showWarmup = cfg.warmups !== false && it.warmup != null;
     const showReflection = cfg.reflections !== false;
-    const showReview = !!(m.reviewable && cfg.reviews);
     return {
       itemId: it.id,
       rest: false,
@@ -297,10 +282,9 @@ export class Tracker {
       reflection: this.progress.reflection(it.id),
       tasks,
       resources: (it.resources ?? []).map((r) => ({ label: r.label, note: r.note })),
-      dueReviews: [],
       complete,
       notLast,
-      show: { warmup: showWarmup, reflection: showReflection, review: showReview },
+      show: { warmup: showWarmup, reflection: showReflection },
     };
   }
 

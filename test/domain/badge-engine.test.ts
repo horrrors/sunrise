@@ -76,7 +76,6 @@ test('sync awards once; evaluate keeps owned badges unlocked after work undone',
   const undone = new Progress({
     schema: 'sunrise.progress/v1',
     items: {},
-    reviews: [],
     badges: p.toJSON().badges,
   });
   const b = e.evaluate(PACK, undone, rules).find((x) => x.id === 'first')!;
@@ -111,7 +110,7 @@ test('track-complete needs every item done, not a rounded 100% (199/200 must not
       completedHour: 12,
     };
   }
-  const p = new Progress({ schema: 'sunrise.progress/v1', items, reviews: [], badges: {} });
+  const p = new Progress({ schema: 'sunrise.progress/v1', items, badges: {} });
   const rules: BadgeRule[] = [
     { id: 'tc', type: 'track-complete', track: 'dsa', title: 'T' },
     { id: 'pc', type: 'percent', gte: 100, title: 'P' },
@@ -129,7 +128,7 @@ test('track-complete needs every item done, not a rounded 100% (199/200 must not
     completedAt: '2026-05-30',
     completedHour: 12,
   };
-  const all = new Progress({ schema: 'sunrise.progress/v1', items, reviews: [], badges: {} });
+  const all = new Progress({ schema: 'sunrise.progress/v1', items, badges: {} });
   const by2 = Object.fromEntries(
     engine()
       .evaluate(big, all, rules)

@@ -3,21 +3,18 @@
   // src/domain/progress.ts
   var Progress = class _Progress {
     items;
-    reviews;
     badges;
     constructor(data) {
       this.items = data.items;
-      this.reviews = data.reviews;
       this.badges = data.badges;
     }
     static empty() {
-      return new _Progress({ schema: "sunrise.progress/v1", items: {}, reviews: [], badges: {} });
+      return new _Progress({ schema: "sunrise.progress/v1", items: {}, badges: {} });
     }
     toJSON() {
       return structuredClone({
         schema: "sunrise.progress/v1",
         items: this.items,
-        reviews: this.reviews,
         badges: this.badges
       });
     }
@@ -100,13 +97,6 @@
         }
       }
       return changed;
-    }
-    getReviewList() {
-      return this.reviews;
-    }
-    scheduleReview(itemId, today) {
-      this.reviews = this.reviews.filter((r) => r.itemId !== itemId);
-      this.reviews.push({ itemId, lastDate: today });
     }
     isBadgeOwned(id) {
       return this.badges[id] !== void 0;
@@ -216,8 +206,7 @@
       id: ID,
       label: { type: "string", required: true },
       icon: { type: "string" },
-      color: { type: "string" },
-      reviewable: { type: "boolean" }
+      color: { type: "string" }
     }
   };
   var PHASE = {
@@ -419,7 +408,6 @@
     props: {
       schema: { type: "string" },
       items: { type: "object", required: true },
-      reviews: { type: "array", required: true },
       badges: { type: "object" }
     }
   };
@@ -434,7 +422,6 @@
         data = {
           schema: "sunrise.progress/v1",
           items: data["days"],
-          reviews: data["reviews"] || [],
           badges: data["badges"] || {}
         };
       }
@@ -481,23 +468,12 @@
           completedHour: typeof completedHour === "number" ? completedHour : null
         };
       }
-      const rawReviews = data["reviews"];
-      const reviews = [];
-      rawReviews.forEach((r, i) => {
-        const rr = r;
-        if (!isObj(rr) || typeof rr["itemId"] !== "string" || typeof rr["lastDate"] !== "string" || !DATE_RE.test(rr["lastDate"])) {
-          errors.push({ path: `reviews[${i}]`, msg: "bad review shape" });
-          return;
-        }
-        reviews.push({ itemId: rr["itemId"], lastDate: rr["lastDate"] });
-      });
       if (errors.length) throw new ValidationError(errors);
       const rawBadges = data["badges"];
       const badges = isObj(rawBadges) ? rawBadges : {};
       return {
         schema: "sunrise.progress/v1",
         items,
-        reviews,
         badges
       };
     }
@@ -647,10 +623,6 @@
       this.deps.sessionStore.save(sess);
       this.themeId = id;
     }
-    scheduleReviewForCurrent() {
-      this.deps.reviews.schedule(this.progress, this.currentItemId, this.deps.clock.today());
-      this.save();
-    }
     importProgress(json) {
       let raw;
       try {
@@ -699,10 +671,6 @@
       const notLast = i < this.allItems.length - 1;
       const phaseLabel = this.uiText("phaseLabel").replace("{p}", g.phase == null ? "" : g.phase).replace("{w}", String(this.groupOrdinal(it.id)));
       if (it.rest) {
-        const dueReviews = cfg.reviews ? this.deps.reviews.due(this.progress, this.deps.clock.today()).map((id) => {
-          const item = this.allItems.find((x) => x.id === id);
-          return item ? item.title ?? id : id;
-        }) : [];
         return {
           itemId: it.id,
           rest: true,
@@ -715,10 +683,9 @@
           reflection: "",
           tasks: [],
           resources: [],
-          dueReviews,
           complete: false,
           notLast,
-          show: { warmup: false, reflection: false, review: false }
+          show: { warmup: false, reflection: false }
         };
       }
       const complete = this.progress.isItemComplete(it);
@@ -730,7 +697,6 @@
       }));
       const showWarmup = cfg.warmups !== false && it.warmup != null;
       const showReflection = cfg.reflections !== false;
-      const showReview = !!(m.reviewable && cfg.reviews);
       return {
         itemId: it.id,
         rest: false,
@@ -744,10 +710,9 @@
         reflection: this.progress.reflection(it.id),
         tasks,
         resources: (it.resources ?? []).map((r) => ({ label: r.label, note: r.note })),
-        dueReviews: [],
         complete,
         notLast,
-        show: { warmup: showWarmup, reflection: showReflection, review: showReview }
+        show: { warmup: showWarmup, reflection: showReflection }
       };
     }
     dashboard() {
@@ -961,16 +926,6 @@
     }
   };
 
-  // src/domain/review-schedule.ts
-  var ReviewSchedule = class {
-    due(progress, today) {
-      return progress.getReviewList().filter((r) => diffDays(r.lastDate, today) >= 1).map((r) => r.itemId);
-    }
-    schedule(progress, itemId, today) {
-      progress.scheduleReview(itemId, today);
-    }
-  };
-
   // src/domain/badge-engine.ts
   var inHourRange = (h, from, to) => from <= to ? h >= from && h < to : h >= from || h < to;
   var BadgeEngine = class {
@@ -1082,10 +1037,7 @@
     cardMap: "\u041A\u0430\u0440\u0442\u0430 \u043F\u0440\u043E\u0433\u0440\u0435\u0441\u0441\u0430",
     trophies: "\u0422\u0440\u043E\u0444\u0435\u0438",
     nextDay: "\u0421\u043B\u0435\u0434\u0443\u044E\u0449\u0438\u0439 \u0434\u0435\u043D\u044C \u2192",
-    scheduleReview: "\uFF0B \u0417\u0430\u043F\u043B\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043F\u043E\u0432\u0442\u043E\u0440",
-    restTitle: "\u0420\u0430\u0437\u0433\u0440\u0443\u0437\u043A\u0430 / \u043F\u043E\u0432\u0442\u043E\u0440\u044B",
-    restToday: "\u041F\u043E\u0432\u0442\u043E\u0440\u043E\u0432 \u043D\u0430 \u0441\u0435\u0433\u043E\u0434\u043D\u044F \u043D\u0435\u0442. \u041E\u0442\u0434\u044B\u0445 \u0437\u0430\u0441\u043B\u0443\u0436\u0435\u043D \u{1F319}",
-    dueToday: "\u041A \u043F\u043E\u0432\u0442\u043E\u0440\u0443 \u0441\u0435\u0433\u043E\u0434\u043D\u044F",
+    restTitle: "\u0420\u0430\u0437\u0433\u0440\u0443\u0437\u043A\u0430",
     overallTitle: "\u041E\u0431\u0449\u0438\u0439 \u043F\u0440\u043E\u0433\u0440\u0435\u0441\u0441",
     streakTitle: "\u0421\u0435\u0440\u0438\u044F",
     phasesTitle: "\u0424\u0430\u0437\u044B",
@@ -1516,10 +1468,10 @@
       const phaseLabel = this.$("phaseLabel");
       if (phaseLabel) phaseLabel.textContent = vm.phaseLabel;
       if (vm.rest) {
-        el.innerHTML = `<div class="today-side"><span class="vert">${this.esc(lbl.restVert)}</span></div><div class="today-main"><h2 class="today-title">${this.esc(vm.title)}</h2>` + (vm.reflectPrompt ? `<p class="warm"><span class="warm-i">\u263E</span> ${this.esc(vm.reflectPrompt)}</p>` : "") + `<div class="rest-due">${vm.dueReviews.length ? `${this.esc(lbl.dueToday)} \u2014 <b>${this.esc(vm.dueReviews.join(" \xB7 "))}</b>` : this.esc(lbl.restToday)}</div>` + (vm.notLast ? `<button class="next-day-cta" id="nextDayCta" type="button">${this.esc(lbl.nextDay)}</button>` : "") + `</div>`;
+        el.innerHTML = `<div class="today-side"><span class="vert">${this.esc(lbl.restVert)}</span></div><div class="today-main"><h2 class="today-title">${this.esc(vm.title)}</h2>` + (vm.reflectPrompt ? `<p class="warm"><span class="warm-i">\u263E</span> ${this.esc(vm.reflectPrompt)}</p>` : "") + (vm.notLast ? `<button class="next-day-cta" id="nextDayCta" type="button">${this.esc(lbl.nextDay)}</button>` : "") + `</div>`;
         return;
       }
-      el.innerHTML = `<div class="today-side"><span class="vert">${this.esc(lbl.todayVert)}</span></div><div class="today-main"><span class="trackpill"><span class="k">${this.esc(vm.trackIcon)}</span> ${this.esc(vm.trackLabel)}</span><h2 class="today-title">${this.esc(vm.title)}</h2>` + (vm.show.warmup && vm.warmup ? `<div class="warm"><span class="warm-i">\u2726</span> <span class="muted">${this.esc(lbl.warmup)}</span> ${this.esc(vm.warmup)}</div>` : "") + `<div class="tasks" id="taskList"></div>` + (vm.show.reflection ? `<div class="reflect-block"><label class="reflect-label" for="reflect"><span class="kanji">\u7701</span> ${this.esc(lbl.reflect)}${vm.reflectPrompt ? ` \u2014 ${this.esc(vm.reflectPrompt)}` : ""}</label><textarea id="reflect" placeholder="${this.esc(lbl.taskPlaceholder)}">${this.esc(vm.reflection || "")}</textarea></div>` : "") + (vm.resources.length ? `<div class="res-row">${vm.resources.map((r) => `<span class="chip"><b>${this.esc(r.label)}</b> ${this.esc(r.note)}</span>`).join("")}</div>` : "") + (vm.show.review ? `<button class="btn gold" id="markReview" type="button">${this.esc(lbl.scheduleReview)}</button>` : "") + (vm.complete && vm.notLast ? `<button class="next-day-cta" id="nextDayCta" type="button">${this.esc(lbl.nextDay)}</button>` : "") + `</div>`;
+      el.innerHTML = `<div class="today-side"><span class="vert">${this.esc(lbl.todayVert)}</span></div><div class="today-main"><span class="trackpill"><span class="k">${this.esc(vm.trackIcon)}</span> ${this.esc(vm.trackLabel)}</span><h2 class="today-title">${this.esc(vm.title)}</h2>` + (vm.show.warmup && vm.warmup ? `<div class="warm"><span class="warm-i">\u2726</span> <span class="muted">${this.esc(lbl.warmup)}</span> ${this.esc(vm.warmup)}</div>` : "") + `<div class="tasks" id="taskList"></div>` + (vm.show.reflection ? `<div class="reflect-block"><label class="reflect-label" for="reflect"><span class="kanji">\u7701</span> ${this.esc(lbl.reflect)}${vm.reflectPrompt ? ` \u2014 ${this.esc(vm.reflectPrompt)}` : ""}</label><textarea id="reflect" placeholder="${this.esc(lbl.taskPlaceholder)}">${this.esc(vm.reflection || "")}</textarea></div>` : "") + (vm.resources.length ? `<div class="res-row">${vm.resources.map((r) => `<span class="chip"><b>${this.esc(r.label)}</b> ${this.esc(r.note)}</span>`).join("")}</div>` : "") + (vm.complete && vm.notLast ? `<button class="next-day-cta" id="nextDayCta" type="button">${this.esc(lbl.nextDay)}</button>` : "") + `</div>`;
       const taskList = this.$("taskList");
       if (taskList) {
         taskList.innerHTML = vm.tasks.map((t, k) => {
@@ -1743,11 +1695,8 @@
         warmup: u("warmup"),
         reflect: u("reflect"),
         taskPlaceholder: u("taskPlaceholder"),
-        scheduleReview: u("scheduleReview"),
         nextDay: u("nextDay"),
         hint: u("hint"),
-        dueToday: u("dueToday"),
-        restToday: u("restToday"),
         overallTitle: u("overallTitle"),
         streakTitle: u("streakTitle"),
         inARow: u("inARow"),
@@ -1846,15 +1795,6 @@
         if (reflect) {
           reflect.oninput = (e) => {
             this.t.setReflection(e.target.value);
-          };
-        }
-      }
-      if (vm.show.review) {
-        const mr = this.r.$("markReview");
-        if (mr) {
-          mr.onclick = () => {
-            this.t.scheduleReviewForCurrent();
-            this.renderAll();
           };
         }
       }
@@ -2181,7 +2121,6 @@
         random: new MathRandom(),
         streaks,
         stats,
-        reviews: new ReviewSchedule(),
         badges: new BadgeEngine(streaks, stats),
         defaultUi: DEFAULT_UI,
         genericBadges: GENERIC_BADGES,

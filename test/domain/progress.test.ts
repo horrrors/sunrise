@@ -20,7 +20,6 @@ test('empty + toJSON round-trips shape', () => {
   assert.deepEqual(p.toJSON(), {
     schema: 'sunrise.progress/v1',
     items: {},
-    reviews: [],
     badges: {},
   });
 });
@@ -59,13 +58,6 @@ test('reflections, completedDates, counts', () => {
   assert.deepEqual(p.completedHours(), [14]);
   assert.equal(p.completedCount(), 1);
 });
-test('reviews: re-scheduling replaces the previous date', () => {
-  const p = Progress.empty();
-  p.scheduleReview('bfs', '2026-05-30');
-  p.scheduleReview('bfs', '2026-05-31'); // replaces
-  assert.equal(p.getReviewList().length, 1);
-  assert.deepEqual(p.getReviewList()[0], { itemId: 'bfs', lastDate: '2026-05-31' });
-});
 test('badges: award is sticky and records date', () => {
   const p = Progress.empty();
   p.awardBadge('first-light', '2026-05-30');
@@ -77,7 +69,6 @@ test('isItemComplete/taskChecked tolerate a progress entry missing tasks (legacy
   const bad = {
     schema: 'sunrise.progress/v1',
     items: { i1: { reflection: '', completedAt: null, completedHour: null } },
-    reviews: [],
     badges: {},
   } as unknown as ProgressData;
   const p = new Progress(bad);
@@ -89,7 +80,6 @@ test('setTaskDone tolerates a progress entry missing tasks (write-path counterpa
   const bad = {
     schema: 'sunrise.progress/v1',
     items: { i1: { reflection: '', completedAt: null, completedHour: null } },
-    reviews: [],
     badges: {},
   } as unknown as ProgressData;
   const p = new Progress(bad);

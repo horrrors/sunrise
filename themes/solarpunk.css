@@ -15,7 +15,7 @@
   --leaf:      #3f7d4f;
   --leaf-lt:   #5a9c66;
   --moss:      #2a5d3a;
-  --gold:      #e0a93b;   /* warm sun = the .gold button */
+  --gold:      #e0a93b;   /* warm sun */
   --gold-deep: #c98e22;
   --clay:      #c0653f;   /* terracotta */
   --sky:       #4f93b8;
@@ -195,23 +195,6 @@
 :root[data-theme="solarpunk"] .btn:active{ transform:translateY(0); }
 :root[data-theme="solarpunk"] .btn.ghost{ background:transparent; }
 :root[data-theme="solarpunk"] .btn.ghost:hover{ background:rgba(251,246,234,.7); }
-
-/* the sun button */
-:root[data-theme="solarpunk"] .btn.gold{
-  font-family:var(--font-display); letter-spacing:1px; font-size:15px;
-  color:#3a2a08;
-  background:linear-gradient(135deg, #f3c869, var(--gold) 55%, var(--gold-deep));
-  border:1px solid var(--gold-deep);
-  padding:12px 24px;
-  margin-top:12px;
-  box-shadow:var(--sh-sun), 0 8px 18px rgba(201,142,34,.28);
-}
-:root[data-theme="solarpunk"] .btn.gold:hover{
-  transform:translateY(-2px);
-  color:#3a2a08;
-  border-color:var(--gold-deep);
-  box-shadow:0 0 30px rgba(224,169,59,.55), 0 12px 26px rgba(201,142,34,.34);
-}
 
 /* ====================== LAYOUT ====================== */
 :root[data-theme="solarpunk"] .wrap{
@@ -539,14 +522,6 @@
 }
 :root[data-theme="solarpunk"] .warm-i{ color:var(--gold-deep); flex:0 0 auto; font-size:16px; }
 :root[data-theme="solarpunk"] .warm .muted{ color:var(--leaf); text-transform:uppercase; letter-spacing:1px; font-size:11px; }
-
-:root[data-theme="solarpunk"] .rest-due{
-  font-family:var(--font-ui); font-size:14px; color:var(--ink-dim);
-  background:rgba(63,125,79,.07);
-  border:1px dashed rgba(63,125,79,.4);
-  border-radius:var(--r-sm); padding:15px; margin:6px 0 18px;
-}
-:root[data-theme="solarpunk"] .rest-due b{ color:var(--leaf); font-family:var(--font-display); }
 
 /* ====================== TASKS ====================== */
 :root[data-theme="solarpunk"] .tasks{ display:flex; flex-direction:column; gap:9px; margin:6px 0 20px; }

@@ -184,18 +184,6 @@
 :root[data-theme="memphis"] #exportBtn:hover{ background:var(--violet); color:var(--cream); }
 :root[data-theme="memphis"] #importBtn:hover{ background:var(--cyan); }
 
-/* gold = the celebratory "mark review" action */
-:root[data-theme="memphis"] .btn.gold{
-  font-family:var(--font-display); font-weight:400; font-size:15px; letter-spacing:.5px;
-  color:var(--black);
-  background:var(--yellow);
-  border:var(--bord) solid var(--black);
-  box-shadow:5px 5px 0 var(--pink);
-  padding:12px 22px;
-  margin-top:12px;
-}
-:root[data-theme="memphis"] .btn.gold:hover{ transform:translate(-2px,-2px) rotate(-1.5deg); box-shadow:7px 7px 0 var(--pink); }
-
 /* ====================== LAYOUT ====================== */
 :root[data-theme="memphis"] .wrap{
   max-width:1120px; margin:0 auto;
@@ -499,14 +487,6 @@
   text-transform:uppercase; letter-spacing:1px; font-size:10.5px;
   padding:1px 7px; border:2px solid var(--black); border-radius:99px;
 }
-
-:root[data-theme="memphis"] .rest-due{
-  font-family:var(--font-mono); font-weight:700; font-size:13.5px; color:var(--ink-dim);
-  background:var(--cream-2);
-  border:var(--bord) dashed var(--black);
-  border-radius:var(--r-sm); padding:15px; margin:6px 0 18px;
-}
-:root[data-theme="memphis"] .rest-due b{ color:var(--violet); }
 
 /* ====================== TASKS ====================== */
 :root[data-theme="memphis"] .tasks{ display:flex; flex-direction:column; gap:10px; margin:8px 0 20px; }

@@ -187,19 +187,6 @@
 :root[data-theme="dawn"] .btn:active{ transform:translateY(0); }
 :root[data-theme="dawn"] .btn.ghost{ background:rgba(255,250,243,.6); }
 
-:root[data-theme="dawn"] .btn.gold{
-  font-family:var(--font-display); font-weight:600; font-size:14px; letter-spacing:.3px;
-  color:var(--night);
-  background:linear-gradient(135deg, var(--gold), var(--amber));
-  border:1px solid rgba(224,145,63,.5);
-  box-shadow:0 8px 22px -8px rgba(255,180,84,.7);
-  margin-top:12px;
-}
-:root[data-theme="dawn"] .btn.gold:hover{
-  transform:translateY(-2px);
-  box-shadow:0 12px 30px -8px rgba(255,180,84,.8);
-}
-
 /* ====================== LAYOUT ====================== */
 :root[data-theme="dawn"] .wrap{
   max-width:1100px; margin:0 auto;
@@ -503,14 +490,6 @@
 }
 :root[data-theme="dawn"] .warm-i{ color:var(--coral); flex:0 0 auto; font-size:16px; }
 :root[data-theme="dawn"] .warm .muted{ color:var(--plum); text-transform:uppercase; letter-spacing:1px; font-size:11px; }
-
-:root[data-theme="dawn"] .rest-due{
-  font-family:var(--font-mono); font-size:13px; line-height:1.6; color:var(--ink-dim);
-  background:rgba(255,107,107,.07);
-  border:1px dashed rgba(255,107,107,.4);
-  border-radius:var(--r-sm); padding:14px 16px; margin:6px 0 16px;
-}
-:root[data-theme="dawn"] .rest-due b{ color:var(--coral); }
 
 /* ====================== TASKS ====================== */
 :root[data-theme="dawn"] .tasks{ display:flex; flex-direction:column; gap:9px; margin:6px 0 18px; }

@@ -24,7 +24,7 @@
   --green:  #2ee86b;
   --pink:   #ff2e88;
   --cyan:   #2ee8e8;
-  --yellow: #ffe600;   /* the .gold button */
+  --yellow: #ffe600;
   --purple: #b06bff;
   --orange: #ff7a1a;
 
@@ -210,26 +210,6 @@
   box-shadow:0 0 0 #000;
 }
 :root[data-theme="arcade"] .btn.ghost{ background:var(--panel); }
-
-:root[data-theme="arcade"] .btn.gold{
-  font-family:var(--font-display); font-size:11px;
-  color:#0d0221;
-  background:var(--yellow);
-  border:2px solid #0d0221;
-  box-shadow:4px 4px 0 #5a4a00, 0 0 14px rgba(255,230,0,.4);
-  padding:13px 18px;
-  margin-top:12px;
-  text-shadow:none;
-}
-:root[data-theme="arcade"] .btn.gold:hover{
-  color:#0d0221;
-  transform:translate(2px,2px);
-  box-shadow:2px 2px 0 #5a4a00, 0 0 18px rgba(255,230,0,.6);
-}
-:root[data-theme="arcade"] .btn.gold:active{
-  transform:translate(4px,4px);
-  box-shadow:0 0 0 #5a4a00, 0 0 18px rgba(255,230,0,.6);
-}
 
 /* ====================== LAYOUT ====================== */
 :root[data-theme="arcade"] .wrap{
@@ -506,14 +486,6 @@
   color:var(--cyan); text-transform:uppercase; letter-spacing:1px;
   font-family:var(--font-mono); font-size:11px;
 }
-
-:root[data-theme="arcade"] .rest-due{
-  font-family:var(--font-mono); font-size:13px; color:var(--ink-dim);
-  background:#1a0c40;
-  border:2px dashed var(--pink);
-  padding:14px; margin:8px 0 16px;
-}
-:root[data-theme="arcade"] .rest-due b{ color:var(--pink); text-shadow:var(--glow-pink); }
 
 /* ====================== TASKS ====================== */
 :root[data-theme="arcade"] .tasks{ display:flex; flex-direction:column; gap:9px; margin:8px 0 18px; }

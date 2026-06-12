@@ -9,11 +9,8 @@ export interface RenderLabels {
   warmup: string;
   reflect: string;
   taskPlaceholder: string;
-  scheduleReview: string;
   nextDay: string;
   hint: string;
-  dueToday: string;
-  restToday: string;
   overallTitle: string;
   streakTitle: string;
   inARow: string;

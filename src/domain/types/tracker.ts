@@ -9,7 +9,6 @@ import type {
 } from '../../ports/index.ts';
 import type { Streaks } from '../streaks.ts';
 import type { ProgressStats } from '../progress-stats.ts';
-import type { ReviewSchedule } from '../review-schedule.ts';
 import type { BadgeEngine } from '../badge-engine.ts';
 
 export interface TrackerDeps {
@@ -21,7 +20,6 @@ export interface TrackerDeps {
   random: Random;
   streaks: Streaks;
   stats: ProgressStats;
-  reviews: ReviewSchedule;
   badges: BadgeEngine;
   defaultUi: Record<string, string>;
   genericBadges: readonly BadgeRule[];

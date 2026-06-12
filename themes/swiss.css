@@ -156,14 +156,6 @@
 :root[data-theme="swiss"] .btn:active{ transform:translateY(1px); }
 :root[data-theme="swiss"] .btn.ghost{ background:transparent; }
 :root[data-theme="swiss"] .btn.ghost:hover{ background:var(--ink); color:var(--paper); }
-:root[data-theme="swiss"] .btn.gold{
-  background:var(--red); color:var(--paper-2);
-  border-color:var(--red);
-  font-family:var(--font-ui); font-weight:800; font-size:13px;
-  letter-spacing:.04em; text-transform:uppercase;
-  padding:13px 22px; margin-top:14px;
-}
-:root[data-theme="swiss"] .btn.gold:hover{ background:var(--ink); border-color:var(--ink); color:var(--paper); }
 
 /* ====================== LAYOUT ====================== */
 :root[data-theme="swiss"] .wrap{
@@ -400,13 +392,6 @@
   font-family:var(--font-mono); text-transform:uppercase;
   letter-spacing:.14em; font-size:10.5px; color:var(--ink); font-weight:600;
 }
-
-:root[data-theme="swiss"] .rest-due{
-  font-family:var(--font-mono); font-size:13px; line-height:1.55; color:var(--ink-dim);
-  border:1px solid var(--rule); border-left:6px solid var(--red);
-  padding:16px 18px; margin:8px 0 18px;
-}
-:root[data-theme="swiss"] .rest-due b{ color:var(--ink); }
 
 /* ====================== TASKS ====================== */
 :root[data-theme="swiss"] .tasks{ display:flex; flex-direction:column; gap:0; margin:8px 0 22px; border-top:1px solid var(--rule); }

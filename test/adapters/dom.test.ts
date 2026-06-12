@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { Tracker } from '../../src/domain/tracker.ts';
 import { Streaks } from '../../src/domain/streaks.ts';
 import { ProgressStats } from '../../src/domain/progress-stats.ts';
-import { ReviewSchedule } from '../../src/domain/review-schedule.ts';
 import { BadgeEngine } from '../../src/domain/badge-engine.ts';
 import {
   DEFAULT_UI,
@@ -208,7 +207,6 @@ function harness(seed?: { store?: Record<string, string> }): Harness {
     random: new MathRandom(),
     streaks,
     stats,
-    reviews: new ReviewSchedule(),
     badges: new BadgeEngine(streaks, stats),
     defaultUi: DEFAULT_UI,
     genericBadges: GENERIC_BADGES,
@@ -395,7 +393,8 @@ test('rest-day item renders the rest branch', async () => {
   assert.ok(restId, 'fixture has a rest item');
   registry['daySelect']!.value = restId!;
   registry['daySelect']!.onchange!();
-  assert.ok((registry['todayCard']!.innerHTML || '').includes('rest-due'), 'rest branch rendered');
+  // the rest branch is recognizable by its vertical label (dev-roadmap: 休 · REST)
+  assert.ok((registry['todayCard']!.innerHTML || '').includes('休'), 'rest branch rendered');
 });
 
 test('renderCardMap renders rows + cells with data-id', async () => {

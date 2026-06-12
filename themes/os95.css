@@ -495,21 +495,6 @@
   font-size: 12px;
 }
 :root[data-theme="os95"] .chip b { color: var(--title); }
-
-/* rest day — a system message box */
-:root[data-theme="os95"] .rest-due {
-  padding: 14px 16px;
-  background: var(--face-2);
-  box-shadow: var(--well);
-  font-size: 13px;
-}
-:root[data-theme="os95"] .rest-due b { color: var(--title); }
-
-/* CTAs — dialog buttons; the next-day CTA is the default button (black rim) */
-:root[data-theme="os95"] .btn.gold {
-  width: max-content;
-  color: var(--title);
-}
 :root[data-theme="os95"] .next-day-cta {
   width: max-content;
   border: 1px solid var(--lo-2);

@@ -470,27 +470,6 @@
   font: 12.5px var(--font-mono);
 }
 :root[data-theme="gazette"] .chip b { color: var(--accent); }
-
-/* rest day */
-:root[data-theme="gazette"] .rest-due {
-  padding: 16px 18px;
-  border: 1px dashed var(--line-strong);
-  background: var(--paper-2);
-  font-style: italic;
-}
-:root[data-theme="gazette"] .rest-due b { color: var(--accent); font-style: normal; }
-
-/* CTAs — rubber-stamp red and ink */
-:root[data-theme="gazette"] .btn.gold {
-  width: max-content;
-  background: var(--paper);
-  color: var(--accent);
-  border: 2px solid var(--accent);
-  font: 700 12.5px var(--font-mono);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-:root[data-theme="gazette"] .btn.gold:hover { background: var(--accent); color: var(--paper); }
 :root[data-theme="gazette"] .next-day-cta {
   width: max-content;
   padding: 13px 22px;

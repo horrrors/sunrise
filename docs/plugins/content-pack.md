@@ -61,7 +61,7 @@ rejected at registration time.
 ## `tracks[]` — the subject columns
 
 ```js
-{ id:"dsa", label:"Algorithms", icon:"算", color:"#e23", reviewable:true }
+{ id:"dsa", label:"Algorithms", icon:"算", color:"#e23" }
 ```
 
 - `id` ✅, `label` ✅. `icon` optional (short glyph/emoji).
@@ -69,9 +69,6 @@ rejected at registration time.
   so the pack looks right under any theme, and this hint wins over a theme's own
   `:root` `--track-<id>`. (A theme that wants to force a track color styles the
   `[data-track="<id>"]` elements directly.)
-- `reviewable` optional — items on this track show a "schedule review" button
-  when `settings.reviews` is on. Scheduling sets a reminder: the item appears
-  on rest-day cards from the next day onward, until it is re-scheduled.
 - **`rest` is a built-in track id** — you may use `track:"rest"` on rest items
   without declaring it.
 
@@ -79,16 +76,12 @@ rejected at registration time.
 
 ```js
 { labels:{ phase:"Phase", item:"Day" },
-  reviews:true, reflections:true, warmups:true }
+  reflections:true, warmups:true }
 ```
 
 - `labels` — display nouns; only `phase` and `item` are used (values must be
   strings).
 - `reflections` / `warmups` are **on unless you set them to `false`**.
-- `reviews` is **off unless you explicitly set `reviews:true`** — and the
-  schedule-review button only appears on items whose track is `reviewable`.
-  A scheduled item surfaces on rest-day cards from the next day until
-  re-scheduled (a plain reminder; intervals do not expand).
 
 ## `phases[]` / `groups[]` / `items[]`
 
@@ -101,7 +94,7 @@ groups: [
         warmup:"warm-up text", reflectPrompt:"reflection question",
         tasks:[ { id:"t1", text:"Task one" }, { id:"t2", text:"Task two" } ],
         resources:[ { label:"MDN", note:"Big-O" } ] },
-      { id:"g1rest", track:"rest", rest:true, reflectPrompt:"Rest & review" }
+      { id:"g1rest", track:"rest", rest:true, reflectPrompt:"What stuck this week?" }
     ] }
 ]
 ```
@@ -169,7 +162,7 @@ setting per pack:
 - `todayVert` / `restVert` — the vertical captions on the day card and rest card.
 - `hint` — label on the per-task `guidance` spoiler (default: a localized "what
   counts as a strong answer").
-- `scheduleReview`, `restTitle`, `restToday`, `dueToday` — review / rest captions.
+- `restTitle` — the rest-day card heading.
 
 ```js
 ui: { phaseLabel:"Phase {p} · Week {w}", todayVert:"TODAY", restVert:"REST" }
@@ -181,7 +174,7 @@ ui: { phaseLabel:"Phase {p} · Week {w}", todayVert:"TODAY", restVert:"REST" }
 (function (root){
   var pack = {
     schema:"sunrise.pack/v1", id:"rust-core", name:"Rust Core", version:"1.0.0", locale:"en",
-    settings:{ labels:{ phase:"Phase", item:"Day" }, reviews:false, reflections:true, warmups:true },
+    settings:{ labels:{ phase:"Phase", item:"Day" }, reflections:true, warmups:true },
     tracks:[ { id:"ownership", label:"Ownership", icon:"🦀", color:"#d35400" },
              { id:"async", label:"Async", icon:"⚙️", color:"#2980b9" } ],
     phases:[ { id:"p1", title:"Basics" } ],

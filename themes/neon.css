@@ -168,15 +168,6 @@
 }
 :root[data-theme="neon"] .btn:active{ transform:translateY(0); }
 :root[data-theme="neon"] .btn.ghost{ background:transparent; }
-:root[data-theme="neon"] .btn.gold{
-  background:linear-gradient(120deg, rgba(255,210,63,.12), rgba(255,0,168,.10));
-  border-color:rgba(255,210,63,.5);
-  color:var(--gold); text-shadow:0 0 8px rgba(255,210,63,.6);
-  margin-top:10px;
-}
-:root[data-theme="neon"] .btn.gold:hover{
-  border-color:var(--gold); box-shadow:0 0 8px rgba(255,210,63,.7), 0 0 22px rgba(255,210,63,.4);
-}
 
 /* ====================== LAYOUT ====================== */
 :root[data-theme="neon"] .wrap{
@@ -441,14 +432,6 @@
 }
 :root[data-theme="neon"] .warm-i{ color:var(--lime); text-shadow:var(--glow-lime); flex:0 0 auto; }
 :root[data-theme="neon"] .warm .muted{ color:var(--cyan); text-transform:uppercase; letter-spacing:1px; font-size:11px; }
-
-:root[data-theme="neon"] .rest-due{
-  font-family:var(--font-mono); font-size:13px; color:var(--ink-dim);
-  background:rgba(255,0,168,.05);
-  border:1px dashed rgba(255,0,168,.35);
-  border-radius:var(--r-sm); padding:14px; margin:6px 0 16px;
-}
-:root[data-theme="neon"] .rest-due b{ color:var(--magenta); }
 
 /* ====================== TASKS ====================== */
 :root[data-theme="neon"] .tasks{ display:flex; flex-direction:column; gap:8px; margin:6px 0 18px; }

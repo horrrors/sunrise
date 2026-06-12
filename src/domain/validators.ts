@@ -104,7 +104,6 @@ const TRACK: Schema = {
     label: { type: 'string', required: true },
     icon: { type: 'string' },
     color: { type: 'string' },
-    reviewable: { type: 'boolean' },
   },
 };
 const PHASE: Schema = {
@@ -337,13 +336,14 @@ export class ThemeValidator {
   }
 }
 
+// `reviews` was removed with the review feature; stored blobs and old exports
+// may still carry the key in any shape — check() ignores unlisted props.
 const PROGRESS_SCHEMA: Schema = {
   type: 'object',
   required: true,
   props: {
     schema: { type: 'string' },
     items: { type: 'object', required: true },
-    reviews: { type: 'array', required: true },
     badges: { type: 'object' },
   },
 };
@@ -363,7 +363,6 @@ export class ProgressValidator {
       data = {
         schema: 'sunrise.progress/v1',
         items: data['days'],
-        reviews: data['reviews'] || [],
         badges: data['badges'] || {},
       };
     }
@@ -412,28 +411,12 @@ export class ProgressValidator {
         completedHour: typeof completedHour === 'number' ? completedHour : null,
       };
     }
-    const rawReviews = data['reviews'] as unknown[];
-    const reviews: ProgressData['reviews'] = [];
-    rawReviews.forEach((r, i) => {
-      const rr = r as Record<string, unknown>;
-      if (
-        !isObj(rr) ||
-        typeof rr['itemId'] !== 'string' ||
-        typeof rr['lastDate'] !== 'string' ||
-        !DATE_RE.test(rr['lastDate'])
-      ) {
-        errors.push({ path: `reviews[${i}]`, msg: 'bad review shape' });
-        return;
-      }
-      reviews.push({ itemId: rr['itemId'], lastDate: rr['lastDate'] });
-    });
     if (errors.length) throw new ValidationError(errors);
     const rawBadges = data['badges'];
     const badges = isObj(rawBadges) ? rawBadges : {};
     return {
       schema: 'sunrise.progress/v1',
       items,
-      reviews,
       badges: badges as ProgressData['badges'],
     };
   }

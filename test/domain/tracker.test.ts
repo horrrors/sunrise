@@ -4,7 +4,6 @@ import { Tracker } from '../../src/domain/tracker.ts';
 import { Progress } from '../../src/domain/progress.ts';
 import { Streaks } from '../../src/domain/streaks.ts';
 import { ProgressStats } from '../../src/domain/progress-stats.ts';
-import { ReviewSchedule } from '../../src/domain/review-schedule.ts';
 import { BadgeEngine } from '../../src/domain/badge-engine.ts';
 import type { Pack, Theme, Session } from '../../src/domain/types/entities.ts';
 import type { ItemProgress } from '../../src/domain/types/progress.ts';
@@ -62,7 +61,6 @@ function buildTracker(opts: {
     random: { next: () => opts.randomValue ?? 0.99 },
     streaks: new Streaks(),
     stats: new ProgressStats(),
-    reviews: new ReviewSchedule(),
     badges: new BadgeEngine(new Streaks(), new ProgressStats()),
     defaultUi: DEFAULT_UI,
     genericBadges: GENERIC_BADGES,
@@ -178,30 +176,6 @@ test('badge awards are eager: a reflection-driven trophy persists without item c
   assert.equal(t.trophies().find((x) => x.id === 'noted')!.unlocked, true);
 });
 
-test('reviews are keyed by item id and surface as titles on the rest card', () => {
-  const pack: Pack = {
-    ...PACK,
-    settings: { reviews: true },
-    tracks: [{ id: 'dsa', label: 'DSA', reviewable: true }],
-    groups: [
-      {
-        id: 'g1',
-        title: 'Week 1',
-        items: [
-          { id: 'i1', track: 'dsa', title: 'Graphs', tasks: [{ id: 't1', text: 'x' }] },
-          { id: 'r1', track: 'rest', rest: true },
-        ],
-      },
-    ],
-  };
-  const { t, store, setToday } = buildTracker({ packs: [pack] });
-  t.scheduleReviewForCurrent(); // current = i1
-  assert.deepEqual(store.get('p')!.getReviewList()[0], { itemId: 'i1', lastDate: '2026-05-30' });
-  setToday('2026-05-31');
-  t.selectItem('r1');
-  assert.deepEqual(t.todayCard().dueReviews, ['Graphs']); // title, not id
-});
-
 test('streak word uses Slavic plural rules (21 → one-form, 22 → few-form)', () => {
   const mk = (n: number) => {
     const items: Record<string, ItemProgress> = {};
@@ -215,7 +189,7 @@ test('streak word uses Slavic plural rules (21 → one-form, 22 → few-form)', 
       };
     }
     const store = new Map<string, Progress>();
-    store.set('p', new Progress({ schema: 'sunrise.progress/v1', items, reviews: [], badges: {} }));
+    store.set('p', new Progress({ schema: 'sunrise.progress/v1', items, badges: {} }));
     return buildTracker({ packs: [PACK], store }).t;
   };
   assert.equal(mk(21).dashboard().streakWord, DEFAULT_STREAK_WORDS[0]); // 21 день
@@ -335,10 +309,7 @@ function makeResumeTracker(opts: { session?: Session; complete?: string[] } = {}
         completedHour: 14,
       };
     }
-    store.set(
-      'resume',
-      new Progress({ schema: 'sunrise.progress/v1', items, reviews: [], badges: {} }),
-    );
+    store.set('resume', new Progress({ schema: 'sunrise.progress/v1', items, badges: {} }));
   }
   const { t, getSession } = buildTracker({
     packs: [RESUME_PACK],

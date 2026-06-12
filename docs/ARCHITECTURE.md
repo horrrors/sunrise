@@ -49,7 +49,7 @@ index.html
         │     │                                                                          │         │
         │     │      ┌──────────────── DOMAIN (pure logic — no browser) ──────────┐      │         │
         │     │      │  Entities (types)   Progress (aggregate)                    │      │         │
-        │     │      │  Services: Streaks · ProgressStats · ReviewSchedule ·       │      │         │
+        │     │      │  Services: Streaks · ProgressStats ·                        │      │         │
         │     │      │            BadgeEngine · Validators                         │      │         │
         │     │      │  Tracker (facade — the app's one entry point)               │      │         │
         │     │      └─────────────────────────────────────────────────────────────┘      │         │
@@ -65,7 +65,7 @@ The folder layout mirrors the rings:
 src/
   domain/        ← ring 1: pure logic. Classes + functions, NO browser globals.
     types/       ← all the domain's type/interface declarations (data shapes)
-    progress.ts, streaks.ts, progress-stats.ts, review-schedule.ts,
+    progress.ts, streaks.ts, progress-stats.ts,
     badge-engine.ts, validators.ts, tracker.ts, builtins.ts, dates.ts, errors.ts
   ports/
     index.ts     ← ring 2: the interfaces the domain depends on
@@ -85,21 +85,20 @@ Pure TypeScript. Knows nothing about the outside world. Four kinds of thing live
 **a) Entity types** (`domain/types/*`) — the data shapes, all `interface`s:
 - `entities.ts` — the **content-pack contract**: `Pack`, `Track`, `Phase`, `Group`, `Item`, `Task`, `Theme`, plus `Session` (active pack/theme + a per-pack `cursors` map of resume positions). The pack types describe data that comes *in* from plugins; they're read-only (`readonly` everywhere).
 - `badge-rule.ts` — `BadgeRule`, a **discriminated union** of the 14 achievement conditions (`{type:'streak', gte}`, `{type:'track-complete', track}`, …).
-- `progress.ts` — `ProgressData`/`ItemProgress`/`Review`: the saved-state shape (a `Review` is just `{itemId, lastDate}`).
+- `progress.ts` — `ProgressData`/`ItemProgress`: the saved-state shape.
 - `view-models.ts` — the **DTOs the UI renders** (`TodayVM`, `DashboardVM`, `CardMapVM`, …). More on these below.
 - `progress-stats.ts`, `badge-engine.ts`, `tracker.ts` — small public types tied to those modules (`Stat`, `BadgeStatus`, `TrackerDeps`).
 
-**b) The `Progress` aggregate** (`domain/progress.ts`) — the *one mutable thing* in the app. It owns your task checks, reflections, reviews, and earned badges behind `private` fields, and it **enforces the completion invariant in one place**: checking the last task of a day sets `completedAt`/`completedHour`; un-checking clears them. Because that rule lives *inside* the object, no other code can set "completed" incorrectly. It also does `toJSON()` (for saving) and `Progress.empty()` / takes `ProgressData` in its constructor (for loading).
+**b) The `Progress` aggregate** (`domain/progress.ts`) — the *one mutable thing* in the app. It owns your task checks, reflections, and earned badges behind `private` fields, and it **enforces the completion invariant in one place**: checking the last task of a day sets `completedAt`/`completedHour`; un-checking clears them. Because that rule lives *inside* the object, no other code can set "completed" incorrectly. It also does `toJSON()` (for saving) and `Progress.empty()` / takes `ProgressData` in its constructor (for loading).
 
 **c) Services** — stateless classes, each a single responsibility, that compute over a `Pack` + a `Progress`:
 - `Streaks` — current / longest streak, "has there been a comeback gap".
 - `ProgressStats` — totals: overall %, per-track, per-phase, task counts, completed groups.
-- `ReviewSchedule` — simple review reminders, just `due()`/`schedule()`: an item becomes due ≥1 day after it was scheduled and stays due until re-scheduled. No spaced-repetition ladder.
 - `BadgeEngine` — interprets the `BadgeRule` union: builds a small context (streak, %, hours, etc.) and evaluates each rule. `evaluate()` (read) and `sync()` (awards newly-passing badges).
 - `Validators` (`validators.ts`) — `PackValidator` / `ThemeValidator` / `ProgressValidator`. They check untrusted incoming data (plugins, imported JSON) and **throw** `ValidationError`/`ImportError` on bad shape. This is where the runtime contract lives.
 
 **d) The `Tracker` facade** (`domain/tracker.ts`) — **the single entry point the UI talks to.** Everything outside the domain goes through it. It has two kinds of method:
-- **Intents (commands)** — `setTaskDone`, `setReflection`, `selectItem`, `goToItem`, `selectPack`, `selectTheme`, `scheduleReviewForCurrent`, `importProgress`, `exportProgress`. These mutate state (via `Progress`) and persist (via the `ProgressStore` port).
+- **Intents (commands)** — `setTaskDone`, `setReflection`, `selectItem`, `goToItem`, `selectPack`, `selectTheme`, `importProgress`, `exportProgress`. These mutate state (via `Progress`) and persist (via the `ProgressStore` port).
 - **Queries** — `dashboard()`, `todayCard()`, `selectors()`, `cardMap()`, `trophies()`, `comeback()`. Each returns a **plain view-model** (a DTO from `view-models.ts`) describing *what to show* — never any HTML. Smaller scalar lookups round these out: `trackColors()`, `mottos()`, `ui(key)`, `itemLabel()`, `activeThemeHref()`/`activeThemeId()`, `activePackId()`, `locale()`. (The shortcuts help overlay has no Tracker query — the controller assembles it from `ui(...)` strings.)
 
 The `Tracker` is constructed with all its dependencies (ports + services + default data) in one `TrackerDeps` object — that's the dependency injection. It holds the active pack, the loaded progress, and the current day, and orchestrates the services and ports to fulfill each intent/query.
@@ -203,11 +202,10 @@ A cookbook. The pattern is always: *figure out which ring owns the change, do it
 
 | You want to change… | Go to |
 |---|---|
-| What "day complete" / reflections / reviews / badges-owned mean | `src/domain/progress.ts` |
+| What "day complete" / reflections / badges-owned mean | `src/domain/progress.ts` |
 | Streak math | `src/domain/streaks.ts` (+ UTC helpers in `dates.ts`) |
 | Progress totals (%, per-track, per-phase) | `src/domain/progress-stats.ts` |
 | Badge unlock logic | `src/domain/badge-engine.ts` (+ types in `domain/types/badge-rule.ts`) |
-| Review reminders (due/schedule) | `src/domain/review-schedule.ts` |
 | Plugin/import validation rules | `src/domain/validators.ts` |
 | App orchestration / what the UI can ask for | `src/domain/tracker.ts` |
 | Default UI strings, generic badges, bundled themes | `src/domain/builtins.ts` |

@@ -34,7 +34,6 @@ export interface Track {
   readonly label: string;
   readonly icon?: string;
   readonly color?: string;
-  readonly reviewable?: boolean;
 }
 export interface Labels {
   readonly phase?: string;
@@ -42,7 +41,6 @@ export interface Labels {
 }
 export interface PackSettings {
   readonly labels?: Labels;
-  readonly reviews?: boolean;
   readonly reflections?: boolean;
   readonly warmups?: boolean;
 }

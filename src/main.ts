@@ -1,7 +1,6 @@
 import { Tracker } from './domain/tracker.ts';
 import { Streaks } from './domain/streaks.ts';
 import { ProgressStats } from './domain/progress-stats.ts';
-import { ReviewSchedule } from './domain/review-schedule.ts';
 import { BadgeEngine } from './domain/badge-engine.ts';
 import {
   DEFAULT_UI,
@@ -52,7 +51,6 @@ function boot(): void {
       random: new MathRandom(),
       streaks,
       stats,
-      reviews: new ReviewSchedule(),
       badges: new BadgeEngine(streaks, stats),
       defaultUi: DEFAULT_UI,
       genericBadges: GENERIC_BADGES,

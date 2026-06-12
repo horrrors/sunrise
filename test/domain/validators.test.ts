@@ -79,12 +79,11 @@ test('progress parse: valid passes; null item rejected; legacy days→items', ()
   const ok = {
     schema: 'sunrise.progress/v1',
     items: { a: { tasks: {}, reflection: '', completedAt: null, completedHour: null } },
-    reviews: [],
     badges: {},
     lastSurprise: null,
   };
   assert.deepEqual(v.parse(ok).items['a']?.reflection, '');
-  assert.throws(() => v.parse({ items: { x: null }, reviews: [] }), ValidationError);
+  assert.throws(() => v.parse({ items: { x: null } }), ValidationError);
   const legacy = {
     version: 2,
     days: {
@@ -130,12 +129,16 @@ test('duplicate task id within an item → issue mentioning duplicate task id', 
   );
 });
 
-test('ProgressValidator: reviews entry with wrong shape → issue path reviews[0]', () => {
+// The review feature was removed; stored blobs (and old exports) still carry a
+// `reviews` key in any shape. It must be silently dropped, never rejected.
+test('ProgressValidator: legacy reviews key is ignored and not round-tripped', () => {
   const v = new ProgressValidator();
-  assert.throws(
-    () => v.parse({ items: {}, reviews: ['oops'] }),
-    (e: unknown) => e instanceof ValidationError && e.issues.some((i) => i.path === 'reviews[0]'),
-  );
+  const out = v.parse({
+    items: {},
+    reviews: [{ itemId: 'a', lastDate: '2026-01-02' }, 'garbage'],
+  });
+  assert.ok(!('reviews' in out), 'parsed data must not carry reviews');
+  assert.ok(!('reviews' in v.parse({ items: {} })), 'missing reviews key is fine too');
 });
 
 const hasIssue = (e: unknown, path: string, re?: RegExp): boolean =>
@@ -230,15 +233,15 @@ test('weekday days outside 1..7 and hour-range outside 0..23 are rejected', () =
 test('progress: wrong schema version rejected; absent schema accepted', () => {
   const v = new ProgressValidator();
   assert.throws(
-    () => v.parse({ schema: 'sunrise.progress/v99', items: {}, reviews: [] }),
+    () => v.parse({ schema: 'sunrise.progress/v99', items: {} }),
     (e: unknown) => hasIssue(e, 'schema', /unsupported progress version/),
   );
-  assert.equal(v.parse({ items: {}, reviews: [] }).schema, 'sunrise.progress/v1');
+  assert.equal(v.parse({ items: {} }).schema, 'sunrise.progress/v1');
 });
 
 test('progress: item entry internals normalized or rejected', () => {
   const v = new ProgressValidator();
-  const empty = v.parse({ items: { a: {} }, reviews: [] });
+  const empty = v.parse({ items: { a: {} } });
   assert.deepEqual(empty.items['a'], {
     tasks: {},
     reflection: '',
@@ -246,30 +249,19 @@ test('progress: item entry internals normalized or rejected', () => {
     completedHour: null,
   });
   assert.throws(
-    () => v.parse({ items: { a: { completedAt: 42 } }, reviews: [] }),
+    () => v.parse({ items: { a: { completedAt: 42 } } }),
     (e: unknown) => hasIssue(e, 'items.a.completedAt'),
   );
   // completedAt is shape-checked only (\d{4}-\d{2}-\d{2}); impossible-but-shaped dates pass through.
-  const shaped = v.parse({ items: { a: { completedAt: '2026-13-99' } }, reviews: [] });
+  const shaped = v.parse({ items: { a: { completedAt: '2026-13-99' } } });
   assert.equal(shaped.items['a']?.completedAt, '2026-13-99');
   const tasks = v.parse({
     items: { a: { tasks: { t1: true, t2: false, t3: 1, t4: 'x' } } },
-    reviews: [],
   }).items['a']!.tasks;
   assert.deepEqual(tasks, { t1: true });
 });
 
-test('progress: reviews keep {itemId,lastDate} only; bad lastDate rejected', () => {
-  const v = new ProgressValidator();
-  const out = v.parse({ items: {}, reviews: [{ itemId: 'a', lastDate: '2026-01-02', stage: 3 }] });
-  assert.deepEqual(out.reviews, [{ itemId: 'a', lastDate: '2026-01-02' }]);
-  assert.throws(
-    () => v.parse({ items: {}, reviews: [{ itemId: 'a', lastDate: 'garbage' }] }),
-    (e: unknown) => hasIssue(e, 'reviews[0]'),
-  );
-});
-
-test('progress: legacy days blob migrates to items and normalizes reviews', () => {
+test('progress: legacy days blob migrates to items', () => {
   const out = new ProgressValidator().parse({
     days: { a: { tasks: { t: true } } },
     reviews: [{ itemId: 'a', lastDate: '2026-01-01', stage: 2 }],
@@ -280,5 +272,5 @@ test('progress: legacy days blob migrates to items and normalizes reviews', () =
     completedAt: null,
     completedHour: null,
   });
-  assert.deepEqual(out.reviews, [{ itemId: 'a', lastDate: '2026-01-01' }]);
+  assert.ok(!('reviews' in out));
 });

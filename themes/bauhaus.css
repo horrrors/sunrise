@@ -171,22 +171,6 @@
 :root[data-theme="bauhaus"] #exportBtn:hover{ background:var(--blue); color:var(--paper); }
 :root[data-theme="bauhaus"] #importBtn:hover{ background:var(--blue); color:var(--paper); }
 
-:root[data-theme="bauhaus"] .btn.gold{
-  background:var(--yellow);
-  color:var(--ink);
-  border:var(--bw) solid var(--ink);
-  font-family:var(--font-display); font-weight:800; letter-spacing:1px;
-  text-transform:uppercase;
-  padding:12px 22px;
-  margin-top:12px;
-  box-shadow:4px 4px 0 var(--ink);
-}
-:root[data-theme="bauhaus"] .btn.gold:hover{
-  transform:translate(-2px,-2px); box-shadow:6px 6px 0 var(--ink);
-  background:var(--red); color:var(--paper);
-}
-:root[data-theme="bauhaus"] .btn.gold:active{ transform:translate(2px,2px); box-shadow:0 0 0 var(--ink); }
-
 /* ====================== LAYOUT ====================== */
 :root[data-theme="bauhaus"] .wrap{
   max-width:1100px; margin:0 auto;
@@ -525,14 +509,6 @@
   color:var(--ink); text-transform:uppercase; letter-spacing:1px;
   font-family:var(--font-mono); font-weight:700; font-size:11px;
 }
-
-:root[data-theme="bauhaus"] .rest-due{
-  font-family:var(--font-mono); font-size:13px; color:var(--ink-dim);
-  background:var(--paper);
-  border:var(--bw) dashed var(--ink);
-  border-radius:0; padding:15px; margin:6px 0 16px;
-}
-:root[data-theme="bauhaus"] .rest-due b{ color:var(--red); font-weight:700; }
 
 /* ====================== TASKS ====================== */
 :root[data-theme="bauhaus"] .tasks{ display:flex; flex-direction:column; gap:10px; margin:6px 0 18px; }

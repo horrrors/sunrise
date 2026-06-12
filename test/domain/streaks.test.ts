@@ -9,7 +9,7 @@ function progressOf(dates: string[]): Progress {
   dates.forEach((d, i) => {
     items['x' + i] = { tasks: {}, reflection: '', completedAt: d, completedHour: 12 };
   });
-  return new Progress({ schema: 'sunrise.progress/v1', items, reviews: [], badges: {} });
+  return new Progress({ schema: 'sunrise.progress/v1', items, badges: {} });
 }
 
 test('streaks: empty, consecutive ending today, anchors to yesterday', () => {

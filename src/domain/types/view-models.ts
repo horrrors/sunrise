@@ -24,10 +24,9 @@ export interface TodayVM {
   reflection: string;
   tasks: TaskVM[];
   resources: { label: string; note: string }[];
-  dueReviews: string[];
   complete: boolean;
   notLast: boolean;
-  show: { warmup: boolean; reflection: boolean; review: boolean };
+  show: { warmup: boolean; reflection: boolean };
 }
 export interface DashboardVM {
   overall: Stat;
