@@ -196,11 +196,11 @@ triangle is already injected):
 .task-hint-body{font-size:13px;line-height:1.55;opacity:.78;border-left:2px solid currentColor;padding-left:10px;margin-left:3px}
 
 /* copy / AI-copy tools — FUNCTIONAL baseline, tinted by your HUD tokens
-   (--paper/--paper-2/--ink/--r). Desktop: chips sit at the block's top-right
-   at 60% opacity (full on hover/focus) and the floated .tools-spacer that
-   leads the text reserves their corner, so text WRAPS AROUND the buttons and
-   never runs under them. [data-mobile]: spacer hidden, tools drop into the
-   flow (static, right-aligned) with 34px tap targets. Override only the look. */
+   (--paper/--paper-2/--ink/--r). The chips sit at the block's top-right and
+   the floated .tools-spacer that leads the text reserves their corner, so
+   text WRAPS AROUND the buttons and never runs under them. Desktop: 28px
+   chips at 60% opacity (full on hover/focus). [data-mobile]: same corner
+   placement, 30px chips, always full opacity. Override only the look. */
 .warm{position:relative}
 .task-tools{position:absolute;top:6px;right:6px;display:inline-flex;gap:5px;opacity:.6;transition:opacity .12s ease}
 .task-wrap:hover .task-tools,.task-wrap:focus-within .task-tools,.warm:hover>.task-tools,.warm:focus-within>.task-tools{opacity:1}
