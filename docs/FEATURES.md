@@ -61,6 +61,7 @@ On phones (viewport ≤640px) every theme automatically switches to a game-HUD l
 ## Platform
 
 - **Offline, no server** — opens by double-clicking `index.html` from `file://`; works with no network.
+- **Installable PWA** — served over HTTPS the app installs to a phone home screen (manifest + icons) and runs fully offline via a cache-first service worker that precaches the bundle, every pack and **every theme**; progress data never leaves the device. `file://` desktop use is unchanged.
 - **Zero runtime dependencies** — the shipped bundle is plain JavaScript; the only dependencies are dev-time build tools.
 - **Graceful degradation** — corrupt saved data resets to a fresh start rather than crashing; a failed boot shows a readable fallback (listing why), never a blank page.
 - **Accessible touches** — ARIA labels on controls, `role="dialog"` modals, Escape-to-close, `prefers-reduced-motion` honored by the themes, and a per-pack `<html lang>`.

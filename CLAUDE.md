@@ -9,7 +9,7 @@ Sunrise is an **offline, zero-runtime-dependency goal-achievement tracker**. It 
 ## Commands
 
 ```bash
-npm run build      # esbuild src/main.ts -> dist/sunrise.js (+ .map). REBUILD AFTER ANY src CHANGE.
+npm run build      # esbuild src/main.ts -> dist/sunrise.js (+ .map) AND regenerates sw.js. REBUILD AFTER ANY src CHANGE.
 npm run typecheck  # tsc --noEmit
 npm test           # node --test "test/**/*.test.ts"
 npm run lint       # eslint src test
@@ -24,6 +24,7 @@ node --test test/domain/tracker.test.ts --test-name-pattern='completing the acti
 
 - **Requires Node 23.11.0** (pinned in `.tool-versions` / `.nvmrc`). Tests are `.ts` files run *natively* by `node --test` via type-stripping — there is no test compile step and zero test-time dependencies.
 - **Critical workflow:** after editing anything under `src/`, run `npm run build` and commit the regenerated `dist/sunrise.js` (and `.map`) *in the same change* as the `.ts` edits. `index.html` loads the bundle directly; stale `dist` means stale app.
+- **`sw.js` is a committed build artifact too** — `scripts/gen-sw.mjs` (part of `npm run build`) globs every pack/theme/icon into the precache list and stamps a content-hash cache name, so adding a theme or editing any asset requires a rebuild+commit (staleness-tested in `test/pwa/pwa-shell.test.ts`). The PWA installs from HTTPS (Cloudflare Pages, no build step); on `file://` the app skips SW registration silently and behaves exactly as before.
 
 ## Architecture
 

@@ -119,6 +119,10 @@ Progress is already clean, per-pack-namespaced JSON — sync is purely additive.
 
 ## 7. Phase 2 — Home-base LAN sync
 
+> *Drift note (2026-06-13): the review feature was removed entirely on 06-12
+> (`ReviewSchedule`, `reviews` in `ProgressData` — all gone; the validator drops
+> the legacy key). When planning Phase 2, delete the `reviews` merge row below.*
+
 **Topology:** one device (typically the Mac) runs a tiny sync server; phones sync to it over wifi
 by its LAN IP, behind the one-time LNA permission.
 
