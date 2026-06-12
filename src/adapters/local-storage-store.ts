@@ -11,14 +11,35 @@ const LEGACY_THEME = 'sunriseTheme';
 export class LocalStorageProgressStore implements ProgressStore {
   private validator = new ProgressValidator();
   public load(packId: string): Progress {
+    let raw: string | null;
     try {
-      const raw = localStorage.getItem(PREFIX + packId);
-      if (!raw) return Progress.empty();
+      raw = localStorage.getItem(PREFIX + packId);
+    } catch {
+      return Progress.empty();
+    }
+    if (!raw) return Progress.empty();
+    try {
       return new Progress(this.validator.parse(JSON.parse(raw)));
-    } catch { return Progress.empty(); }
+    } catch (e) {
+      // The next save would overwrite the unreadable blob — keep a copy for manual recovery.
+      console.error(
+        `[sunrise] progress for "${packId}" is unreadable, starting empty (backup at ${PREFIX}${packId}.corrupt):`,
+        e,
+      );
+      try {
+        localStorage.setItem(PREFIX + packId + '.corrupt', raw);
+      } catch {
+        /* quota */
+      }
+      return Progress.empty();
+    }
   }
   public save(packId: string, p: Progress): void {
-    try { localStorage.setItem(PREFIX + packId, JSON.stringify(p.toJSON(), null, 2)); } catch { /* quota */ }
+    try {
+      localStorage.setItem(PREFIX + packId, JSON.stringify(p.toJSON(), null, 2));
+    } catch {
+      /* quota */
+    }
   }
 }
 
@@ -27,12 +48,22 @@ function readSession(): Session {
     const raw = localStorage.getItem(SESSION);
     const o: unknown = raw ? JSON.parse(raw) : {};
     return o && typeof o === 'object' && !Array.isArray(o) ? (o as Session) : {};
-  } catch { return {}; }
+  } catch {
+    return {};
+  }
 }
 
 export class LocalStorageSessionStore implements SessionStore {
-  public load(): Session { return readSession(); }
-  public save(s: Session): void { try { localStorage.setItem(SESSION, JSON.stringify(s)); } catch { /* quota */ } }
+  public load(): Session {
+    return readSession();
+  }
+  public save(s: Session): void {
+    try {
+      localStorage.setItem(SESSION, JSON.stringify(s));
+    } catch {
+      /* quota */
+    }
+  }
 }
 
 export function migrateLegacy(): void {
@@ -46,5 +77,7 @@ export function migrateLegacy(): void {
     const th = localStorage.getItem(LEGACY_THEME);
     if (th && !sess.themeId) sess.themeId = th;
     localStorage.setItem(SESSION, JSON.stringify(sess));
-  } catch { /* never block boot */ }
+  } catch {
+    /* never block boot */
+  }
 }

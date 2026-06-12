@@ -24,7 +24,6 @@ export interface TodayVM {
   reflection: string;
   tasks: TaskVM[];
   resources: { label: string; note: string }[];
-  reviewable: boolean;
   dueReviews: string[];
   complete: boolean;
   notLast: boolean;

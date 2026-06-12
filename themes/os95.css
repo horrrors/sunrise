@@ -1,0 +1,830 @@
+/* ============================================================================
+   themes/os95.css — «OS '95 · Рабочий стол»
+   ----------------------------------------------------------------------------
+   The tracker as a retro desktop OS: a teal desktop, gray window chrome with
+   hard four-layer bevels, navy title bars, an installer-wizard gradient spine
+   on the today card, Explorer-style navy selection for done tasks, a Notepad
+   reflection box, Minesweeper card-map cells, tooltip-yellow hints, and the
+   Solitaire win cascade as confetti. No webfonts — pure system chrome, works
+   fully offline.
+
+   Motion (all era-stepped, auto-capped by the app's baseline motion guard):
+   windows zoom open in steps on boot and on every redraw, progress blocks
+   march like the file-copy dialog, the streak flame is a two-frame GIF, done
+   tasks flicker like a double-click selection, trophies pop in like a slow
+   folder, modals dim + zoom, and the taskbar runs a marquee ticker.
+
+   Install (already wired in index.html; shown for copy-paste reuse):
+     SUNRISE.registerTheme({
+       schema:  "sunrise.theme/v1",
+       id:      "os95",
+       name:    "OS '95 · Рабочий стол",
+       version: "1.0.0",
+       cssHref: "themes/os95.css",
+     });
+
+   Tokens:
+     --desk                  the teal desktop
+     --face/--face-2         window chrome gray, lighter gray
+     --hi/--lo/--lo-2        bevel highlight / shadow / deep shadow
+     --title / --title-2     active title-bar gradient ends (navy → blue)
+     --ink / --muted / --accent
+     --bevel-out / --bevel-in / --well   the three canonical bevels
+     --r:0 and --focus-ring (dotted marquee) are consumed by the app baseline.
+   The app baseline ships the mechanism (checkbox hiding, focus rule, card-map
+   grid + tooltip, shortcuts list, motion guard) — only looks are themed here.
+   ========================================================================== */
+
+:root[data-theme="os95"] {
+  --desk: #008080;
+  --face: #c0c0c0;
+  --face-2: #dfdfdf;
+  --hi: #ffffff;
+  --lo: #808080;
+  --lo-2: #0a0a0a;
+  --title: #000080;
+  --title-2: #1084d0;
+  --ink: #0a0a0a;
+  --muted: #5a5a5a;
+  --accent: #000080;
+  --tip-bg: #ffffe1;
+  --bevel-out: inset -1px -1px 0 var(--lo-2), inset 1px 1px 0 var(--hi),
+    inset -2px -2px 0 var(--lo), inset 2px 2px 0 var(--face-2);
+  --bevel-in: inset -1px -1px 0 var(--hi), inset 1px 1px 0 var(--lo-2),
+    inset -2px -2px 0 var(--face-2), inset 2px 2px 0 var(--lo);
+  --well: inset -1px -1px 0 var(--face-2), inset 1px 1px 0 var(--lo),
+    inset -2px -2px 0 var(--hi), inset 2px 2px 0 var(--lo-2);
+  --sh-sm: 1px 1px 0 rgba(0, 0, 0, 0.4);
+  --sh: 2px 2px 0 rgba(0, 0, 0, 0.45);
+  --sh-lg: 4px 4px 0 rgba(0, 0, 0, 0.5);
+  --font-ui: "Tahoma", "Segoe UI", "MS Sans Serif", system-ui, sans-serif;
+  --font-fixed: "Courier New", ui-monospace, monospace;
+  --r: 0px;
+  --focus-ring: 2px dotted var(--lo-2);
+  color-scheme: light;
+}
+
+:root[data-theme="os95"] ::selection { background: var(--title); color: var(--hi); }
+
+:root[data-theme="os95"] body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font: 400 13.5px/1.5 var(--font-ui);
+  background-color: var(--desk);
+  /* faint 2px dither so the desktop isn't a dead flat fill */
+  background-image: repeating-conic-gradient(
+    rgba(255, 255, 255, 0.025) 0 25%,
+    transparent 0 50%
+  );
+  background-size: 4px 4px;
+}
+
+/* ---- page column ---------------------------------------------------------- */
+
+:root[data-theme="os95"] .app-header,
+:root[data-theme="os95"] .wrap,
+:root[data-theme="os95"] .foot {
+  width: min(1100px, 100% - 32px);
+  margin-inline: auto;
+}
+
+/* ---- header — the "sunrise.exe" window ------------------------------------- */
+
+:root[data-theme="os95"] .app-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 22px;
+  padding: 4px;
+  background: var(--face);
+  box-shadow: var(--bevel-out), var(--sh);
+  animation: os95-window-in 0.22s steps(5) both; /* boot: the window zooms open */
+}
+:root[data-theme="os95"] .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 8px;
+  background: linear-gradient(90deg, var(--title), var(--title-2));
+  color: var(--hi);
+}
+:root[data-theme="os95"] .brand-mark {
+  display: grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 4px;
+  background: var(--face);
+  color: var(--ink);
+  font: 700 11px/1 var(--font-ui);
+  box-shadow: var(--bevel-out);
+}
+:root[data-theme="os95"] .brand-name {
+  font: 700 clamp(1.05rem, 2.2vw, 1.35rem)/1 var(--font-ui);
+  letter-spacing: 0.04em;
+}
+:root[data-theme="os95"] .brand-sub {
+  margin-left: auto;
+  font: 700 11.5px var(--font-ui);
+  color: #cfe3ff;
+}
+:root[data-theme="os95"] .toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 6px 6px;
+}
+:root[data-theme="os95"] .field { display: flex; flex-direction: column; gap: 2px; }
+
+/* ---- controls — beveled buttons, sunken fields ------------------------------ */
+
+:root[data-theme="os95"] .btn {
+  border: 0;
+  background: var(--face);
+  color: var(--ink);
+  padding: 7px 12px;
+  font: 700 13px var(--font-ui);
+  cursor: pointer;
+  box-shadow: var(--bevel-out);
+}
+:root[data-theme="os95"] .btn:hover { filter: brightness(1.04); }
+:root[data-theme="os95"] .btn:active {
+  box-shadow: var(--bevel-in);
+  padding: 8px 11px 6px 13px; /* content shifts 1px — the W95 press */
+  filter: none;
+}
+:root[data-theme="os95"] select {
+  border: 0;
+  background: var(--hi);
+  color: var(--ink);
+  padding: 6px 8px;
+  font: 13px var(--font-ui);
+  box-shadow: var(--well);
+}
+:root[data-theme="os95"] .btn:focus-visible,
+:root[data-theme="os95"] select:focus-visible,
+:root[data-theme="os95"] textarea#reflect:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: -4px;
+}
+:root[data-theme="os95"] #importFile { display: none !important; }
+
+/* ---- desktop furniture ------------------------------------------------------ */
+
+:root[data-theme="os95"] .wrap { padding: 6px 0 26px; }
+:root[data-theme="os95"] .section-title {
+  /* desktop icon label: white with a hard 1px shadow on the teal */
+  font: 700 12px var(--font-ui);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--hi);
+  text-shadow: 1px 1px 0 var(--lo-2);
+  opacity: 1;
+  margin: 22px 2px 10px;
+}
+:root[data-theme="os95"] #comeback {
+  margin: 14px 0;
+  padding: 12px 14px;
+  background: var(--face);
+  box-shadow: var(--bevel-out), var(--sh-sm);
+  font-weight: 700;
+  animation: os95-attn 0.8s linear both; /* blinks twice on appear, then rests */
+}
+
+/* ---- dashboard — four little windows ---------------------------------------- */
+
+:root[data-theme="os95"] .dash {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+:root[data-theme="os95"] .stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 10px 14px;
+  background: var(--face);
+  box-shadow: var(--bevel-out), var(--sh);
+  animation: os95-window-in 0.18s steps(4) both; /* windows re-zoom on every redraw */
+}
+:root[data-theme="os95"] .dash .stat-card:nth-child(2) { animation-delay: 0.05s; }
+:root[data-theme="os95"] .dash .stat-card:nth-child(3) { animation-delay: 0.1s; }
+:root[data-theme="os95"] .dash .stat-card:nth-child(4) { animation-delay: 0.15s; }
+:root[data-theme="os95"] .eyebrow {
+  /* the card's own title bar, inset in the window frame like the real thing */
+  margin: 0 -6px 4px;
+  padding: 5px 8px;
+  background: linear-gradient(90deg, var(--title), var(--title-2));
+  color: var(--hi);
+  font: 700 11.5px var(--font-ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+:root[data-theme="os95"] .ring {
+  width: 132px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  margin: 4px auto 0;
+  background:
+    radial-gradient(closest-side, var(--face) 0 71%, transparent 72%),
+    conic-gradient(var(--title) calc(var(--p) * 1%), var(--hi) 0);
+  box-shadow: var(--sh-sm);
+}
+:root[data-theme="os95"] .ring > div {
+  width: 74%;
+  aspect-ratio: 1;
+  display: grid;
+  place-content: center; /* pack the % + fraction as one centered group */
+  place-items: center;
+  gap: 3px;
+  border-radius: 50%;
+  background: var(--face);
+}
+:root[data-theme="os95"] .ring b,
+:root[data-theme="os95"] .streak-num { font: 700 30px/1 var(--font-ui); }
+:root[data-theme="os95"] .ring small,
+:root[data-theme="os95"] .stat-sub,
+:root[data-theme="os95"] .muted { color: var(--muted); font-size: 12px; }
+:root[data-theme="os95"] .flame {
+  text-align: center;
+  font-size: 26px;
+  animation: os95-flicker 0.65s linear infinite; /* two-frame animated-GIF fire */
+}
+:root[data-theme="os95"] .streak-num { text-align: center; }
+:root[data-theme="os95"] .stat-card[data-kind="streak"] .stat-sub { text-align: center; }
+
+:root[data-theme="os95"] .prow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+:root[data-theme="os95"] .prow .lbl {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-weight: 700;
+  font-size: 12.5px;
+}
+:root[data-theme="os95"] .prow .lbl > i {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  background: var(--title);
+  box-shadow: var(--bevel-out);
+}
+:root[data-theme="os95"] .val { font: 700 12px var(--font-fixed); }
+/* the classic segmented progress dialog: sunken well, blue blocks */
+:root[data-theme="os95"] .bar {
+  height: 14px;
+  overflow: hidden;
+  background: var(--hi);
+  box-shadow: var(--well);
+  padding: 3px;
+}
+:root[data-theme="os95"] .bar > i {
+  display: block;
+  height: 100%;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--title) 0 8px,
+    transparent 8px 10px
+  );
+  animation: os95-march 1.4s linear infinite; /* blocks march like the copy dialog */
+}
+
+/* ---- day rail ---------------------------------------------------------------- */
+
+:root[data-theme="os95"] .day-rail {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 52px;
+  gap: 12px;
+  align-items: stretch;
+}
+:root[data-theme="os95"] .today-wrap { min-width: 0; }
+:root[data-theme="os95"] .day-nav {
+  border: 0;
+  background: var(--face);
+  color: var(--ink);
+  font: 700 26px/1 var(--font-ui);
+  cursor: pointer;
+  box-shadow: var(--bevel-out), var(--sh-sm);
+}
+:root[data-theme="os95"] .day-nav:active:not(:disabled) { box-shadow: var(--bevel-in); }
+:root[data-theme="os95"] .day-nav:disabled {
+  color: var(--lo);
+  text-shadow: 1px 1px 0 var(--hi); /* embossed disabled text */
+  cursor: default;
+}
+:root[data-theme="os95"] .day-nav:focus-visible { outline: var(--focus-ring); outline-offset: -4px; }
+
+/* ---- today card — a window with a wizard sidebar ------------------------------ */
+
+:root[data-theme="os95"] .today {
+  display: flex;
+  overflow: hidden;
+  min-height: 420px;
+  padding: 4px;
+  background: var(--face);
+  box-shadow: var(--bevel-out), var(--sh-lg);
+  animation: os95-window-in 0.25s steps(5) 0.1s both; /* persists in the DOM → plays once at boot */
+}
+:root[data-theme="os95"] .today-side {
+  flex: 0 0 76px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--track-local, var(--title)) 75%, #000),
+    color-mix(in srgb, var(--track-local, var(--title-2)) 70%, var(--title-2))
+  );
+}
+:root[data-theme="os95"] .vert {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font: 700 14px var(--font-ui);
+  letter-spacing: 0.42em;
+  color: var(--hi);
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.55);
+}
+:root[data-theme="os95"] .today-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  padding: clamp(16px, 3.5vw, 28px);
+}
+:root[data-theme="os95"] .trackpill {
+  /* a status-bar segment */
+  width: max-content;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 9px;
+  background: var(--face);
+  box-shadow: var(--well);
+  font: 700 11.5px var(--font-ui);
+}
+:root[data-theme="os95"] .trackpill > .k {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  background: var(--track-local, var(--title));
+}
+:root[data-theme="os95"] .today-title {
+  margin: 0;
+  font: 700 clamp(1.5rem, 3.4vw, 2.4rem)/1.12 var(--font-ui);
+  letter-spacing: -0.01em;
+}
+
+/* warm-up — Tip of the Day, in tooltip yellow; both <div> and rest <p> variants */
+:root[data-theme="os95"] .warm {
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--tip-bg);
+  border: 1px solid var(--lo-2);
+  box-shadow: var(--sh-sm);
+  font-size: 13px;
+}
+:root[data-theme="os95"] .warm .muted {
+  font-weight: 700;
+  color: var(--ink);
+  margin-right: 4px;
+}
+:root[data-theme="os95"] .warm-i { margin-right: 6px; }
+
+/* tasks — an Explorer list in a sunken well; done = selected row */
+:root[data-theme="os95"] .tasks,
+:root[data-theme="os95"] #taskList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--hi);
+  box-shadow: var(--well);
+  padding: 6px;
+}
+:root[data-theme="os95"] .task-wrap { gap: 2px; }
+:root[data-theme="os95"] .task {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 7px 8px;
+  cursor: pointer;
+  animation: os95-task-in 0.3s both ease-out;
+}
+:root[data-theme="os95"] .task:hover { background: var(--face-2); }
+:root[data-theme="os95"] .task:active { cursor: wait; } /* the system is thinking */
+:root[data-theme="os95"] .task .box {
+  width: 15px;
+  height: 15px;
+  background: var(--hi);
+  box-shadow: var(--well);
+}
+:root[data-theme="os95"] .task-text { font-size: 13.5px; }
+:root[data-theme="os95"] .task.done {
+  background: var(--title); /* the navy selection bar */
+  color: var(--hi);
+  animation: os95-select 0.24s linear both; /* the double-click selection flicker */
+}
+:root[data-theme="os95"] .task.done:hover { background: var(--title); }
+:root[data-theme="os95"] .task.done .box::after {
+  content: "";
+  display: block;
+  width: 4px;
+  height: 8px;
+  margin: 1px auto 0;
+  rotate: 40deg;
+  border: 2px solid var(--ink);
+  border-top: 0;
+  border-left: 0;
+  animation: os95-tick 0.16s steps(2) both;
+}
+:root[data-theme="os95"] .task-hint { margin-left: 30px; }
+:root[data-theme="os95"] .task-hint-body {
+  background: var(--tip-bg);
+  border: 1px solid var(--lo-2);
+  border-left: 1px solid var(--lo-2);
+  padding: 8px 10px;
+  margin-left: 0;
+  color: var(--ink);
+}
+
+/* reflection — Notepad */
+:root[data-theme="os95"] .reflect-block { display: flex; flex-direction: column; gap: 6px; }
+:root[data-theme="os95"] .reflect-label { font: 700 12px var(--font-ui); }
+:root[data-theme="os95"] .kanji {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  background: var(--face);
+  box-shadow: var(--bevel-out);
+  font-size: 11px;
+  margin-right: 6px;
+}
+:root[data-theme="os95"] textarea#reflect {
+  min-height: 110px;
+  resize: vertical;
+  border: 0;
+  background: var(--hi);
+  color: var(--ink);
+  padding: 10px 12px;
+  font: 13px/1.6 var(--font-fixed);
+  box-shadow: var(--well);
+}
+
+/* resources — beveled file chips */
+:root[data-theme="os95"] .res-row { display: flex; flex-wrap: wrap; gap: 6px; }
+:root[data-theme="os95"] .chip {
+  padding: 5px 9px;
+  background: var(--face);
+  box-shadow: var(--bevel-out);
+  font-size: 12px;
+}
+:root[data-theme="os95"] .chip b { color: var(--title); }
+
+/* rest day — a system message box */
+:root[data-theme="os95"] .rest-due {
+  padding: 14px 16px;
+  background: var(--face-2);
+  box-shadow: var(--well);
+  font-size: 13px;
+}
+:root[data-theme="os95"] .rest-due b { color: var(--title); }
+
+/* CTAs — dialog buttons; the next-day CTA is the default button (black rim) */
+:root[data-theme="os95"] .btn.gold {
+  width: max-content;
+  color: var(--title);
+}
+:root[data-theme="os95"] .next-day-cta {
+  width: max-content;
+  border: 1px solid var(--lo-2);
+  background: var(--face);
+  color: var(--ink);
+  padding: 9px 26px;
+  font: 700 13px var(--font-ui);
+  cursor: pointer;
+  box-shadow: var(--bevel-out);
+  animation: os95-window-in 0.18s steps(4) both; /* the default button pops in */
+}
+:root[data-theme="os95"] .next-day-cta:active {
+  box-shadow: var(--bevel-in);
+  padding: 10px 25px 8px 27px;
+}
+:root[data-theme="os95"] .next-day-cta:focus-visible { outline: var(--focus-ring); outline-offset: -5px; }
+
+/* ---- footer — the taskbar ------------------------------------------------------ */
+
+:root[data-theme="os95"] .foot {
+  margin-top: 18px;
+  margin-bottom: 18px;
+  padding: 9px 6px;
+  background: var(--face);
+  box-shadow: var(--bevel-out), var(--sh-sm);
+  text-align: center;
+  overflow: hidden;
+}
+:root[data-theme="os95"] #motd {
+  display: inline-block;
+  font: 700 12px var(--font-fixed);
+  white-space: nowrap;
+  transition: opacity 0.5s ease;
+  animation: os95-marquee 18s linear infinite; /* the taskbar ticker */
+}
+:root[data-theme="os95"] #motd.motd-out { opacity: 0; }
+
+/* ---- modals — real dialog windows ----------------------------------------------- */
+
+:root[data-theme="os95"] .modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: none;
+  overflow-y: auto;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 16px;
+  background: rgba(0, 0, 0, 0.35);
+}
+:root[data-theme="os95"] .modal.open { display: flex; animation: os95-dim 0.2s both; }
+:root[data-theme="os95"] .modal.open .modal-panel { animation: os95-window-in 0.18s steps(4) both; }
+:root[data-theme="os95"] .modal-panel {
+  width: min(560px, 92vw);
+  margin: auto;
+  overflow: visible;
+  padding: 4px 4px 12px;
+  background: var(--face);
+  box-shadow: var(--bevel-out), var(--sh-lg);
+}
+:root[data-theme="os95"] .tr-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 5px 5px 9px;
+  margin-bottom: 12px;
+  background: linear-gradient(90deg, var(--title), var(--title-2));
+  color: var(--hi);
+}
+:root[data-theme="os95"] #cardMapTitle,
+:root[data-theme="os95"] #trophiesTitle,
+:root[data-theme="os95"] #shortcutsTitle {
+  flex: 1;
+  font: 700 13px var(--font-ui);
+  letter-spacing: 0.02em;
+}
+:root[data-theme="os95"] .tr-head button {
+  border: 0;
+  width: 24px;
+  height: 22px;
+  background: var(--face);
+  color: var(--ink);
+  font: 700 12px/1 var(--font-ui);
+  cursor: pointer;
+  box-shadow: var(--bevel-out);
+}
+:root[data-theme="os95"] .tr-head button:active { box-shadow: var(--bevel-in); }
+:root[data-theme="os95"] .tr-head button:focus-visible { outline: var(--focus-ring); outline-offset: -4px; }
+:root[data-theme="os95"] .cm-grid,
+:root[data-theme="os95"] .tr-grid { padding: 0 8px; }
+
+/* card map — Minesweeper cells: raised unrevealed, sunken when done */
+:root[data-theme="os95"] .cm-rlabel { color: var(--muted); opacity: 1; }
+:root[data-theme="os95"] .cm-card {
+  border: 0;
+  background: var(--face);
+  box-shadow: var(--bevel-out);
+}
+:root[data-theme="os95"] .cm-card:hover { transform: none; filter: brightness(1.06); }
+:root[data-theme="os95"] .cm-card:active { box-shadow: var(--bevel-in); filter: none; } /* Minesweeper press */
+:root[data-theme="os95"] .cm-card.done {
+  background: var(--title);
+  box-shadow: var(--well);
+}
+:root[data-theme="os95"] .cm-card.rest {
+  border: 1px dashed var(--lo);
+  background: var(--face-2);
+  box-shadow: none;
+}
+:root[data-theme="os95"] .cm-card.current { outline: 2px dotted var(--lo-2); outline-offset: 2px; }
+:root[data-theme="os95"] .cm-card[data-tip]:hover::after {
+  background: var(--tip-bg);
+  color: var(--ink);
+  border: 1px solid var(--lo-2);
+  border-radius: 0;
+  font: 12px var(--font-ui);
+}
+
+/* trophies — desktop icons; unlocked = selected label */
+:root[data-theme="os95"] .tr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+}
+:root[data-theme="os95"] .badge {
+  position: relative;
+  display: grid;
+  place-content: center; /* equal-height grid rows would otherwise spread icon and label apart */
+  place-items: center;
+  gap: 6px;
+  text-align: center;
+  padding: 12px 8px;
+  background: var(--face);
+  animation: os95-icon-in 0.16s steps(3) both; /* icons load like a slow folder */
+}
+:root[data-theme="os95"] .badge:nth-child(2n) { animation-delay: 0.05s; }
+:root[data-theme="os95"] .badge:nth-child(3n) { animation-delay: 0.09s; }
+:root[data-theme="os95"] .badge:nth-child(5n) { animation-delay: 0.13s; }
+:root[data-theme="os95"] .badge .bi { font-size: 30px; }
+:root[data-theme="os95"] .badge .bt { font: 11.5px var(--font-ui); padding: 1px 5px; }
+:root[data-theme="os95"] .badge.on .bt { background: var(--title); color: var(--hi); }
+:root[data-theme="os95"] .badge.off { opacity: 0.5; }
+:root[data-theme="os95"] .badge.off .bi { filter: grayscale(1); }
+:root[data-theme="os95"] .badge[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 220px;
+  padding: 6px 9px;
+  background: var(--tip-bg);
+  color: var(--ink);
+  border: 1px solid var(--lo-2);
+  font: 12px/1.4 var(--font-ui);
+  box-shadow: var(--sh-sm);
+  z-index: 2;
+  white-space: normal;
+}
+:root[data-theme="os95"] .badge[data-tip]:hover::before {
+  content: "";
+  position: absolute;
+  bottom: calc(100% + 3px);
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 9px;
+  height: 9px;
+  background: var(--tip-bg);
+  border: 1px solid var(--lo-2);
+  border-top: 0;
+  border-left: 0;
+  z-index: 3;
+}
+
+/* ---- effects --------------------------------------------------------------------- */
+
+:root[data-theme="os95"] #fx {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+  overflow: hidden;
+}
+:root[data-theme="os95"] .fx-flash {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.5);
+  animation: os95-flash 0.5s steps(3) both; /* stepped, like a slow repaint */
+}
+:root[data-theme="os95"] .toast,
+:root[data-theme="os95"] .badge-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%) translateY(10px);
+  opacity: 0;
+  padding: 12px 16px;
+  background: var(--face);
+  color: var(--ink);
+  box-shadow: var(--bevel-out), var(--sh-lg);
+  font: 700 12.5px var(--font-ui);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+:root[data-theme="os95"] .toast.show,
+:root[data-theme="os95"] .badge-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+:root[data-theme="os95"] .badge-toast > .bt-i { margin-right: 8px; }
+
+/* confetti — the Solitaire win cascade: falling playing cards */
+:root[data-theme="os95"] .confetti-piece {
+  position: fixed;
+  top: 14%;
+  left: 50%;
+  width: 14px;
+  height: 19px;
+  display: grid;
+  place-items: center;
+  background: var(--hi);
+  border: 1px solid var(--lo-2);
+  border-radius: 2px;
+  animation: os95-confetti calc(1.15s + var(--i) * 16ms) ease-in both;
+}
+:root[data-theme="os95"] .confetti-piece::after { font: 700 10px/1 var(--font-ui); }
+:root[data-theme="os95"] .confetti-piece:nth-child(4n)::after { content: "♥"; color: #c00000; }
+:root[data-theme="os95"] .confetti-piece:nth-child(4n + 1)::after { content: "♠"; color: var(--lo-2); }
+:root[data-theme="os95"] .confetti-piece:nth-child(4n + 2)::after { content: "♦"; color: #c00000; }
+:root[data-theme="os95"] .confetti-piece:nth-child(4n + 3)::after { content: "♣"; color: var(--lo-2); }
+:root[data-theme="os95"] .confetti-piece:nth-child(5n) {
+  background: var(--title); /* a few land face-down */
+}
+:root[data-theme="os95"] .confetti-piece:nth-child(5n)::after { content: ""; }
+
+/* ---- per-track colors — the 16-color VGA palette ----------------------------------
+   Pack-injected --track-<id> wins; fallbacks are this theme's inks for the
+   dev-roadmap track ids. Unknown tracks fall back to title-bar navy. */
+
+:root[data-theme="os95"] [data-track] { --track-local: var(--title); }
+:root[data-theme="os95"] [data-track="dsa"] { --track-local: var(--track-dsa, #008080); }
+:root[data-theme="os95"] [data-track="js"] { --track-local: var(--track-js, #808000); }
+:root[data-theme="os95"] [data-track="ts"] { --track-local: var(--track-ts, #000080); }
+:root[data-theme="os95"] [data-track="node"] { --track-local: var(--track-node, #008000); }
+:root[data-theme="os95"] [data-track="sysdesign"] { --track-local: var(--track-sysdesign, #800080); }
+:root[data-theme="os95"] [data-track="patterns"] { --track-local: var(--track-patterns, #800000); }
+:root[data-theme="os95"] [data-track="distsys"] { --track-local: var(--track-distsys, #0a5fae); }
+:root[data-theme="os95"] [data-track="db"] { --track-local: var(--track-db, #a00050); }
+:root[data-theme="os95"] [data-track="cs"] { --track-local: var(--track-cs, #606060); }
+
+:root[data-theme="os95"] .bar[data-track] > i {
+  background: repeating-linear-gradient(90deg, var(--track-local) 0 8px, transparent 8px 10px);
+}
+:root[data-theme="os95"] .prow[data-track] .lbl > i { background: var(--track-local); }
+
+/* ---- keyframes --------------------------------------------------------------------- */
+
+@keyframes os95-task-in {
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes os95-flash {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+/* the classic window-open zoom — stepped, like the animated rectangle repaint */
+@keyframes os95-window-in {
+  from { transform: scale(0.6); }
+  to { transform: scale(1); }
+}
+/* two-frame GIF fire */
+@keyframes os95-flicker {
+  0%, 49% { transform: none; }
+  50%, 100% { transform: translateY(-1.5px) scale(1.07); }
+}
+/* progress blocks march forward (one 10px block period per loop) */
+@keyframes os95-march {
+  to { background-position-x: 10px; }
+}
+/* double-click selection flicker before the row settles navy */
+@keyframes os95-select {
+  0%, 49% { background-color: var(--face-2); }
+  50%, 100% { background-color: var(--title); }
+}
+@keyframes os95-tick {
+  from { transform: scale(0); }
+  to { transform: scale(1); }
+}
+/* system-message blink: twice, then rest */
+@keyframes os95-attn {
+  0%, 24% { background-color: var(--tip-bg); }
+  25%, 49% { background-color: var(--face); }
+  50%, 74% { background-color: var(--tip-bg); }
+  75%, 100% { background-color: var(--face); }
+}
+@keyframes os95-dim {
+  from { background-color: rgba(0, 0, 0, 0); }
+}
+@keyframes os95-icon-in {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+/* taskbar ticker */
+@keyframes os95-marquee {
+  from { transform: translateX(52vw); }
+  to { transform: translateX(-52vw); }
+}
+@keyframes os95-confetti {
+  0% { transform: translate(-50%, 0) rotate(0); opacity: 1; }
+  100% {
+    transform: translate(calc(-50% + var(--dx) * 240px), calc(160px + var(--dy) * 480px))
+      rotate(calc(var(--rot) / 2)); /* cards tumble, but heavier than paper */
+    opacity: 0;
+  }
+}
+
+/* ---- small screens ------------------------------------------------------------------ */
+
+@media (max-width: 720px) {
+  :root[data-theme="os95"] .day-rail { grid-template-columns: 38px minmax(0, 1fr) 38px; gap: 7px; }
+  :root[data-theme="os95"] .day-nav { font-size: 20px; }
+  :root[data-theme="os95"] .today { flex-direction: column; }
+  :root[data-theme="os95"] .today-side { flex: 0 0 40px; }
+  :root[data-theme="os95"] .vert { writing-mode: horizontal-tb; transform: none; letter-spacing: 0.3em; }
+  :root[data-theme="os95"] .brand-sub { display: none; }
+}

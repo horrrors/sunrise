@@ -109,7 +109,13 @@ test('addBuiltinThemes adds without validation and does not touch rejected()', (
   const r = new WindowPluginRegistry();
   const themes: Theme[] = [
     VALID_THEME,
-    { schema: 'sunrise.theme/v1', id: 'bonus', name: 'Bonus', version: '1.0.0', cssHref: 'themes/bonus.css' },
+    {
+      schema: 'sunrise.theme/v1',
+      id: 'bonus',
+      name: 'Bonus',
+      version: '1.0.0',
+      cssHref: 'themes/bonus.css',
+    },
   ];
   r.addBuiltinThemes(themes);
   assert.equal(r.themes().length, 2);
@@ -127,6 +133,41 @@ test('multiple valid packs and themes register independently', () => {
   assert.equal(r.rejected().length, 0);
 });
 
+test('duplicate pack id keeps the first pack and records a rejection', () => {
+  const r = new WindowPluginRegistry();
+  r.registerPack(VALID_PACK);
+  r.registerPack({ ...VALID_PACK, name: 'Imposter' });
+  assert.equal(r.packs().length, 1);
+  assert.equal(r.packs()[0]?.name, 'Test Pack');
+  const rej = r.rejected()[0]!;
+  assert.equal(rej.kind, 'pack');
+  assert.equal(rej.id, 'test-pack');
+  assert.ok(rej.issues.some((i) => i.path === 'id' && i.msg.includes('duplicate')));
+});
+
+test('duplicate theme id keeps the first theme and records a rejection', () => {
+  const r = new WindowPluginRegistry();
+  r.registerTheme(VALID_THEME);
+  r.registerTheme({ ...VALID_THEME, name: 'Imposter' });
+  assert.equal(r.themes().length, 1);
+  assert.equal(r.themes()[0]?.name, 'Neon');
+  const rej = r.rejected()[0]!;
+  assert.equal(rej.kind, 'theme');
+  assert.equal(rej.id, 'neon');
+  assert.ok(rej.issues.some((i) => i.path === 'id' && i.msg.includes('duplicate')));
+});
+
+test('registerTheme rejects an id colliding with a builtin theme', () => {
+  const r = new WindowPluginRegistry();
+  r.addBuiltinThemes([VALID_THEME]);
+  r.registerTheme({ ...VALID_THEME, name: 'Imposter' });
+  assert.equal(r.themes().length, 1);
+  assert.equal(r.themes()[0]?.name, 'Neon');
+  const rej = r.rejected()[0]!;
+  assert.equal(rej.kind, 'theme');
+  assert.ok(rej.issues.some((i) => i.msg.includes('duplicate')));
+});
+
 test('packs() and themes() return read-only snapshot (arrays)', () => {
   const r = new WindowPluginRegistry();
   r.registerPack(VALID_PACK);
@@ -141,6 +182,6 @@ test('packs() returns a snapshot that does not mutate when more packs register l
   const snapshot = reg.packs();
   assert.equal(snapshot.length, 1);
   reg.registerPack({ ...VALID_PACK, id: 'p2' });
-  assert.equal(snapshot.length, 1);        // snapshot unchanged
-  assert.equal(reg.packs().length, 2);     // fresh call reflects the new pack
+  assert.equal(snapshot.length, 1); // snapshot unchanged
+  assert.equal(reg.packs().length, 2); // fresh call reflects the new pack
 });

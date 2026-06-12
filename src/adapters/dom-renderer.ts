@@ -26,9 +26,16 @@ export class DomRenderer {
 
   // ----- keyboard focus (the only place that touches activeElement/focus) ----
 
-  public focusTask(taskId: string): void {
+  // preventScroll keeps re-renders from yanking the page; pass reveal when the
+  // user is navigating (the checkbox is visually hidden, so an off-screen row
+  // would otherwise show no focus at all).
+  public focusTask(taskId: string, reveal = false): void {
     const el = this.$('cb_' + taskId) as HTMLElement | null;
-    if (el && typeof el.focus === 'function') el.focus({ preventScroll: true });
+    if (!el || typeof el.focus !== 'function') return;
+    el.focus({ preventScroll: true });
+    if (!reveal || typeof el.closest !== 'function') return;
+    const row = el.closest('.task');
+    if (row && typeof row.scrollIntoView === 'function') row.scrollIntoView({ block: 'nearest' });
   }
 
   public activeTaskId(): string | null {
@@ -82,7 +89,9 @@ export class DomRenderer {
         `<div class="today-side"><span class="vert">${this.esc(lbl.restVert)}</span></div>` +
         `<div class="today-main">` +
         `<h2 class="today-title">${this.esc(vm.title)}</h2>` +
-        `<p class="warm"><span class="warm-i">☾</span> ${this.esc(vm.reflectPrompt || '')}</p>` +
+        (vm.reflectPrompt
+          ? `<p class="warm"><span class="warm-i">☾</span> ${this.esc(vm.reflectPrompt)}</p>`
+          : '') +
         `<div class="rest-due">${
           vm.dueReviews.length
             ? `${this.esc(lbl.dueToday)} — <b>${this.esc(vm.dueReviews.join(' · '))}</b>`
@@ -257,16 +266,61 @@ export class DomRenderer {
 
   // ----- theme & track colors ------------------------------------------------
 
+  // Theme switching double-buffers the stylesheet: swapping #themeCss's href
+  // directly drops the old sheet while the new one is still loading, which
+  // flashes the page unstyled. Instead the new sheet loads in a parallel
+  // <link> while the old one keeps the page styled, and the swap happens only
+  // once it's ready (then it's served from cache, so the flip is instant).
+  private themeLoader: HTMLLinkElement | null = null;
+  private themeToken = 0;
+
   public applyTheme(href: string, id: string): void {
     const link = this.$('themeCss') as HTMLLinkElement | null;
-    if (link) link.href = href;
-    document.documentElement.setAttribute('data-theme', id);
+    if (!link) return;
+    const token = ++this.themeToken;
+    if (this.themeLoader) {
+      // a previous switch is still loading — this one supersedes it
+      this.themeLoader.remove();
+      this.themeLoader = null;
+    }
+    if (link.getAttribute('href') === href) {
+      document.documentElement.setAttribute('data-theme', id);
+      return;
+    }
+    const loader = document.createElement('link');
+    loader.rel = 'stylesheet';
+    loader.href = href;
+    loader.onload = () => {
+      if (token !== this.themeToken) return;
+      this.themeLoader = null;
+      link.href = href;
+      document.documentElement.setAttribute('data-theme', id);
+      // keep both sheets through one paint so the handover is seamless
+      setTimeout(() => loader.remove(), 200);
+    };
+    loader.onerror = () => {
+      if (token !== this.themeToken) return;
+      // keep the previous theme rather than leaving the page unstyled
+      this.themeLoader = null;
+      loader.remove();
+      console.error(`[sunrise] theme css failed to load, keeping the current theme: ${href}`);
+    };
+    this.themeLoader = loader;
+    document.head.appendChild(loader);
   }
 
+  private appliedTrackColorIds: string[] = [];
+
   public applyTrackColors(colors: TrackColor[]): void {
+    // Clear the previous pack's vars first — packs can share track ids, and a
+    // stale inline value would mask the theme's fallback color.
+    for (const id of this.appliedTrackColorIds) {
+      document.documentElement.style.removeProperty(`--track-${id}`);
+    }
     for (const c of colors) {
       document.documentElement.style.setProperty(`--track-${c.id}`, c.color);
     }
+    this.appliedTrackColorIds = colors.map((c) => c.id);
   }
 
   public setLang(lang: string): void {
@@ -342,7 +396,6 @@ export class DomRenderer {
     const detail = reasons.length
       ? `<ul>${reasons.map((x) => `<li>${this.esc(x)}</li>`).join('')}</ul>`
       : '';
-    document.body.innerHTML =
-      `<div style="padding:24px;font:16px system-ui"><p>${this.esc(message)}</p>${detail}</div>`;
+    document.body.innerHTML = `<div style="padding:24px;font:16px system-ui"><p>${this.esc(message)}</p>${detail}</div>`;
   }
 }

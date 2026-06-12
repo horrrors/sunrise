@@ -4,16 +4,28 @@ import { ProgressStats } from './domain/progress-stats.ts';
 import { ReviewSchedule } from './domain/review-schedule.ts';
 import { BadgeEngine } from './domain/badge-engine.ts';
 import {
-  DEFAULT_UI, DEFAULT_STREAK_WORDS, DEFAULT_MOTTOS, GENERIC_BADGES, BUILTIN_THEMES,
+  DEFAULT_UI,
+  DEFAULT_STREAK_WORDS,
+  DEFAULT_MOTTOS,
+  GENERIC_BADGES,
+  BUILTIN_THEMES,
 } from './domain/builtins.ts';
 import { SystemClock } from './adapters/system-clock.ts';
 import { MathRandom } from './adapters/math-random.ts';
-import { LocalStorageProgressStore, LocalStorageSessionStore, migrateLegacy } from './adapters/local-storage-store.ts';
+import {
+  LocalStorageProgressStore,
+  LocalStorageSessionStore,
+  migrateLegacy,
+} from './adapters/local-storage-store.ts';
 import { WindowPluginRegistry } from './adapters/window-registry.ts';
 import { DomRenderer } from './adapters/dom-renderer.ts';
 import { DomController } from './adapters/dom-controller.ts';
 
-declare global { interface Window { SUNRISE?: { registerPack(p: unknown): void; registerTheme(t: unknown): void }; } }
+declare global {
+  interface Window {
+    SUNRISE?: { registerPack(p: unknown): void; registerTheme(t: unknown): void };
+  }
+}
 
 const registry = new WindowPluginRegistry();
 registry.addBuiltinThemes(BUILTIN_THEMES);
@@ -29,17 +41,36 @@ function boot(): void {
     const streaks = new Streaks();
     const stats = new ProgressStats();
     const tracker = new Tracker({
-      packs: registry, themes: registry,
-      progressStore: new LocalStorageProgressStore(), sessionStore: new LocalStorageSessionStore(),
-      clock: new SystemClock(), random: new MathRandom(),
-      streaks, stats, reviews: new ReviewSchedule(), badges: new BadgeEngine(streaks, stats),
-      defaultUi: DEFAULT_UI, genericBadges: GENERIC_BADGES,
-      defaultStreakWords: DEFAULT_STREAK_WORDS, defaultMottos: DEFAULT_MOTTOS,
+      packs: registry,
+      themes: registry,
+      progressStore: new LocalStorageProgressStore(),
+      sessionStore: new LocalStorageSessionStore(),
+      clock: new SystemClock(),
+      random: new MathRandom(),
+      streaks,
+      stats,
+      reviews: new ReviewSchedule(),
+      badges: new BadgeEngine(streaks, stats),
+      defaultUi: DEFAULT_UI,
+      genericBadges: GENERIC_BADGES,
+      defaultStreakWords: DEFAULT_STREAK_WORDS,
+      defaultMottos: DEFAULT_MOTTOS,
     });
     tracker.init(); // throws if no packs registered
     new DomController(tracker, renderer).start();
-  } catch {
-    renderer.stub('Failed to load plugins. Check that dist/sunrise.js and data/packs/* sit next to index.html.', registry.rejected().map((r) => `${r.kind} "${r.id}": ${r.issues.map((i) => `${i.path} ${i.msg}`).join(', ')}`));
+  } catch (err) {
+    console.error('[sunrise] boot failed:', err);
+    renderer.stub(
+      'Failed to start. Check that dist/sunrise.js and data/packs/* sit next to index.html; details below and in the console.',
+      [
+        ...registry
+          .rejected()
+          .map(
+            (r) => `${r.kind} "${r.id}": ${r.issues.map((i) => `${i.path} ${i.msg}`).join(', ')}`,
+          ),
+        `error: ${String(err)}`,
+      ],
+    );
   }
 }
 

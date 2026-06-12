@@ -14,6 +14,7 @@ export class DomController {
   private t: Tracker;
   private r: DomRenderer;
   private activeModal: string | null = null;
+  private motdTimer: ReturnType<typeof setInterval> | null = null;
   constructor(tracker: Tracker, renderer: DomRenderer) {
     this.t = tracker;
     this.r = renderer;
@@ -57,15 +58,24 @@ export class DomController {
 
   private applyStaticLabels(): void {
     const u = (k: string): string => this.t.ui(k);
-    const aria: [string, string][] = [
+    // Icon-only controls: one ui string doubles as aria-label and hover
+    // tooltip (data-tip, styled by the canonical baseline in index.html).
+    // The ✕ buttons reuse scClose — the same "close" wording as the Esc row.
+    const iconLabels: [string, string][] = [
       ['exportBtn', 'export'],
       ['importBtn', 'import'],
       ['cardMapBtn', 'cardMap'],
       ['trophiesBtn', 'trophies'],
       ['prevDay', 'prevDayAria'],
       ['nextDay', 'nextDayAria'],
+      ['cardMapClose', 'scClose'],
+      ['trophiesClose', 'scClose'],
+      ['shortcutsClose', 'scClose'],
     ];
-    for (const [id, key] of aria) this.r.setAttr(id, 'aria-label', u(key));
+    for (const [id, key] of iconLabels) {
+      this.r.setAttr(id, 'aria-label', u(key));
+      this.r.setAttr(id, 'data-tip', u(key));
+    }
     this.r.setAttr('packSelect', 'aria-label', u('pack'));
     this.r.setAttr('themeSelect', 'aria-label', u('theme'));
     this.r.setAttr('daySelect', 'aria-label', this.t.itemLabel());
@@ -120,11 +130,13 @@ export class DomController {
   // ----- today-card handlers (re-bound on every render) ----------------------
 
   private bindTodayHandlers(vm: TodayVM): void {
+    const cta = this.r.$('nextDayCta');
+    if (cta) (cta as HTMLElement).onclick = () => this.go(1);
     if (vm.rest) return;
     for (const t of vm.tasks) {
       const cb = this.r.$('cb_' + t.id) as HTMLInputElement | null;
       if (cb) {
-        cb.onchange = (e) => this.toggleTick(t.id, (e.target as HTMLInputElement).checked);
+        cb.onchange = (e) => this.setTaskChecked(t.id, (e.target as HTMLInputElement).checked);
       }
     }
     if (vm.show.reflection) {
@@ -146,9 +158,9 @@ export class DomController {
     }
   }
 
-  private toggleTick(taskId: string, checked: boolean): void {
+  private setTaskChecked(taskId: string, checked: boolean): void {
     const was = this.t.todayCard().complete;
-    const res = this.t.toggleTask(taskId, checked);
+    const res = this.t.setTaskDone(taskId, checked);
     // Fire effects only on the not-complete → complete transition (parity).
     if (!was && this.t.todayCard().complete) {
       this.r.celebrate();
@@ -169,8 +181,6 @@ export class DomController {
     const next = this.r.$('nextDay') as HTMLButtonElement | null;
     if (prev) prev.disabled = i <= 0;
     if (next) next.disabled = i >= sel.items.length - 1;
-    const cta = this.r.$('nextDayCta');
-    if (cta) (cta as HTMLElement).onclick = () => this.go(1);
   }
 
   private go(delta: number, scroll = true): void {
@@ -206,17 +216,17 @@ export class DomController {
         e.preventDefault();
         break;
       case 'ArrowDown':
-        this.moveTickFocus(1);
+        this.moveTaskFocus(1);
         e.preventDefault();
         break;
       case 'ArrowUp':
-        this.moveTickFocus(-1);
+        this.moveTaskFocus(-1);
         e.preventDefault();
         break;
       case 'Enter': {
         const id = this.r.activeTaskId();
         if (id) {
-          this.toggleTick(id, !this.tickDone(id));
+          this.setTaskChecked(id, !this.taskDone(id));
           e.preventDefault();
         }
         break;
@@ -226,11 +236,13 @@ export class DomController {
         this.open('shortcutsModal');
         break;
       default: {
+        // e.code matches the physical key, so M/T work on non-Latin layouts too
+        // (on ЙЦУКЕН the M key yields key='ь').
         const k = key.toLowerCase();
-        if (k === 'm') {
+        if (k === 'm' || e.code === 'KeyM') {
           this.renderCardMap();
           this.open('cardMapModal');
-        } else if (k === 't') {
+        } else if (k === 't' || e.code === 'KeyT') {
           this.renderTrophies();
           this.open('trophiesModal');
         }
@@ -238,11 +250,11 @@ export class DomController {
     }
   }
 
-  private tickDone(taskId: string): boolean {
+  private taskDone(taskId: string): boolean {
     return this.t.todayCard().tasks.find((t) => t.id === taskId)?.done ?? false;
   }
 
-  private moveTickFocus(delta: number): void {
+  private moveTaskFocus(delta: number): void {
     const card = this.t.todayCard();
     if (card.rest) return;
     const ids = card.tasks.map((t) => t.id);
@@ -251,7 +263,7 @@ export class DomController {
     let i = cur ? ids.indexOf(cur) : -1;
     if (i < 0) i = delta > 0 ? 0 : ids.length - 1;
     else i = Math.min(Math.max(i + delta, 0), ids.length - 1);
-    this.r.focusTask(ids[i]!);
+    this.r.focusTask(ids[i]!, true); // reveal: the row may be off-screen
   }
 
   // ----- wiring (port of app.js init()) --------------------------------------
@@ -263,6 +275,8 @@ export class DomController {
         this.t.selectPack(pack.value);
         this.r.applyTrackColors(this.t.trackColors());
         this.r.setLang(this.t.locale());
+        this.applyStaticLabels(); // ui() answers come from the new pack now
+        this.startMotd();
         this.renderAll();
       };
     }
@@ -330,7 +344,8 @@ export class DomController {
         a.href = URL.createObjectURL(blob);
         a.download = this.t.activePackId() + '-progress.json';
         a.click();
-        URL.revokeObjectURL(a.href);
+        // Safari starts the download async; revoking synchronously can abort it.
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
       };
     }
     const importBtn = this.r.$('importBtn');
@@ -366,6 +381,9 @@ export class DomController {
     if (el) {
       el.classList.add('open');
       this.activeModal = id;
+      // Move focus into the dialog so Enter/Space can't activate background controls.
+      const btn = typeof el.querySelector === 'function' ? el.querySelector('button') : null;
+      if (btn && typeof btn.focus === 'function') btn.focus();
     }
   }
 
@@ -396,13 +414,18 @@ export class DomController {
 
   // ----- motd ----------------------------------------------------------------
 
+  // Re-entrant: a pack switch calls this again with the new pack's mottos.
   private startMotd(): void {
+    if (this.motdTimer != null) {
+      clearInterval(this.motdTimer);
+      this.motdTimer = null;
+    }
     const mottos = this.t.mottos();
     if (!mottos.length) return;
     this.r.setText('motd', mottos[0]!);
     if (mottos.length > 1) {
       let i = 0;
-      setInterval(() => {
+      this.motdTimer = setInterval(() => {
         const el = this.r.$('motd');
         if (!el) return;
         el.classList.add('motd-out');

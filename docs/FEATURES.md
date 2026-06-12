@@ -40,8 +40,9 @@ What the app does today, grouped by area. Each line is one feature with a one-se
 
 ## Appearance
 
-- **5 themes** — Neo-Brutalist Riso, Neon, Japanese, Emerald, Colorful Dashboard — switchable live and remembered across sessions.
+- **17 themes** — 5 built-in (Neo-Brutalist Riso, Neon, Japanese, Emerald, Colorful Dashboard) + 12 registered in `index.html` — switchable live and remembered across sessions.
 - **Per-track colors** — a pack can suggest a color per track; themes can override.
+- **Icon tooltips** — hovering an icon-only control (toolbar buttons, day arrows, dialog ✕) shows its name, localized by the pack.
 - **Localized UI** — UI strings, day-of-week, month names, and labels are data (the bundled pack ships a Russian UI with Japanese flourishes); a pack can override any of them.
 
 ## Data

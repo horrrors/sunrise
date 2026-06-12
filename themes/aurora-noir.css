@@ -93,7 +93,7 @@
     conic-gradient(var(--accent) calc(var(--p) * 1%), var(--rail) 0);
 }
 :root[data-theme="aurora-noir"] .ring > div {
-  width:74%; aspect-ratio:1; display:grid; place-items:center; border-radius:50%; background:var(--panel);
+  width:74%; aspect-ratio:1; display:grid; place-content:center; place-items:center; border-radius:50%; background:var(--panel);
 }
 :root[data-theme="aurora-noir"] .ring b,
 :root[data-theme="aurora-noir"] .streak-num {
@@ -201,27 +201,21 @@
 }
 :root[data-theme="aurora-noir"] .modal.open { display:flex; }
 :root[data-theme="aurora-noir"] .modal-panel { width:min(560px,92vw); margin:auto; overflow:visible; padding:18px; box-shadow:var(--sh-lg); }
-:root[data-theme="aurora-noir"] .cal-head,
 :root[data-theme="aurora-noir"] .tr-head { display:flex; align-items:center; gap:10px; }
-:root[data-theme="aurora-noir"] #calTitle,
-:root[data-theme="aurora-noir"] #trophiesTitle { flex:1; font:900 20px var(--font-display); }
-:root[data-theme="aurora-noir"] .cal-head button,
+:root[data-theme="aurora-noir"] #cardMapTitle,
+:root[data-theme="aurora-noir"] #trophiesTitle,
+:root[data-theme="aurora-noir"] #shortcutsTitle { flex:1; font:900 20px var(--font-display); }
 :root[data-theme="aurora-noir"] .tr-head button {
   border:1px solid var(--line); border-radius:12px; background:rgba(255,255,255,.07); color:var(--ink); padding:8px 10px;
 }
-:root[data-theme="aurora-noir"] .cal-dow,
-:root[data-theme="aurora-noir"] .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-top:10px; }
-:root[data-theme="aurora-noir"] .cal-dow span { text-align:center; color:var(--muted); font:700 11px var(--font-mono); }
-:root[data-theme="aurora-noir"] .cday {
-  aspect-ratio:1; display:grid; place-items:center; border-radius:10px; background:rgba(255,255,255,.05); border:1px solid transparent;
-}
-:root[data-theme="aurora-noir"] .cday.other { opacity:.35; }
-:root[data-theme="aurora-noir"] .cday.done { background:rgba(53,208,167,.16); color:var(--good); }
-:root[data-theme="aurora-noir"] .cday.today { border-color:var(--gold); box-shadow:0 0 0 3px rgba(247,201,72,.13); }
+/* card map — the baseline cells fall back to the light default-theme tokens; retheme for dark */
+:root[data-theme="aurora-noir"] .cm-card { border-color:var(--line); background:rgba(255,255,255,.08); }
+:root[data-theme="aurora-noir"] .cm-card.done { background:var(--good); }
+:root[data-theme="aurora-noir"] .cm-card.current { outline-color:var(--gold); }
 
 :root[data-theme="aurora-noir"] .tr-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:12px; margin-top:14px; }
 :root[data-theme="aurora-noir"] .badge {
-  position:relative; display:grid; place-items:center; gap:8px; text-align:center; padding:14px;
+  position:relative; display:grid; place-content:center; place-items:center; gap:8px; text-align:center; padding:14px;
   border-radius:18px; border:1px solid var(--line); background:rgba(255,255,255,.05);
 }
 :root[data-theme="aurora-noir"] .badge.on { color:var(--gold); box-shadow:0 0 26px rgba(247,201,72,.16); }
@@ -256,11 +250,17 @@
 :root[data-theme="aurora-noir"] .confetti-piece:nth-child(3n+1) { background:#7c3aed; }
 :root[data-theme="aurora-noir"] .confetti-piece:nth-child(4n) { width:13px; height:7px; }
 
+/* the bundled dev-roadmap pack's real track ids (it declares no colors, so these fallbacks show) */
 :root[data-theme="aurora-noir"] [data-track] { --track-local:var(--accent); }
 :root[data-theme="aurora-noir"] [data-track="dsa"] { --track-local:var(--track-dsa,#2dd4bf); }
-:root[data-theme="aurora-noir"] [data-track="web"] { --track-local:var(--track-web,#7c3aed); }
-:root[data-theme="aurora-noir"] [data-track="design"] { --track-local:var(--track-design,#f7c948); }
-:root[data-theme="aurora-noir"] [data-track="system"] { --track-local:var(--track-system,#fb7185); }
+:root[data-theme="aurora-noir"] [data-track="js"] { --track-local:var(--track-js,#f7c948); }
+:root[data-theme="aurora-noir"] [data-track="ts"] { --track-local:var(--track-ts,#60a5fa); }
+:root[data-theme="aurora-noir"] [data-track="node"] { --track-local:var(--track-node,#4ade80); }
+:root[data-theme="aurora-noir"] [data-track="sysdesign"] { --track-local:var(--track-sysdesign,#c084fc); }
+:root[data-theme="aurora-noir"] [data-track="patterns"] { --track-local:var(--track-patterns,#fb923c); }
+:root[data-theme="aurora-noir"] [data-track="distsys"] { --track-local:var(--track-distsys,#38bdf8); }
+:root[data-theme="aurora-noir"] [data-track="db"] { --track-local:var(--track-db,#fb7185); }
+:root[data-theme="aurora-noir"] [data-track="cs"] { --track-local:var(--track-cs,#94a3b8); }
 
 :root[data-theme="aurora-noir"] .today[data-track] .today-side { background:var(--track-local); }
 :root[data-theme="aurora-noir"] .today[data-track] .trackpill { border-color:color-mix(in srgb,var(--track-local) 55%,var(--line)); background:color-mix(in srgb,var(--track-local) 16%,transparent); }

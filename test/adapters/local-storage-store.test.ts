@@ -1,6 +1,10 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { LocalStorageProgressStore, LocalStorageSessionStore, migrateLegacy } from '../../src/adapters/local-storage-store.ts';
+import {
+  LocalStorageProgressStore,
+  LocalStorageSessionStore,
+  migrateLegacy,
+} from '../../src/adapters/local-storage-store.ts';
 import { Progress } from '../../src/domain/progress.ts';
 import type { Item } from '../../src/domain/types/entities.ts';
 
@@ -11,12 +15,24 @@ import type { Item } from '../../src/domain/types/entities.ts';
 function makeFakeStorage(): Storage {
   const store = new Map<string, string>();
   return {
-    get length(): number { return store.size; },
-    key(index: number): string | null { return [...store.keys()][index] ?? null; },
-    getItem(key: string): string | null { return store.get(key) ?? null; },
-    setItem(key: string, value: string): void { store.set(key, value); },
-    removeItem(key: string): void { store.delete(key); },
-    clear(): void { store.clear(); },
+    get length(): number {
+      return store.size;
+    },
+    key(index: number): string | null {
+      return [...store.keys()][index] ?? null;
+    },
+    getItem(key: string): string | null {
+      return store.get(key) ?? null;
+    },
+    setItem(key: string, value: string): void {
+      store.set(key, value);
+    },
+    removeItem(key: string): void {
+      store.delete(key);
+    },
+    clear(): void {
+      store.clear();
+    },
   };
 }
 
@@ -35,11 +51,37 @@ test('load returns Progress.empty() when key is missing', () => {
   assert.deepEqual(p.toJSON(), Progress.empty().toJSON());
 });
 
-test('load returns Progress.empty() on corrupt JSON', () => {
+test('load returns Progress.empty() on corrupt JSON and backs up the raw blob', () => {
   localStorage.setItem('sunrise.progress.bad', '{not json}}');
   const store = new LocalStorageProgressStore();
   const p = store.load('bad');
   assert.deepEqual(p.toJSON(), Progress.empty().toJSON());
+  assert.equal(localStorage.getItem('sunrise.progress.bad.corrupt'), '{not json}}');
+});
+
+test('load returns Progress.empty() when localStorage.getItem throws (privacy mode)', () => {
+  const broken = makeFakeStorage();
+  broken.getItem = () => {
+    throw new Error('SecurityError');
+  };
+  (globalThis as unknown as { localStorage: Storage }).localStorage = broken;
+  const store = new LocalStorageProgressStore();
+  const p = store.load('mypkg');
+  assert.deepEqual(p.toJSON(), Progress.empty().toJSON());
+});
+
+test('load backs up a blob with an unknown schema version and starts empty', () => {
+  const raw = JSON.stringify({
+    schema: 'sunrise.progress/v99',
+    items: {},
+    reviews: [],
+    badges: {},
+  });
+  localStorage.setItem('sunrise.progress.future', raw);
+  const store = new LocalStorageProgressStore();
+  const p = store.load('future');
+  assert.deepEqual(p.toJSON(), Progress.empty().toJSON());
+  assert.equal(localStorage.getItem('sunrise.progress.future.corrupt'), raw);
 });
 
 test('load returns Progress.empty() on null item in stored progress', () => {
@@ -71,7 +113,9 @@ test('save → load round-trips progress', () => {
 test('save is a no-op when localStorage throws (quota)', () => {
   // Override setItem to throw
   const throwing = makeFakeStorage();
-  throwing.setItem = () => { throw new Error('QuotaExceededError'); };
+  throwing.setItem = () => {
+    throw new Error('QuotaExceededError');
+  };
   (globalThis as unknown as { localStorage: Storage }).localStorage = throwing;
   const store = new LocalStorageProgressStore();
   // Should not throw

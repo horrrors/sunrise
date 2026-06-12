@@ -1,25 +1,28 @@
 import type { Item } from './types/entities.ts';
-import type { ItemProgress, Review, Surprise, ProgressData } from './types/progress.ts';
+import type { ItemProgress, Review, ProgressData } from './types/progress.ts';
 
 export class Progress {
   private items: Record<string, ItemProgress>;
   private reviews: Review[];
   private badges: Record<string, { at: string }>;
-  private lastSurprise: Surprise | null;
 
   constructor(data: ProgressData) {
     this.items = data.items;
     this.reviews = data.reviews;
     this.badges = data.badges;
-    this.lastSurprise = data.lastSurprise;
   }
 
   public static empty(): Progress {
-    return new Progress({ schema: 'sunrise.progress/v1', items: {}, reviews: [], badges: {}, lastSurprise: null });
+    return new Progress({ schema: 'sunrise.progress/v1', items: {}, reviews: [], badges: {} });
   }
 
   public toJSON(): ProgressData {
-    return structuredClone({ schema: 'sunrise.progress/v1', items: this.items, reviews: this.reviews, badges: this.badges, lastSurprise: this.lastSurprise });
+    return structuredClone({
+      schema: 'sunrise.progress/v1',
+      items: this.items,
+      reviews: this.reviews,
+      badges: this.badges,
+    });
   }
 
   private ensure(itemId: string): ItemProgress {
@@ -40,6 +43,7 @@ export class Progress {
 
   public setTaskDone(item: Item, taskId: string, done: boolean, today: string, hour: number): void {
     const st = this.ensure(item.id);
+    st.tasks ??= {}; // a hand-built/legacy entry may lack the map (read paths tolerate this too)
     if (done) st.tasks[taskId] = true;
     else delete st.tasks[taskId];
     if (this.isItemComplete(item)) {
@@ -91,35 +95,34 @@ export class Progress {
     return n;
   }
 
+  // A new pack version can add tasks to an already-completed item; the stale
+  // completedAt would then disagree with isItemComplete (streaks vs dashboard).
+  // Returns true when anything was cleared so the caller can persist.
+  public reconcile(items: readonly Item[]): boolean {
+    let changed = false;
+    for (const it of items) {
+      const st = this.items[it.id];
+      if (st?.completedAt && !this.isItemComplete(it)) {
+        st.completedAt = null;
+        st.completedHour = null;
+        changed = true;
+      }
+    }
+    return changed;
+  }
+
   public getReviewList(): readonly Review[] {
     return this.reviews;
   }
   public scheduleReview(itemId: string, today: string): void {
     this.reviews = this.reviews.filter((r) => r.itemId !== itemId);
-    this.reviews.push({ itemId, lastDate: today, stage: 0 });
-  }
-  public advanceReview(itemId: string, today: string, maxStage: number): void {
-    const r = this.reviews.find((x) => x.itemId === itemId);
-    if (r) {
-      r.lastDate = today;
-      r.stage = Math.min(r.stage + 1, maxStage);
-    }
+    this.reviews.push({ itemId, lastDate: today });
   }
 
-  public ownedBadges(): Readonly<Record<string, { at: string }>> {
-    return this.badges;
-  }
   public isBadgeOwned(id: string): boolean {
     return this.badges[id] !== undefined;
   }
   public awardBadge(id: string, at: string): void {
     if (!this.badges[id]) this.badges[id] = { at };
-  }
-  public badgeAt(id: string): string | null {
-    return this.badges[id]?.at ?? null;
-  }
-
-  public setLastSurprise(s: Surprise): void {
-    this.lastSurprise = s;
   }
 }

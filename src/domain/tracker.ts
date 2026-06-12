@@ -3,6 +3,7 @@ import type { BadgeRule } from './types/badge-rule.ts';
 import type { TrackerDeps } from './types/tracker.ts';
 import { Progress } from './progress.ts';
 import { ProgressValidator } from './validators.ts';
+import { ImportError } from './errors.ts';
 import type {
   TodayVM,
   DashboardVM,
@@ -24,7 +25,7 @@ export class Tracker {
   private currentItemId = '';
   private rules: readonly BadgeRule[] = [];
   private allItems: Item[] = [];
-  private groupById: Record<string, Group> = {};
+  private groupOfItem: Record<string, Group> = {};
   private mottosList: readonly string[] = [];
 
   constructor(deps: TrackerDeps) {
@@ -49,12 +50,17 @@ export class Tracker {
     const packs = this.deps.packs.packs();
     this.pack = packs.find((p) => p.id === packId) ?? packs[0]!;
     this.progress = this.deps.progressStore.load(this.pack.id);
-    this.rules = [...this.deps.genericBadges, ...(this.pack.badges ?? [])];
+    // Last wins, so a pack badge reusing a generic id overrides both its
+    // condition and its displayed title/desc/icon.
+    const byId = new Map<string, BadgeRule>();
+    for (const r of [...this.deps.genericBadges, ...(this.pack.badges ?? [])]) byId.set(r.id, r);
+    this.rules = [...byId.values()];
     this.allItems = this.pack.groups.flatMap((g) => [...g.items]);
-    this.groupById = {};
-    for (const g of this.pack.groups) for (const it of g.items) this.groupById[it.id] = g;
+    this.groupOfItem = {};
+    for (const g of this.pack.groups) for (const it of g.items) this.groupOfItem[it.id] = g;
     this.mottosList =
       this.pack.mottos && this.pack.mottos.length ? this.pack.mottos : this.deps.defaultMottos;
+    if (this.progress.reconcile(this.allItems)) this.save();
   }
 
   private save(): void {
@@ -68,16 +74,20 @@ export class Tracker {
     if (fromPack != null) return fromPack;
     return this.deps.defaultUi[k] ?? '';
   }
-  private lbl(k: keyof NonNullable<NonNullable<Pack['settings']>['labels']>, fallback: string): string {
+  private lbl(
+    k: keyof NonNullable<NonNullable<Pack['settings']>['labels']>,
+    fallbackKey: string,
+  ): string {
     const l = this.pack.settings && this.pack.settings.labels;
     const v = l && l[k];
-    return v != null ? v : this.uiText(fallback);
+    return v != null ? v : this.uiText(fallbackKey);
   }
   private itemOf(id: string): Item {
     const it = this.allItems.find((x) => x.id === id);
     if (!it) throw new Error(`unknown item "${id}"`);
     return it;
   }
+  // Unlike itemOf this never throws: the implicit "rest" track is undeclared by design.
   private trackMeta(id: string): Track {
     for (const t of this.pack.tracks) if (t.id === id) return t;
     return { id, label: '', icon: '' };
@@ -105,38 +115,41 @@ export class Tracker {
     return this.allItems.findIndex((it) => it.id === this.currentItemId);
   }
   private groupOrdinal(id: string): number {
-    return this.pack.groups.indexOf(this.groupById[id]!) + 1;
+    return this.pack.groups.indexOf(this.groupOfItem[id]!) + 1;
+  }
+  // Badge awards must stick the moment a trophy shows as earned, so every
+  // progress mutation syncs awards — not just item completion (which also toasts).
+  private syncBadges(): string[] {
+    return this.deps.badges.sync(this.pack, this.progress, this.rules, this.deps.clock.today());
   }
 
   // ----- intents -------------------------------------------------------------
 
-  public toggleTask(taskId: string, done: boolean): CompleteResult {
+  public setTaskDone(taskId: string, done: boolean): CompleteResult {
     const item = this.itemOf(this.currentItemId);
     const wasComplete = this.progress.isItemComplete(item);
     this.progress.setTaskDone(item, taskId, done, this.deps.clock.today(), this.deps.clock.hour());
     if (!wasComplete && this.progress.isItemComplete(item)) return this.onItemCompleted();
+    this.syncBadges();
     this.save();
     return { unlockedBadges: [] };
   }
 
   private onItemCompleted(): CompleteResult {
-    const today = this.deps.clock.today();
-    const unlocked = this.deps.badges.sync(this.pack, this.progress, this.rules, today);
-    let surprise: string | undefined;
+    const unlocked = this.syncBadges();
+    this.save();
+    const result: CompleteResult = { unlockedBadges: unlocked };
     if (this.deps.random.next() < SURPRISE_CHANCE) {
       const pool = this.pack.surprises ?? [];
       const msg = pool.length ? pool[Math.floor(this.deps.random.next() * pool.length)] : undefined;
-      if (msg) {
-        this.progress.setLastSurprise({ text: msg, at: today });
-        surprise = msg;
-      }
+      if (msg) result.surprise = msg;
     }
-    this.save();
-    return surprise === undefined ? { unlockedBadges: unlocked } : { unlockedBadges: unlocked, surprise };
+    return result;
   }
 
   public setReflection(text: string): void {
     this.progress.setReflection(this.currentItemId, text);
+    this.syncBadges();
     this.save();
   }
 
@@ -170,22 +183,35 @@ export class Tracker {
   }
 
   public scheduleReviewForCurrent(): void {
-    const it = this.itemOf(this.currentItemId);
-    const g = this.groupById[it.id]!;
-    const reviewId = g.id + '-' + (it.title || it.id);
-    this.deps.reviews.schedule(this.progress, reviewId, this.deps.clock.today());
+    this.deps.reviews.schedule(this.progress, this.currentItemId, this.deps.clock.today());
     this.save();
   }
 
   public importProgress(json: string): void {
-    const data = new ProgressValidator().parseJson(json);
+    let raw: unknown;
+    try {
+      raw = JSON.parse(json);
+    } catch {
+      throw new ImportError('Invalid JSON');
+    }
+    // Exports embed the pack id; a file from another pack would silently wipe
+    // this pack's progress (old exports without packId are accepted as-is).
+    const filePackId =
+      raw && typeof raw === 'object' ? (raw as Record<string, unknown>)['packId'] : undefined;
+    if (typeof filePackId === 'string' && filePackId !== this.pack.id) {
+      throw new ImportError(`file is for pack "${filePackId}", active pack is "${this.pack.id}"`);
+    }
+    const data = new ProgressValidator().parse(raw);
     this.progress = new Progress(data);
+    // Same healing as loadPack: the file's completedAt may disagree with its
+    // task checks under the current pack version (streaks vs dashboard).
+    this.progress.reconcile(this.allItems);
     this.save();
     this.currentItemId = this.resumeItemId();
   }
 
   public exportProgress(): string {
-    return JSON.stringify(this.progress.toJSON(), null, 2);
+    return JSON.stringify({ packId: this.pack.id, ...this.progress.toJSON() }, null, 2);
   }
 
   // ----- queries -------------------------------------------------------------
@@ -202,7 +228,7 @@ export class Tracker {
       selected: t.id === this.themeId,
     }));
     const items = this.allItems.map((it) => {
-      const g = this.groupById[it.id]!;
+      const g = this.groupOfItem[it.id]!;
       const tl = it.rest ? this.uiText('restVert') : this.trackMeta(it.track).label;
       return { id: it.id, label: `${g.title} · ${tl}`, selected: it.id === this.currentItemId };
     });
@@ -212,7 +238,7 @@ export class Tracker {
   public todayCard(): TodayVM {
     const it = this.itemOf(this.currentItemId);
     const m = this.trackMeta(it.track);
-    const g = this.groupById[it.id]!;
+    const g = this.groupOfItem[it.id]!;
     const cfg = this.pack.settings ?? {};
     const i = this.itemIndex();
     const notLast = i < this.allItems.length - 1;
@@ -221,8 +247,13 @@ export class Tracker {
       .replace('{w}', String(this.groupOrdinal(it.id)));
 
     if (it.rest) {
+      // Reviews are stored by item id; display titles. Ids from older versions
+      // (group+title composites) won't resolve and are shown as stored.
       const dueReviews = cfg.reviews
-        ? this.deps.reviews.due(this.progress, this.deps.clock.today())
+        ? this.deps.reviews.due(this.progress, this.deps.clock.today()).map((id) => {
+            const item = this.allItems.find((x) => x.id === id);
+            return item ? (item.title ?? id) : id;
+          })
         : [];
       return {
         itemId: it.id,
@@ -236,7 +267,6 @@ export class Tracker {
         reflection: '',
         tasks: [],
         resources: [],
-        reviewable: false,
         dueReviews,
         complete: false,
         notLast,
@@ -267,7 +297,6 @@ export class Tracker {
       reflection: this.progress.reflection(it.id),
       tasks,
       resources: (it.resources ?? []).map((r) => ({ label: r.label, note: r.note })),
-      reviewable: showReview,
       dueReviews: [],
       complete,
       notLast,
@@ -281,8 +310,15 @@ export class Tracker {
     const byPhase = this.deps.stats.byPhase(this.pack, this.progress);
     const byTrack = this.deps.stats.byTrack(this.pack, this.progress);
     const sw = this.deps.defaultStreakWords;
+    // Slavic plural pick: one (1, 21, 31… but not 11), few (2-4, 22-24… but not 12-14), many.
+    const m10 = streak % 10;
+    const m100 = streak % 100;
     const streakWord =
-      streak === 1 ? sw[0] ?? '' : streak >= 2 && streak <= 4 ? sw[1] ?? '' : sw[2] ?? '';
+      m10 === 1 && m100 !== 11
+        ? (sw[0] ?? '')
+        : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)
+          ? (sw[1] ?? '')
+          : (sw[2] ?? '');
     const phaseList = this.pack.phases ?? [];
     const phases = phaseList.length
       ? phaseList.map((ph) => ({
@@ -305,28 +341,19 @@ export class Tracker {
   }
 
   public cardMap(): CardMapVM {
-    let done = 0;
-    let total = 0;
+    const overall = this.deps.stats.overall(this.pack, this.progress);
     const groups = this.pack.groups.map((g) => ({
       id: g.id,
       title: g.title,
-      items: g.items.map((it) => {
-        const rest = !!it.rest;
-        const isDone = this.progress.isItemComplete(it);
-        if (!rest) {
-          total++;
-          if (isDone) done++;
-        }
-        return {
-          id: it.id,
-          title: it.title ?? '',
-          done: isDone,
-          rest,
-          current: it.id === this.currentItemId,
-        };
-      }),
+      items: g.items.map((it) => ({
+        id: it.id,
+        title: it.title ?? '',
+        done: this.progress.isItemComplete(it),
+        rest: !!it.rest,
+        current: it.id === this.currentItemId,
+      })),
     }));
-    return { done, total, groups };
+    return { done: overall.done, total: overall.total, groups };
   }
 
   public trophies(): TrophyVM[] {
@@ -345,8 +372,11 @@ export class Tracker {
 
   public comeback(): { show: boolean; days: number } {
     const today = this.deps.clock.today();
-    const b = this.deps.badges.evaluate(this.pack, this.progress, this.rules).find((x) => x.id === 'comeback');
+    const b = this.deps.badges
+      .evaluate(this.pack, this.progress, this.rules)
+      .find((x) => x.id === 'comeback');
     const streak = this.deps.streaks.current(this.progress, today);
+    // streak <= 2: greet only during the first couple of days back, then get out of the way.
     const show = !!(b && b.unlocked && streak <= 2);
     return { show, days: this.progress.completedCount() };
   }

@@ -19,13 +19,13 @@ Your progress is saved to `localStorage`; export/import it as JSON from the tool
 ## Features
 
 - **One day at a time** — each day is a small set of tasks; a day completes when all its tasks are checked.
-- **Streaks & card map** — current/longest streak (UTC), plus a card map of the whole pack marking which cards are done.
+- **Streaks & card map** — current/longest streak (counted on local calendar days), plus a card map of the whole pack marking which cards are done.
 - **30 trophies** — streaks, totals, reflections, track/phase mastery, weekend/night-owl/early-lark, comeback, and more. Once earned, they stick.
 - **Per-day reflection** and an optional **"strong answer" guidance** spoiler under tasks.
-- **Spaced repetition** — schedule pattern reviews on review-eligible tracks; due items surface on rest days.
-- **5 themes**, switchable live (Neo-Brutalist, Neon, Japanese, Emerald, Dashboard).
+- **Review reminders** — schedule a topic on a review-eligible track; it surfaces on rest days until re-scheduled.
+- **17 live-switchable themes** — 5 built-in (Neo-Brutalist Riso, Neon, Japanese, Emerald, Colorful Dashboard) plus 12 registered in `index.html` (Dawn, Arcade · 8-bit, Solarpunk, Swiss, Bauhaus, Blueprint, Memphis, Arcade · Synthwave Sun, Arcade · Cyber Grid, Aurora Noir, Gazette · Утренний выпуск, OS '95 · Рабочий стол).
 - **Confetti, surprise notes, rotating mottos** — small dopamine hits on completion.
-- **Export / import** progress as JSON.
+- **Export / import** progress as JSON — exports embed the pack id, so importing another pack's file is rejected.
 
 ## Architecture
 
@@ -36,6 +36,7 @@ Sunrise is a **thin host** that loads plugins. Nothing domain-specific is hardco
 ```
 index.html  →  dist/sunrise.js   (compiled IIFE — wires the app, exposes window.SUNRISE)
             →  data/packs/dev-roadmap.js   (calls window.SUNRISE.registerPack)
+            →  inline <script>   (one window.SUNRISE.registerTheme call per extra theme)
 ```
 
 `index.html` is the shell. `dist/sunrise.js` is a zero-dependency IIFE built from `src/main.ts` by esbuild. Content packs call `window.SUNRISE.registerPack(...)` when they load; themes call `window.SUNRISE.registerTheme(...)`.
@@ -55,7 +56,7 @@ Progress is **namespaced per pack**, so multiple roadmaps keep independent strea
 
 ## Plugins
 
-Two kinds, each a single self-registering `.js` file (themes pair with a `.css`). Install by adding one `<script src>` line to `index.html`.
+Two kinds. A **content pack** installs by adding one `<script src>` line to `index.html`; a **theme** is a `.css` file plus one `SUNRISE.registerTheme(...)` line in the inline script block at the bottom of `index.html`.
 
 - **Content pack** — a self-contained knowledge base: its own tracks (subject columns), structure (groups → items → tasks), settings, and optional declarative badges.
 - **Theme** — a CSS skin + a tiny manifest, layered over the canonical hooks.
@@ -79,7 +80,7 @@ src/
   adapters/                adapter ring (SystemClock, MathRandom, LocalStorage*, WindowPluginRegistry, DomRenderer, DomController)
 data/
   packs/dev-roadmap.js     pack #1 — the 13-week curriculum (13 groups · 91 items · 9 tracks)
-themes/                    bonus · neon · japanese · emerald · dashboard  (CSS only)
+themes/                    17 theme stylesheets — 5 built-in + 12 registered in index.html  (CSS only)
 test/
   domain/                  unit tests for the domain ring (pure, no DOM)
   adapters/                adapter tests (local-storage, window-registry, DOM via fake-DOM harness)
@@ -89,7 +90,7 @@ scripts/reshape-curriculum.js   one-off generator that produced pack #1 (kept fo
 
 ## Development
 
-**Requires Node ≥ 23.6** (so `node --test` can run `.ts` files natively — zero test-time dependencies).
+**Requires Node 23.11.0** (pinned in `.nvmrc` / `.tool-versions`; `node --test` runs `.ts` files natively — zero test-time dependencies).
 
 ```bash
 npm run build      # esbuild src/main.ts → dist/sunrise.js  (commit the result)
@@ -104,6 +105,10 @@ All devDependencies (`esbuild`, `typescript`, `typescript-eslint`, `prettier`) a
 The domain ring is browser-agnostic and unit-tested directly. `DomRenderer` and `DomController` are tested via a lightweight fake-DOM harness in `test/adapters/dom.test.ts`.
 
 After changing source, run `npm run build` and commit `dist/sunrise.js` alongside the `.ts` changes — `index.html` loads the bundle from `file://` with no dev server involved.
+
+## Limitations
+
+Sunrise is a **single-tab app**: progress saves are whole-blob `localStorage` writes, so two open tabs overwrite each other's saves — keep it open in one tab.
 
 ## License
 

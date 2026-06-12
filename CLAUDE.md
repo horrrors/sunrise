@@ -14,6 +14,7 @@ npm run typecheck  # tsc --noEmit
 npm test           # node --test "test/**/*.test.ts"
 npm run lint       # eslint src test
 npm run format     # prettier --write .
+npm run format:check # prettier --check . — part of the pre-commit gate
 
 # Single test file:
 node --test test/domain/tracker.test.ts
@@ -51,11 +52,12 @@ index.html  ──<script src>──>  dist/sunrise.js   (IIFE: defines window.S
 ## Key invariants (these will bite you)
 
 - **Domain purity is lint-enforced.** `eslint.config.js` bans `window`, `document`, `localStorage`, `Date`, and `Math.random` inside `src/domain/**`. Need wall-clock time or randomness in the domain? Use the `Clock` / `Random` ports. The *only* exempt file is `src/domain/dates.ts`.
-- **Dates are UTC ISO strings (`YYYY-MM-DD`) everywhere.** All date math lives in `src/domain/dates.ts` (uses `Date.UTC`; `weekdayMon()` returns 0=Mon..6=Sun). Streaks/reviews are keyed on these strings.
-- **Progress is namespaced per pack** — `LocalStorageProgressStore` keys on `sunrise.progress.<packId>`, so multiple packs keep independent streaks/badges/reflections. Session state (active pack/theme, resume cursor) is global under `sunrise.session`.
-- **Badge awards are one-way** — `sync()` only *adds* newly-earned badges; nothing un-awards. A task is stored `true` or deleted, never `false`. An item completes only when *all* its tasks are checked (rest items and task-less items never complete).
-- **Schema versions are checked:** packs are `sunrise.pack/v1`, progress `sunrise.progress/v1`, themes `sunrise.theme/v1`. `ProgressValidator` migrates a legacy v2 (days→items) shape.
-- **TS strictness:** `strict`, `noUncheckedIndexedAccess`, `erasableSyntaxOnly`, `verbatimModuleSyntax`, `allowImportingTsExtensions`. Imports use explicit `.ts` extensions (required for native `node --test`).
+- **Dates are local-calendar-day strings (`YYYY-MM-DD`) everywhere.** `SystemClock.today()` returns the *local* day (same time basis as `hour()` — the `Clock` port documents this). Date *math* lives in `src/domain/dates.ts` and is UTC-epoch arithmetic over the strings, so it's timezone-free (`weekdayMon()` returns 0=Mon..6=Sun). Streaks/reviews are keyed on these strings.
+- **Progress is namespaced per pack** — `LocalStorageProgressStore` keys on `sunrise.progress.<packId>`, so multiple packs keep independent streaks/badges/reflections. Session state (active pack/theme, per-pack `cursors` map of resume positions) is global under `sunrise.session`.
+- **Badge awards are one-way and eagerly synced** — every progress mutation (`setTaskDone`, `setReflection`) runs `sync()`, which only *adds* newly-earned badges; nothing un-awards, so a trophy can never re-lock. A task is stored `true` or deleted, never `false`. An item completes only when *all* its tasks are checked (rest items never complete; task-less non-rest items are rejected by the validator).
+- **Reviews are simple reminders**, keyed by item id — `ReviewSchedule` is just `due()`/`schedule()`: an item is due ≥1 day after scheduling and stays due until re-scheduled. There is no spaced-repetition ladder.
+- **Schema versions are checked:** packs are `sunrise.pack/v1`, progress `sunrise.progress/v1` (any *other* progress schema string is rejected; missing is tolerated), themes `sunrise.theme/v1`. `ProgressValidator` migrates a legacy v2 (days→items) shape. Duplicate pack/theme ids are rejected at registration by `WindowPluginRegistry` (path `id`).
+- **TS strictness:** `strict`, `noUncheckedIndexedAccess`, `erasableSyntaxOnly`, `verbatimModuleSyntax`, `allowImportingTsExtensions`; `module`/`moduleResolution` are `NodeNext`, which enforces the explicit `.ts` extensions on relative imports (required for native `node --test`).
 
 ## Plugins
 
@@ -70,4 +72,4 @@ The authoring guides — `docs/plugins/content-pack.md` and `docs/plugins/theme.
 
 `src/main.ts` composition root · `src/domain/` pure core (`tracker.ts` facade, `entities.ts` types, `progress.ts` aggregate, services, `validators.ts`, `builtins.ts`) · `src/ports/index.ts` interfaces · `src/adapters/` DOM + storage + window registry · `test/domain/` pure unit tests · `test/adapters/` use a fake-DOM harness (`FakeEl` in `dom.test.ts`) and a Map-backed fake `localStorage`, so adapter tests run without a browser · `data/packs/dev-roadmap.js` the bundled example pack · `docs/` design docs + the plugin authoring guides.
 
-> Note: the README still says "5 themes" — there are now 15 registered (5 built-in + 10 in `index.html`). The "calendar" concept was replaced by the **card map** (`.cm-*` hooks, `#cardMapModal`); some older docs may still reference the calendar.
+> Note: 17 themes are registered (5 built-in in `BUILTIN_THEMES` + 12 via the inline `<script>` in `index.html`). The "calendar" concept was replaced by the **card map** (`.cm-*` hooks, `#cardMapModal`); some older docs may still reference the calendar.

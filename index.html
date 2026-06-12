@@ -25,6 +25,11 @@
 .cm-card.rest{border-style:dashed;background:transparent;opacity:.5}
 .cm-card.current{outline:3px solid var(--yellow,#f6c343);outline-offset:2px}
 .cm-card[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:max-content;max-width:220px;font:600 12px system-ui,sans-serif;line-height:1.35;color:#fff;background:#1a1a1a;border-radius:6px;padding:7px 10px;z-index:5;pointer-events:none;white-space:normal}
+/* icon-button tooltips (toolbar, day-nav, modal ✕) — same data-tip mechanism as .cm-card; themes may override */
+.toolbar [data-tip],.day-nav[data-tip],.tr-head [data-tip]{position:relative}
+.toolbar [data-tip]:hover::after,.day-nav[data-tip]:hover::after,.tr-head [data-tip]:hover::after{content:attr(data-tip);position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);width:max-content;max-width:220px;font:600 12px system-ui,sans-serif;line-height:1.35;color:#fff;background:#1a1a1a;border-radius:6px;padding:7px 10px;z-index:30;pointer-events:none;white-space:normal}
+.day-nav[data-tip]:hover::after{top:auto;bottom:calc(100% + 8px)}
+.tr-head [data-tip]:hover::after{left:auto;right:0;transform:none}
 /* shortcuts overlay — theme-independent list */
 .sc-grid{display:flex;flex-direction:column;gap:8px}
 .sc-row{display:flex;align-items:center;gap:12px}
@@ -96,9 +101,11 @@
     SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "bauhaus",   name: "Bauhaus · 1919",    version: "1.0.0", cssHref: "themes/bauhaus.css" });
     SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "blueprint", name: "Blueprint · Чертёж", version: "1.0.0", cssHref: "themes/blueprint.css" });
     SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "memphis",   name: "Memphis · 1984",    version: "1.0.0", cssHref: "themes/memphis.css" });
-    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "arcade-animated", name: "Arcade · 8-bit Animated", version: "1.0.0", cssHref: "themes/arcade-animated.css" });
-    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "arcade-animated-v2", name: "Arcade · 8-bit Animated v2", version: "1.0.0", cssHref: "themes/arcade-animated-v2.css" });
+    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "arcade-animated", name: "Arcade · Synthwave Sun", version: "1.0.0", cssHref: "themes/arcade-animated.css" });
+    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "arcade-animated-v2", name: "Arcade · Cyber Grid", version: "1.0.0", cssHref: "themes/arcade-animated-v2.css" });
     SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "aurora-noir", name: "Aurora Noir · Сияние", version: "1.0.0", cssHref: "themes/aurora-noir.css" });
+    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "gazette",   name: "Gazette · Утренний выпуск", version: "1.0.0", cssHref: "themes/gazette.css" });
+    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "os95",      name: "OS '95 · Рабочий стол", version: "1.0.0", cssHref: "themes/os95.css" });
   }
 </script>
 </body>

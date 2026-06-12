@@ -5,7 +5,9 @@ import type { Stat } from './types/progress-stats.ts';
 const pct = (done: number, total: number): number => (total ? Math.round((done / total) * 100) : 0);
 
 export class ProgressStats {
-  private all(pack: Pack): Item[] { return pack.groups.flatMap((g) => [...g.items]); }
+  private all(pack: Pack): Item[] {
+    return pack.groups.flatMap((g) => [...g.items]);
+  }
   public tracks(pack: Pack): string[] {
     const s = new Set<string>();
     for (const it of this.all(pack)) if (!it.rest) s.add(it.track);

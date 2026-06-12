@@ -1,4 +1,7 @@
-export interface ValidationIssue { readonly path: string; readonly msg: string; }
+export interface ValidationIssue {
+  readonly path: string;
+  readonly msg: string;
+}
 
 export class ValidationError extends Error {
   readonly issues: readonly ValidationIssue[];

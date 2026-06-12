@@ -1,0 +1,738 @@
+/* ============================================================================
+   themes/gazette.css — «Gazette · Утренний выпуск»
+   ----------------------------------------------------------------------------
+   A morning-broadsheet theme: cream newsprint, warm near-black ink, hairline +
+   double rules, a Didone nameplate, red rubrication for accents/CTAs, printed
+   (grayscale) emoji that regain color on hover, ruled writing paper for the
+   reflection box, and paper-scrap confetti.
+
+   Install (already wired in index.html; shown for copy-paste reuse):
+     SUNRISE.registerTheme({
+       schema:  "sunrise.theme/v1",
+       id:      "gazette",
+       name:    "Gazette · Утренний выпуск",
+       version: "1.0.0",
+       cssHref: "themes/gazette.css",
+     });
+
+   Tokens (all theme-owned; the app injects only --track-<id>, --p, confetti vars):
+     --bg / --paper / --paper-2  page, panel and inset-paper surfaces
+     --rail / --line / --line-strong  bar track, hairlines, heavy ink rules
+     --ink / --muted / --accent  text, secondary text, rubrication red
+     --sh-sm / --sh / --sh-lg    3-step shadow ramp
+     --r                         corner radius (0 — print is sharp); read by the
+                                 app baseline (focus outline, card-map cells)
+     --focus-ring                keyboard-focus outline consumed by the baseline
+   Per-track spot colors are wired below for the dev-roadmap track ids with
+   var(--track-<id>, fallback), so a pack that declares its own colors wins.
+   The app baseline already ships the mechanism (checkbox hiding, focus rule,
+   card-map grid + tooltip, shortcuts list, motion guard) — none of it here.
+   ========================================================================== */
+
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=PT+Mono&display=swap");
+
+:root[data-theme="gazette"] {
+  --bg: #ece3cd;
+  --paper: #f7f1e0;
+  --paper-2: #ece4cf;
+  --rail: #ddd2b6;
+  --line: #c9bd9e;
+  --line-strong: #1c1712;
+  --ink: #1c1712;
+  --muted: #6f6552;
+  --accent: #a61b1b;
+  --sh-sm: 0 1px 0 rgba(28, 23, 18, 0.06), 0 2px 6px rgba(28, 23, 18, 0.08);
+  --sh: 0 2px 0 rgba(28, 23, 18, 0.05), 0 10px 26px rgba(28, 23, 18, 0.13);
+  --sh-lg: 0 18px 48px rgba(28, 23, 18, 0.24);
+  --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-body: "PT Serif", Georgia, serif;
+  --font-mono: "PT Mono", ui-monospace, SFMono-Regular, monospace;
+  --r: 0px;
+  --focus-ring: 3px solid var(--accent);
+  color-scheme: light;
+}
+
+:root[data-theme="gazette"] ::selection { background: var(--accent); color: var(--paper); }
+
+:root[data-theme="gazette"] body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font: 400 15.5px/1.6 var(--font-body);
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(circle at 50% -10%, rgba(255, 252, 240, 0.85), transparent 38rem),
+    radial-gradient(circle at 50% 120%, rgba(28, 23, 18, 0.12), transparent 42rem),
+    url('data:image/svg+xml;utf8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22140%22 height=%22140%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3CfeColorMatrix values=%220 0 0 0 0.11  0 0 0 0 0.09  0 0 0 0 0.07  0 0 0 0.05 0%22/%3E%3C/filter%3E%3Crect width=%22140%22 height=%22140%22 filter=%22url(%23n)%22/%3E%3C/svg%3E');
+  background-attachment: fixed;
+}
+
+/* ---- page column ---------------------------------------------------------- */
+
+:root[data-theme="gazette"] .app-header,
+:root[data-theme="gazette"] .wrap,
+:root[data-theme="gazette"] .foot {
+  width: min(1100px, 100% - 32px);
+  margin-inline: auto;
+}
+
+/* ---- masthead (header) ----------------------------------------------------
+   Laid out as a newspaper nameplate: brand row centered, then a toolbar
+   "dateline" strip between a hairline and a heavy double rule. */
+
+:root[data-theme="gazette"] .app-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 26px 0 0;
+}
+:root[data-theme="gazette"] .brand { display: flex; align-items: center; gap: 16px; }
+:root[data-theme="gazette"] .brand-mark {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  background: var(--accent);
+  color: var(--paper);
+  font: 700 12px/1.15 var(--font-body);
+  text-align: center;
+  transform: rotate(-3deg);
+  box-shadow: var(--sh-sm);
+}
+:root[data-theme="gazette"] .brand-name {
+  font: 900 clamp(2rem, 5vw, 3.3rem)/1 var(--font-display);
+  letter-spacing: 0.05em;
+}
+:root[data-theme="gazette"] .brand-sub {
+  font: 12px var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+:root[data-theme="gazette"] .toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 4px double var(--line-strong);
+}
+:root[data-theme="gazette"] .field { display: flex; flex-direction: column; gap: 4px; }
+
+/* ---- controls -------------------------------------------------------------- */
+
+:root[data-theme="gazette"] select,
+:root[data-theme="gazette"] .btn {
+  border: 1px solid var(--line-strong);
+  background: var(--paper);
+  color: var(--ink);
+  padding: 9px 12px;
+  font: 13px var(--font-mono);
+  box-shadow: var(--sh-sm);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease,
+    background-color 0.18s ease, color 0.18s ease;
+}
+:root[data-theme="gazette"] .btn { cursor: pointer; }
+:root[data-theme="gazette"] .btn.ghost { filter: grayscale(1) contrast(1.05); } /* printed emoji */
+:root[data-theme="gazette"] .btn:hover,
+:root[data-theme="gazette"] select:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--sh);
+}
+:root[data-theme="gazette"] .btn.ghost:hover { filter: none; } /* ink takes color on touch */
+:root[data-theme="gazette"] .btn:active { transform: translateY(0); box-shadow: var(--sh-sm); }
+:root[data-theme="gazette"] .btn:focus-visible,
+:root[data-theme="gazette"] select:focus-visible,
+:root[data-theme="gazette"] textarea#reflect:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+:root[data-theme="gazette"] #importFile { display: none !important; }
+
+/* ---- column furniture ------------------------------------------------------ */
+
+:root[data-theme="gazette"] .wrap { padding: 8px 0 28px; }
+:root[data-theme="gazette"] .section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font: 700 12px var(--font-mono);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  opacity: 1;
+  color: var(--ink);
+  margin: 26px 0 12px;
+}
+:root[data-theme="gazette"] .section-title::before,
+:root[data-theme="gazette"] .section-title::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--line);
+}
+:root[data-theme="gazette"] #comeback {
+  margin: 16px 0;
+  padding: 14px 16px 14px 18px;
+  font-style: italic;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--accent);
+  box-shadow: var(--sh-sm);
+}
+
+/* ---- dashboard (article boxes) --------------------------------------------- */
+
+:root[data-theme="gazette"] .dash {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+:root[data-theme="gazette"] .stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px 18px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-top: 4px double var(--line-strong);
+  box-shadow: var(--sh-sm);
+}
+:root[data-theme="gazette"] .eyebrow {
+  font: 700 11px var(--font-mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--line);
+}
+:root[data-theme="gazette"] .ring {
+  width: 132px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  margin: 6px auto 0;
+  background:
+    radial-gradient(closest-side, var(--paper) 0 71%, transparent 72%),
+    conic-gradient(var(--accent) calc(var(--p) * 1%), var(--rail) 0);
+}
+:root[data-theme="gazette"] .ring > div {
+  width: 74%;
+  aspect-ratio: 1;
+  display: grid;
+  place-content: center; /* pack the % + fraction as one centered group */
+  place-items: center;
+  gap: 3px;
+  border-radius: 50%;
+  background: var(--paper);
+}
+:root[data-theme="gazette"] .ring b { font: 900 1.8rem/1 var(--font-display); }
+:root[data-theme="gazette"] .streak-num {
+  font: 900 clamp(2rem, 5vw, 3.2rem)/1 var(--font-display);
+}
+:root[data-theme="gazette"] .ring small,
+:root[data-theme="gazette"] .stat-sub,
+:root[data-theme="gazette"] .muted {
+  color: var(--muted);
+  font: 12.5px var(--font-mono);
+}
+:root[data-theme="gazette"] .flame {
+  filter: grayscale(1) contrast(1.1);
+  opacity: 0.85;
+  text-align: center;
+  font-size: 26px;
+}
+:root[data-theme="gazette"] .streak-num { text-align: center; }
+:root[data-theme="gazette"] .stat-card[data-kind="streak"] .stat-sub { text-align: center; }
+
+:root[data-theme="gazette"] .prow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+:root[data-theme="gazette"] .prow .lbl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-weight: 700;
+  font-size: 13.5px;
+}
+:root[data-theme="gazette"] .prow .lbl > i {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  background: var(--ink);
+  border: 1px solid var(--line-strong);
+}
+:root[data-theme="gazette"] .val { font: 12px var(--font-mono); color: var(--ink); }
+:root[data-theme="gazette"] .bar {
+  height: 8px;
+  overflow: hidden;
+  background: var(--rail);
+  border: 1px solid var(--line);
+}
+:root[data-theme="gazette"] .bar > i { display: block; height: 100%; background: var(--ink); }
+
+/* ---- day rail --------------------------------------------------------------- */
+
+:root[data-theme="gazette"] .day-rail {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 56px;
+  gap: 14px;
+  align-items: stretch;
+}
+:root[data-theme="gazette"] .today-wrap { min-width: 0; }
+:root[data-theme="gazette"] .day-nav {
+  border: 1px solid var(--line-strong);
+  background: var(--paper);
+  color: var(--ink);
+  font: 700 38px/1 var(--font-display);
+  cursor: pointer;
+  box-shadow: var(--sh-sm);
+  transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+:root[data-theme="gazette"] .day-nav:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: var(--sh);
+}
+:root[data-theme="gazette"] .day-nav:disabled { opacity: 0.35; cursor: default; }
+:root[data-theme="gazette"] .day-nav:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+
+/* ---- today card (the front-page lead) --------------------------------------- */
+
+:root[data-theme="gazette"] .today {
+  display: flex;
+  overflow: hidden;
+  min-height: 420px;
+  background: var(--paper);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--sh);
+}
+:root[data-theme="gazette"] .today-side {
+  flex: 0 0 72px;
+  display: grid;
+  place-items: center;
+  background-color: color-mix(in srgb, var(--track-local, var(--ink)) 10%, var(--paper-2));
+  background-image: radial-gradient(circle, rgba(28, 23, 18, 0.12) 1px, transparent 1.3px);
+  background-size: 7px 7px; /* newsprint halftone */
+  border-right: 1px solid var(--line);
+  border-left: 6px solid var(--track-local, var(--ink));
+}
+:root[data-theme="gazette"] .vert {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font: 700 13px var(--font-mono);
+  letter-spacing: 0.4em;
+  color: var(--track-local, var(--ink));
+}
+:root[data-theme="gazette"] .today-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: clamp(20px, 4vw, 34px);
+}
+:root[data-theme="gazette"] .trackpill {
+  width: max-content;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--line-strong);
+  font: 700 11.5px var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: var(--paper);
+}
+:root[data-theme="gazette"] .trackpill > .k {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  background: var(--track-local, var(--accent));
+}
+:root[data-theme="gazette"] .today-title {
+  margin: 0;
+  font: 900 clamp(1.9rem, 4vw, 3.1rem)/1.02 var(--font-display);
+  letter-spacing: 0.005em;
+  padding-bottom: 12px;
+  border-bottom: 3px double var(--line);
+}
+
+/* pull-quote warm-up — both variants: <div> (with .muted label) and rest <p> */
+:root[data-theme="gazette"] .warm {
+  margin: 0;
+  padding: 4px 0 4px 14px;
+  border-left: 3px solid var(--accent);
+  font-style: italic;
+  font-size: 15.5px;
+}
+:root[data-theme="gazette"] .warm .muted {
+  font: 700 11px var(--font-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-style: normal;
+  margin-right: 4px;
+}
+:root[data-theme="gazette"] .warm-i { color: var(--accent); margin-right: 6px; font-style: normal; }
+
+/* tasks — a ruled ledger list, not cards */
+:root[data-theme="gazette"] .tasks,
+:root[data-theme="gazette"] #taskList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid var(--line);
+}
+:root[data-theme="gazette"] #taskList > label.task,
+:root[data-theme="gazette"] #taskList > .task-wrap { border-bottom: 1px solid var(--line); }
+:root[data-theme="gazette"] .task-wrap { gap: 0; padding-bottom: 10px; }
+:root[data-theme="gazette"] .task {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 12px 6px;
+  cursor: pointer;
+  animation: gz-task-in 0.4s both ease-out;
+  transition: background-color 0.15s ease;
+}
+:root[data-theme="gazette"] .task:hover { background: color-mix(in srgb, var(--paper-2) 55%, var(--paper)); }
+:root[data-theme="gazette"] .task .box {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  transition: border-color 0.2s cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+:root[data-theme="gazette"] .task-text { font-size: 15.5px; }
+:root[data-theme="gazette"] .task.done .box { border-color: var(--accent); }
+:root[data-theme="gazette"] .task.done .box::after {
+  /* red editor's tick, drawn larger than the box so it reads as hand-marked */
+  content: "";
+  display: block;
+  width: 7px;
+  height: 14px;
+  margin: -4px auto 0;
+  rotate: 42deg;
+  border: 3px solid var(--accent);
+  border-top: 0;
+  border-left: 0;
+}
+:root[data-theme="gazette"] .task.done .task-text {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--accent) 65%, transparent);
+  text-decoration-thickness: 1.5px;
+}
+:root[data-theme="gazette"] .task-hint { margin-left: 40px; }
+:root[data-theme="gazette"] .task-hint-body { color: var(--muted); border-left-color: var(--line); }
+
+/* reflection — letters to the editor, on ruled paper */
+:root[data-theme="gazette"] .reflect-block { display: flex; flex-direction: column; gap: 8px; }
+:root[data-theme="gazette"] .reflect-label {
+  font: 700 11.5px var(--font-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+:root[data-theme="gazette"] .kanji { color: var(--accent); margin-right: 6px; font-size: 14px; }
+:root[data-theme="gazette"] textarea#reflect {
+  min-height: 112px;
+  resize: vertical;
+  border: 1px solid var(--line);
+  background-color: var(--paper);
+  background-image: repeating-linear-gradient(
+    transparent 0 27px,
+    color-mix(in srgb, var(--line) 55%, transparent) 27px 28px
+  );
+  background-attachment: local;
+  color: var(--ink);
+  padding: 6px 12px;
+  font: 400 15px/28px var(--font-body);
+}
+
+/* resources — footnote chips */
+:root[data-theme="gazette"] .res-row { display: flex; flex-wrap: wrap; gap: 8px; }
+:root[data-theme="gazette"] .chip {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  background: var(--paper-2);
+  font: 12.5px var(--font-mono);
+}
+:root[data-theme="gazette"] .chip b { color: var(--accent); }
+
+/* rest day */
+:root[data-theme="gazette"] .rest-due {
+  padding: 16px 18px;
+  border: 1px dashed var(--line-strong);
+  background: var(--paper-2);
+  font-style: italic;
+}
+:root[data-theme="gazette"] .rest-due b { color: var(--accent); font-style: normal; }
+
+/* CTAs — rubber-stamp red and ink */
+:root[data-theme="gazette"] .btn.gold {
+  width: max-content;
+  background: var(--paper);
+  color: var(--accent);
+  border: 2px solid var(--accent);
+  font: 700 12.5px var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+:root[data-theme="gazette"] .btn.gold:hover { background: var(--accent); color: var(--paper); }
+:root[data-theme="gazette"] .next-day-cta {
+  width: max-content;
+  padding: 13px 22px;
+  background: var(--ink);
+  color: var(--paper);
+  border: 1px solid var(--line-strong);
+  font: 700 13px var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: var(--sh-sm);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+:root[data-theme="gazette"] .next-day-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--sh);
+  background: var(--accent);
+}
+:root[data-theme="gazette"] .next-day-cta:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+
+/* ---- footer ----------------------------------------------------------------- */
+
+:root[data-theme="gazette"] .foot {
+  padding: 16px 0 30px;
+  margin-top: 18px;
+  border-top: 4px double var(--line-strong);
+  text-align: center;
+  color: var(--muted);
+  font-style: italic;
+}
+:root[data-theme="gazette"] #motd { transition: opacity 0.55s ease, transform 0.55s ease; display: inline-block; }
+:root[data-theme="gazette"] #motd.motd-out { opacity: 0; transform: translateY(5px); }
+
+/* ---- modals ------------------------------------------------------------------ */
+
+:root[data-theme="gazette"] .modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: none;
+  overflow-y: auto;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 16px;
+  background: rgba(28, 23, 18, 0.55);
+}
+:root[data-theme="gazette"] .modal.open { display: flex; }
+:root[data-theme="gazette"] .modal-panel {
+  width: min(560px, 92vw);
+  margin: auto;
+  overflow: visible;
+  padding: 18px 20px 20px;
+  background: var(--paper);
+  border: 1px solid var(--line-strong);
+  border-top: 4px double var(--line-strong);
+  box-shadow: var(--sh-lg);
+}
+:root[data-theme="gazette"] .tr-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+  border-bottom: 3px double var(--line);
+}
+:root[data-theme="gazette"] #cardMapTitle,
+:root[data-theme="gazette"] #trophiesTitle,
+:root[data-theme="gazette"] #shortcutsTitle {
+  flex: 1;
+  font: 900 20px var(--font-display);
+}
+:root[data-theme="gazette"] .tr-head button {
+  border: 1px solid var(--line-strong);
+  background: var(--paper);
+  color: var(--ink);
+  padding: 6px 10px;
+  cursor: pointer;
+  font: 700 13px var(--font-mono);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+:root[data-theme="gazette"] .tr-head button:hover { background: var(--ink); color: var(--paper); }
+:root[data-theme="gazette"] .tr-head button:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+
+/* card map — retheme the baseline cells to print */
+:root[data-theme="gazette"] .cm-rlabel { color: var(--muted); opacity: 1; }
+:root[data-theme="gazette"] .cm-card { border-color: var(--ink); background: var(--paper-2); }
+:root[data-theme="gazette"] .cm-card.done { background: var(--ink); }
+:root[data-theme="gazette"] .cm-card.current { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* trophies */
+:root[data-theme="gazette"] .tr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+:root[data-theme="gazette"] .badge {
+  position: relative;
+  display: grid;
+  place-content: center; /* equal-height grid rows would otherwise spread icon and label apart */
+  place-items: center;
+  gap: 8px;
+  text-align: center;
+  padding: 14px 10px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+:root[data-theme="gazette"] .badge .bi { font-size: 30px; }
+:root[data-theme="gazette"] .badge .bt { font: 700 12px var(--font-mono); }
+:root[data-theme="gazette"] .badge.on { border-color: var(--accent); box-shadow: var(--sh-sm); }
+:root[data-theme="gazette"] .badge.on .bt { color: var(--accent); }
+:root[data-theme="gazette"] .badge.off { opacity: 0.45; }
+:root[data-theme="gazette"] .badge.off .bi { filter: grayscale(1); }
+:root[data-theme="gazette"] .badge[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 220px;
+  padding: 8px 10px;
+  background: var(--ink);
+  color: var(--paper);
+  font: 12px/1.4 var(--font-mono);
+  box-shadow: var(--sh-sm);
+  z-index: 2;
+  white-space: normal;
+}
+:root[data-theme="gazette"] .badge[data-tip]:hover::before {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--ink);
+}
+
+/* ---- effects ------------------------------------------------------------------ */
+
+:root[data-theme="gazette"] #fx {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+  overflow: hidden;
+}
+:root[data-theme="gazette"] .fx-flash {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 250, 235, 0.6);
+  animation: gz-flash 0.65s ease both;
+}
+:root[data-theme="gazette"] .toast,
+:root[data-theme="gazette"] .badge-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%) translateY(12px);
+  opacity: 0;
+  padding: 12px 16px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-left: 5px solid var(--accent);
+  box-shadow: var(--sh-lg);
+  font: 700 12.5px var(--font-mono);
+  letter-spacing: 0.06em;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+:root[data-theme="gazette"] .toast.show,
+:root[data-theme="gazette"] .badge-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+:root[data-theme="gazette"] .badge-toast > .bt-i { color: var(--accent); margin-right: 8px; }
+
+/* confetti — shredded newsprint */
+:root[data-theme="gazette"] .confetti-piece {
+  position: fixed;
+  top: 16%;
+  left: 50%;
+  width: 10px;
+  height: 14px;
+  background: var(--ink);
+  animation: gz-confetti calc(1.05s + var(--i) * 14ms) ease-out both;
+}
+:root[data-theme="gazette"] .confetti-piece:nth-child(3n) { background: var(--accent); }
+:root[data-theme="gazette"] .confetti-piece:nth-child(3n + 1) {
+  background: var(--paper);
+  border: 1px solid var(--line-strong);
+}
+:root[data-theme="gazette"] .confetti-piece:nth-child(4n) {
+  width: 12px;
+  height: 8px;
+  background: var(--muted);
+}
+:root[data-theme="gazette"] .confetti-piece:nth-child(5n) { border-radius: 50%; }
+
+/* ---- per-track spot colors ------------------------------------------------------
+   Pack-injected --track-<id> wins; fallbacks below are this theme's print inks
+   for the dev-roadmap track ids. Unknown tracks fall back to plain ink. */
+
+:root[data-theme="gazette"] [data-track] { --track-local: var(--ink); }
+:root[data-theme="gazette"] [data-track="dsa"] { --track-local: var(--track-dsa, #0f766e); }
+:root[data-theme="gazette"] [data-track="js"] { --track-local: var(--track-js, #a16207); }
+:root[data-theme="gazette"] [data-track="ts"] { --track-local: var(--track-ts, #1d4ed8); }
+:root[data-theme="gazette"] [data-track="node"] { --track-local: var(--track-node, #15803d); }
+:root[data-theme="gazette"] [data-track="sysdesign"] { --track-local: var(--track-sysdesign, #6d28d9); }
+:root[data-theme="gazette"] [data-track="patterns"] { --track-local: var(--track-patterns, #c2410c); }
+:root[data-theme="gazette"] [data-track="distsys"] { --track-local: var(--track-distsys, #0369a1); }
+:root[data-theme="gazette"] [data-track="db"] { --track-local: var(--track-db, #be185d); }
+:root[data-theme="gazette"] [data-track="cs"] { --track-local: var(--track-cs, #57534e); }
+
+:root[data-theme="gazette"] .bar[data-track] > i { background: var(--track-local); }
+:root[data-theme="gazette"] .prow[data-track] .lbl > i { background: var(--track-local); }
+
+/* ---- keyframes ------------------------------------------------------------------ */
+
+@keyframes gz-task-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes gz-flash {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes gz-confetti {
+  0% { transform: translate(-50%, 0) rotate(0); opacity: 1; }
+  100% {
+    transform: translate(calc(-50% + var(--dx) * 260px), calc(140px + var(--dy) * 460px))
+      rotate(var(--rot));
+    opacity: 0;
+  }
+}
+
+/* ---- small screens ---------------------------------------------------------------- */
+
+@media (max-width: 720px) {
+  :root[data-theme="gazette"] .day-rail { grid-template-columns: 40px minmax(0, 1fr) 40px; gap: 8px; }
+  :root[data-theme="gazette"] .day-nav { font-size: 28px; }
+  :root[data-theme="gazette"] .today { flex-direction: column; }
+  :root[data-theme="gazette"] .today-side {
+    flex: 0 0 48px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    border-left: 6px solid var(--track-local, var(--ink));
+  }
+  :root[data-theme="gazette"] .vert { writing-mode: horizontal-tb; transform: none; letter-spacing: 0.3em; }
+}

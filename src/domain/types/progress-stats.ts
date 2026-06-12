@@ -1,1 +1,5 @@
-export interface Stat { done: number; total: number; pct: number; }
+export interface Stat {
+  done: number;
+  total: number;
+  pct: number;
+}

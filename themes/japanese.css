@@ -688,7 +688,8 @@
 }
 :root[data-theme="japanese"] .cal-head{ justify-content:space-between; }
 :root[data-theme="japanese"] .tr-head{ justify-content:space-between; }
-:root[data-theme="japanese"] #calTitle,
+:root[data-theme="japanese"] #cardMapTitle,
+:root[data-theme="japanese"] #shortcutsTitle,
 :root[data-theme="japanese"] #trophiesTitle{
   font-family:var(--serif);
   font-size:17px; font-weight:700; color:var(--ai);

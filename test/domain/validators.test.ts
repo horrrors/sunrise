@@ -10,7 +10,11 @@ const PACK = {
   version: '1.0.0',
   tracks: [{ id: 'dsa', label: 'DSA' }],
   groups: [
-    { id: 'g1', title: 'G1', items: [{ id: 'g1i1', track: 'dsa', tasks: [{ id: 't1', text: 'x' }] }] },
+    {
+      id: 'g1',
+      title: 'G1',
+      items: [{ id: 'g1i1', track: 'dsa', tasks: [{ id: 't1', text: 'x' }] }],
+    },
   ],
 };
 const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
@@ -45,7 +49,8 @@ test('issues: bad track ref, dup item id, unknown badge type, bad item-complete 
   cap.badges = [{ id: 'c', title: 'C', type: 'item-complete', item: 'ghost' }];
   assert.throws(
     () => v.parse(cap),
-    (e: unknown) => e instanceof ValidationError && e.issues.some((i) => i.path === 'badges[0].item'),
+    (e: unknown) =>
+      e instanceof ValidationError && e.issues.some((i) => i.path === 'badges[0].item'),
   );
   const ctor = clone(PACK);
   ctor.tracks = [{ id: 'constructor', label: 'C' }];
@@ -64,7 +69,10 @@ test('theme parse: valid passes; wrong version throws', () => {
     cssHref: 'themes/neon.css',
   };
   assert.deepEqual(new ThemeValidator().parse(t), t);
-  assert.throws(() => new ThemeValidator().parse({ ...t, schema: 'sunrise.theme/v2' }), ValidationError);
+  assert.throws(
+    () => new ThemeValidator().parse({ ...t, schema: 'sunrise.theme/v2' }),
+    ValidationError,
+  );
 });
 test('progress parse: valid passes; null item rejected; legacy days→items', () => {
   const v = new ProgressValidator();
@@ -89,13 +97,6 @@ test('progress parse: valid passes; null item rejected; legacy days→items', ()
   assert.equal(out.items['w1d1']?.completedHour, 14);
   assert.equal(out.badges['first-light']?.at, '2026-05-30');
 });
-test('parse rejects bad JSON via parseProgressJson', () => {
-  assert.throws(
-    () => new ProgressValidator().parseJson('{bad'),
-    (e: unknown) => e instanceof ValidationError || (e as Error).name === 'ImportError',
-  );
-});
-
 test('badge missing required param: streak without gte → issue path badges[0].gte', () => {
   const v = new PackValidator();
   const bad = clone(PACK) as Record<string, unknown>;
@@ -133,7 +134,151 @@ test('ProgressValidator: reviews entry with wrong shape → issue path reviews[0
   const v = new ProgressValidator();
   assert.throws(
     () => v.parse({ items: {}, reviews: ['oops'] }),
-    (e: unknown) =>
-      e instanceof ValidationError && e.issues.some((i) => i.path === 'reviews[0]'),
+    (e: unknown) => e instanceof ValidationError && e.issues.some((i) => i.path === 'reviews[0]'),
   );
+});
+
+const hasIssue = (e: unknown, path: string, re?: RegExp): boolean =>
+  e instanceof ValidationError && e.issues.some((i) => i.path === path && (!re || re.test(i.msg)));
+
+test('null array elements → ValidationError with precise paths, not TypeErrors', () => {
+  const v = new PackValidator();
+  const base = clone(PACK);
+  const g = base.groups[0]!;
+  const it = g.items[0]!;
+  assert.throws(
+    () => v.parse({ ...base, tracks: [...base.tracks, null] }),
+    (e: unknown) => hasIssue(e, 'tracks[1]'),
+  );
+  assert.throws(
+    () => v.parse({ ...base, groups: [{ ...g, items: [...g.items, null] }] }),
+    (e: unknown) => hasIssue(e, 'groups[0].items[1]'),
+  );
+  assert.throws(
+    () => v.parse({ ...base, groups: [{ ...g, items: [{ ...it, tasks: [...it.tasks, null] }] }] }),
+    (e: unknown) => hasIssue(e, 'groups[0].items[0].tasks[1]'),
+  );
+  assert.throws(
+    () => v.parse({ ...base, groups: [{ ...g, items: [{ ...it, resources: [null] }] }] }),
+    (e: unknown) => hasIssue(e, 'groups[0].items[0].resources[0]'),
+  );
+  assert.throws(
+    () => v.parse({ ...base, mottos: [null] }),
+    (e: unknown) => hasIssue(e, 'mottos[0]'),
+  );
+});
+
+test('non-rest item needs tasks; rest item without tasks is fine', () => {
+  const v = new PackValidator();
+  const base = clone(PACK);
+  const g = base.groups[0]!;
+  assert.throws(
+    () => v.parse({ ...base, groups: [{ ...g, items: [{ id: 'x1', track: 'dsa' }] }] }),
+    (e: unknown) => hasIssue(e, 'groups[0].items[0].tasks', /at least one task/),
+  );
+  assert.throws(
+    () => v.parse({ ...base, groups: [{ ...g, items: [{ id: 'x1', track: 'dsa', tasks: [] }] }] }),
+    (e: unknown) => hasIssue(e, 'groups[0].items[0].tasks'),
+  );
+  const rest = v.parse({
+    ...base,
+    groups: [{ ...g, items: [{ id: 'r1', track: 'rest', rest: true }] }],
+  });
+  assert.equal(rest.groups[0]!.items[0]!.rest, true);
+});
+
+test('ui and settings.labels values must be strings', () => {
+  const v = new PackValidator();
+  assert.throws(
+    () => v.parse({ ...clone(PACK), ui: { phaseLabel: 123 } }),
+    (e: unknown) => hasIssue(e, 'ui.phaseLabel'),
+  );
+  assert.throws(
+    () => v.parse({ ...clone(PACK), settings: { labels: { item: 5 } } }),
+    (e: unknown) => hasIssue(e, 'settings.labels.item'),
+  );
+  const ok = v.parse({
+    ...clone(PACK),
+    ui: { phaseLabel: 'Phase' },
+    settings: { labels: { item: 'Day' } },
+  });
+  assert.equal(ok.ui?.['phaseLabel'], 'Phase');
+});
+
+test('weekday days outside 1..7 and hour-range outside 0..23 are rejected', () => {
+  const v = new PackValidator();
+  assert.throws(
+    () =>
+      v.parse({ ...clone(PACK), badges: [{ id: 'b', title: 'B', type: 'weekday', days: [0, 6] }] }),
+    (e: unknown) => hasIssue(e, 'badges[0].days', /1=Mon\.\.7=Sun/),
+  );
+  v.parse({ ...clone(PACK), badges: [{ id: 'b', title: 'B', type: 'weekday', days: [6, 7] }] });
+  assert.throws(
+    () =>
+      v.parse({
+        ...clone(PACK),
+        badges: [{ id: 'b', title: 'B', type: 'hour-range', from: 25, to: 5 }],
+      }),
+    (e: unknown) => hasIssue(e, 'badges[0].from'),
+  );
+  v.parse({
+    ...clone(PACK),
+    badges: [{ id: 'b', title: 'B', type: 'hour-range', from: 22, to: 5 }],
+  });
+});
+
+test('progress: wrong schema version rejected; absent schema accepted', () => {
+  const v = new ProgressValidator();
+  assert.throws(
+    () => v.parse({ schema: 'sunrise.progress/v99', items: {}, reviews: [] }),
+    (e: unknown) => hasIssue(e, 'schema', /unsupported progress version/),
+  );
+  assert.equal(v.parse({ items: {}, reviews: [] }).schema, 'sunrise.progress/v1');
+});
+
+test('progress: item entry internals normalized or rejected', () => {
+  const v = new ProgressValidator();
+  const empty = v.parse({ items: { a: {} }, reviews: [] });
+  assert.deepEqual(empty.items['a'], {
+    tasks: {},
+    reflection: '',
+    completedAt: null,
+    completedHour: null,
+  });
+  assert.throws(
+    () => v.parse({ items: { a: { completedAt: 42 } }, reviews: [] }),
+    (e: unknown) => hasIssue(e, 'items.a.completedAt'),
+  );
+  // completedAt is shape-checked only (\d{4}-\d{2}-\d{2}); impossible-but-shaped dates pass through.
+  const shaped = v.parse({ items: { a: { completedAt: '2026-13-99' } }, reviews: [] });
+  assert.equal(shaped.items['a']?.completedAt, '2026-13-99');
+  const tasks = v.parse({
+    items: { a: { tasks: { t1: true, t2: false, t3: 1, t4: 'x' } } },
+    reviews: [],
+  }).items['a']!.tasks;
+  assert.deepEqual(tasks, { t1: true });
+});
+
+test('progress: reviews keep {itemId,lastDate} only; bad lastDate rejected', () => {
+  const v = new ProgressValidator();
+  const out = v.parse({ items: {}, reviews: [{ itemId: 'a', lastDate: '2026-01-02', stage: 3 }] });
+  assert.deepEqual(out.reviews, [{ itemId: 'a', lastDate: '2026-01-02' }]);
+  assert.throws(
+    () => v.parse({ items: {}, reviews: [{ itemId: 'a', lastDate: 'garbage' }] }),
+    (e: unknown) => hasIssue(e, 'reviews[0]'),
+  );
+});
+
+test('progress: legacy days blob migrates to items and normalizes reviews', () => {
+  const out = new ProgressValidator().parse({
+    days: { a: { tasks: { t: true } } },
+    reviews: [{ itemId: 'a', lastDate: '2026-01-01', stage: 2 }],
+  });
+  assert.deepEqual(out.items['a'], {
+    tasks: { t: true },
+    reflection: '',
+    completedAt: null,
+    completedHour: null,
+  });
+  assert.deepEqual(out.reviews, [{ itemId: 'a', lastDate: '2026-01-01' }]);
 });

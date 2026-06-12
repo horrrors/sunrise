@@ -1,22 +1,16 @@
 import type { Progress } from './progress.ts';
 import { diffDays } from './dates.ts';
 
-export const REVIEW_INTERVALS = [1, 3, 7, 16] as const;
-const MAX_STAGE = REVIEW_INTERVALS.length - 1;
-
+// Reviews are passive reminders: a scheduled item surfaces on rest days from the
+// next day onward, until the user re-schedules it (which resets the date).
 export class ReviewSchedule {
   public due(progress: Progress, today: string): string[] {
-    return progress.getReviewList()
-      .filter((r) => {
-        const stage = Math.min(Math.max(r.stage, 0), MAX_STAGE);
-        return diffDays(r.lastDate, today) >= REVIEW_INTERVALS[stage]!;
-      })
+    return progress
+      .getReviewList()
+      .filter((r) => diffDays(r.lastDate, today) >= 1)
       .map((r) => r.itemId);
   }
   public schedule(progress: Progress, itemId: string, today: string): void {
     progress.scheduleReview(itemId, today);
-  }
-  public complete(progress: Progress, itemId: string, today: string): void {
-    progress.advanceReview(itemId, today, MAX_STAGE);
   }
 }

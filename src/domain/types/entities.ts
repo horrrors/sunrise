@@ -1,7 +1,14 @@
 import type { BadgeRule } from './badge-rule.ts';
 
-export interface Task { readonly id: string; readonly text: string; readonly guidance?: string; }
-export interface Resource { readonly label: string; readonly note: string; }
+export interface Task {
+  readonly id: string;
+  readonly text: string;
+  readonly guidance?: string;
+}
+export interface Resource {
+  readonly label: string;
+  readonly note: string;
+}
 export interface Item {
   readonly id: string;
   readonly track: string;
@@ -16,10 +23,12 @@ export interface Group {
   readonly id: string;
   readonly title: string;
   readonly phase?: string;
-  readonly theme?: string;
   readonly items: readonly Item[];
 }
-export interface Phase { readonly id: string; readonly title: string; }
+export interface Phase {
+  readonly id: string;
+  readonly title: string;
+}
 export interface Track {
   readonly id: string;
   readonly label: string;
@@ -27,7 +36,10 @@ export interface Track {
   readonly color?: string;
   readonly reviewable?: boolean;
 }
-export interface Labels { readonly phase?: string; readonly group?: string; readonly groupAbbr?: string; readonly item?: string; }
+export interface Labels {
+  readonly phase?: string;
+  readonly item?: string;
+}
 export interface PackSettings {
   readonly labels?: Labels;
   readonly reviews?: boolean;
@@ -56,4 +68,8 @@ export interface Theme {
   readonly version: string;
   readonly cssHref: string;
 }
-export interface Session { activePackId?: string; themeId?: string; cursors?: Record<string, string>; }
+export interface Session {
+  activePackId?: string;
+  themeId?: string;
+  cursors?: Record<string, string>;
+}

@@ -5,18 +5,21 @@
     items;
     reviews;
     badges;
-    lastSurprise;
     constructor(data) {
       this.items = data.items;
       this.reviews = data.reviews;
       this.badges = data.badges;
-      this.lastSurprise = data.lastSurprise;
     }
     static empty() {
-      return new _Progress({ schema: "sunrise.progress/v1", items: {}, reviews: [], badges: {}, lastSurprise: null });
+      return new _Progress({ schema: "sunrise.progress/v1", items: {}, reviews: [], badges: {} });
     }
     toJSON() {
-      return structuredClone({ schema: "sunrise.progress/v1", items: this.items, reviews: this.reviews, badges: this.badges, lastSurprise: this.lastSurprise });
+      return structuredClone({
+        schema: "sunrise.progress/v1",
+        items: this.items,
+        reviews: this.reviews,
+        badges: this.badges
+      });
     }
     ensure(itemId) {
       let it = this.items[itemId];
@@ -34,6 +37,7 @@
     }
     setTaskDone(item, taskId, done, today, hour) {
       const st = this.ensure(item.id);
+      st.tasks ??= {};
       if (done) st.tasks[taskId] = true;
       else delete st.tasks[taskId];
       if (this.isItemComplete(item)) {
@@ -82,34 +86,33 @@
       }
       return n;
     }
+    // A new pack version can add tasks to an already-completed item; the stale
+    // completedAt would then disagree with isItemComplete (streaks vs dashboard).
+    // Returns true when anything was cleared so the caller can persist.
+    reconcile(items) {
+      let changed = false;
+      for (const it of items) {
+        const st = this.items[it.id];
+        if (st?.completedAt && !this.isItemComplete(it)) {
+          st.completedAt = null;
+          st.completedHour = null;
+          changed = true;
+        }
+      }
+      return changed;
+    }
     getReviewList() {
       return this.reviews;
     }
     scheduleReview(itemId, today) {
       this.reviews = this.reviews.filter((r) => r.itemId !== itemId);
-      this.reviews.push({ itemId, lastDate: today, stage: 0 });
-    }
-    advanceReview(itemId, today, maxStage) {
-      const r = this.reviews.find((x) => x.itemId === itemId);
-      if (r) {
-        r.lastDate = today;
-        r.stage = Math.min(r.stage + 1, maxStage);
-      }
-    }
-    ownedBadges() {
-      return this.badges;
+      this.reviews.push({ itemId, lastDate: today });
     }
     isBadgeOwned(id) {
       return this.badges[id] !== void 0;
     }
     awardBadge(id, at) {
       if (!this.badges[id]) this.badges[id] = { at };
-    }
-    badgeAt(id) {
-      return this.badges[id]?.at ?? null;
-    }
-    setLastSurprise(s) {
-      this.lastSurprise = s;
     }
   };
 
@@ -174,14 +177,17 @@
   };
   var TASK = {
     type: "object",
+    required: true,
     props: { id: ID, text: { type: "string", required: true }, guidance: { type: "string" } }
   };
   var RES = {
     type: "object",
+    required: true,
     props: { label: { type: "string", required: true }, note: { type: "string", required: true } }
   };
   var ITEM = {
     type: "object",
+    required: true,
     props: {
       id: ID,
       track: { type: "string", required: true },
@@ -195,16 +201,17 @@
   };
   var GROUP = {
     type: "object",
+    required: true,
     props: {
       id: ID,
       title: { type: "string", required: true },
       phase: { type: "string" },
-      theme: { type: "string" },
       items: { type: "array", required: true, min: 1, of: ITEM }
     }
   };
   var TRACK = {
     type: "object",
+    required: true,
     props: {
       id: ID,
       label: { type: "string", required: true },
@@ -213,9 +220,14 @@
       reviewable: { type: "boolean" }
     }
   };
-  var PHASE = { type: "object", props: { id: ID, title: { type: "string", required: true } } };
+  var PHASE = {
+    type: "object",
+    required: true,
+    props: { id: ID, title: { type: "string", required: true } }
+  };
   var BADGE = {
     type: "object",
+    required: true,
     props: {
       id: ID,
       title: { type: "string", required: true },
@@ -238,8 +250,9 @@
       phases: { type: "array", of: PHASE },
       groups: { type: "array", required: true, min: 1, of: GROUP },
       badges: { type: "array", of: BADGE },
-      mottos: { type: "array", of: { type: "string" } },
-      surprises: { type: "array", of: { type: "string" } }
+      ui: { type: "object" },
+      mottos: { type: "array", of: { type: "string", required: true } },
+      surprises: { type: "array", of: { type: "string", required: true } }
     }
   };
   var BADGE_PARAMS = {
@@ -286,6 +299,20 @@
       if (!ok) errors.push({ path: `${path}.${k}`, msg: `expected ${base}` });
     }
     const type = b["type"];
+    if (type === "weekday") {
+      const days = b["days"];
+      if (Array.isArray(days) && !days.every((n) => Number.isInteger(n) && n >= 1 && n <= 7)) {
+        errors.push({ path: `${path}.days`, msg: "days are 1=Mon..7=Sun" });
+      }
+    }
+    if (type === "hour-range") {
+      for (const k of ["from", "to"]) {
+        const v = b[k];
+        if (typeof v === "number" && !(Number.isInteger(v) && v >= 0 && v <= 23)) {
+          errors.push({ path: `${path}.${k}`, msg: "expected an hour 0..23" });
+        }
+      }
+    }
     const track = b["track"];
     if ((type === "track-complete" || type === "tasks-done") && track != null && !refs.trackIds.has(track)) {
       errors.push({ path: `${path}.track`, msg: `track "${String(track)}" not declared` });
@@ -336,16 +363,38 @@
           if (!trackIds.has(it["track"])) {
             errors.push({ path: `${p}.track`, msg: `track "${String(it["track"])}" not declared` });
           }
+          if (!it["rest"] && !(Array.isArray(it["tasks"]) && it["tasks"].length > 0)) {
+            errors.push({ path: `${p}.tasks`, msg: "non-rest item needs at least one task" });
+          }
           const tids = /* @__PURE__ */ new Set();
           const tasks = it["tasks"] || [];
           tasks.forEach((t, ti) => {
             const tid = t["id"];
-            if (tids.has(tid)) errors.push({ path: `${p}.tasks[${ti}].id`, msg: `duplicate task id "${tid}"` });
+            if (tids.has(tid))
+              errors.push({ path: `${p}.tasks[${ti}].id`, msg: `duplicate task id "${tid}"` });
             tids.add(tid);
           });
         });
       });
-      badges.forEach((b, bi) => checkBadgeRule(b, `badges[${bi}]`, { trackIds, phaseIds, itemIds }, errors));
+      badges.forEach(
+        (b, bi) => checkBadgeRule(b, `badges[${bi}]`, { trackIds, phaseIds, itemIds }, errors)
+      );
+      const ui = pack["ui"];
+      if (isObj(ui)) {
+        for (const k in ui) {
+          if (typeof ui[k] !== "string") errors.push({ path: `ui.${k}`, msg: "expected string" });
+        }
+      }
+      const settings = pack["settings"];
+      const labels = isObj(settings) ? settings["labels"] : void 0;
+      if (labels !== void 0 && !isObj(labels)) {
+        errors.push({ path: "settings.labels", msg: "expected object" });
+      } else if (isObj(labels)) {
+        for (const k in labels) {
+          if (typeof labels[k] !== "string")
+            errors.push({ path: `settings.labels.${k}`, msg: "expected string" });
+        }
+      }
       if (errors.length) throw new ValidationError(errors);
       return raw;
     }
@@ -375,6 +424,7 @@
     }
   };
   var isObj = (v) => typeof v === "object" && v !== null && !Array.isArray(v);
+  var DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
   var ProgressValidator = class {
     parse(raw) {
       let data;
@@ -385,26 +435,61 @@
           schema: "sunrise.progress/v1",
           items: data["days"],
           reviews: data["reviews"] || [],
-          badges: data["badges"] || {},
-          lastSurprise: data["lastSurprise"] || null
+          badges: data["badges"] || {}
         };
+      }
+      if (data["schema"] !== void 0 && data["schema"] !== "sunrise.progress/v1") {
+        throw new ValidationError([
+          { path: "schema", msg: `unsupported progress version "${String(data["schema"])}"` }
+        ]);
       }
       const errors = [];
       check(data, PROGRESS_SCHEMA, "", errors);
       if (errors.length) throw new ValidationError(errors);
-      const items = data["items"];
-      for (const id in items) {
-        const it = items[id];
-        if (!it || typeof it !== "object" || Array.isArray(it)) {
+      const rawItems = data["items"];
+      const items = {};
+      for (const id in rawItems) {
+        const it = rawItems[id];
+        if (!isObj(it)) {
           errors.push({ path: `items.${id}`, msg: "must be an object" });
+          continue;
         }
+        const rawTasks = it["tasks"];
+        if (rawTasks !== void 0 && !isObj(rawTasks)) {
+          errors.push({ path: `items.${id}.tasks`, msg: "must be an object" });
+        }
+        const tasks = {};
+        if (isObj(rawTasks)) {
+          for (const t in rawTasks) if (rawTasks[t] === true) tasks[t] = true;
+        }
+        const completedAt = it["completedAt"];
+        if (completedAt != null && !(typeof completedAt === "string" && DATE_RE.test(completedAt))) {
+          errors.push({ path: `items.${id}.completedAt`, msg: 'expected "YYYY-MM-DD" or null' });
+        }
+        const completedHour = it["completedHour"];
+        if (completedHour != null && typeof completedHour !== "number") {
+          errors.push({ path: `items.${id}.completedHour`, msg: "expected number or null" });
+        }
+        const reflection = it["reflection"];
+        if (reflection !== void 0 && typeof reflection !== "string") {
+          errors.push({ path: `items.${id}.reflection`, msg: "expected string" });
+        }
+        items[id] = {
+          tasks,
+          reflection: typeof reflection === "string" ? reflection : "",
+          completedAt: typeof completedAt === "string" ? completedAt : null,
+          completedHour: typeof completedHour === "number" ? completedHour : null
+        };
       }
-      const reviews = data["reviews"];
-      reviews.forEach((r, i) => {
+      const rawReviews = data["reviews"];
+      const reviews = [];
+      rawReviews.forEach((r, i) => {
         const rr = r;
-        if (!rr || typeof rr !== "object" || typeof rr["itemId"] !== "string" || typeof rr["lastDate"] !== "string" || typeof rr["stage"] !== "number") {
+        if (!isObj(rr) || typeof rr["itemId"] !== "string" || typeof rr["lastDate"] !== "string" || !DATE_RE.test(rr["lastDate"])) {
           errors.push({ path: `reviews[${i}]`, msg: "bad review shape" });
+          return;
         }
+        reviews.push({ itemId: rr["itemId"], lastDate: rr["lastDate"] });
       });
       if (errors.length) throw new ValidationError(errors);
       const rawBadges = data["badges"];
@@ -413,18 +498,8 @@
         schema: "sunrise.progress/v1",
         items,
         reviews,
-        badges,
-        lastSurprise: data["lastSurprise"] || null
+        badges
       };
-    }
-    parseJson(json) {
-      let data;
-      try {
-        data = JSON.parse(json);
-      } catch {
-        throw new ImportError("Invalid JSON");
-      }
-      return this.parse(data);
     }
   };
 
@@ -438,7 +513,7 @@
     currentItemId = "";
     rules = [];
     allItems = [];
-    groupById = {};
+    groupOfItem = {};
     mottosList = [];
     constructor(deps) {
       this.deps = deps;
@@ -459,11 +534,14 @@
       const packs = this.deps.packs.packs();
       this.pack = packs.find((p) => p.id === packId) ?? packs[0];
       this.progress = this.deps.progressStore.load(this.pack.id);
-      this.rules = [...this.deps.genericBadges, ...this.pack.badges ?? []];
+      const byId = /* @__PURE__ */ new Map();
+      for (const r of [...this.deps.genericBadges, ...this.pack.badges ?? []]) byId.set(r.id, r);
+      this.rules = [...byId.values()];
       this.allItems = this.pack.groups.flatMap((g) => [...g.items]);
-      this.groupById = {};
-      for (const g of this.pack.groups) for (const it of g.items) this.groupById[it.id] = g;
+      this.groupOfItem = {};
+      for (const g of this.pack.groups) for (const it of g.items) this.groupOfItem[it.id] = g;
       this.mottosList = this.pack.mottos && this.pack.mottos.length ? this.pack.mottos : this.deps.defaultMottos;
+      if (this.progress.reconcile(this.allItems)) this.save();
     }
     save() {
       this.deps.progressStore.save(this.pack.id, this.progress);
@@ -474,16 +552,17 @@
       if (fromPack != null) return fromPack;
       return this.deps.defaultUi[k] ?? "";
     }
-    lbl(k, fallback) {
+    lbl(k, fallbackKey) {
       const l = this.pack.settings && this.pack.settings.labels;
       const v = l && l[k];
-      return v != null ? v : this.uiText(fallback);
+      return v != null ? v : this.uiText(fallbackKey);
     }
     itemOf(id) {
       const it = this.allItems.find((x) => x.id === id);
       if (!it) throw new Error(`unknown item "${id}"`);
       return it;
     }
+    // Unlike itemOf this never throws: the implicit "rest" track is undeclared by design.
     trackMeta(id) {
       for (const t of this.pack.tracks) if (t.id === id) return t;
       return { id, label: "", icon: "" };
@@ -510,34 +589,37 @@
       return this.allItems.findIndex((it) => it.id === this.currentItemId);
     }
     groupOrdinal(id) {
-      return this.pack.groups.indexOf(this.groupById[id]) + 1;
+      return this.pack.groups.indexOf(this.groupOfItem[id]) + 1;
+    }
+    // Badge awards must stick the moment a trophy shows as earned, so every
+    // progress mutation syncs awards — not just item completion (which also toasts).
+    syncBadges() {
+      return this.deps.badges.sync(this.pack, this.progress, this.rules, this.deps.clock.today());
     }
     // ----- intents -------------------------------------------------------------
-    toggleTask(taskId, done) {
+    setTaskDone(taskId, done) {
       const item = this.itemOf(this.currentItemId);
       const wasComplete = this.progress.isItemComplete(item);
       this.progress.setTaskDone(item, taskId, done, this.deps.clock.today(), this.deps.clock.hour());
       if (!wasComplete && this.progress.isItemComplete(item)) return this.onItemCompleted();
+      this.syncBadges();
       this.save();
       return { unlockedBadges: [] };
     }
     onItemCompleted() {
-      const today = this.deps.clock.today();
-      const unlocked = this.deps.badges.sync(this.pack, this.progress, this.rules, today);
-      let surprise;
+      const unlocked = this.syncBadges();
+      this.save();
+      const result = { unlockedBadges: unlocked };
       if (this.deps.random.next() < SURPRISE_CHANCE) {
         const pool = this.pack.surprises ?? [];
         const msg = pool.length ? pool[Math.floor(this.deps.random.next() * pool.length)] : void 0;
-        if (msg) {
-          this.progress.setLastSurprise({ text: msg, at: today });
-          surprise = msg;
-        }
+        if (msg) result.surprise = msg;
       }
-      this.save();
-      return surprise === void 0 ? { unlockedBadges: unlocked } : { unlockedBadges: unlocked, surprise };
+      return result;
     }
     setReflection(text) {
       this.progress.setReflection(this.currentItemId, text);
+      this.syncBadges();
       this.save();
     }
     selectItem(id) {
@@ -566,20 +648,28 @@
       this.themeId = id;
     }
     scheduleReviewForCurrent() {
-      const it = this.itemOf(this.currentItemId);
-      const g = this.groupById[it.id];
-      const reviewId = g.id + "-" + (it.title || it.id);
-      this.deps.reviews.schedule(this.progress, reviewId, this.deps.clock.today());
+      this.deps.reviews.schedule(this.progress, this.currentItemId, this.deps.clock.today());
       this.save();
     }
     importProgress(json) {
-      const data = new ProgressValidator().parseJson(json);
+      let raw;
+      try {
+        raw = JSON.parse(json);
+      } catch {
+        throw new ImportError("Invalid JSON");
+      }
+      const filePackId = raw && typeof raw === "object" ? raw["packId"] : void 0;
+      if (typeof filePackId === "string" && filePackId !== this.pack.id) {
+        throw new ImportError(`file is for pack "${filePackId}", active pack is "${this.pack.id}"`);
+      }
+      const data = new ProgressValidator().parse(raw);
       this.progress = new Progress(data);
+      this.progress.reconcile(this.allItems);
       this.save();
       this.currentItemId = this.resumeItemId();
     }
     exportProgress() {
-      return JSON.stringify(this.progress.toJSON(), null, 2);
+      return JSON.stringify({ packId: this.pack.id, ...this.progress.toJSON() }, null, 2);
     }
     // ----- queries -------------------------------------------------------------
     selectors() {
@@ -594,7 +684,7 @@
         selected: t.id === this.themeId
       }));
       const items = this.allItems.map((it) => {
-        const g = this.groupById[it.id];
+        const g = this.groupOfItem[it.id];
         const tl = it.rest ? this.uiText("restVert") : this.trackMeta(it.track).label;
         return { id: it.id, label: `${g.title} \xB7 ${tl}`, selected: it.id === this.currentItemId };
       });
@@ -603,13 +693,16 @@
     todayCard() {
       const it = this.itemOf(this.currentItemId);
       const m = this.trackMeta(it.track);
-      const g = this.groupById[it.id];
+      const g = this.groupOfItem[it.id];
       const cfg = this.pack.settings ?? {};
       const i = this.itemIndex();
       const notLast = i < this.allItems.length - 1;
       const phaseLabel = this.uiText("phaseLabel").replace("{p}", g.phase == null ? "" : g.phase).replace("{w}", String(this.groupOrdinal(it.id)));
       if (it.rest) {
-        const dueReviews = cfg.reviews ? this.deps.reviews.due(this.progress, this.deps.clock.today()) : [];
+        const dueReviews = cfg.reviews ? this.deps.reviews.due(this.progress, this.deps.clock.today()).map((id) => {
+          const item = this.allItems.find((x) => x.id === id);
+          return item ? item.title ?? id : id;
+        }) : [];
         return {
           itemId: it.id,
           rest: true,
@@ -622,7 +715,6 @@
           reflection: "",
           tasks: [],
           resources: [],
-          reviewable: false,
           dueReviews,
           complete: false,
           notLast,
@@ -652,7 +744,6 @@
         reflection: this.progress.reflection(it.id),
         tasks,
         resources: (it.resources ?? []).map((r) => ({ label: r.label, note: r.note })),
-        reviewable: showReview,
         dueReviews: [],
         complete,
         notLast,
@@ -665,7 +756,9 @@
       const byPhase = this.deps.stats.byPhase(this.pack, this.progress);
       const byTrack = this.deps.stats.byTrack(this.pack, this.progress);
       const sw = this.deps.defaultStreakWords;
-      const streakWord = streak === 1 ? sw[0] ?? "" : streak >= 2 && streak <= 4 ? sw[1] ?? "" : sw[2] ?? "";
+      const m10 = streak % 10;
+      const m100 = streak % 100;
+      const streakWord = m10 === 1 && m100 !== 11 ? sw[0] ?? "" : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? sw[1] ?? "" : sw[2] ?? "";
       const phaseList = this.pack.phases ?? [];
       const phases = phaseList.length ? phaseList.map((ph) => ({
         id: ph.id,
@@ -683,28 +776,19 @@
       };
     }
     cardMap() {
-      let done = 0;
-      let total = 0;
+      const overall = this.deps.stats.overall(this.pack, this.progress);
       const groups = this.pack.groups.map((g) => ({
         id: g.id,
         title: g.title,
-        items: g.items.map((it) => {
-          const rest = !!it.rest;
-          const isDone = this.progress.isItemComplete(it);
-          if (!rest) {
-            total++;
-            if (isDone) done++;
-          }
-          return {
-            id: it.id,
-            title: it.title ?? "",
-            done: isDone,
-            rest,
-            current: it.id === this.currentItemId
-          };
-        })
+        items: g.items.map((it) => ({
+          id: it.id,
+          title: it.title ?? "",
+          done: this.progress.isItemComplete(it),
+          rest: !!it.rest,
+          current: it.id === this.currentItemId
+        }))
       }));
-      return { done, total, groups };
+      return { done: overall.done, total: overall.total, groups };
     }
     trophies() {
       const all = this.deps.badges.evaluate(this.pack, this.progress, this.rules);
@@ -878,20 +962,12 @@
   };
 
   // src/domain/review-schedule.ts
-  var REVIEW_INTERVALS = [1, 3, 7, 16];
-  var MAX_STAGE = REVIEW_INTERVALS.length - 1;
   var ReviewSchedule = class {
     due(progress, today) {
-      return progress.getReviewList().filter((r) => {
-        const stage = Math.min(Math.max(r.stage, 0), MAX_STAGE);
-        return diffDays(r.lastDate, today) >= REVIEW_INTERVALS[stage];
-      }).map((r) => r.itemId);
+      return progress.getReviewList().filter((r) => diffDays(r.lastDate, today) >= 1).map((r) => r.itemId);
     }
     schedule(progress, itemId, today) {
       progress.scheduleReview(itemId, today);
-    }
-    complete(progress, itemId, today) {
-      progress.advanceReview(itemId, today, MAX_STAGE);
     }
   };
 
@@ -909,11 +985,14 @@
       const byTrack = this.stats.byTrack(pack, progress);
       const byPhase = this.stats.byPhase(pack, progress);
       const byId = new Map(pack.groups.flatMap((g) => g.items).map((it) => [it.id, it]));
+      const NONE = { done: 0, total: 0 };
       return {
         longestStreak: this.streaks.longest(progress),
         daysDone: overall.done,
         total: overall.total,
-        pct: overall.pct,
+        // exact ratio, not the display-rounded Stat.pct — `percent` rules must
+        // not fire early (199/200 rounds to 100)
+        pct: overall.total ? overall.done / overall.total * 100 : 0,
         reflections: progress.reflectionCount(),
         groupsComplete: this.stats.completedGroups(pack, progress),
         hasComeback: this.streaks.hasComeback(progress),
@@ -922,8 +1001,8 @@
         hours: progress.completedHours(),
         tasks: (track) => this.stats.countTasks(pack, progress, track),
         trackDone: (track) => byTrack[track]?.done ?? 0,
-        trackPct: (track) => byTrack[track]?.pct ?? 0,
-        phasePct: (phase) => byPhase[phase]?.pct ?? 0,
+        trackStat: (track) => byTrack[track] ?? NONE,
+        phaseStat: (phase) => byPhase[phase] ?? NONE,
         itemComplete: (id) => {
           const it = byId.get(id);
           return it ? progress.isItemComplete(it) : false;
@@ -946,14 +1025,19 @@
           return c.reflections >= rule.gte;
         case "groups-complete":
           return c.groupsComplete >= rule.gte;
-        case "track-complete":
-          return c.trackPct(rule.track) === 100;
-        case "phase-complete":
-          return c.phasePct(rule.phase) === 100;
+        case "track-complete": {
+          const s = c.trackStat(rule.track);
+          return s.total > 0 && s.done === s.total;
+        }
+        case "phase-complete": {
+          const s = c.phaseStat(rule.phase);
+          return s.total > 0 && s.done === s.total;
+        }
         case "item-complete":
           return c.itemComplete(rule.item);
         case "all-tracks":
           return c.tracks.length > 0 && c.tracks.every((t) => c.trackDone(t) >= rule.eachGte);
+        // weekdayMon is 0-based (0=Mon); rule.days uses the documented 1=Mon..7=Sun.
         case "weekday":
           return c.dates.some((d) => rule.days.includes(weekdayMon(d) + 1));
         case "hour-range":
@@ -966,31 +1050,18 @@
         }
       }
     }
-    dedupe(rules) {
-      const idx = /* @__PURE__ */ new Map();
-      const out = [];
-      for (const r of rules) {
-        const at = idx.get(r.id);
-        if (at !== void 0) out[at] = r;
-        else {
-          idx.set(r.id, out.length);
-          out.push(r);
-        }
-      }
-      return out;
-    }
+    // Rules are deduped by Tracker.loadPack (last wins); ids are unique here.
     evaluate(pack, progress, rules) {
       const ctx = this.context(pack, progress);
-      return this.dedupe(rules).map((r) => ({
+      return rules.map((r) => ({
         id: r.id,
-        unlocked: progress.isBadgeOwned(r.id) || this.passes(r, ctx),
-        at: progress.badgeAt(r.id)
+        unlocked: progress.isBadgeOwned(r.id) || this.passes(r, ctx)
       }));
     }
     sync(pack, progress, rules, today) {
       const ctx = this.context(pack, progress);
       const unlocked = [];
-      for (const r of this.dedupe(rules)) {
+      for (const r of rules) {
         if (!progress.isBadgeOwned(r.id) && this.passes(r, ctx)) {
           progress.awardBadge(r.id, today);
           unlocked.push(r.id);
@@ -1008,7 +1079,6 @@
     reflect: "\u0420\u0435\u0444\u043B\u0435\u043A\u0441\u0438\u044F",
     export: "\u042D\u043A\u0441\u043F\u043E\u0440\u0442",
     import: "\u0418\u043C\u043F\u043E\u0440\u0442",
-    calendar: "\u041A\u0430\u043B\u0435\u043D\u0434\u0430\u0440\u044C",
     cardMap: "\u041A\u0430\u0440\u0442\u0430 \u043F\u0440\u043E\u0433\u0440\u0435\u0441\u0441\u0430",
     trophies: "\u0422\u0440\u043E\u0444\u0435\u0438",
     nextDay: "\u0421\u043B\u0435\u0434\u0443\u044E\u0449\u0438\u0439 \u0434\u0435\u043D\u044C \u2192",
@@ -1049,45 +1119,215 @@
   var DEFAULT_STREAK_WORDS = ["\u0434\u0435\u043D\u044C", "\u0434\u043D\u044F", "\u0434\u043D\u0435\u0439"];
   var DEFAULT_MOTTOS = ["\u4E00\u6B69\u4E00\u6B69 \xB7 \u0448\u0430\u0433 \u0437\u0430 \u0448\u0430\u0433\u043E\u043C"];
   var GENERIC_BADGES = [
-    { id: "first-light", type: "days-done", gte: 1, title: "First Light", desc: "\u041F\u0435\u0440\u0432\u044B\u0439 \u043F\u043E\u043B\u043D\u043E\u0441\u0442\u044C\u044E \u0437\u0430\u043A\u0440\u044B\u0442\u044B\u0439 \u0434\u0435\u043D\u044C", icon: "\u{1F305}" },
-    { id: "streak-3", type: "streak", gte: 3, title: "\u0420\u0430\u0437\u043E\u0433\u0440\u0435\u0432", desc: "\u0421\u0435\u0440\u0438\u044F 3 \u0434\u043D\u044F \u043F\u043E\u0434\u0440\u044F\u0434", icon: "\u{1F331}" },
-    { id: "streak-7", type: "streak", gte: 7, title: "7 \u0434\u043D\u0435\u0439", desc: "\u0421\u0435\u0440\u0438\u044F 7 \u0434\u043D\u0435\u0439 \u043F\u043E\u0434\u0440\u044F\u0434", icon: "\u{1F525}" },
-    { id: "streak-14", type: "streak", gte: 14, title: "14 \u0434\u043D\u0435\u0439", desc: "\u0421\u0435\u0440\u0438\u044F 14 \u0434\u043D\u0435\u0439 \u043F\u043E\u0434\u0440\u044F\u0434", icon: "\u{1F30B}" },
-    { id: "streak-30", type: "streak", gte: 30, title: "30 \u0434\u043D\u0435\u0439", desc: "\u0421\u0435\u0440\u0438\u044F 30 \u0434\u043D\u0435\u0439 \u043F\u043E\u0434\u0440\u044F\u0434", icon: "\u26A1" },
-    { id: "streak-100", type: "streak", gte: 100, title: "100 \u0434\u043D\u0435\u0439", desc: "\u0421\u0435\u0440\u0438\u044F 100 \u0434\u043D\u0435\u0439 \u043F\u043E\u0434\u0440\u044F\u0434", icon: "\u{1F4AF}" },
-    { id: "days-10", type: "days-done", gte: 10, title: "10 \u0434\u043D\u0435\u0439", desc: "10 \u0434\u043D\u0435\u0439 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u043E", icon: "\u{1F4C5}" },
-    { id: "days-25", type: "days-done", gte: 25, title: "25 \u0434\u043D\u0435\u0439", desc: "25 \u0434\u043D\u0435\u0439 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u043E", icon: "\u{1F5D3}\uFE0F" },
-    { id: "days-50", type: "days-done", gte: 50, title: "50 \u0434\u043D\u0435\u0439", desc: "50 \u0434\u043D\u0435\u0439 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u043E", icon: "\u{1F4C6}" },
-    { id: "halfway", type: "percent", gte: 50, title: "\u042D\u043A\u0432\u0430\u0442\u043E\u0440", desc: "\u041F\u0440\u043E\u0439\u0434\u0435\u043D\u0430 \u043F\u043E\u043B\u043E\u0432\u0438\u043D\u0430 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B", icon: "\u{1F317}" },
-    { id: "finisher", type: "all-done", title: "\u0424\u0438\u043D\u0438\u0448\u0435\u0440", desc: "\u041F\u0440\u043E\u0439\u0434\u0435\u043D\u044B \u0432\u0441\u0435 \u0434\u043D\u0438 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B", icon: "\u{1F393}" },
-    { id: "tasks-100", type: "tasks-done", gte: 100, title: "100 \u0437\u0430\u0434\u0430\u0447", desc: "100 \u0437\u0430\u0434\u0430\u0447 \u0432\u044B\u043F\u043E\u043B\u043D\u0435\u043D\u043E", icon: "\u2705" },
-    { id: "scribe-10", type: "reflections", gte: 10, title: "\u041B\u0435\u0442\u043E\u043F\u0438\u0441\u0435\u0446", desc: "10 \u0440\u0435\u0444\u043B\u0435\u043A\u0441\u0438\u0439 \u043D\u0430\u043F\u0438\u0441\u0430\u043D\u043E", icon: "\u270D\uFE0F" },
-    { id: "scribe-30", type: "reflections", gte: 30, title: "\u0425\u0440\u043E\u043D\u0438\u0441\u0442", desc: "30 \u0440\u0435\u0444\u043B\u0435\u043A\u0441\u0438\u0439 \u043D\u0430\u043F\u0438\u0441\u0430\u043D\u043E", icon: "\u{1F4DC}" },
-    { id: "perfect-week", type: "groups-complete", gte: 1, title: "\u0418\u0434\u0435\u0430\u043B\u044C\u043D\u0430\u044F \u043D\u0435\u0434\u0435\u043B\u044F", desc: "\u041D\u0435\u0434\u0435\u043B\u044F \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u0430 \u0446\u0435\u043B\u0438\u043A\u043E\u043C", icon: "\u{1F31F}" },
-    { id: "weeks-4", type: "groups-complete", gte: 4, title: "\u041C\u0435\u0441\u044F\u0446 \u0432 \u0434\u0435\u043B\u0435", desc: "4 \u043D\u0435\u0434\u0435\u043B\u0438 \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u044B \u0446\u0435\u043B\u0438\u043A\u043E\u043C", icon: "\u{1F4C8}" },
-    { id: "comeback", type: "comeback", title: "Comeback", desc: "\u0412\u0435\u0440\u043D\u0443\u043B\u0441\u044F \u043F\u043E\u0441\u043B\u0435 \u043F\u0440\u043E\u043F\u0443\u0441\u043A\u0430", icon: "\u{1FA79}" },
-    { id: "night-owl", type: "hour-range", from: 22, to: 5, title: "Night Owl", desc: "\u0417\u0430\u043A\u0440\u044B\u043B \u0434\u0435\u043D\u044C \u043F\u043E\u0441\u043B\u0435 22:00 \u0438\u043B\u0438 \u0434\u043E 5:00", icon: "\u{1F989}" },
-    { id: "early-lark", type: "hour-range", from: 5, to: 8, title: "Early Lark", desc: "\u0417\u0430\u043A\u0440\u044B\u043B \u0434\u0435\u043D\u044C \u0434\u043E 8:00 \u0443\u0442\u0440\u0430", icon: "\u{1F426}" },
-    { id: "weekend", type: "weekday", days: [6, 7], title: "\u0412\u043E\u0438\u043D \u0432\u044B\u0445\u043E\u0434\u043D\u043E\u0433\u043E", desc: "\u0417\u0430\u043A\u0440\u044B\u043B \u0434\u0435\u043D\u044C \u0432 \u0441\u0443\u0431\u0431\u043E\u0442\u0443 \u0438\u043B\u0438 \u0432\u043E\u0441\u043A\u0440\u0435\u0441\u0435\u043D\u044C\u0435", icon: "\u{1F334}" }
+    {
+      id: "first-light",
+      type: "days-done",
+      gte: 1,
+      title: "First Light",
+      desc: "\u041F\u0435\u0440\u0432\u044B\u0439 \u043F\u043E\u043B\u043D\u043E\u0441\u0442\u044C\u044E \u0437\u0430\u043A\u0440\u044B\u0442\u044B\u0439 \u0434\u0435\u043D\u044C",
+      icon: "\u{1F305}"
+    },
+    {
+      id: "streak-3",
+      type: "streak",
+      gte: 3,
+      title: "\u0420\u0430\u0437\u043E\u0433\u0440\u0435\u0432",
+      desc: "\u0421\u0435\u0440\u0438\u044F 3 \u0434\u043D\u044F \u043F\u043E\u0434\u0440\u044F\u0434",
+      icon: "\u{1F331}"
+    },
+    {
+      id: "streak-7",
+      type: "streak",
+      gte: 7,
+      title: "7 \u0434\u043D\u0435\u0439",
+      desc: "\u0421\u0435\u0440\u0438\u044F 7 \u0434\u043D\u0435\u0439 \u043F\u043E\u0434\u0440\u044F\u0434",
+      icon: "\u{1F525}"
+    },
+    {
+      id: "streak-14",
+      type: "streak",
+      gte: 14,
+      title: "14 \u0434\u043D\u0435\u0439",
+      desc: "\u0421\u0435\u0440\u0438\u044F 14 \u0434\u043D\u0435\u0439 \u043F\u043E\u0434\u0440\u044F\u0434",
+      icon: "\u{1F30B}"
+    },
+    {
+      id: "streak-30",
+      type: "streak",
+      gte: 30,
+      title: "30 \u0434\u043D\u0435\u0439",
+      desc: "\u0421\u0435\u0440\u0438\u044F 30 \u0434\u043D\u0435\u0439 \u043F\u043E\u0434\u0440\u044F\u0434",
+      icon: "\u26A1"
+    },
+    {
+      id: "streak-100",
+      type: "streak",
+      gte: 100,
+      title: "100 \u0434\u043D\u0435\u0439",
+      desc: "\u0421\u0435\u0440\u0438\u044F 100 \u0434\u043D\u0435\u0439 \u043F\u043E\u0434\u0440\u044F\u0434",
+      icon: "\u{1F4AF}"
+    },
+    {
+      id: "days-10",
+      type: "days-done",
+      gte: 10,
+      title: "10 \u0434\u043D\u0435\u0439",
+      desc: "10 \u0434\u043D\u0435\u0439 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u043E",
+      icon: "\u{1F4C5}"
+    },
+    {
+      id: "days-25",
+      type: "days-done",
+      gte: 25,
+      title: "25 \u0434\u043D\u0435\u0439",
+      desc: "25 \u0434\u043D\u0435\u0439 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u043E",
+      icon: "\u{1F5D3}\uFE0F"
+    },
+    {
+      id: "days-50",
+      type: "days-done",
+      gte: 50,
+      title: "50 \u0434\u043D\u0435\u0439",
+      desc: "50 \u0434\u043D\u0435\u0439 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u043E",
+      icon: "\u{1F4C6}"
+    },
+    {
+      id: "halfway",
+      type: "percent",
+      gte: 50,
+      title: "\u042D\u043A\u0432\u0430\u0442\u043E\u0440",
+      desc: "\u041F\u0440\u043E\u0439\u0434\u0435\u043D\u0430 \u043F\u043E\u043B\u043E\u0432\u0438\u043D\u0430 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B",
+      icon: "\u{1F317}"
+    },
+    {
+      id: "finisher",
+      type: "all-done",
+      title: "\u0424\u0438\u043D\u0438\u0448\u0435\u0440",
+      desc: "\u041F\u0440\u043E\u0439\u0434\u0435\u043D\u044B \u0432\u0441\u0435 \u0434\u043D\u0438 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B",
+      icon: "\u{1F393}"
+    },
+    {
+      id: "tasks-100",
+      type: "tasks-done",
+      gte: 100,
+      title: "100 \u0437\u0430\u0434\u0430\u0447",
+      desc: "100 \u0437\u0430\u0434\u0430\u0447 \u0432\u044B\u043F\u043E\u043B\u043D\u0435\u043D\u043E",
+      icon: "\u2705"
+    },
+    {
+      id: "scribe-10",
+      type: "reflections",
+      gte: 10,
+      title: "\u041B\u0435\u0442\u043E\u043F\u0438\u0441\u0435\u0446",
+      desc: "10 \u0440\u0435\u0444\u043B\u0435\u043A\u0441\u0438\u0439 \u043D\u0430\u043F\u0438\u0441\u0430\u043D\u043E",
+      icon: "\u270D\uFE0F"
+    },
+    {
+      id: "scribe-30",
+      type: "reflections",
+      gte: 30,
+      title: "\u0425\u0440\u043E\u043D\u0438\u0441\u0442",
+      desc: "30 \u0440\u0435\u0444\u043B\u0435\u043A\u0441\u0438\u0439 \u043D\u0430\u043F\u0438\u0441\u0430\u043D\u043E",
+      icon: "\u{1F4DC}"
+    },
+    {
+      id: "perfect-week",
+      type: "groups-complete",
+      gte: 1,
+      title: "\u0418\u0434\u0435\u0430\u043B\u044C\u043D\u0430\u044F \u043D\u0435\u0434\u0435\u043B\u044F",
+      desc: "\u041D\u0435\u0434\u0435\u043B\u044F \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u0430 \u0446\u0435\u043B\u0438\u043A\u043E\u043C",
+      icon: "\u{1F31F}"
+    },
+    {
+      id: "weeks-4",
+      type: "groups-complete",
+      gte: 4,
+      title: "\u041C\u0435\u0441\u044F\u0446 \u0432 \u0434\u0435\u043B\u0435",
+      desc: "4 \u043D\u0435\u0434\u0435\u043B\u0438 \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u044B \u0446\u0435\u043B\u0438\u043A\u043E\u043C",
+      icon: "\u{1F4C8}"
+    },
+    {
+      id: "comeback",
+      type: "comeback",
+      title: "Comeback",
+      desc: "\u0412\u0435\u0440\u043D\u0443\u043B\u0441\u044F \u043F\u043E\u0441\u043B\u0435 \u043F\u0440\u043E\u043F\u0443\u0441\u043A\u0430",
+      icon: "\u{1FA79}"
+    },
+    {
+      id: "night-owl",
+      type: "hour-range",
+      from: 22,
+      to: 5,
+      title: "Night Owl",
+      desc: "\u0417\u0430\u043A\u0440\u044B\u043B \u0434\u0435\u043D\u044C \u043F\u043E\u0441\u043B\u0435 22:00 \u0438\u043B\u0438 \u0434\u043E 5:00",
+      icon: "\u{1F989}"
+    },
+    {
+      id: "early-lark",
+      type: "hour-range",
+      from: 5,
+      to: 8,
+      title: "Early Lark",
+      desc: "\u0417\u0430\u043A\u0440\u044B\u043B \u0434\u0435\u043D\u044C \u0434\u043E 8:00 \u0443\u0442\u0440\u0430",
+      icon: "\u{1F426}"
+    },
+    {
+      id: "weekend",
+      type: "weekday",
+      days: [6, 7],
+      title: "\u0412\u043E\u0438\u043D \u0432\u044B\u0445\u043E\u0434\u043D\u043E\u0433\u043E",
+      desc: "\u0417\u0430\u043A\u0440\u044B\u043B \u0434\u0435\u043D\u044C \u0432 \u0441\u0443\u0431\u0431\u043E\u0442\u0443 \u0438\u043B\u0438 \u0432\u043E\u0441\u043A\u0440\u0435\u0441\u0435\u043D\u044C\u0435",
+      icon: "\u{1F334}"
+    }
   ];
   var BUILTIN_THEMES = [
-    { schema: "sunrise.theme/v1", id: "bonus", name: "Neo-Brutalist Riso", version: "1.0.0", cssHref: "themes/bonus.css" },
-    { schema: "sunrise.theme/v1", id: "neon", name: "Neon \xB7 \u041A\u0438\u0441\u043B\u043E\u0442\u0430", version: "1.0.0", cssHref: "themes/neon.css" },
-    { schema: "sunrise.theme/v1", id: "japanese", name: "Japanese \xB7 \u548C", version: "1.0.0", cssHref: "themes/japanese.css" },
-    { schema: "sunrise.theme/v1", id: "emerald", name: "Emerald \xB7 \u041C\u0440\u0430\u043C\u043E\u0440", version: "1.0.0", cssHref: "themes/emerald.css" },
-    { schema: "sunrise.theme/v1", id: "dashboard", name: "Colorful Dashboard", version: "1.0.0", cssHref: "themes/dashboard.css" }
+    {
+      schema: "sunrise.theme/v1",
+      id: "bonus",
+      name: "Neo-Brutalist Riso",
+      version: "1.0.0",
+      cssHref: "themes/bonus.css"
+    },
+    {
+      schema: "sunrise.theme/v1",
+      id: "neon",
+      name: "Neon \xB7 \u041A\u0438\u0441\u043B\u043E\u0442\u0430",
+      version: "1.0.0",
+      cssHref: "themes/neon.css"
+    },
+    {
+      schema: "sunrise.theme/v1",
+      id: "japanese",
+      name: "Japanese \xB7 \u548C",
+      version: "1.0.0",
+      cssHref: "themes/japanese.css"
+    },
+    {
+      schema: "sunrise.theme/v1",
+      id: "emerald",
+      name: "Emerald \xB7 \u041C\u0440\u0430\u043C\u043E\u0440",
+      version: "1.0.0",
+      cssHref: "themes/emerald.css"
+    },
+    {
+      schema: "sunrise.theme/v1",
+      id: "dashboard",
+      name: "Colorful Dashboard",
+      version: "1.0.0",
+      cssHref: "themes/dashboard.css"
+    }
   ];
 
   // src/adapters/system-clock.ts
   var SystemClock = class {
     today() {
-      return (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+      const d = /* @__PURE__ */ new Date();
+      const p = (n) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
     }
-    // UTC date (parity)
     hour() {
       return (/* @__PURE__ */ new Date()).getHours();
     }
-    // local hour (parity)
   };
 
   // src/adapters/math-random.ts
@@ -1105,11 +1345,24 @@
   var LocalStorageProgressStore = class {
     validator = new ProgressValidator();
     load(packId) {
+      let raw;
       try {
-        const raw = localStorage.getItem(PREFIX + packId);
-        if (!raw) return Progress.empty();
-        return new Progress(this.validator.parse(JSON.parse(raw)));
+        raw = localStorage.getItem(PREFIX + packId);
       } catch {
+        return Progress.empty();
+      }
+      if (!raw) return Progress.empty();
+      try {
+        return new Progress(this.validator.parse(JSON.parse(raw)));
+      } catch (e) {
+        console.error(
+          `[sunrise] progress for "${packId}" is unreadable, starting empty (backup at ${PREFIX}${packId}.corrupt):`,
+          e
+        );
+        try {
+          localStorage.setItem(PREFIX + packId + ".corrupt", raw);
+        } catch {
+        }
         return Progress.empty();
       }
     }
@@ -1176,14 +1429,22 @@
     }
     registerPack(raw) {
       try {
-        this.packList.push(this.packValidator.parse(raw));
+        const pack = this.packValidator.parse(raw);
+        if (this.packList.some((p) => p.id === pack.id)) {
+          throw new ValidationError([{ path: "id", msg: `duplicate pack id "${pack.id}"` }]);
+        }
+        this.packList.push(pack);
       } catch (e) {
         this.reject("pack", raw, e);
       }
     }
     registerTheme(raw) {
       try {
-        this.themeList.push(this.themeValidator.parse(raw));
+        const theme = this.themeValidator.parse(raw);
+        if (this.themeList.some((t) => t.id === theme.id)) {
+          throw new ValidationError([{ path: "id", msg: `duplicate theme id "${theme.id}"` }]);
+        }
+        this.themeList.push(theme);
       } catch (e) {
         this.reject("theme", raw, e);
       }
@@ -1206,9 +1467,16 @@
       return document.getElementById(id);
     }
     // ----- keyboard focus (the only place that touches activeElement/focus) ----
-    focusTask(taskId) {
+    // preventScroll keeps re-renders from yanking the page; pass reveal when the
+    // user is navigating (the checkbox is visually hidden, so an off-screen row
+    // would otherwise show no focus at all).
+    focusTask(taskId, reveal = false) {
       const el = this.$("cb_" + taskId);
-      if (el && typeof el.focus === "function") el.focus({ preventScroll: true });
+      if (!el || typeof el.focus !== "function") return;
+      el.focus({ preventScroll: true });
+      if (!reveal || typeof el.closest !== "function") return;
+      const row = el.closest(".task");
+      if (row && typeof row.scrollIntoView === "function") row.scrollIntoView({ block: "nearest" });
     }
     activeTaskId() {
       const a = document.activeElement;
@@ -1247,7 +1515,7 @@
       const phaseLabel = this.$("phaseLabel");
       if (phaseLabel) phaseLabel.textContent = vm.phaseLabel;
       if (vm.rest) {
-        el.innerHTML = `<div class="today-side"><span class="vert">${this.esc(lbl.restVert)}</span></div><div class="today-main"><h2 class="today-title">${this.esc(vm.title)}</h2><p class="warm"><span class="warm-i">\u263E</span> ${this.esc(vm.reflectPrompt || "")}</p><div class="rest-due">${vm.dueReviews.length ? `${this.esc(lbl.dueToday)} \u2014 <b>${this.esc(vm.dueReviews.join(" \xB7 "))}</b>` : this.esc(lbl.restToday)}</div>` + (vm.notLast ? `<button class="next-day-cta" id="nextDayCta" type="button">${this.esc(lbl.nextDay)}</button>` : "") + `</div>`;
+        el.innerHTML = `<div class="today-side"><span class="vert">${this.esc(lbl.restVert)}</span></div><div class="today-main"><h2 class="today-title">${this.esc(vm.title)}</h2>` + (vm.reflectPrompt ? `<p class="warm"><span class="warm-i">\u263E</span> ${this.esc(vm.reflectPrompt)}</p>` : "") + `<div class="rest-due">${vm.dueReviews.length ? `${this.esc(lbl.dueToday)} \u2014 <b>${this.esc(vm.dueReviews.join(" \xB7 "))}</b>` : this.esc(lbl.restToday)}</div>` + (vm.notLast ? `<button class="next-day-cta" id="nextDayCta" type="button">${this.esc(lbl.nextDay)}</button>` : "") + `</div>`;
         return;
       }
       el.innerHTML = `<div class="today-side"><span class="vert">${this.esc(lbl.todayVert)}</span></div><div class="today-main"><span class="trackpill"><span class="k">${this.esc(vm.trackIcon)}</span> ${this.esc(vm.trackLabel)}</span><h2 class="today-title">${this.esc(vm.title)}</h2>` + (vm.show.warmup && vm.warmup ? `<div class="warm"><span class="warm-i">\u2726</span> <span class="muted">${this.esc(lbl.warmup)}</span> ${this.esc(vm.warmup)}</div>` : "") + `<div class="tasks" id="taskList"></div>` + (vm.show.reflection ? `<div class="reflect-block"><label class="reflect-label" for="reflect"><span class="kanji">\u7701</span> ${this.esc(lbl.reflect)}${vm.reflectPrompt ? ` \u2014 ${this.esc(vm.reflectPrompt)}` : ""}</label><textarea id="reflect" placeholder="${this.esc(lbl.taskPlaceholder)}">${this.esc(vm.reflection || "")}</textarea></div>` : "") + (vm.resources.length ? `<div class="res-row">${vm.resources.map((r) => `<span class="chip"><b>${this.esc(r.label)}</b> ${this.esc(r.note)}</span>`).join("")}</div>` : "") + (vm.show.review ? `<button class="btn gold" id="markReview" type="button">${this.esc(lbl.scheduleReview)}</button>` : "") + (vm.complete && vm.notLast ? `<button class="next-day-cta" id="nextDayCta" type="button">${this.esc(lbl.nextDay)}</button>` : "") + `</div>`;
@@ -1325,15 +1593,53 @@
       ).join("");
     }
     // ----- theme & track colors ------------------------------------------------
+    // Theme switching double-buffers the stylesheet: swapping #themeCss's href
+    // directly drops the old sheet while the new one is still loading, which
+    // flashes the page unstyled. Instead the new sheet loads in a parallel
+    // <link> while the old one keeps the page styled, and the swap happens only
+    // once it's ready (then it's served from cache, so the flip is instant).
+    themeLoader = null;
+    themeToken = 0;
     applyTheme(href, id) {
       const link = this.$("themeCss");
-      if (link) link.href = href;
-      document.documentElement.setAttribute("data-theme", id);
+      if (!link) return;
+      const token = ++this.themeToken;
+      if (this.themeLoader) {
+        this.themeLoader.remove();
+        this.themeLoader = null;
+      }
+      if (link.getAttribute("href") === href) {
+        document.documentElement.setAttribute("data-theme", id);
+        return;
+      }
+      const loader = document.createElement("link");
+      loader.rel = "stylesheet";
+      loader.href = href;
+      loader.onload = () => {
+        if (token !== this.themeToken) return;
+        this.themeLoader = null;
+        link.href = href;
+        document.documentElement.setAttribute("data-theme", id);
+        setTimeout(() => loader.remove(), 200);
+      };
+      loader.onerror = () => {
+        if (token !== this.themeToken) return;
+        this.themeLoader = null;
+        loader.remove();
+        console.error(`[sunrise] theme css failed to load, keeping the current theme: ${href}`);
+      };
+      this.themeLoader = loader;
+      document.head.appendChild(loader);
     }
+    appliedTrackColorIds = [];
     applyTrackColors(colors) {
+      for (const id of this.appliedTrackColorIds) {
+        document.documentElement.style.removeProperty(`--track-${id}`);
+      }
       for (const c of colors) {
         document.documentElement.style.setProperty(`--track-${c.id}`, c.color);
       }
+      this.appliedTrackColorIds = colors.map((c) => c.id);
     }
     setLang(lang) {
       document.documentElement.lang = lang;
@@ -1405,6 +1711,7 @@
     t;
     r;
     activeModal = null;
+    motdTimer = null;
     constructor(tracker, renderer) {
       this.t = tracker;
       this.r = renderer;
@@ -1444,15 +1751,21 @@
     }
     applyStaticLabels() {
       const u = (k) => this.t.ui(k);
-      const aria = [
+      const iconLabels = [
         ["exportBtn", "export"],
         ["importBtn", "import"],
         ["cardMapBtn", "cardMap"],
         ["trophiesBtn", "trophies"],
         ["prevDay", "prevDayAria"],
-        ["nextDay", "nextDayAria"]
+        ["nextDay", "nextDayAria"],
+        ["cardMapClose", "scClose"],
+        ["trophiesClose", "scClose"],
+        ["shortcutsClose", "scClose"]
       ];
-      for (const [id, key] of aria) this.r.setAttr(id, "aria-label", u(key));
+      for (const [id, key] of iconLabels) {
+        this.r.setAttr(id, "aria-label", u(key));
+        this.r.setAttr(id, "data-tip", u(key));
+      }
       this.r.setAttr("packSelect", "aria-label", u("pack"));
       this.r.setAttr("themeSelect", "aria-label", u("theme"));
       this.r.setAttr("daySelect", "aria-label", this.t.itemLabel());
@@ -1499,11 +1812,13 @@
     }
     // ----- today-card handlers (re-bound on every render) ----------------------
     bindTodayHandlers(vm) {
+      const cta = this.r.$("nextDayCta");
+      if (cta) cta.onclick = () => this.go(1);
       if (vm.rest) return;
       for (const t of vm.tasks) {
         const cb = this.r.$("cb_" + t.id);
         if (cb) {
-          cb.onchange = (e) => this.toggleTick(t.id, e.target.checked);
+          cb.onchange = (e) => this.setTaskChecked(t.id, e.target.checked);
         }
       }
       if (vm.show.reflection) {
@@ -1524,9 +1839,9 @@
         }
       }
     }
-    toggleTick(taskId, checked) {
+    setTaskChecked(taskId, checked) {
       const was = this.t.todayCard().complete;
-      const res = this.t.toggleTask(taskId, checked);
+      const res = this.t.setTaskDone(taskId, checked);
       if (!was && this.t.todayCard().complete) {
         this.r.celebrate();
         if (res.unlockedBadges.length) {
@@ -1545,8 +1860,6 @@
       const next = this.r.$("nextDay");
       if (prev) prev.disabled = i <= 0;
       if (next) next.disabled = i >= sel.items.length - 1;
-      const cta = this.r.$("nextDayCta");
-      if (cta) cta.onclick = () => this.go(1);
     }
     go(delta, scroll = true) {
       this.t.goToItem(delta);
@@ -1577,17 +1890,17 @@
           e.preventDefault();
           break;
         case "ArrowDown":
-          this.moveTickFocus(1);
+          this.moveTaskFocus(1);
           e.preventDefault();
           break;
         case "ArrowUp":
-          this.moveTickFocus(-1);
+          this.moveTaskFocus(-1);
           e.preventDefault();
           break;
         case "Enter": {
           const id = this.r.activeTaskId();
           if (id) {
-            this.toggleTick(id, !this.tickDone(id));
+            this.setTaskChecked(id, !this.taskDone(id));
             e.preventDefault();
           }
           break;
@@ -1598,20 +1911,20 @@
           break;
         default: {
           const k = key.toLowerCase();
-          if (k === "m") {
+          if (k === "m" || e.code === "KeyM") {
             this.renderCardMap();
             this.open("cardMapModal");
-          } else if (k === "t") {
+          } else if (k === "t" || e.code === "KeyT") {
             this.renderTrophies();
             this.open("trophiesModal");
           }
         }
       }
     }
-    tickDone(taskId) {
+    taskDone(taskId) {
       return this.t.todayCard().tasks.find((t) => t.id === taskId)?.done ?? false;
     }
-    moveTickFocus(delta) {
+    moveTaskFocus(delta) {
       const card = this.t.todayCard();
       if (card.rest) return;
       const ids = card.tasks.map((t) => t.id);
@@ -1620,7 +1933,7 @@
       let i = cur ? ids.indexOf(cur) : -1;
       if (i < 0) i = delta > 0 ? 0 : ids.length - 1;
       else i = Math.min(Math.max(i + delta, 0), ids.length - 1);
-      this.r.focusTask(ids[i]);
+      this.r.focusTask(ids[i], true);
     }
     // ----- wiring (port of app.js init()) --------------------------------------
     wire() {
@@ -1630,6 +1943,8 @@
           this.t.selectPack(pack.value);
           this.r.applyTrackColors(this.t.trackColors());
           this.r.setLang(this.t.locale());
+          this.applyStaticLabels();
+          this.startMotd();
           this.renderAll();
         };
       }
@@ -1691,7 +2006,7 @@
           a.href = URL.createObjectURL(blob);
           a.download = this.t.activePackId() + "-progress.json";
           a.click();
-          URL.revokeObjectURL(a.href);
+          setTimeout(() => URL.revokeObjectURL(a.href), 1e3);
         };
       }
       const importBtn = this.r.$("importBtn");
@@ -1726,6 +2041,8 @@
       if (el) {
         el.classList.add("open");
         this.activeModal = id;
+        const btn = typeof el.querySelector === "function" ? el.querySelector("button") : null;
+        if (btn && typeof btn.focus === "function") btn.focus();
       }
     }
     closeActiveModal() {
@@ -1751,13 +2068,18 @@
       }
     }
     // ----- motd ----------------------------------------------------------------
+    // Re-entrant: a pack switch calls this again with the new pack's mottos.
     startMotd() {
+      if (this.motdTimer != null) {
+        clearInterval(this.motdTimer);
+        this.motdTimer = null;
+      }
       const mottos = this.t.mottos();
       if (!mottos.length) return;
       this.r.setText("motd", mottos[0]);
       if (mottos.length > 1) {
         let i = 0;
-        setInterval(() => {
+        this.motdTimer = setInterval(() => {
           const el = this.r.$("motd");
           if (!el) return;
           el.classList.add("motd-out");
@@ -1802,8 +2124,17 @@
       });
       tracker.init();
       new DomController(tracker, renderer).start();
-    } catch {
-      renderer.stub("Failed to load plugins. Check that dist/sunrise.js and data/packs/* sit next to index.html.", registry.rejected().map((r) => `${r.kind} "${r.id}": ${r.issues.map((i) => `${i.path} ${i.msg}`).join(", ")}`));
+    } catch (err) {
+      console.error("[sunrise] boot failed:", err);
+      renderer.stub(
+        "Failed to start. Check that dist/sunrise.js and data/packs/* sit next to index.html; details below and in the console.",
+        [
+          ...registry.rejected().map(
+            (r) => `${r.kind} "${r.id}": ${r.issues.map((i) => `${i.path} ${i.msg}`).join(", ")}`
+          ),
+          `error: ${String(err)}`
+        ]
+      );
     }
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);

@@ -11,8 +11,9 @@ A theme is **pure CSS plus a one-line manifest**. It restyles a fixed set of DOM
 hooks the app renders; it contains **no JavaScript and adds no DOM** of its own.
 
 > ⚠️ **The app ships almost no CSS.** There is no reset, no base layout, no
-> default spacing — only the tiny inline block in **§3**. Your stylesheet owns
-> **100% of the layout**: page width and centering, the header row, the
+> default spacing — only the inline block in **§3** (which also makes the
+> card-map and shortcuts modals work without theme help). Your stylesheet owns
+> **the rest of the layout**: page width and centering, the header row, the
 > day-rail row, the today card, the dashboard grid, modal positioning, and
 > `box-sizing`. If you only set colors, elements collapse into the default block
 > flow and **overlap**. Treat the hooks below as a bare, unstyled skeleton you
@@ -47,10 +48,12 @@ Two ways; the first needs no build.
 `src/domain/builtins.ts` and rebuild (`npm run build`). Use this only if you are
 editing the app itself.
 
-When the user picks your theme the app swaps the `#themeCss` link's `href` to
-your `cssHref` and sets `data-theme="<id>"` on `<html>`. Every registered theme
-is **validated**; an invalid manifest is rejected (reason logged to the console)
-and skipped — it never breaks the app.
+When the user picks your theme the app loads your `cssHref` in a background
+`<link>` first, and only once it's ready swaps `#themeCss` to it and sets
+`data-theme="<id>"` on `<html>` — switching never flashes unstyled, and a
+`cssHref` that fails to load keeps the previous theme applied (error in the
+console). Every registered theme is **validated**; an invalid manifest is
+rejected (reason logged to the console) and skipped — it never breaks the app.
 
 | field | type | required | notes |
 |---|---|---|---|
@@ -77,6 +80,11 @@ to your own id so they only apply when your theme is active:
 > stays `"bonus"`, so none of your `[data-theme="my-theme"]` rules apply and the
 > page looks unstyled/wrong. That is expected — select your theme to see it.
 > `lang` is also rewritten by JS per pack locale, so don't rely on `:lang()`.
+
+> Two legacy built-ins (`bonus.css`, `dashboard.css`) predate this rule and ship
+> unscoped; they get away with it only because the app swaps a single `<link>`
+> per active theme. Your theme must still scope everything — unscoped rules
+> bleed through the moment the stylesheet is loaded alongside another.
 
 The reduced-motion guard (**§6**) is the one block you may leave global.
 
@@ -105,10 +113,10 @@ are yours to neutralize.
       <label class="field"><select id="packSelect"></select></label>
       <label class="field"><select id="themeSelect"></select></label>
       <label class="field"><select id="daySelect"></select></label>
-      <button class="btn ghost" id="calBtn">📅</button>
+      <button class="btn ghost" id="cardMapBtn">🗺️</button>
       <button class="btn ghost" id="trophiesBtn">🏆</button>
-      <button class="btn ghost" id="exportBtn"></button>
-      <button class="btn ghost" id="importBtn"></button>
+      <button class="btn ghost" id="exportBtn">📤</button>
+      <button class="btn ghost" id="importBtn">📥</button>
       <input type="file" id="importFile" hidden>          <!-- keep hidden -->
     </div>
   </header>
@@ -123,19 +131,22 @@ are yours to neutralize.
       <section class="today-wrap">
         <article class="today" id="todayCard">       <!-- data-track="<id>" added at runtime -->
           <div class="today-side"><span class="vert">TODAY</span></div>
-          <div class="today-main">                   <!-- ACTIVE item; children render in this order: -->
+          <div class="today-main">                   <!-- ACTIVE item; children render in this order,
+                                                          each only when the item has it: -->
             <span class="trackpill"><span class="k"></span> Track name</span>
             <h2 class="today-title">…</h2>
-            <div class="warm"><span class="warm-i">✦</span><span class="muted">Warm-up</span> text…</div>
+            <div class="warm"><span class="warm-i">✦</span> <span class="muted">Warm-up</span> text…</div>  <!-- only if warmup -->
             <div class="tasks" id="taskList"><!-- task rows, see below --></div>
-            <div class="reflect-block"><label class="reflect-label" for="reflect"><span class="kanji">省</span> …</label><textarea id="reflect"></textarea></div>
-            <div class="res-row"><span class="chip"><b>label</b> note</span></div>
+            <div class="reflect-block"><label class="reflect-label" for="reflect"><span class="kanji">省</span> …</label><textarea id="reflect"></textarea></div>  <!-- only if reflection on -->
+            <div class="res-row"><span class="chip"><b>label</b> note</span></div>   <!-- only if resources -->
             <button class="btn gold" id="markReview">…</button>   <!-- only on reviewable tracks -->
-            <button class="next-day-cta" id="nextDayCta">…</button>
+            <button class="next-day-cta" id="nextDayCta">…</button>  <!-- only when complete AND not the last item -->
           </div>
           <!-- a REST day instead renders: .today-side>.vert, then .today-main with
-               <h2 today-title>, <p class="warm"><span class="warm-i">☾</span> prompt</p> (NO .muted),
-               and a <div class="rest-due"> block (no tasks/reflect). -->
+               <h2 today-title>, an optional <p class="warm"><span class="warm-i">☾</span> prompt</p>
+               (NO .muted; only if the item has a reflect prompt), a <div class="rest-due"> block
+               (either "due today — <b>item titles</b>" or the plain rest text; no tasks/reflect),
+               and the same optional .next-day-cta#nextDayCta button when not the last item. -->
         </article>
       </section>
       <button class="day-nav day-next" id="nextDay">›</button>
@@ -144,14 +155,10 @@ are yours to neutralize.
 
   <div class="foot"><span id="motd"></span></div>          <!-- footer, motto rotates -->
 
-  <div class="modal" id="calModal" role="dialog">          <!-- hidden until .open added -->
-    <div class="modal-panel cal-panel">
-      <div class="cal-head">
-        <button id="calPrev">‹</button><div id="calTitle"></div>
-        <button id="calNext">›</button><button id="calClose">✕</button>
-      </div>
-      <div class="cal-dow" id="calDow"></div>              <!-- 7 <span> weekday heads -->
-      <div class="cal-grid" id="calGrid"></div>            <!-- .cday(.other|.done|.today) -->
+  <div class="modal" id="cardMapModal" role="dialog">      <!-- hidden until .open added -->
+    <div class="modal-panel cardmap-panel">
+      <div class="tr-head"><div id="cardMapTitle"></div><button id="cardMapClose">✕</button></div>
+      <div class="cm-grid" id="cardMapGrid"></div>         <!-- .cm-row > .cm-rlabel + .cm-cells > .cm-card -->
     </div>
   </div>
 
@@ -159,6 +166,13 @@ are yours to neutralize.
     <div class="modal-panel tr-panel">
       <div class="tr-head"><div id="trophiesTitle"></div><button id="trophiesClose">✕</button></div>
       <div class="tr-grid" id="trophiesGrid"></div>        <!-- .badge(.on|.off)[data-tip] -->
+    </div>
+  </div>
+
+  <div class="modal" id="shortcutsModal" role="dialog">    <!-- hidden until .open added -->
+    <div class="modal-panel sc-panel">
+      <div class="tr-head"><div id="shortcutsTitle"></div><button id="shortcutsClose">✕</button></div>
+      <div class="sc-grid" id="shortcutsGrid"></div>       <!-- .sc-row > kbd.sc-keys + .sc-desc -->
     </div>
   </div>
 
@@ -181,12 +195,50 @@ triangle is already injected):
 .task-hint[open]>summary{margin-bottom:6px}
 .task-hint-body{font-size:13px;line-height:1.55;opacity:.78;border-left:2px solid currentColor;padding-left:10px;margin-left:3px}
 
+/* card map — a FUNCTIONAL baseline: the grid already lays out and the tooltip
+   already works in every theme. Override the look (colors, size, radius) only
+   if the card map matters to your design; doing nothing is fine. */
+.cm-grid{display:flex;flex-direction:column;gap:12px}
+.cm-row{display:flex;flex-direction:column;gap:6px}
+.cm-rlabel{font:700 11px ui-monospace,SFMono-Regular,monospace;letter-spacing:.08em;text-transform:uppercase;opacity:.55}
+.cm-cells{display:flex;flex-wrap:wrap;gap:6px}
+.cm-card{position:relative;box-sizing:border-box;width:24px;height:24px;border:2px solid var(--ink,#222);border-radius:var(--r,6px);background:var(--paper-2,#e7e3d8);cursor:pointer;transition:transform .08s ease}
+.cm-card:hover{transform:translate(-2px,-2px)}
+.cm-card.done{background:var(--cobalt,#2b6cb0)}
+.cm-card.rest{border-style:dashed;background:transparent;opacity:.5}
+.cm-card.current{outline:3px solid var(--yellow,#f6c343);outline-offset:2px}
+.cm-card[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:max-content;max-width:220px;font:600 12px system-ui,sans-serif;line-height:1.35;color:#fff;background:#1a1a1a;border-radius:6px;padding:7px 10px;z-index:5;pointer-events:none;white-space:normal}
+
+/* icon-button tooltips — FUNCTIONAL baseline too: the toolbar buttons, day-nav
+   arrows and modal ✕ carry their localized name in data-tip; hover shows it
+   (below the toolbar, above the arrows, under-right of the ✕). Override the
+   bubble look only if it clashes with your design. */
+.toolbar [data-tip],.day-nav[data-tip],.tr-head [data-tip]{position:relative}
+.toolbar [data-tip]:hover::after,.day-nav[data-tip]:hover::after,.tr-head [data-tip]:hover::after{content:attr(data-tip);position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);width:max-content;max-width:220px;font:600 12px system-ui,sans-serif;line-height:1.35;color:#fff;background:#1a1a1a;border-radius:6px;padding:7px 10px;z-index:30;pointer-events:none;white-space:normal}
+.day-nav[data-tip]:hover::after{top:auto;bottom:calc(100% + 8px)}
+.tr-head [data-tip]:hover::after{left:auto;right:0;transform:none}
+
+/* shortcuts overlay — deliberately theme-independent; themes normally add NO .sc-* rules */
+.sc-grid{display:flex;flex-direction:column;gap:8px}
+.sc-row{display:flex;align-items:center;gap:12px}
+.sc-keys{flex:0 0 auto;min-width:84px;font:600 12px ui-monospace,SFMono-Regular,monospace}
+.sc-desc{opacity:.8}
+
 /* mechanism the app also ships — DON'T re-declare these (set --focus-ring to restyle focus): */
 *,*::before,*::after{box-sizing:border-box}
 .task input{position:absolute;opacity:0;width:0;height:0;pointer-events:none}   /* native checkbox hidden for you */
 @media (prefers-reduced-motion: reduce){ *,*::before,*::after{ animation-duration:.001ms!important; animation-iteration-count:1!important; transition-duration:.001ms!important; scroll-behavior:auto!important } }
 #taskList .task:has(input:focus-visible){ outline:var(--focus-ring, 3px solid var(--accent,#f6c343)); outline-offset:3px; border-radius:var(--r,8px) }
 ```
+
+**`--focus-ring` (the one token the baseline reads).** The keyboard-focus rule
+above outlines the focused task row with `var(--focus-ring, 3px solid
+var(--accent,#f6c343))` — so by default it picks up your `--accent`. Set
+`--focus-ring` in your theme's token block only if you want a different focus
+look (e.g. `--focus-ring: 2px dashed var(--ink)`); never re-declare the rule.
+Note the baseline's `.cm-card` reads `--ink`/`--paper-2`/`--cobalt`/`--yellow`/`--r`
+with hardcoded fallbacks — those names come from the default theme; either
+define them, or (cleaner) restyle `.cm-card` directly with your own tokens.
 
 ---
 
@@ -209,7 +261,7 @@ triangle is already injected):
 |---|---|---|
 | `.modal` | `.open` | shown; **no `.open` = hidden** (you must hide it — §5) |
 | `.task` (a `<label>`) | `.done` | all-checked / completed task |
-| `.cday` | `.done` / `.today` / `.other` | calendar day states |
+| `.cm-card` | `.done` / `.rest` / `.current` | card-map cell states; `.done`/`.rest` are mutually exclusive, `.current` combines with either |
 | `.badge` | `.on` / `.off` | unlocked / locked trophy |
 | `#motd` | `.motd-out` | added ~600ms **before** the text swaps, then removed → fade must work both ways |
 | `.toast`, `.badge-toast` | `.show` | added ~20ms after insert, removed ~400ms before removal → **base state must be hidden**, `.show` visible |
@@ -217,8 +269,12 @@ triangle is already injected):
 **Per-element inline styles the app writes (these beat your stylesheet):**
 
 - every `.task` gets `style="animation-delay:<k*55>ms"` — a staggered entrance.
-  Define a `.task` entrance keyframe keyed off it (and disable it under reduced
-  motion). It's the only motion the app pre-wires.
+  Define a `.task` entrance keyframe keyed off it, with `animation-fill-mode:
+  both` — without a backwards fill, delayed rows flash fully visible and then
+  jump to the keyframe's `from` state (the app's baseline reduced-motion guard
+  already covers the keyframe itself). Each `.confetti-piece` likewise gets an
+  inline random `left` and `animation-delay` on top of its custom properties —
+  `left` only moves a *positioned* element (see the Effects recipe in §5).
 - every dashboard `.bar > i` gets `style="width:<pct>%"` — **this inline width is
   what draws the progress-bar fill** (bars have no `--p`; the width is their only
   length source). Give `.bar` a fixed height + `overflow:hidden` and
@@ -266,8 +322,8 @@ toolbar, or the selects/buttons stack:
 :root[data-theme="my-theme"] .prow .lbl { display:flex; align-items:center; gap:8px; min-width:0; }         /* .lbl>i is the track dot */
 :root[data-theme="my-theme"] .bar       { height:8px; border-radius:99px; overflow:hidden; background:var(--rail); }
 :root[data-theme="my-theme"] .bar > i   { display:block; height:100%; }   /* width set inline by the app */
-:root[data-theme="my-theme"] .ring      { width:132px; aspect-ratio:1; display:grid; place-items:center; border-radius:50%; }   /* the BOX — §6 paints the donut into it */
-:root[data-theme="my-theme"] .ring > div{ width:74%; aspect-ratio:1; display:grid; place-items:center; border-radius:50%; background:var(--panel); }   /* readout disc = the hole; holds <b>% + <small> */
+:root[data-theme="my-theme"] .ring      { width:132px; aspect-ratio:1; display:grid; place-items:center; border-radius:50%; margin-inline:auto; }   /* the BOX — §6 paints the donut into it; margin-inline centers it, else it sits flush left in the card */
+:root[data-theme="my-theme"] .ring > div{ width:74%; aspect-ratio:1; display:grid; place-content:center; place-items:center; border-radius:50%; background:var(--panel); }   /* readout disc = the hole; holds <b>% + <small>. place-content packs the two rows as one centered group — without it grid stretches them apart vertically */
 ```
 
 > ⚠️ `.ring` **must** get an explicit size here — it's the only element the app
@@ -283,13 +339,14 @@ top of the card:
 ```
 
 **Today card** — the signature three-zone card: a track-colored spine, a
-vertical-text rail, and the main column.
+vertical text rail, and the main column.
 
 ```css
 :root[data-theme="my-theme"] .today      { display:flex; overflow:hidden; min-height:420px; }
 :root[data-theme="my-theme"] .today-side { flex:0 0 84px; display:grid; place-items:center; background:var(--accent); }
 :root[data-theme="my-theme"] .today-main { flex:1; min-width:0; display:flex; flex-direction:column; gap:14px; padding:clamp(20px,4vw,34px); }
 :root[data-theme="my-theme"] .vert       { writing-mode:vertical-rl; transform:rotate(180deg); }
+:root[data-theme="my-theme"] .today-title{ margin:0; }   /* h2 ships browser margins that double the column's gap */
 :root[data-theme="my-theme"] .tasks, :root[data-theme="my-theme"] #taskList { display:flex; flex-direction:column; gap:10px; }  /* space task rows */
 :root[data-theme="my-theme"] .res-row     { display:flex; flex-wrap:wrap; gap:8px; }
 :root[data-theme="my-theme"] .reflect-block { display:flex; flex-direction:column; gap:8px; }
@@ -305,25 +362,37 @@ panel doesn't fill the edges (so click-to-close works), panel `overflow:visible`
 ```css
 :root[data-theme="my-theme"] .modal       { position:fixed; inset:0; z-index:50; display:none; overflow-y:auto; align-items:flex-start; justify-content:center; padding:32px 16px; background:rgba(0,0,0,.4); }
 :root[data-theme="my-theme"] .modal.open  { display:flex; }
-:root[data-theme="my-theme"] .modal-panel { width:min(560px, 92vw); margin:auto; overflow:visible; }
+:root[data-theme="my-theme"] .modal-panel { width:min(560px, 92vw); margin:auto; overflow:visible; background:var(--panel); }   /* the panel needs its own surface — the app ships none, and a transparent panel reads as a broken overlay */
 ```
 
 > Click-to-close fires only when the click lands on the `.modal` element itself —
 > so the panel must **not** cover the whole overlay (keep the `padding`/`width`
-> gap above), or closing silently breaks. `Esc` always closes.
+> gap above), or closing silently breaks. `Esc` always closes. Opening a modal
+> moves keyboard focus to the panel's first `<button>` — give your buttons a
+> visible `:focus-visible` style so that focus can be seen.
 
-**Inside the panels** — these multi-child containers also need layout or they
-stack. The calendar especially collapses into a single vertical column without a
-7-column grid:
+**Inside the panels** — all three panels share the same `.tr-head` header row
+(title + ✕ button); lay it out once. The trophies grid needs columns or badges
+stack; the card map and shortcuts grids are **already laid out by the baseline
+(§3)** — add `.cm-*` rules only to retheme the look, and leave `.sc-*` alone:
 
 ```css
-:root[data-theme="my-theme"] .cal-head, :root[data-theme="my-theme"] .tr-head { display:flex; align-items:center; gap:10px; }
-:root[data-theme="my-theme"] #calTitle, :root[data-theme="my-theme"] #trophiesTitle { flex:1; }   /* push ✕ right */
-:root[data-theme="my-theme"] .cal-dow, :root[data-theme="my-theme"] .cal-grid { display:grid; grid-template-columns:repeat(7, 1fr); gap:6px; }
-:root[data-theme="my-theme"] .cday    { aspect-ratio:1; display:grid; place-items:center; border-radius:10px; }
+:root[data-theme="my-theme"] .tr-head { display:flex; align-items:center; gap:10px; }
+:root[data-theme="my-theme"] #cardMapTitle, :root[data-theme="my-theme"] #trophiesTitle,
+:root[data-theme="my-theme"] #shortcutsTitle { flex:1; }   /* push ✕ right */
 :root[data-theme="my-theme"] .tr-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:12px; }
-:root[data-theme="my-theme"] .badge   { display:grid; place-items:center; gap:8px; text-align:center; padding:14px; }  /* .bi icon + .bt label */
+:root[data-theme="my-theme"] .badge   { display:grid; place-content:center; place-items:center; gap:8px; text-align:center; padding:14px; }  /* .bi icon + .bt label; place-content is required — the grid row stretches badges to equal height, and without it the icon and label drift apart vertically */
+
+/* optional — retheme the card-map cells (the baseline already makes them work): */
+:root[data-theme="my-theme"] .cm-card        { border-color:var(--line); background:var(--rail); }
+:root[data-theme="my-theme"] .cm-card.done   { background:var(--accent); }
+:root[data-theme="my-theme"] .cm-card.current{ outline-color:var(--accent); }
 ```
+
+Card-map cells are clickable (clicking one jumps to that item and closes the
+modal) — keep the baseline's `cursor:pointer` if you restyle them. Each cell
+carries the item title in `data-tip`; the baseline already renders that tooltip
+via `::after`, so unlike `.badge` you don't build it yourself.
 
 **Effects layer** — keep it out of the way; the app inserts/removes children:
 
@@ -334,6 +403,7 @@ stack. The calendar especially collapses into a single vertical column without a
 :root[data-theme="my-theme"] .badge-toast { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); opacity:0; }   /* base = HIDDEN */
 :root[data-theme="my-theme"] .toast.show,
 :root[data-theme="my-theme"] .badge-toast.show { opacity:1; }
+:root[data-theme="my-theme"] .confetti-piece   { position:fixed; top:18%; width:9px; height:14px; }   /* MUST be positioned: the app drives pieces via inline `left`, which does nothing on a static inline span (and width/height don't apply to one either) — unpositioned confetti is invisible */
 ```
 
 > The toast/flash classes are `position:fixed` on their own (not just children of
@@ -382,7 +452,8 @@ recipes): `--bg` (page), `--panel` (card surface), `--rail` (bar/ring track),
 ramp** `--sh-sm`/`--sh`/`--sh-lg`. **None of these are app-injected — they are
 yours to define** (the app injects only `--track-<id>`, `--p`, and the confetti
 vars, per §4). Reuse the ramp: resting cards use the mid shadow, hover/modals the
-large one.
+large one. On a dark theme also set `color-scheme: dark` in the token block, or
+native selects, their dropdown popups, and scrollbars stay light.
 
 **Fluid type.** Size headings and big padding with `clamp(min, vw, max)`, not
 fixed px — this is the biggest polish tell and prevents mobile breakage:
@@ -396,7 +467,11 @@ fixed px — this is the biggest polish tell and prevents mobile breakage:
 a body face, optionally mono for `.eyebrow`/`.val` stats), each with a system
 fallback stack so it degrades on `file://`.
 
-**Per-track color.** The app sets `--track-<id>` for tracks the pack colors. To
+**Per-track color.** The app sets `--track-<id>` for tracks the pack colors.
+The bundled `dev-roadmap` pack declares the track ids `dsa js ts node sysdesign
+patterns distsys db cs` — and **no colors**, so for it your per-id fallbacks are
+the colors users actually see. Use those real ids; selectors for invented ids
+match nothing and every track silently falls back to the neutral default. To
 theme tracks richly:
 - give bare `[data-track]` a **neutral accent default** so unknown packs still
   look intentional;
@@ -421,7 +496,7 @@ child) so the percent is readable:
     radial-gradient(closest-side, var(--panel) 0 71%, transparent 72%),    /* the hole */
     conic-gradient(var(--accent) calc(var(--p) * 1%), var(--rail) 0);       /* the progress */
 }
-.ring > div { display:grid; place-items:center; }   /* holds <b>% and <small>done/total -->
+.ring > div { display:grid; place-content:center; place-items:center; }   /* holds <b>% and <small>done/total — size the <b> so the worst case "100%" still fits inside the hole */
 ```
 
 **Atmosphere.** A flat `background:var(--bg)` looks cheap. Stack 1–2 soft
@@ -461,21 +536,26 @@ longer write your own. For reference, the shipped guard is:
 ## 8. Canonical hook checklist
 
 > **App-provided baseline (don't write these):** the `box-sizing` reset, the
-> native-checkbox hide (`.task input`), the reduced-motion guard, and the keyboard
-> focus outline — set `--focus-ring` to restyle focus.
+> native-checkbox hide (`.task input`), the reduced-motion guard, the keyboard
+> focus outline (set `--focus-ring` to restyle focus), the functional card-map
+> grid + its `data-tip` tooltip (`.cm-*`), the icon-button tooltips (`.toolbar`/
+> `.day-nav`/`.tr-head` `[data-tip]`), and the entire shortcuts list (`.sc-*`).
 
 Style **every** one of these (grouped by where they render). Tag in parentheses
 when it matters.
 
-- **Header:** `.app-header`, `.brand` (`.brand-mark`, `.brand-name`, `.brand-sub#phaseLabel`), `.toolbar`, `.field`, `select`, `.btn`, `.btn.ghost`, `.btn.gold`, `#importFile` (hidden)
+- **Header:** `.app-header`, `.brand` (`.brand-mark`, `.brand-name`, `.brand-sub#phaseLabel`), `.toolbar`, `.field`, `select`, `.btn`, `.btn.ghost[data-tip]` (baseline tooltip), `.btn.gold`, `#importFile` (hidden)
 - **Column:** `.wrap`, `.section-title` (h2; `#summaryTitle`, `#todayTitle`), `#comeback`
 - **Dashboard:** `.dash`, `.stat-card[data-kind="progress|streak|phases|tracks"]`, `.eyebrow`, `.ring`+`.ring>div>b`+`small`, `.stat-sub`, `.muted`, `.flame`, `.streak-num`, `.prow`(`.lbl>i`, `.val`) + sibling `.bar>i`, `[data-track]`
-- **Day rail:** `.day-rail`, `.day-nav.day-prev#prevDay` / `.day-nav.day-next#nextDay`, `.today-wrap`, `.today#todayCard[data-track]`
+- **Day rail:** `.day-rail`, `.day-nav.day-prev#prevDay` / `.day-nav.day-next#nextDay` (`[data-tip]`, baseline tooltip), `.today-wrap`, `.today#todayCard[data-track]`
   - active item: `.today-side>.vert`, `.today-main`, `.trackpill`(span)`>.k`, `.today-title`(h2), `.warm`(div)`>.warm-i`+`.muted`, `.tasks#taskList`, `.reflect-block>.reflect-label[for=reflect]>.kanji` + `textarea#reflect`, `.res-row>.chip`(span)`>b`, `.btn.gold#markReview`, `.next-day-cta#nextDayCta`
   - task: `label.task(.done)[style=animation-delay] > input#cb_<id>` + `.box` + `.task-text`; with guidance: `.task-wrap > (label) + details.task-hint > summary + .task-hint-body`
-  - rest item: `.warm`(p)`>.warm-i`, `.rest-due`
+  - rest item: `.warm`(p)`>.warm-i` (only with a reflect prompt), `.rest-due` (due titles in `<b>` or plain rest text), optional `.next-day-cta#nextDayCta`
 - **Footer:** `.foot > #motd(.motd-out)`
-- **Modals:** `.modal(.open)[role=dialog]` → `.modal-panel.cal-panel|.tr-panel`; cal: `.cal-head`(`#calPrev/#calTitle/#calNext/#calClose`), `.cal-dow#calDow`, `.cal-grid#calGrid>.cday(.other|.done|.today)`; trophies: `.tr-head`(`#trophiesTitle/#trophiesClose`), `.tr-grid#trophiesGrid>.badge(.on|.off)[data-tip]>.bi+.bt`
+- **Modals:** `.modal(.open)[role=dialog]` → `.modal-panel.cardmap-panel|.tr-panel|.sc-panel`, each headed by `.tr-head`
+  - card map: `.tr-head`(`#cardMapTitle/#cardMapClose`), `.cm-grid#cardMapGrid > .cm-row > .cm-rlabel + .cm-cells > .cm-card(.done|.rest|.current)[data-id][data-tip]` — baseline-functional, override look only
+  - trophies: `.tr-head`(`#trophiesTitle/#trophiesClose`), `.tr-grid#trophiesGrid>.badge(.on|.off)[data-tip]>.bi+.bt`
+  - shortcuts: `.tr-head`(`#shortcutsTitle/#shortcutsClose`), `.sc-grid#shortcutsGrid > .sc-row > kbd.sc-keys + .sc-desc` — theme-independent via the baseline; themes normally need **no** `.sc-*` rules
 - **Effects:** `#fx`, `.fx-flash`, `.confetti-piece`, `.toast(.show)`, `.badge-toast(.show)>.bt-i`+trailing text span
 
 > Badges carry `data-tip` — build the tooltip yourself: give `.badge` a
@@ -508,8 +588,11 @@ when it matters.
 >      so nothing overlaps;
 >    - **hides the native checkbox** and drives the check via `.box` / `.task.done`;
 >    - styles **every** hook in the §8 checklist, both states of each runtime
->      class (`.modal.open`, `.task.done`, `.cday.*`, `.badge.on/.off`,
->      `.toast.show`, `#motd.motd-out`), and both `.warm` variants;
+>      class (`.modal.open`, `.task.done`, `.badge.on/.off`, `.toast.show`,
+>      `#motd.motd-out`), and both `.warm` variants; the card-map cells
+>      (`.cm-card.done/.rest/.current`) and shortcuts list already work via the
+>      baseline — retheme `.cm-card` only if it fits the vibe, add no `.sc-*`
+>      rules;
 >    - reads `--track-<id>`, `.ring`'s unitless `--p` via `calc(var(--p)*1%)`
 >      with a donut hole, and the confetti vars (`--dx` −1…1, `--dy` 0…1,
 >      `--rot`, `--i`);
@@ -517,5 +600,6 @@ when it matters.
 >      fluid type, a 2–3 font stack, per-track colors with `color-mix()` tints,
 >      a layered atmospheric background, hover/active micro-interactions, and the
 >      `.task` entrance keyframe keyed off the inline `animation-delay`;
->    - includes the blanket reduced-motion block.
+>    - adds **no** reduced-motion block of its own — the app baseline ships the
+>      guard (§7), and the theme test rejects a stylesheet that re-declares it.
 > 2. The one-line `registerTheme({…})` manifest pointing at that file.

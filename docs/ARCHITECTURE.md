@@ -13,7 +13,7 @@ The app is a **thin host that runs plugins**, built as a **SOLID onion** (a.k.a.
 So the rules of the app (what "completing a day" means, how streaks work, when a badge unlocks) live in plain TypeScript classes that never touch the DOM, `localStorage`, `Date`, or `Math.random`. Everything browser-shaped — the screen, storage, the clock, the plugin registry — lives at the *edges* and is handed to the core through small interfaces. The core asks for what it needs ("what's today?", "save this") and the edges provide it.
 
 **Why bother?** Two payoffs you can feel:
-1. **The core is tested without a browser.** All ~75 tests run in plain Node (`node --test`): the domain has zero browser dependencies, and even the adapter tests use a tiny fake DOM rather than a real browser. No jsdom, no DOM mocking for the rules.
+1. **The core is tested without a browser.** The whole test suite runs in plain Node (`node --test`): the domain has zero browser dependencies, and even the adapter tests use a tiny fake DOM rather than a real browser. No jsdom, no DOM mocking for the rules.
 2. **The edges are swappable.** Storage is an interface; today it's `localStorage`, tomorrow it could be a server, and the core wouldn't change a line.
 
 > **Honest note:** for an app this small this structure is *more* than strictly necessary — it's a deliberate, learn-it-properly choice, not a reflex. If it ever feels heavy, that's expected; the payoff is clarity and testability, not fewer files.
@@ -83,10 +83,10 @@ A rule the linter enforces for you: **files under `src/domain/` may not use `win
 Pure TypeScript. Knows nothing about the outside world. Four kinds of thing live here:
 
 **a) Entity types** (`domain/types/*`) — the data shapes, all `interface`s:
-- `entities.ts` — the **content-pack contract**: `Pack`, `Track`, `Phase`, `Group`, `Item`, `Task`, `Theme`, `Session`. These describe data that comes *in* from plugins; they're read-only (`readonly` everywhere).
+- `entities.ts` — the **content-pack contract**: `Pack`, `Track`, `Phase`, `Group`, `Item`, `Task`, `Theme`, plus `Session` (active pack/theme + a per-pack `cursors` map of resume positions). The pack types describe data that comes *in* from plugins; they're read-only (`readonly` everywhere).
 - `badge-rule.ts` — `BadgeRule`, a **discriminated union** of the 14 achievement conditions (`{type:'streak', gte}`, `{type:'track-complete', track}`, …).
-- `progress.ts` — `ProgressData`/`ItemProgress`/`Review`/`Surprise`: the saved-state shape.
-- `view-models.ts` — the **DTOs the UI renders** (`TodayVM`, `DashboardVM`, `CalendarVM`, …). More on these below.
+- `progress.ts` — `ProgressData`/`ItemProgress`/`Review`: the saved-state shape (a `Review` is just `{itemId, lastDate}`).
+- `view-models.ts` — the **DTOs the UI renders** (`TodayVM`, `DashboardVM`, `CardMapVM`, …). More on these below.
 - `progress-stats.ts`, `badge-engine.ts`, `tracker.ts` — small public types tied to those modules (`Stat`, `BadgeStatus`, `TrackerDeps`).
 
 **b) The `Progress` aggregate** (`domain/progress.ts`) — the *one mutable thing* in the app. It owns your task checks, reflections, reviews, and earned badges behind `private` fields, and it **enforces the completion invariant in one place**: checking the last task of a day sets `completedAt`/`completedHour`; un-checking clears them. Because that rule lives *inside* the object, no other code can set "completed" incorrectly. It also does `toJSON()` (for saving) and `Progress.empty()` / takes `ProgressData` in its constructor (for loading).
@@ -94,13 +94,13 @@ Pure TypeScript. Knows nothing about the outside world. Four kinds of thing live
 **c) Services** — stateless classes, each a single responsibility, that compute over a `Pack` + a `Progress`:
 - `Streaks` — current / longest streak, "has there been a comeback gap".
 - `ProgressStats` — totals: overall %, per-track, per-phase, task counts, completed groups.
-- `ReviewSchedule` — the spaced-repetition interval policy (which reviews are due).
+- `ReviewSchedule` — simple review reminders, just `due()`/`schedule()`: an item becomes due ≥1 day after it was scheduled and stays due until re-scheduled. No spaced-repetition ladder.
 - `BadgeEngine` — interprets the `BadgeRule` union: builds a small context (streak, %, hours, etc.) and evaluates each rule. `evaluate()` (read) and `sync()` (awards newly-passing badges).
 - `Validators` (`validators.ts`) — `PackValidator` / `ThemeValidator` / `ProgressValidator`. They check untrusted incoming data (plugins, imported JSON) and **throw** `ValidationError`/`ImportError` on bad shape. This is where the runtime contract lives.
 
 **d) The `Tracker` facade** (`domain/tracker.ts`) — **the single entry point the UI talks to.** Everything outside the domain goes through it. It has two kinds of method:
-- **Intents (commands)** — `toggleTask`, `setReflection`, `selectPack`, `selectTheme`, `goToItem`, `scheduleReviewForCurrent`, `importProgress`, `exportProgress`. These mutate state (via `Progress`) and persist (via the `ProgressStore` port).
-- **Queries** — `dashboard()`, `todayCard()`, `selectors()`, `calendar()`, `trophies()`, `comeback()`. Each returns a **plain view-model** (a DTO from `view-models.ts`) describing *what to show* — never any HTML.
+- **Intents (commands)** — `setTaskDone`, `setReflection`, `selectItem`, `goToItem`, `selectPack`, `selectTheme`, `scheduleReviewForCurrent`, `importProgress`, `exportProgress`. These mutate state (via `Progress`) and persist (via the `ProgressStore` port).
+- **Queries** — `dashboard()`, `todayCard()`, `selectors()`, `cardMap()`, `trophies()`, `comeback()`. Each returns a **plain view-model** (a DTO from `view-models.ts`) describing *what to show* — never any HTML. Smaller scalar lookups round these out: `trackColors()`, `mottos()`, `ui(key)`, `itemLabel()`, `activeThemeHref()`/`activeThemeId()`, `activePackId()`, `locale()`. (The shortcuts help overlay has no Tracker query — the controller assembles it from `ui(...)` strings.)
 
 The `Tracker` is constructed with all its dependencies (ports + services + default data) in one `TrackerDeps` object — that's the dependency injection. It holds the active pack, the loaded progress, and the current day, and orchestrates the services and ports to fulfill each intent/query.
 
@@ -127,7 +127,7 @@ The only browser-aware code. Each adapter implements a port or drives the UI:
 - `LocalStorageProgressStore` / `LocalStorageSessionStore` — read/write `localStorage` (keys `sunrise.progress.<packId>` / `sunrise.session`), and the one-shot `migrateLegacy()` that imports old saves. They **catch all errors and fall back to a fresh value** — corrupt storage never crashes the app.
 - `WindowPluginRegistry` — backs `window.SUNRISE.registerPack/registerTheme`. When a pack/theme self-registers, it's **validated on the spot**; valid ones go into `packs()`/`themes()`, invalid ones are recorded in `rejected()` (with reasons) and dropped. It implements both `PackSource` and `ThemeSource`.
 - `DomRenderer` — turns a view-model into DOM. It builds HTML strings (with `esc()` on every interpolated value) and writes them into the canonical hook elements. **It only reads view-models; it never computes anything.**
-- `DomController` — wires DOM events to `Tracker` intents and re-renders. Checkbox → `tracker.toggleTask()` → fire confetti/toast → re-render. It's a faithful port of the old `app.js` event wiring.
+- `DomController` — wires DOM events to `Tracker` intents and re-renders. Checkbox → `tracker.setTaskDone()` → fire confetti/toast → re-render. It's a faithful port of the old `app.js` event wiring.
 - `main.ts` — the **composition root**: it `new`s every adapter and service, packs them into `TrackerDeps`, runs migration, calls `tracker.init()`, and starts the `DomController`. It also wraps boot in a `try/catch` — the **single place** that turns an exception into a graceful fallback screen.
 
 ---
@@ -139,11 +139,12 @@ Trace "user checks the last task of a day" end to end — this is the mental mod
 ```
 1. DOM  : <input id="cb_t3"> change event
 2. DomController  : the cb.onchange handler runs →
-3. Tracker.toggleTask('t3', true)        (intent)
+3. Tracker.setTaskDone('t3', true)       (intent)
 4.   Progress.setTaskDone(item, 't3', …) → all tasks now checked → sets completedAt/hour (the invariant)
 5.   BadgeEngine.sync(pack, progress, rules, today) → awards any newly-passing badges, returns their ids
-6.   (12% roll via Random port → maybe a surprise message)
-7.   ProgressStore.save(packId, progress)   (persist, through the port)
+     (this sync runs on *every* progress mutation, not just completion — awards can never re-lock)
+6.   ProgressStore.save(packId, progress)   (persist, through the port)
+7.   (12% roll via Random port → maybe a surprise message)
 8.   returns { unlockedBadges, surprise? } to the controller
 9. DomController  : because the day went incomplete→complete, fire DomRenderer.celebrate() + badgeToast()
 10.               then #renderAll() → pulls fresh view-models from Tracker queries
@@ -162,7 +163,7 @@ Notice what *didn't* happen: the domain (steps 3–8) never touched the DOM, and
 - **Progress is namespaced per pack.** Each pack's state lives under its own `localStorage` key, so switching packs never mixes histories.
 - **Badges are declarative rules, not code.** A pack adds achievements as data (`{type:'track-complete', track:'dsa', …}`); the `BadgeEngine` interprets them. The app ships ~20 generic rules; packs append their own.
 - **Style conventions:** TypeScript with Java-style access (`private`/`public`, not `#`); types live in `types/` folders; relative imports keep the `.ts` extension and `import type` for type-only imports; **erasable TS only** (no `enum`, no `namespace`, no constructor *parameter properties* — declare fields and assign them in the body) so Node can run the `.ts` tests natively.
-- **The composition root is the only place that knows the whole graph.** If you want to see how it all wires together, read `main.ts` — it's under 50 lines.
+- **The composition root is the only place that knows the whole graph.** If you want to see how it all wires together, read `main.ts` — it's ~50 lines.
 
 ---
 
@@ -191,10 +192,10 @@ A cookbook. The pattern is always: *figure out which ring owns the change, do it
 **Add a domain operation** (a new intent) — add a method to `Tracker`, mutate via `Progress`/a service, persist via the store, and call it from a `DomController` event handler.
 
 **Golden rules while you work:**
-- Never `import` anything from `adapters/` or `ports/` into `domain/` (the linter blocks it).
+- Never `import` anything from `adapters/` into `domain/` (the linter blocks it). The domain *may* import the port interfaces from `ports/` — that's the inward direction the onion allows.
 - Never reach for `document`/`Date`/`localStorage`/`Math.random` inside `domain/` — ask for a port instead.
 - Keep the renderer dumb: it paints view-models, it doesn't decide anything.
-- After touching `src/`, run the gate before committing: `npm run typecheck && npm run lint && npm test && npm run build`, and commit the rebuilt `dist/sunrise.js`.
+- After touching `src/`, run the gate before committing: `npm run format:check && npm run typecheck && npm run lint && npm test && npm run build`, and commit the rebuilt `dist/sunrise.js`.
 
 ---
 
@@ -206,7 +207,7 @@ A cookbook. The pattern is always: *figure out which ring owns the change, do it
 | Streak math | `src/domain/streaks.ts` (+ UTC helpers in `dates.ts`) |
 | Progress totals (%, per-track, per-phase) | `src/domain/progress-stats.ts` |
 | Badge unlock logic | `src/domain/badge-engine.ts` (+ types in `domain/types/badge-rule.ts`) |
-| Spaced-repetition intervals | `src/domain/review-schedule.ts` |
+| Review reminders (due/schedule) | `src/domain/review-schedule.ts` |
 | Plugin/import validation rules | `src/domain/validators.ts` |
 | App orchestration / what the UI can ask for | `src/domain/tracker.ts` |
 | Default UI strings, generic badges, bundled themes | `src/domain/builtins.ts` |

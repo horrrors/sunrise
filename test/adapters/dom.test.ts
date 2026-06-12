@@ -68,19 +68,22 @@ class FakeEl {
   }
   set innerHTML(v: string) {
     this._html = v;
-    const re = /id="([^"$]+)"/g;
+    // Register id-carrying elements, mirroring tagName/type from the markup so
+    // activeTaskId()/isTypingTarget() see INPUT[type=checkbox] like a real DOM.
+    const tagRe = /<(\w+)([^>]*)>/g;
     let m: RegExpExecArray | null;
-    while ((m = re.exec(v))) {
-      const id = m[1]!;
-      this.#registry[id] = this.#registry[id] || new FakeEl(id, this.#registry);
+    while ((m = tagRe.exec(v))) {
+      const attrs = m[2]!;
+      const idm = /\bid="([^"$]+)"/.exec(attrs);
+      if (!idm) continue;
+      const id = idm[1]!;
+      const el = (this.#registry[id] = this.#registry[id] || new FakeEl(id, this.#registry));
+      el.tagName = m[1]!.toUpperCase();
+      const tm = /\btype="([^"]+)"/.exec(attrs);
+      if (tm) el.type = tm[1]!;
     }
   }
-  get textContent(): string {
-    return '';
-  }
-  set textContent(_v: string) {
-    /* no-op */
-  }
+  textContent = '';
   appendChild(c: unknown): unknown {
     return c;
   }
@@ -89,7 +92,9 @@ class FakeEl {
   }
   append(): void {}
   remove(): void {}
+  attrs: Record<string, string> = {};
   setAttribute(k: string, v: string): void {
+    this.attrs[k] = v;
     if (k.indexOf('data-') === 0) this.dataset[k.slice(5)] = v;
   }
   getAttribute(): null {
@@ -158,6 +163,7 @@ function harness(seed?: { store?: Record<string, string> }): Harness {
     querySelector: (): null => null,
     addEventListener: (): void => {},
     documentElement: new FakeEl('html', registry),
+    head: new FakeEl('head', registry),
     body: new FakeEl('body', registry),
     activeElement: null as FakeEl | null,
   };
@@ -256,17 +262,21 @@ test('dashboard renders stat-cards', async () => {
   assert.ok((registry['dashboard']!.innerHTML || '').includes('stat-card'), 'dashboard');
 });
 
-test('trophies render 30 tiles', async () => {
-  const { registry } = await boot();
+test('trophies render one tile per trophy', async () => {
+  const { registry, tracker } = await boot();
   registry['trophiesBtn']!.onclick!();
   const tiles = (registry['trophiesGrid']!.innerHTML.match(/data-tip/g) || []).length;
-  assert.equal(tiles, 30, 'trophy tiles: ' + tiles);
+  assert.equal(tiles, tracker.trophies().length, 'trophy tiles: ' + tiles);
 });
 
 test('card map: opens, renders cards, click navigates + closes modal', async () => {
   const { registry, tracker } = await boot();
   registry['cardMapBtn']!.onclick!();
-  assert.equal(registry['cardMapModal']!.classList.contains('open'), true, 'modal open before navigate');
+  assert.equal(
+    registry['cardMapModal']!.classList.contains('open'),
+    true,
+    'modal open before navigate',
+  );
   const grid = registry['cardMapGrid']!;
   assert.ok((grid.innerHTML || '').includes('cm-card'), 'cards rendered');
 
@@ -331,9 +341,7 @@ test('pack switch re-applies track colors and lang', async () => {
       {
         id: 'g',
         title: 'W',
-        items: [
-          { id: 'p2i1', track: 'x', title: 'B', tasks: [{ id: 't1', text: 'y' }] },
-        ],
+        items: [{ id: 'p2i1', track: 'x', title: 'B', tasks: [{ id: 't1', text: 'y' }] }],
       },
     ],
   };
@@ -346,8 +354,12 @@ test('pack switch re-applies track colors and lang', async () => {
   // Install spies after start() so initial apply doesn't inflate counts.
   let colors = 0;
   let langs = 0;
-  (h.renderer as unknown as Record<string, unknown>).applyTrackColors = () => { colors++; };
-  (h.renderer as unknown as Record<string, unknown>).setLang = () => { langs++; };
+  (h.renderer as unknown as Record<string, unknown>).applyTrackColors = () => {
+    colors++;
+  };
+  (h.renderer as unknown as Record<string, unknown>).setLang = () => {
+    langs++;
+  };
 
   // Fire pack switch to p2.
   const packSel = h.registry['packSelect']!;
@@ -528,4 +540,179 @@ test('keyboard day-nav keeps scroll position; buttons still scroll to top', asyn
 
   registry['nextDay']!.onclick!();
   assert.equal(scrolls, 1, 'the prev/next button still scrolls to top');
+});
+
+test('item title and task text are HTML-escaped in the rendered card', async () => {
+  const h = harness();
+  const evil = '<script>alert(1)</script> & co';
+  h.registryPlugin.registerPack({
+    schema: 'sunrise.pack/v1',
+    id: 'evil',
+    name: 'Evil',
+    version: '1.0.0',
+    locale: 'en',
+    tracks: [{ id: 'x', label: 'X' }],
+    groups: [
+      {
+        id: 'g',
+        title: 'G',
+        items: [{ id: 'i1', track: 'x', title: evil, tasks: [{ id: 't1', text: evil }] }],
+      },
+    ],
+  });
+  h.tracker.init();
+  new DomController(h.tracker, h.renderer).start();
+
+  const today = h.registry['todayCard']!.innerHTML;
+  const tasks = h.registry['taskList']!.innerHTML;
+  assert.ok(today.includes('&lt;script&gt;'), 'title escaped');
+  assert.ok(tasks.includes('&lt;script&gt;'), 'task text escaped');
+  assert.ok(today.includes('&amp;') && tasks.includes('&amp;'), 'ampersand escaped');
+  assert.ok(!today.includes('<script') && !tasks.includes('<script'), 'no raw script tag');
+});
+
+test('card map / trophies modal titles carry the real counters', async () => {
+  const { registry, tracker } = await boot();
+
+  registry['cardMapBtn']!.onclick!();
+  const cm = tracker.cardMap();
+  assert.ok(
+    registry['cardMapTitle']!.textContent.includes(`${cm.done}/${cm.total}`),
+    'card map title: ' + registry['cardMapTitle']!.textContent,
+  );
+
+  registry['trophiesBtn']!.onclick!();
+  const trophies = tracker.trophies();
+  const got = trophies.filter((b) => b.unlocked).length;
+  assert.ok(
+    registry['trophiesTitle']!.textContent.includes(`${got}/${trophies.length}`),
+    'trophies title: ' + registry['trophiesTitle']!.textContent,
+  );
+});
+
+test('open modal suppresses day nav; Escape and backdrop click close it', async () => {
+  const { registry, controller, tracker } = await boot();
+  const items = tracker.selectors().items.map((o) => o.id);
+  tracker.selectItem(items[0]!);
+
+  controller!.handleKeydown(ev('m'));
+  assert.equal(registry['cardMapModal']!.classList.contains('open'), true, 'modal open');
+  controller!.handleKeydown(ev('ArrowRight'));
+  assert.equal(tracker.todayCard().itemId, items[0], 'nav suppressed while modal open');
+  controller!.handleKeydown(ev('Escape'));
+  assert.equal(registry['cardMapModal']!.classList.contains('open'), false, 'Escape closes');
+
+  controller!.handleKeydown(ev('m'));
+  registry['cardMapModal']!.onclick!({ target: { id: 'cardMapModal' } });
+  assert.equal(registry['cardMapModal']!.classList.contains('open'), false, 'backdrop closes');
+});
+
+test('M via e.code opens the card map on non-Latin layouts', async () => {
+  const { registry, controller } = await boot();
+  controller!.handleKeydown(ev('ь', { code: 'KeyM' }));
+  assert.equal(registry['cardMapModal']!.classList.contains('open'), true, 'ь/KeyM opens map');
+});
+
+test('ArrowUp with nothing focused enters at the last tick; rest card ignores arrows', async () => {
+  const { registry, controller, renderer, tracker } = await boot();
+  const doc = (globalThis as { document?: { activeElement?: unknown } }).document!;
+
+  let multi: string | undefined;
+  for (const o of tracker.selectors().items) {
+    tracker.selectItem(o.id);
+    if (tracker.todayCard().tasks.length >= 2) {
+      multi = o.id;
+      break;
+    }
+  }
+  assert.ok(multi, 'fixture has an item with >= 2 ticks');
+  registry['daySelect']!.value = multi!;
+  registry['daySelect']!.onchange!();
+  doc.activeElement = null;
+  const ids = tracker.todayCard().tasks.map((t) => t.id);
+  controller!.handleKeydown(ev('ArrowUp'));
+  assert.equal(renderer.activeTaskId(), ids[ids.length - 1], 'up with nothing focused -> last');
+
+  let restId: string | undefined;
+  for (const o of tracker.selectors().items) {
+    tracker.selectItem(o.id);
+    if (tracker.todayCard().rest) {
+      restId = o.id;
+      break;
+    }
+  }
+  assert.ok(restId, 'fixture has a rest item');
+  registry['daySelect']!.value = restId!;
+  registry['daySelect']!.onchange!();
+  doc.activeElement = null;
+  controller!.handleKeydown(ev('ArrowDown'));
+  controller!.handleKeydown(ev('ArrowUp'));
+  assert.equal(renderer.activeTaskId(), null, 'rest card: arrows do nothing');
+});
+
+test('dashboard shows the exact done/total and streak numbers', async () => {
+  const { registry, tracker } = await boot();
+  Object.keys(registry)
+    .filter((id) => /^cb_/.test(id))
+    .forEach((id) => {
+      const el = registry[id]!;
+      if (el.onchange) el.onchange({ target: { checked: true } });
+    });
+  const vm = tracker.dashboard();
+  assert.ok(vm.overall.done >= 1, 'at least one item done');
+  const html = registry['dashboard']!.innerHTML;
+  assert.ok(html.includes(`<small>${vm.overall.done}/${vm.overall.total}</small>`), 'done/total');
+  assert.ok(html.includes(`<div class="streak-num">${vm.streak}</div>`), 'streak number');
+});
+
+test('icon-only controls carry data-tip tooltips and aria-labels from ui strings', async () => {
+  const { registry, tracker } = await boot();
+  const u = (k: string): string => tracker.ui(k);
+  const expected: [string, string][] = [
+    ['cardMapBtn', u('cardMap')],
+    ['trophiesBtn', u('trophies')],
+    ['exportBtn', u('export')],
+    ['importBtn', u('import')],
+    ['prevDay', u('prevDayAria')],
+    ['nextDay', u('nextDayAria')],
+    ['cardMapClose', u('scClose')],
+    ['trophiesClose', u('scClose')],
+    ['shortcutsClose', u('scClose')],
+  ];
+  for (const [id, label] of expected) {
+    assert.equal(registry[id]!.dataset['tip'], label, `${id} data-tip`);
+    assert.equal(registry[id]!.attrs['aria-label'], label, `${id} aria-label`);
+  }
+});
+
+test('pack switch refreshes static labels and the motd', async () => {
+  const h = harness();
+  await registerDevRoadmap(h.registryPlugin);
+  h.registryPlugin.registerPack({
+    schema: 'sunrise.pack/v1',
+    id: 'pb',
+    name: 'Pack B',
+    version: '1.0.0',
+    locale: 'en',
+    ui: { summaryTitle: 'B Summary' },
+    mottos: ['B motto'],
+    tracks: [{ id: 'x', label: 'X' }],
+    groups: [
+      {
+        id: 'g',
+        title: 'G',
+        items: [{ id: 'pbi1', track: 'x', title: 'B1', tasks: [{ id: 't1', text: 'do' }] }],
+      },
+    ],
+  });
+  h.tracker.init();
+  new DomController(h.tracker, h.renderer).start();
+
+  const before = h.registry['summaryTitle']!.textContent;
+  assert.notEqual(before, 'B Summary', 'pack A renders its own summary title');
+  const sel = h.registry['packSelect']!;
+  sel.value = 'pb';
+  sel.onchange!();
+  assert.equal(h.registry['summaryTitle']!.textContent, 'B Summary', 'summary title refreshed');
+  assert.equal(h.registry['motd']!.textContent, 'B motto', 'motd shows pack B motto');
 });

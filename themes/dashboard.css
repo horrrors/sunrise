@@ -594,7 +594,7 @@ textarea:focus{
   display:flex; align-items:center; justify-content:space-between; gap:10px;
   margin-bottom:16px;
 }
-.tr-head #trophiesTitle{
+.tr-head > div{
   font-family:var(--display); font-weight:800; font-size:17px; color:var(--ink);
 }
 .tr-grid{

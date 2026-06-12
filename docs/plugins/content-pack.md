@@ -53,6 +53,11 @@ All `id`s match `^[a-z0-9][a-z0-9-]*$` and must be **unique within their list**
 (track ids, phase ids, group ids, badge ids); **item ids are globally unique**
 across the whole pack, and **task ids are unique within their item**.
 
+No array (`tracks`, `phases`, `groups`, `items`, `tasks`, `resources`, `badges`,
+`mottos`, `surprises`) may contain `null` entries. Values in `ui` and
+`settings.labels` must be strings. A pack whose `id` is already registered is
+rejected at registration time.
+
 ## `tracks[]` — the subject columns
 
 ```js
@@ -65,28 +70,32 @@ across the whole pack, and **task ids are unique within their item**.
   `:root` `--track-<id>`. (A theme that wants to force a track color styles the
   `[data-track="<id>"]` elements directly.)
 - `reviewable` optional — items on this track show a "schedule review" button
-  (spaced repetition), when `settings.reviews` is on.
+  when `settings.reviews` is on. Scheduling sets a reminder: the item appears
+  on rest-day cards from the next day onward, until it is re-scheduled.
 - **`rest` is a built-in track id** — you may use `track:"rest"` on rest items
   without declaring it.
 
 ## `settings{}`
 
 ```js
-{ labels:{ phase:"Phase", group:"Week", groupAbbr:"Wk", item:"Day" },
+{ labels:{ phase:"Phase", item:"Day" },
   reviews:true, reflections:true, warmups:true }
 ```
 
-- `labels` — display nouns for the hierarchy.
+- `labels` — display nouns; only `phase` and `item` are used (values must be
+  strings).
 - `reflections` / `warmups` are **on unless you set them to `false`**.
 - `reviews` is **off unless you explicitly set `reviews:true`** — and the
   schedule-review button only appears on items whose track is `reviewable`.
+  A scheduled item surfaces on rest-day cards from the next day until
+  re-scheduled (a plain reminder; intervals do not expand).
 
 ## `phases[]` / `groups[]` / `items[]`
 
 ```js
 phases: [ { id:"p1", title:"Foundations" } ],
 groups: [
-  { id:"g1", title:"Week 1", phase:"p1", theme:"Intro topics",
+  { id:"g1", title:"Week 1", phase:"p1",
     items: [
       { id:"g1i1", track:"dsa", title:"Complexity",
         warmup:"warm-up text", reflectPrompt:"reflection question",
@@ -98,13 +107,13 @@ groups: [
 ```
 
 - A **group** needs `id` + `title` and at least one item; `phase` (if set) must
-  reference a declared phase id; `theme` is an optional subtitle.
+  reference a declared phase id.
 - An **item** is complete when all its `tasks` are checked. `title` is optional;
   `warmup` / `reflectPrompt` / `resources` are optional.
-- **A non-rest item must have at least one task.** The schema doesn't enforce it,
-  but a task-less non-rest item can *never* be completed (yet still counts toward
-  the total), so it permanently caps progress below 100%. Only `rest:true` items
-  may omit tasks.
+- **A non-rest item must have at least one task — the validator enforces this**
+  (`non-rest item needs at least one task`): a task-less non-rest item could
+  never be completed, yet would still count toward the total. Only `rest:true`
+  items may omit tasks.
 - `rest:true` items are breathers — not counted toward progress and carry no
   tasks; give them `track:"rest"`.
 - A **task** is `{ id, text, guidance? }` — both `id` and `text` are required;
@@ -118,7 +127,8 @@ groups: [
 Each badge is data: `{ id, title, desc, icon, type, …params }`. No code. The app
 ships a generic set automatically (streaks, total days, reflections,
 weekend / night-owl / early-lark, perfect group, halfway, finisher, comeback);
-your pack only adds extras. To override a generic badge, reuse its `id`.
+your pack only adds extras. To override a generic badge, reuse its `id` — your
+rule replaces both the unlock condition and the displayed title/desc/icon.
 
 Required per type: `id`, `title`, `type`. (`desc`, `icon` optional.)
 
@@ -135,8 +145,8 @@ Required per type: `id`, `title`, `type`. (`desc`, `icon` optional.)
 | `phase-complete` | `phase:string` | a (declared) phase is 100% complete |
 | `item-complete` | `item:string` | a specific (declared) item is complete |
 | `all-tracks` | `eachGte:number` | every track has ≥ eachGte items done |
-| `weekday` | `days:number[]` | completed an item on a listed weekday (1=Mon … 7=Sun) |
-| `hour-range` | `from:number, to:number` | completed an item in the hour window (wraps if from>to) |
+| `weekday` | `days:number[]` — integers 1..7 | completed an item on a listed weekday (1=Mon … 7=Sun) |
+| `hour-range` | `from:number, to:number` — hours 0..23 | completed an item in the hour window (wraps if from>to) |
 | `comeback` | — | resumed after a ≥2-day gap |
 
 The `track` / `phase` / `item` referenced by `track-complete`, `tasks-done`,
@@ -150,7 +160,8 @@ The `track` / `phase` / `item` referenced by `track-complete`, `tasks-done`,
 
 A pack may override any app-default UI string via a top-level `ui` object (it is
 a free-form `{ key: string }` map; unknown keys are harmless, missing ones fall
-back to the app defaults). The ones most worth setting per pack:
+back to the app defaults; every value must be a string). The ones most worth
+setting per pack:
 
 - `phaseLabel` — the small header label; supports `{p}` (current group's phase
   id) and `{w}` (current group's 1-based ordinal). The app default is empty, so
@@ -170,11 +181,11 @@ ui: { phaseLabel:"Phase {p} · Week {w}", todayVert:"TODAY", restVert:"REST" }
 (function (root){
   var pack = {
     schema:"sunrise.pack/v1", id:"rust-core", name:"Rust Core", version:"1.0.0", locale:"en",
-    settings:{ labels:{ phase:"Phase", group:"Week", groupAbbr:"Wk", item:"Day" }, reviews:false, reflections:true, warmups:true },
+    settings:{ labels:{ phase:"Phase", item:"Day" }, reviews:false, reflections:true, warmups:true },
     tracks:[ { id:"ownership", label:"Ownership", icon:"🦀", color:"#d35400" },
              { id:"async", label:"Async", icon:"⚙️", color:"#2980b9" } ],
     phases:[ { id:"p1", title:"Basics" } ],
-    groups:[ { id:"g1", title:"Week 1", phase:"p1", theme:"Ownership & borrowing", items:[
+    groups:[ { id:"g1", title:"Week 1", phase:"p1", items:[
       { id:"g1i1", track:"ownership", title:"Move semantics", warmup:"Recall stack vs heap",
         reflectPrompt:"Where did the borrow checker bite?", tasks:[ { id:"t1", text:"Read ch.4" }, { id:"t2", text:"Solve 3 exercises" } ] },
       { id:"g1i2", track:"async", title:"Futures 101", tasks:[ { id:"t1", text:"Write a hello-async" } ] },
@@ -199,10 +210,13 @@ ui: { phaseLabel:"Phase {p} · Week {w}", todayVert:"TODAY", restVert:"REST" }
 >
 > Rules: the pack object must include `schema:"sunrise.pack/v1"`, `id:"{ID}"`,
 > `name`, `version`, at least one track, and at least one group. Every non-rest
-> item has 2–4 concrete `tasks`; every task has both `id` and `text`; end each
-> group with a `rest:true` item on `track:"rest"`; all ids match
-> `^[a-z0-9][a-z0-9-]*$`, item ids are globally unique, task ids unique within
-> their item; any badge/track/phase/item it references must exist.
+> item has 2–4 concrete `tasks` (the validator rejects a non-rest item with no
+> tasks); every task has both `id` and `text`; end each group with a `rest:true`
+> item on `track:"rest"`; all ids match `^[a-z0-9][a-z0-9-]*$`, item ids are
+> globally unique, task ids unique within their item; no array contains `null`
+> entries; `ui` and `settings.labels` values are strings; weekday badge `days`
+> are integers 1..7 and hour-range `from`/`to` are hours 0..23; any
+> badge/track/phase/item it references must exist.
 >
 > Output **only** the self-registering `data/packs/{ID}.js` file (the IIFE that
 > calls `registerPack({…})`), nothing else.
