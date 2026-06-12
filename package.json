@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Personal goal-achievement tracker (pluginable, zero-runtime-deps)",
   "scripts": {
-    "build": "esbuild src/main.ts --bundle --format=iife --target=es2022 --sourcemap --outfile=dist/sunrise.js",
+    "build": "esbuild src/main.ts --bundle --format=iife --target=es2022 --sourcemap --outfile=dist/sunrise.js && node scripts/gen-sw.mjs",
     "typecheck": "tsc --noEmit",
     "test": "node --test \"test/**/*.test.ts\"",
     "lint": "eslint src test",
