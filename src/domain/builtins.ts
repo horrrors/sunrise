@@ -37,6 +37,7 @@ export const DEFAULT_UI: Record<string, string> = {
   nextDayAria: 'Следующий день',
   theme: 'Тема',
   pack: 'Программа',
+  menu: 'Меню',
   hint: 'Что считается сильным ответом',
   shortcuts: 'Горячие клавиши',
   scDay: 'Предыдущий / следующий день',

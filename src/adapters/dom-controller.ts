@@ -14,6 +14,7 @@ export class DomController {
   private t: Tracker;
   private r: DomRenderer;
   private activeModal: string | null = null;
+  private activeSheet: 'menu' | 'stats' | null = null;
   private motdTimer: ReturnType<typeof setInterval> | null = null;
   constructor(tracker: Tracker, renderer: DomRenderer) {
     this.t = tracker;
@@ -71,6 +72,10 @@ export class DomController {
       ['cardMapClose', 'scClose'],
       ['trophiesClose', 'scClose'],
       ['shortcutsClose', 'scClose'],
+      ['dockMapBtn', 'cardMap'],
+      ['dockTrophiesBtn', 'trophies'],
+      ['dockMenuBtn', 'menu'],
+      ['dockBars', 'summaryTitle'],
     ];
     for (const [id, key] of iconLabels) {
       this.r.setAttr(id, 'aria-label', u(key));
@@ -200,6 +205,7 @@ export class DomController {
     const key = e.key;
     if (key === 'Escape') {
       if (this.activeModal) this.closeActiveModal();
+      else this.closeSheets();
       return;
     }
     if (this.activeModal) return; // modal open → only Esc acts
@@ -272,6 +278,7 @@ export class DomController {
     const pack = this.r.$('packSelect') as HTMLSelectElement | null;
     if (pack) {
       pack.onchange = () => {
+        this.closeSheets();
         this.t.selectPack(pack.value);
         this.r.applyTrackColors(this.t.trackColors());
         this.r.setLang(this.t.locale());
@@ -283,6 +290,7 @@ export class DomController {
     const theme = this.r.$('themeSelect') as HTMLSelectElement | null;
     if (theme) {
       theme.onchange = () => {
+        this.closeSheets();
         this.t.selectTheme(theme.value);
         const href = this.t.activeThemeHref();
         if (href != null) this.r.applyTheme(href, theme.value);
@@ -291,6 +299,7 @@ export class DomController {
     const day = this.r.$('daySelect') as HTMLSelectElement | null;
     if (day) {
       day.onchange = () => {
+        this.closeSheets();
         this.t.selectItem(day.value);
         this.renderAll();
       };
@@ -339,6 +348,7 @@ export class DomController {
     const exportBtn = this.r.$('exportBtn');
     if (exportBtn) {
       (exportBtn as HTMLElement).onclick = () => {
+        this.closeSheets();
         const blob = new Blob([this.t.exportProgress()], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -353,6 +363,7 @@ export class DomController {
     if (importBtn && importFile) {
       (importBtn as HTMLElement).onclick = () => importFile.click();
       importFile.onchange = (e) => {
+        this.closeSheets();
         const f = (e.target as HTMLInputElement).files?.[0];
         if (!f) return;
         const rd = new FileReader();
@@ -373,9 +384,29 @@ export class DomController {
         (e.target as HTMLInputElement).value = '';
       };
     }
+
+    const dockMap = this.r.$('dockMapBtn');
+    if (dockMap) {
+      (dockMap as HTMLElement).onclick = () => {
+        this.renderCardMap();
+        this.open('cardMapModal');
+      };
+    }
+    const dockTrophies = this.r.$('dockTrophiesBtn');
+    if (dockTrophies) {
+      (dockTrophies as HTMLElement).onclick = () => {
+        this.renderTrophies();
+        this.open('trophiesModal');
+      };
+    }
+    const dockMenu = this.r.$('dockMenuBtn');
+    if (dockMenu) (dockMenu as HTMLElement).onclick = () => this.toggleSheet('menu');
+    const dockBars = this.r.$('dockBars');
+    if (dockBars) (dockBars as HTMLElement).onclick = () => this.toggleSheet('stats');
   }
 
   private open(id: string): void {
+    this.closeSheets();
     if (this.activeModal && this.activeModal !== id) this.closeActiveModal();
     const el = this.r.$(id);
     if (el) {
@@ -392,6 +423,19 @@ export class DomController {
     const el = this.r.$(this.activeModal);
     if (el) el.classList.remove('open');
     this.activeModal = null;
+  }
+
+  private toggleSheet(which: 'menu' | 'stats'): void {
+    const next = this.activeSheet === which ? null : which;
+    const toolbar = this.r.$('toolbar');
+    if (toolbar) toolbar.classList[next === 'menu' ? 'add' : 'remove']('open');
+    const dash = this.r.$('dashboard');
+    if (dash) dash.classList[next === 'stats' ? 'add' : 'remove']('open');
+    this.activeSheet = next;
+  }
+
+  private closeSheets(): void {
+    if (this.activeSheet) this.toggleSheet(this.activeSheet);
   }
 
   private bindClose(btnId: string, modalId: string): void {

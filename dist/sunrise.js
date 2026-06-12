@@ -1106,6 +1106,7 @@
     nextDayAria: "\u0421\u043B\u0435\u0434\u0443\u044E\u0449\u0438\u0439 \u0434\u0435\u043D\u044C",
     theme: "\u0422\u0435\u043C\u0430",
     pack: "\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u0430",
+    menu: "\u041C\u0435\u043D\u044E",
     hint: "\u0427\u0442\u043E \u0441\u0447\u0438\u0442\u0430\u0435\u0442\u0441\u044F \u0441\u0438\u043B\u044C\u043D\u044B\u043C \u043E\u0442\u0432\u0435\u0442\u043E\u043C",
     shortcuts: "\u0413\u043E\u0440\u044F\u0447\u0438\u0435 \u043A\u043B\u0430\u0432\u0438\u0448\u0438",
     scDay: "\u041F\u0440\u0435\u0434\u044B\u0434\u0443\u0449\u0438\u0439 / \u0441\u043B\u0435\u0434\u0443\u044E\u0449\u0438\u0439 \u0434\u0435\u043D\u044C",
@@ -1717,6 +1718,7 @@
     t;
     r;
     activeModal = null;
+    activeSheet = null;
     motdTimer = null;
     constructor(tracker, renderer) {
       this.t = tracker;
@@ -1766,7 +1768,11 @@
         ["nextDay", "nextDayAria"],
         ["cardMapClose", "scClose"],
         ["trophiesClose", "scClose"],
-        ["shortcutsClose", "scClose"]
+        ["shortcutsClose", "scClose"],
+        ["dockMapBtn", "cardMap"],
+        ["dockTrophiesBtn", "trophies"],
+        ["dockMenuBtn", "menu"],
+        ["dockBars", "summaryTitle"]
       ];
       for (const [id, key] of iconLabels) {
         this.r.setAttr(id, "aria-label", u(key));
@@ -1881,6 +1887,7 @@
       const key = e.key;
       if (key === "Escape") {
         if (this.activeModal) this.closeActiveModal();
+        else this.closeSheets();
         return;
       }
       if (this.activeModal) return;
@@ -1946,6 +1953,7 @@
       const pack = this.r.$("packSelect");
       if (pack) {
         pack.onchange = () => {
+          this.closeSheets();
           this.t.selectPack(pack.value);
           this.r.applyTrackColors(this.t.trackColors());
           this.r.setLang(this.t.locale());
@@ -1957,6 +1965,7 @@
       const theme = this.r.$("themeSelect");
       if (theme) {
         theme.onchange = () => {
+          this.closeSheets();
           this.t.selectTheme(theme.value);
           const href = this.t.activeThemeHref();
           if (href != null) this.r.applyTheme(href, theme.value);
@@ -1965,6 +1974,7 @@
       const day = this.r.$("daySelect");
       if (day) {
         day.onchange = () => {
+          this.closeSheets();
           this.t.selectItem(day.value);
           this.renderAll();
         };
@@ -2007,6 +2017,7 @@
       const exportBtn = this.r.$("exportBtn");
       if (exportBtn) {
         exportBtn.onclick = () => {
+          this.closeSheets();
           const blob = new Blob([this.t.exportProgress()], { type: "application/json" });
           const a = document.createElement("a");
           a.href = URL.createObjectURL(blob);
@@ -2020,6 +2031,7 @@
       if (importBtn && importFile) {
         importBtn.onclick = () => importFile.click();
         importFile.onchange = (e) => {
+          this.closeSheets();
           const f = e.target.files?.[0];
           if (!f) return;
           const rd = new FileReader();
@@ -2040,8 +2052,27 @@
           e.target.value = "";
         };
       }
+      const dockMap = this.r.$("dockMapBtn");
+      if (dockMap) {
+        dockMap.onclick = () => {
+          this.renderCardMap();
+          this.open("cardMapModal");
+        };
+      }
+      const dockTrophies = this.r.$("dockTrophiesBtn");
+      if (dockTrophies) {
+        dockTrophies.onclick = () => {
+          this.renderTrophies();
+          this.open("trophiesModal");
+        };
+      }
+      const dockMenu = this.r.$("dockMenuBtn");
+      if (dockMenu) dockMenu.onclick = () => this.toggleSheet("menu");
+      const dockBars = this.r.$("dockBars");
+      if (dockBars) dockBars.onclick = () => this.toggleSheet("stats");
     }
     open(id) {
+      this.closeSheets();
       if (this.activeModal && this.activeModal !== id) this.closeActiveModal();
       const el = this.r.$(id);
       if (el) {
@@ -2056,6 +2087,17 @@
       const el = this.r.$(this.activeModal);
       if (el) el.classList.remove("open");
       this.activeModal = null;
+    }
+    toggleSheet(which) {
+      const next = this.activeSheet === which ? null : which;
+      const toolbar = this.r.$("toolbar");
+      if (toolbar) toolbar.classList[next === "menu" ? "add" : "remove"]("open");
+      const dash = this.r.$("dashboard");
+      if (dash) dash.classList[next === "stats" ? "add" : "remove"]("open");
+      this.activeSheet = next;
+    }
+    closeSheets() {
+      if (this.activeSheet) this.toggleSheet(this.activeSheet);
     }
     bindClose(btnId, modalId) {
       const btn = this.r.$(btnId);

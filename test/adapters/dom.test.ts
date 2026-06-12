@@ -743,3 +743,47 @@ test('dock bars reflect progress and streak after a render', async () => {
   assert.equal(registry['dockStreakVal']!.textContent, `${vm.streak}d`);
   assert.equal(fillW('dockStreakFill'), `${Math.round(Math.min(vm.streak / 30, 1) * 100)}%`);
 });
+
+test('dock map/trophies buttons open their modals (closing any sheet first)', async () => {
+  const { registry } = await boot();
+  registry['dockMenuBtn']!.onclick!();
+  assert.equal(registry['toolbar']!.classList.contains('open'), true, 'menu sheet opens');
+  registry['dockMapBtn']!.onclick!();
+  assert.equal(registry['cardMapModal']!.classList.contains('open'), true, 'map modal opens');
+  assert.equal(registry['toolbar']!.classList.contains('open'), false, 'sheet closed by modal');
+  registry['cardMapModal']!.onclick!({ target: { id: 'cardMapModal' } });
+  registry['dockTrophiesBtn']!.onclick!();
+  assert.equal(registry['trophiesModal']!.classList.contains('open'), true, 'trophies modal opens');
+});
+
+test('menu and stats sheets toggle and are mutually exclusive; Esc closes', async () => {
+  const { registry, controller } = await boot();
+  registry['dockMenuBtn']!.onclick!();
+  assert.equal(registry['toolbar']!.classList.contains('open'), true, 'menu opens');
+  registry['dockBars']!.onclick!();
+  assert.equal(registry['dashboard']!.classList.contains('open'), true, 'stats opens');
+  assert.equal(registry['toolbar']!.classList.contains('open'), false, 'menu closed by stats');
+  registry['dockBars']!.onclick!();
+  assert.equal(registry['dashboard']!.classList.contains('open'), false, 'stats toggles closed');
+  registry['dockMenuBtn']!.onclick!();
+  controller!.handleKeydown(ev('Escape'));
+  assert.equal(registry['toolbar']!.classList.contains('open'), false, 'Esc closes the sheet');
+});
+
+test('a toolbar action closes the menu sheet', async () => {
+  const { registry, tracker } = await boot();
+  registry['dockMenuBtn']!.onclick!();
+  const items = tracker.selectors().items.map((o) => o.id);
+  registry['daySelect']!.value = items[1]!;
+  registry['daySelect']!.onchange!();
+  assert.equal(registry['toolbar']!.classList.contains('open'), false, 'day pick closes menu');
+});
+
+test('dock controls carry aria-labels from ui strings', async () => {
+  const { registry, tracker } = await boot();
+  const u = (k: string): string => tracker.ui(k);
+  assert.equal(registry['dockMapBtn']!.attrs['aria-label'], u('cardMap'));
+  assert.equal(registry['dockTrophiesBtn']!.attrs['aria-label'], u('trophies'));
+  assert.equal(registry['dockMenuBtn']!.attrs['aria-label'], u('menu'));
+  assert.equal(registry['dockBars']!.attrs['aria-label'], u('summaryTitle'));
+});
