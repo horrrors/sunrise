@@ -793,11 +793,7 @@ test('stats sheet stays open across a keyboard-nav re-render', async () => {
   registry['dockBars']!.onclick!();
   assert.equal(registry['dashboard']!.classList.contains('open'), true, 'stats sheet open');
   controller!.handleKeydown(ev('ArrowRight'));
-  assert.equal(
-    registry['dashboard']!.classList.contains('open'),
-    true,
-    'sheet survives renderAll',
-  );
+  assert.equal(registry['dashboard']!.classList.contains('open'), true, 'sheet survives renderAll');
 });
 
 const touch = (x: number, y: number) => ({ changedTouches: [{ clientX: x, clientY: y }] });

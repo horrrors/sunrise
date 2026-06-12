@@ -23,7 +23,13 @@ function fakes(initialMatches: boolean) {
       delete attrs[n];
     },
   };
-  return { matchMedia, root, attrs, fire: (m: boolean) => listener!({ matches: m }), q: () => query };
+  return {
+    matchMedia,
+    root,
+    attrs,
+    fire: (m: boolean) => listener!({ matches: m }),
+    q: () => query,
+  };
 }
 
 test('narrow at boot sets data-mobile; query embeds the breakpoint', () => {
