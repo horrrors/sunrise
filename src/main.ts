@@ -20,6 +20,7 @@ import {
 import { WindowPluginRegistry } from './adapters/window-registry.ts';
 import { DomRenderer } from './adapters/dom-renderer.ts';
 import { DomController } from './adapters/dom-controller.ts';
+import { watchMobileMode } from './adapters/mobile-mode.ts';
 
 declare global {
   interface Window {
@@ -33,6 +34,8 @@ window.SUNRISE = {
   registerPack: (p) => registry.registerPack(p),
   registerTheme: (t) => registry.registerTheme(t),
 };
+
+watchMobileMode((q) => window.matchMedia(q), document.documentElement);
 
 function boot(): void {
   const renderer = new DomRenderer();

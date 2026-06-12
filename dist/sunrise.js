@@ -2093,6 +2093,18 @@
     }
   };
 
+  // src/adapters/mobile-mode.ts
+  var MOBILE_BREAKPOINT_PX = 640;
+  function watchMobileMode(matchMedia, root) {
+    const mq = matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX}px)`);
+    const apply = (m) => {
+      if (m) root.setAttribute("data-mobile", "1");
+      else root.removeAttribute("data-mobile");
+    };
+    apply(mq.matches);
+    mq.addEventListener("change", (e) => apply(e.matches));
+  }
+
   // src/main.ts
   var registry = new WindowPluginRegistry();
   registry.addBuiltinThemes(BUILTIN_THEMES);
@@ -2100,6 +2112,7 @@
     registerPack: (p) => registry.registerPack(p),
     registerTheme: (t) => registry.registerTheme(t)
   };
+  watchMobileMode((q) => window.matchMedia(q), document.documentElement);
   function boot() {
     const renderer = new DomRenderer();
     try {
