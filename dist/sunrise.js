@@ -1542,6 +1542,12 @@
         (t) => `<div class="prow" data-track="${this.esc(t.id)}"><span class="lbl"><i></i>${this.esc(t.label)}</span><span class="val">${t.stat.pct}%</span></div><div class="bar" data-track="${this.esc(t.id)}"><i style="width:${t.stat.pct}%"></i></div>`
       ).join("");
       dash.innerHTML = `<div class="stat-card" data-kind="progress"><div class="eyebrow">${this.esc(lbl.overallTitle)}</div><div class="ring" style="--p:${vm.overall.pct}"><div><b>${vm.overall.pct}%</b><small>${vm.overall.done}/${vm.overall.total}</small></div></div><div class="stat-sub" style="text-align:center">${this.esc(vm.daysOfLabel)}</div></div><div class="stat-card" data-kind="streak"><div class="eyebrow">${this.esc(lbl.streakTitle)}</div><div class="flame">\u{1F525}</div><div class="streak-num">${vm.streak}</div><div class="stat-sub">${this.esc(vm.streakWord)} ${this.esc(lbl.inARow)}</div></div>` + (vm.phases && vm.phases.length ? `<div class="stat-card" data-kind="phases"><div class="eyebrow">${this.esc(lbl.phasesTitle)}</div>${phaseRows}</div>` : "") + `<div class="stat-card" data-kind="tracks"><div class="eyebrow">${this.esc(lbl.tracksTitle)}</div>` + (trackRows || '<div class="muted">\u2014</div>') + `</div>`;
+      const sFill = this.$("dockStreakFill");
+      if (sFill) sFill.style.width = `${Math.round(Math.min(vm.streak / 30, 1) * 100)}%`;
+      this.setText("dockStreakVal", `${vm.streak}d`);
+      const pFill = this.$("dockProgressFill");
+      if (pFill) pFill.style.width = `${vm.overall.pct}%`;
+      this.setText("dockProgressVal", `${vm.overall.done}/${vm.overall.total}`);
     }
     // ----- comeback ------------------------------------------------------------
     renderComeback(vm) {

@@ -188,6 +188,14 @@ export class DomRenderer {
       `<div class="stat-card" data-kind="tracks"><div class="eyebrow">${this.esc(lbl.tracksTitle)}</div>` +
       (trackRows || '<div class="muted">—</div>') +
       `</div>`;
+    // Dock micro-bars (mobile HUD) — same VM, micro presentation. Streak bar
+    // fills against a 30-day target (capped); progress bar is overall pct.
+    const sFill = this.$('dockStreakFill');
+    if (sFill) sFill.style.width = `${Math.round(Math.min(vm.streak / 30, 1) * 100)}%`;
+    this.setText('dockStreakVal', `${vm.streak}d`);
+    const pFill = this.$('dockProgressFill');
+    if (pFill) pFill.style.width = `${vm.overall.pct}%`;
+    this.setText('dockProgressVal', `${vm.overall.done}/${vm.overall.total}`);
   }
 
   // ----- comeback ------------------------------------------------------------

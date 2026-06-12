@@ -152,6 +152,16 @@ function harness(seed?: { store?: Record<string, string> }): Harness {
     'shortcutsGrid',
     'fx',
     'themeCss',
+    'toolbar',
+    'dock',
+    'dockBars',
+    'dockMapBtn',
+    'dockTrophiesBtn',
+    'dockMenuBtn',
+    'dockStreakFill',
+    'dockStreakVal',
+    'dockProgressFill',
+    'dockProgressVal',
   ];
   for (const id of STATIC_IDS) registry[id] = new FakeEl(id, registry);
 
@@ -715,4 +725,21 @@ test('pack switch refreshes static labels and the motd', async () => {
   sel.onchange!();
   assert.equal(h.registry['summaryTitle']!.textContent, 'B Summary', 'summary title refreshed');
   assert.equal(h.registry['motd']!.textContent, 'B motto', 'motd shows pack B motto');
+});
+
+test('dock bars reflect progress and streak after a render', async () => {
+  const { registry, tracker } = await boot();
+  Object.keys(registry)
+    .filter((id) => /^cb_/.test(id))
+    .forEach((id) => {
+      const el = registry[id]!;
+      if (el.onchange) el.onchange({ target: { checked: true } });
+    });
+  const vm = tracker.dashboard();
+  const fillW = (id: string): string =>
+    (registry[id]!.style as unknown as { width?: string }).width ?? '';
+  assert.equal(registry['dockProgressVal']!.textContent, `${vm.overall.done}/${vm.overall.total}`);
+  assert.equal(fillW('dockProgressFill'), `${vm.overall.pct}%`);
+  assert.equal(registry['dockStreakVal']!.textContent, `${vm.streak}d`);
+  assert.equal(fillW('dockStreakFill'), `${Math.round(Math.min(vm.streak / 30, 1) * 100)}%`);
 });
