@@ -99,12 +99,15 @@ export class DomRenderer {
       return;
     }
 
-    // copy / AI-copy pair rendered over every copyable text block
+    // copy / AI-copy pair rendered over every copyable text block; the floated
+    // .tools-spacer leads the block's text so it wraps around the buttons
+    // instead of running under them (hidden on mobile, where tools are static)
     const tools = (copyId: string, aiId: string): string =>
       `<span class="task-tools">` +
       `<button class="copy-btn" id="${copyId}" type="button" data-tip="${this.esc(lbl.copy)}" aria-label="${this.esc(lbl.copy)}">⧉</button>` +
       `<button class="copy-btn ai" id="${aiId}" type="button" data-tip="${this.esc(lbl.copyAi)}" aria-label="${this.esc(lbl.copyAi)}">✨</button>` +
       `</span>`;
+    const spacer = `<i class="tools-spacer" aria-hidden="true"></i>`;
 
     el.innerHTML =
       `<div class="today-side"><span class="vert">${this.esc(lbl.todayVert)}</span></div>` +
@@ -112,7 +115,7 @@ export class DomRenderer {
       `<span class="trackpill"><span class="k">${this.esc(vm.trackIcon)}</span> ${this.esc(vm.trackLabel)}</span>` +
       `<h2 class="today-title">${this.esc(vm.title)}</h2>` +
       (vm.show.warmup && vm.warmup
-        ? `<div class="warm"><span class="warm-i">✦</span> <span class="muted">${this.esc(lbl.warmup)}</span> ${this.esc(vm.warmup)}${tools('copyWarm', 'copyaiWarm')}</div>`
+        ? `<div class="warm">${spacer}<span class="warm-i">✦</span> <span class="muted">${this.esc(lbl.warmup)}</span> ${this.esc(vm.warmup)}${tools('copyWarm', 'copyaiWarm')}</div>`
         : '') +
       `<div class="tasks" id="taskList"></div>` +
       (vm.show.reflection
@@ -137,7 +140,7 @@ export class DomRenderer {
           const label =
             `<label class="task ${t.done ? 'done' : ''}" style="animation-delay:${k * 55}ms">` +
             `<input type="checkbox" id="cb_${id}"${t.done ? ' checked' : ''}/>` +
-            `<span class="box"></span><span class="task-text">${this.esc(t.text)}</span></label>`;
+            `<span class="box"></span><span class="task-text"><i class="tools-spacer" aria-hidden="true"></i>${this.esc(t.text)}</span></label>`;
           return (
             `<div class="task-wrap">${label}${tools(`copy_${id}`, `copyai_${id}`)}` +
             (t.guidance

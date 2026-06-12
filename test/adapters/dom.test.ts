@@ -406,6 +406,10 @@ test('today card renders copy + AI-copy tools on tasks and warmup', async () => 
   const card = registry['todayCard']!.innerHTML || '';
   assert.ok(card.includes('id="copyWarm"'), 'warmup plain copy button');
   assert.ok(card.includes('id="copyaiWarm"'), 'warmup AI copy button');
+  // the floated spacer reserves the tools' corner inside the text flow, so
+  // text wraps around the buttons instead of running under them
+  assert.ok(/class="task-text"><i class="tools-spacer"/.test(tasks), 'spacer leads each task text');
+  assert.ok(/class="warm"><i class="tools-spacer"/.test(card), 'spacer leads the warmup block');
 });
 
 test('copy buttons copy text / AI prompt via the clipboard seam, never toggle the task', async () => {

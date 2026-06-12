@@ -196,13 +196,15 @@ triangle is already injected):
 .task-hint-body{font-size:13px;line-height:1.55;opacity:.78;border-left:2px solid currentColor;padding-left:10px;margin-left:3px}
 
 /* copy / AI-copy tools — FUNCTIONAL baseline, tinted by your HUD tokens
-   (--paper/--paper-2/--ink/--r). Hover/focus-revealed overlay on desktop;
-   [data-mobile] forces them visible, drops them into the flow (static, right-
-   aligned under the task / after the warm-up text) and bumps the tap target
-   to 34px. Override only the look. */
+   (--paper/--paper-2/--ink/--r). Desktop: chips sit at the block's top-right
+   at 60% opacity (full on hover/focus) and the floated .tools-spacer that
+   leads the text reserves their corner, so text WRAPS AROUND the buttons and
+   never runs under them. [data-mobile]: spacer hidden, tools drop into the
+   flow (static, right-aligned) with 34px tap targets. Override only the look. */
 .warm{position:relative}
-.task-tools{position:absolute;top:6px;right:6px;display:inline-flex;gap:5px;opacity:0;transition:opacity .12s ease}
-.task-wrap:hover>.task-tools,.task-wrap:focus-within>.task-tools,.warm:hover>.task-tools,.warm:focus-within>.task-tools{opacity:1}
+.task-tools{position:absolute;top:6px;right:6px;display:inline-flex;gap:5px;opacity:.6;transition:opacity .12s ease}
+.task-wrap:hover .task-tools,.task-wrap:focus-within .task-tools,.warm:hover>.task-tools,.warm:focus-within>.task-tools{opacity:1}
+.tools-spacer{float:right;width:72px;height:30px}
 .copy-btn{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:2px solid var(--ink,#222);border-radius:var(--r,6px);background:var(--paper-2,#e7e3d8);color:var(--ink,#222);font-size:13px;line-height:1;cursor:pointer}
 .copy-btn:hover{background:var(--paper,#fff)}
 
@@ -691,7 +693,7 @@ when it matters.
 - **Dashboard:** `.dash`, `.stat-card[data-kind="progress|streak|phases|tracks"]`, `.eyebrow`, `.ring`+`.ring>div>b`+`small`, `.stat-sub`, `.muted`, `.flame`, `.streak-num`, `.prow`(`.lbl>i`, `.val`) + sibling `.bar>i`, `[data-track]`
 - **Day rail:** `.day-rail`, `.day-nav.day-prev#prevDay` / `.day-nav.day-next#nextDay` (`[data-tip]`, baseline tooltip), `.today-wrap`, `.today#todayCard[data-track]`
   - active item: `.today-side>.vert`, `.today-main`, `.trackpill`(span)`>.k`, `.today-title`(h2), `.warm`(div)`>.warm-i`+`.muted` (+ `.task-tools` with `#copyWarm`/`#copyaiWarm`), `.tasks#taskList`, `.reflect-block>.reflect-label[for=reflect]>.kanji` + `textarea#reflect`, `.res-row>.chip`(span)`>b`, `.next-day-cta#nextDayCta`
-  - task: `.task-wrap > label.task(.done)[style=animation-delay] (> input#cb_<id>` + `.box` + `.task-text)` + `.task-tools > button.copy-btn#copy_<id> + button.copy-btn.ai#copyai_<id>`; with guidance also `+ details.task-hint > summary + .task-hint-body`
+  - task: `.task-wrap > label.task(.done)[style=animation-delay] (> input#cb_<id>` + `.box` + `.task-text > i.tools-spacer + text)` + `.task-tools > button.copy-btn#copy_<id> + button.copy-btn.ai#copyai_<id>`; with guidance also `+ details.task-hint > summary + .task-hint-body` (`.warm` likewise starts with `i.tools-spacer`)
   - rest item: `.warm`(p)`>.warm-i` (only with a reflect prompt), optional `.next-day-cta#nextDayCta`
 - **Footer:** `.foot > #motd(.motd-out)`
 - **Modals:** `.modal(.open)[role=dialog]` → `.modal-panel.cardmap-panel|.tr-panel|.sc-panel`, each headed by `.tr-head`

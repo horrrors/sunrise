@@ -17,8 +17,11 @@
 /* copy / AI-copy tools — canonical token-tinted look so they work in every theme;
    hover/focus-reveal on desktop, forced visible under [data-mobile]; themes may override */
 .warm{position:relative}
-.task-tools{position:absolute;top:6px;right:6px;display:inline-flex;gap:5px;opacity:0;transition:opacity .12s ease}
-.task-wrap:hover>.task-tools,.task-wrap:focus-within>.task-tools,.warm:hover>.task-tools,.warm:focus-within>.task-tools{opacity:1}
+.task-tools{position:absolute;top:6px;right:6px;display:inline-flex;gap:5px;opacity:.6;transition:opacity .12s ease}
+.task-wrap:hover .task-tools,.task-wrap:focus-within .task-tools,.warm:hover>.task-tools,.warm:focus-within>.task-tools{opacity:1}
+/* floated lead-in spacer: reserves the tools' corner inside the text flow so
+   the first lines wrap around the buttons instead of running under them */
+.tools-spacer{float:right;width:72px;height:30px}
 .copy-btn{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:2px solid var(--ink,#222);border-radius:var(--r,6px);background:var(--paper-2,#e7e3d8);color:var(--ink,#222);font-size:13px;line-height:1;cursor:pointer}
 .copy-btn:hover{background:var(--paper,#fff)}
 /* card map — canonical baseline so the grid is visible in every theme; themes may override */
@@ -82,6 +85,7 @@
 :root[data-mobile] .task{min-height:44px!important;align-items:center!important}
 :root[data-mobile] .task-tools{position:static!important;opacity:1!important;justify-content:flex-end!important;margin-left:auto!important}
 :root[data-mobile] .copy-btn{width:34px!important;height:34px!important;font-size:15px!important}
+:root[data-mobile] .tools-spacer{display:none!important}
 :root[data-mobile] .foot{margin:8px 8px 84px!important;width:auto!important;text-align:center!important}
 :root[data-mobile] .toast,:root[data-mobile] .badge-toast{bottom:calc(64px + env(safe-area-inset-bottom,0px))!important}
 :root[data-mobile] .modal{z-index:80!important}
