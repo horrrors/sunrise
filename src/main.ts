@@ -36,6 +36,13 @@ window.SUNRISE = {
 
 watchMobileMode((q) => window.matchMedia(q), document.documentElement);
 
+// PWA: register the offline shell + ask for durable storage. http(s) only —
+// the file:// desktop flow must stay silent (a SW cannot register there).
+if (location.protocol.startsWith('http') && 'serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+  void navigator.storage?.persist?.();
+}
+
 function boot(): void {
   const renderer = new DomRenderer();
   try {

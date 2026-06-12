@@ -2163,6 +2163,11 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
     registerTheme: (t) => registry.registerTheme(t)
   };
   watchMobileMode((q) => window.matchMedia(q), document.documentElement);
+  if (location.protocol.startsWith("http") && "serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js").catch(() => {
+    });
+    void navigator.storage?.persist?.();
+  }
   function boot() {
     const renderer = new DomRenderer();
     try {
