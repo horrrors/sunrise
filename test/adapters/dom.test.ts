@@ -843,3 +843,19 @@ test('small, vertical, typing-target and modal-open swipes are ignored', async (
   card.ontouchend!(touch(100, 100));
   assert.equal(tracker.todayCard().itemId, items[0], 'modal-open ignored');
 });
+
+test('swipe still navigates while a sheet is open (by design)', async () => {
+  const { registry, tracker } = await boot();
+  const items = tracker.selectors().items.map((o) => o.id);
+  tracker.selectItem(items[0]!);
+  registry['dockBars']!.onclick!();
+  assert.equal(registry['dashboard']!.classList.contains('open'), true, 'stats sheet open');
+  const card = registry['todayCard']! as unknown as {
+    ontouchstart?: (e: unknown) => void;
+    ontouchend?: (e: unknown) => void;
+  };
+  card.ontouchstart!(touch(300, 100));
+  card.ontouchend!(touch(150, 100));
+  assert.equal(tracker.todayCard().itemId, items[1], 'swipe navigates under an open sheet');
+  assert.equal(registry['dashboard']!.classList.contains('open'), true, 'sheet stays open');
+});
