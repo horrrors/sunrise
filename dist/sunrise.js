@@ -2056,6 +2056,25 @@
       if (dockMenu) dockMenu.onclick = () => this.toggleSheet("menu");
       const dockBars = this.r.$("dockBars");
       if (dockBars) dockBars.onclick = () => this.toggleSheet("stats");
+      const todayCard = this.r.$("todayCard");
+      if (todayCard) {
+        let sx = 0;
+        let sy = 0;
+        todayCard.ontouchstart = (e) => {
+          const t = e.changedTouches[0];
+          if (!t) return;
+          sx = t.clientX;
+          sy = t.clientY;
+        };
+        todayCard.ontouchend = (e) => {
+          if (this.activeModal || this.r.isTypingTarget()) return;
+          const t = e.changedTouches[0];
+          if (!t) return;
+          const dx = t.clientX - sx;
+          const dy = t.clientY - sy;
+          if (Math.abs(dx) >= 50 && Math.abs(dx) > Math.abs(dy) * 1.5) this.go(dx < 0 ? 1 : -1);
+        };
+      }
     }
     open(id) {
       this.closeSheets();

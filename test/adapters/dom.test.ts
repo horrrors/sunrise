@@ -799,3 +799,47 @@ test('stats sheet stays open across a keyboard-nav re-render', async () => {
     'sheet survives renderAll',
   );
 });
+
+const touch = (x: number, y: number) => ({ changedTouches: [{ clientX: x, clientY: y }] });
+
+test('horizontal swipe on the today card changes day (left=next, right=prev)', async () => {
+  const { registry, tracker } = await boot();
+  const items = tracker.selectors().items.map((o) => o.id);
+  tracker.selectItem(items[0]!);
+  const card = registry['todayCard']! as unknown as {
+    ontouchstart?: (e: unknown) => void;
+    ontouchend?: (e: unknown) => void;
+  };
+  card.ontouchstart!(touch(300, 100));
+  card.ontouchend!(touch(180, 110)); // dx=-120 → next
+  assert.equal(tracker.todayCard().itemId, items[1], 'left swipe advances');
+  card.ontouchstart!(touch(100, 100));
+  card.ontouchend!(touch(260, 90)); // dx=+160 → prev
+  assert.equal(tracker.todayCard().itemId, items[0], 'right swipe goes back');
+});
+
+test('small, vertical, typing-target and modal-open swipes are ignored', async () => {
+  const { registry, controller, tracker } = await boot();
+  const items = tracker.selectors().items.map((o) => o.id);
+  tracker.selectItem(items[0]!);
+  const card = registry['todayCard']! as unknown as {
+    ontouchstart?: (e: unknown) => void;
+    ontouchend?: (e: unknown) => void;
+  };
+  card.ontouchstart!(touch(300, 100));
+  card.ontouchend!(touch(270, 100)); // |dx|=30 < 50
+  assert.equal(tracker.todayCard().itemId, items[0], 'sub-threshold ignored');
+  card.ontouchstart!(touch(300, 100));
+  card.ontouchend!(touch(220, 260)); // dy dominates
+  assert.equal(tracker.todayCard().itemId, items[0], 'vertical scroll ignored');
+  registry['daySelect']!.tagName = 'SELECT';
+  registry['daySelect']!.focus();
+  card.ontouchstart!(touch(300, 100));
+  card.ontouchend!(touch(100, 100));
+  assert.equal(tracker.todayCard().itemId, items[0], 'typing target ignored');
+  (globalThis as { document?: { activeElement?: unknown } }).document!.activeElement = null;
+  controller!.handleKeydown(ev('m'));
+  card.ontouchstart!(touch(300, 100));
+  card.ontouchend!(touch(100, 100));
+  assert.equal(tracker.todayCard().itemId, items[0], 'modal-open ignored');
+});

@@ -393,6 +393,28 @@ export class DomController {
     if (dockMenu) (dockMenu as HTMLElement).onclick = () => this.toggleSheet('menu');
     const dockBars = this.r.$('dockBars');
     if (dockBars) (dockBars as HTMLElement).onclick = () => this.toggleSheet('stats');
+
+    // Swipe day-nav: primary mobile gesture; maps to the existing prev/next
+    // intents. Threshold + horizontal-dominance keep page scrolling intact.
+    const todayCard = this.r.$('todayCard');
+    if (todayCard) {
+      let sx = 0;
+      let sy = 0;
+      (todayCard as HTMLElement).ontouchstart = (e: TouchEvent) => {
+        const t = e.changedTouches[0];
+        if (!t) return;
+        sx = t.clientX;
+        sy = t.clientY;
+      };
+      (todayCard as HTMLElement).ontouchend = (e: TouchEvent) => {
+        if (this.activeModal || this.r.isTypingTarget()) return;
+        const t = e.changedTouches[0];
+        if (!t) return;
+        const dx = t.clientX - sx;
+        const dy = t.clientY - sy;
+        if (Math.abs(dx) >= 50 && Math.abs(dx) > Math.abs(dy) * 1.5) this.go(dx < 0 ? 1 : -1);
+      };
+    }
   }
 
   private open(id: string): void {
