@@ -116,6 +116,16 @@ export class DomController {
     this.r.renderCardMap(this.t.cardMap(), this.t.ui('cardMap'));
   }
 
+  private openCardMap(): void {
+    this.renderCardMap();
+    this.open('cardMapModal');
+  }
+
+  private openTrophies(): void {
+    this.renderTrophies();
+    this.open('trophiesModal');
+  }
+
   private renderShortcuts(): void {
     const u = (k: string): string => this.t.ui(k);
     this.r.renderShortcuts(
@@ -189,6 +199,8 @@ export class DomController {
   }
 
   private go(delta: number, scroll = true): void {
+    // Deliberate: arrow/swipe day-nav does NOT close sheets — sheets are a
+    // mobile affordance, arrows a desktop one; closing on nav would surprise.
     this.t.goToItem(delta);
     this.renderAll();
     if (!scroll) return; // keyboard nav keeps the current scroll position
@@ -246,11 +258,9 @@ export class DomController {
         // (on ЙЦУКЕН the M key yields key='ь').
         const k = key.toLowerCase();
         if (k === 'm' || e.code === 'KeyM') {
-          this.renderCardMap();
-          this.open('cardMapModal');
+          this.openCardMap();
         } else if (k === 't' || e.code === 'KeyT') {
-          this.renderTrophies();
-          this.open('trophiesModal');
+          this.openTrophies();
         }
       }
     }
@@ -306,12 +316,7 @@ export class DomController {
     }
 
     const cardMapBtn = this.r.$('cardMapBtn');
-    if (cardMapBtn) {
-      (cardMapBtn as HTMLElement).onclick = () => {
-        this.renderCardMap();
-        this.open('cardMapModal');
-      };
-    }
+    if (cardMapBtn) (cardMapBtn as HTMLElement).onclick = () => this.openCardMap();
     this.bindClose('cardMapClose', 'cardMapModal');
     this.bindBackdrop('cardMapModal');
     const cardMapGrid = this.r.$('cardMapGrid');
@@ -326,12 +331,7 @@ export class DomController {
     }
 
     const trBtn = this.r.$('trophiesBtn');
-    if (trBtn) {
-      (trBtn as HTMLElement).onclick = () => {
-        this.renderTrophies();
-        this.open('trophiesModal');
-      };
-    }
+    if (trBtn) (trBtn as HTMLElement).onclick = () => this.openTrophies();
     this.bindClose('trophiesClose', 'trophiesModal');
     this.bindBackdrop('trophiesModal');
 
@@ -386,19 +386,9 @@ export class DomController {
     }
 
     const dockMap = this.r.$('dockMapBtn');
-    if (dockMap) {
-      (dockMap as HTMLElement).onclick = () => {
-        this.renderCardMap();
-        this.open('cardMapModal');
-      };
-    }
+    if (dockMap) (dockMap as HTMLElement).onclick = () => this.openCardMap();
     const dockTrophies = this.r.$('dockTrophiesBtn');
-    if (dockTrophies) {
-      (dockTrophies as HTMLElement).onclick = () => {
-        this.renderTrophies();
-        this.open('trophiesModal');
-      };
-    }
+    if (dockTrophies) (dockTrophies as HTMLElement).onclick = () => this.openTrophies();
     const dockMenu = this.r.$('dockMenuBtn');
     if (dockMenu) (dockMenu as HTMLElement).onclick = () => this.toggleSheet('menu');
     const dockBars = this.r.$('dockBars');

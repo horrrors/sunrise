@@ -1807,6 +1807,14 @@
     renderCardMap() {
       this.r.renderCardMap(this.t.cardMap(), this.t.ui("cardMap"));
     }
+    openCardMap() {
+      this.renderCardMap();
+      this.open("cardMapModal");
+    }
+    openTrophies() {
+      this.renderTrophies();
+      this.open("trophiesModal");
+    }
     renderShortcuts() {
       const u = (k) => this.t.ui(k);
       this.r.renderShortcuts(
@@ -1925,11 +1933,9 @@
         default: {
           const k = key.toLowerCase();
           if (k === "m" || e.code === "KeyM") {
-            this.renderCardMap();
-            this.open("cardMapModal");
+            this.openCardMap();
           } else if (k === "t" || e.code === "KeyT") {
-            this.renderTrophies();
-            this.open("trophiesModal");
+            this.openTrophies();
           }
         }
       }
@@ -1980,12 +1986,7 @@
         };
       }
       const cardMapBtn = this.r.$("cardMapBtn");
-      if (cardMapBtn) {
-        cardMapBtn.onclick = () => {
-          this.renderCardMap();
-          this.open("cardMapModal");
-        };
-      }
+      if (cardMapBtn) cardMapBtn.onclick = () => this.openCardMap();
       this.bindClose("cardMapClose", "cardMapModal");
       this.bindBackdrop("cardMapModal");
       const cardMapGrid = this.r.$("cardMapGrid");
@@ -1999,12 +2000,7 @@
         };
       }
       const trBtn = this.r.$("trophiesBtn");
-      if (trBtn) {
-        trBtn.onclick = () => {
-          this.renderTrophies();
-          this.open("trophiesModal");
-        };
-      }
+      if (trBtn) trBtn.onclick = () => this.openTrophies();
       this.bindClose("trophiesClose", "trophiesModal");
       this.bindBackdrop("trophiesModal");
       this.bindClose("shortcutsClose", "shortcutsModal");
@@ -2053,19 +2049,9 @@
         };
       }
       const dockMap = this.r.$("dockMapBtn");
-      if (dockMap) {
-        dockMap.onclick = () => {
-          this.renderCardMap();
-          this.open("cardMapModal");
-        };
-      }
+      if (dockMap) dockMap.onclick = () => this.openCardMap();
       const dockTrophies = this.r.$("dockTrophiesBtn");
-      if (dockTrophies) {
-        dockTrophies.onclick = () => {
-          this.renderTrophies();
-          this.open("trophiesModal");
-        };
-      }
+      if (dockTrophies) dockTrophies.onclick = () => this.openTrophies();
       const dockMenu = this.r.$("dockMenuBtn");
       if (dockMenu) dockMenu.onclick = () => this.toggleSheet("menu");
       const dockBars = this.r.$("dockBars");

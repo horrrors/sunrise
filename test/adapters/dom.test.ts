@@ -787,3 +787,15 @@ test('dock controls carry aria-labels from ui strings', async () => {
   assert.equal(registry['dockMenuBtn']!.attrs['aria-label'], u('menu'));
   assert.equal(registry['dockBars']!.attrs['aria-label'], u('summaryTitle'));
 });
+
+test('stats sheet stays open across a keyboard-nav re-render', async () => {
+  const { registry, controller } = await boot();
+  registry['dockBars']!.onclick!();
+  assert.equal(registry['dashboard']!.classList.contains('open'), true, 'stats sheet open');
+  controller!.handleKeydown(ev('ArrowRight'));
+  assert.equal(
+    registry['dashboard']!.classList.contains('open'),
+    true,
+    'sheet survives renderAll',
+  );
+});
