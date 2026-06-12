@@ -53,6 +53,12 @@
   --t-db:       #2ad1d1;   /* teal */
   --t-cs:       #9fe65a;   /* green */
   --t-rest:     #6f93b4;   /* neutral graphite */
+
+  /* mobile HUD + card-map baseline tokens (theme guide §5) */
+  --paper:   var(--sheet);
+  --paper-2: var(--sheet-2);
+  --accent:  var(--amber);
+  --cobalt:  var(--cyan);
 }
 
 /* ====================== BASE / RESET ====================== */

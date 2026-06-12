@@ -42,6 +42,10 @@
   --font-ui:      'Jost', 'Futura', 'Century Gothic', sans-serif;
   --font-mono:    'Space Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
+  /* mobile HUD + card-map baseline tokens (theme guide §5) */
+  --accent: var(--red);
+  --cobalt: var(--blue);
+
   /* track accents — mapped across primaries + black + tints */
   --track-dsa:       #e2402b;  /* red    */
   --track-js:        #f2c200;  /* yellow */

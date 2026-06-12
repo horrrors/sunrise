@@ -47,6 +47,14 @@
   --r:    18px;
   --r-md: 14px;
   --r-sm: 10px;
+
+  /* mobile HUD + card-map baseline tokens (theme guide §5); --accent above is
+     a gradient — invalid inside the baseline's `outline:3px solid var(--accent)`
+     fallback, so give the focus ring its own solid color */
+  --paper:      var(--panel);
+  --paper-2:    var(--panel-2);
+  --cobalt:     var(--plum);
+  --focus-ring: 3px solid var(--coral);
   --fast: .2s cubic-bezier(.33,1,.68,1);
   --slow: .5s cubic-bezier(.33,1,.68,1);
 

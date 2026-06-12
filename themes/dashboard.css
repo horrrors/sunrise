@@ -45,6 +45,11 @@
   /* fonts with offline fallback to system (file://) */
   --font:'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --display:'Sora', 'Plus Jakarta Sans', system-ui, sans-serif;
+
+  /* mobile HUD + card-map baseline tokens (theme guide §5) */
+  --paper:var(--surface);
+  --paper-2:var(--surface-2);
+  --cobalt:var(--violet);
 }
 
 /* ---- per-track colors ---------------------------------------------------- */
@@ -97,7 +102,8 @@ body{
 .brand{ display:flex; align-items:center; gap:12px; min-width:0; }
 .brand-mark{
   display:grid; place-items:center;
-  width:42px; height:42px;
+  /* width:auto — 日の出 at 18px is ~54px and wraps out of a fixed 42px tile */
+  min-width:42px; width:auto; height:42px; padding:0 9px;
   border-radius:14px;
   font-family:var(--display); font-size:18px; font-weight:800;
   color:#fff;

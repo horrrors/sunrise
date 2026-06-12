@@ -317,23 +317,28 @@ look, use `[data-mobile]` attribute selectors instead. Tablet-range refinements
 
 ### HUD tokens — define these or get generic fallbacks
 
-The baseline HUD reads the following tokens **with hardcoded fallbacks**. Most
-existing themes define only some of them; the HUD works without them but uses
-generic colors, not your theme palette. To get a fully matched HUD, define all
-of these in your token block:
+The baseline HUD reads the following tokens **with hardcoded fallbacks**. The
+HUD works without them but uses generic colors, not your theme palette — a
+beige dock pinned to a neon-black page. Define all of these in your token
+block (map them to your existing palette vars):
 
 | token | fallback | used for |
 |---|---|---|
+| `--paper` | `#fff` | dock micro-bar wells |
 | `--paper-2` | `--paper` → `#f4f1e8` | dock background, sheet backgrounds |
 | `--ink` | `#222` | borders, text |
 | `--accent` | `#f6c343` | streak bar fill |
 | `--cobalt` | `#2b6cb0` | progress bar fill |
 | `--r` | `6px` | bar corner radius |
 
-> **Honest note:** almost no existing theme defines `--cobalt`; very few define
-> `--paper-2`. Without them the HUD is functional but uses generic fallbacks
-> that may not match your palette. Define these tokens if the HUD look matters
-> to your design.
+> Every bundled theme defines the full set (see the `/* mobile HUD + card-map
+> baseline tokens */` line in any `themes/*.css` token block for a copyable
+> example), and the guard test rejects a theme that skips one. The same tokens
+> also tint the canonical card-map cells and the keyboard-focus ring, so a
+> matched set pays off on desktop too. One trap: if your `--accent` is a
+> *gradient*, also define `--focus-ring` with a solid color — a gradient is
+> invalid inside the baseline's `outline: 3px solid var(--accent)` fallback and
+> would silently kill the focus outline (this bit `dawn`).
 
 ### Dock anatomy and renderer fill contract
 
@@ -380,6 +385,27 @@ theme file. Your file loads **after** the baseline, so at equal specificity
 
 The rule of thumb: prefix the baseline selector with your `data-theme` and
 mirror its `!important` on any layout-critical declarations you change.
+
+Expect the baseline to neutralize some desktop styling under `[data-mobile]`,
+on purpose:
+
+- **Page column** — your `width:min(…)` + `margin-inline:auto` on
+  `.app-header`/`.wrap`/`.foot` is flattened to edge-to-edge (`width:auto`,
+  zero margins). Forcing only the margin would leave a narrow column pinned to
+  the left edge.
+- **`body` / `.app-header` effects** — `filter`, `backdrop-filter`,
+  `transform`, `perspective` *and* `animation` are forced to `none` on both.
+  Any of them turns that element into the containing block for its
+  `position:fixed` descendants, which then anchor to the page box instead of
+  the viewport: a body-level `filter` animation sent the arcade themes' dock
+  and sheets below the fold entirely, and a header transform *animation* with
+  `fill-mode: both` hung `os95`'s menu sheet off the header even after the
+  animation finished. Body-level ambience must live on `body::before/::after`
+  (those are untouched), not on `body` itself.
+- **Control metrics** — the day-nav is a 36px square and dock buttons keep your
+  `.btn` skin, but the baseline owns their content centering (`inline-flex` +
+  `line-height:1`, day-nav `padding:0`), so desktop line-heights don't push
+  glyphs off-center.
 
 ### Sheet class names are owned by the app
 

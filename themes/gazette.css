@@ -49,6 +49,8 @@
   --font-mono: "PT Mono", ui-monospace, SFMono-Regular, monospace;
   --r: 0px;
   --focus-ring: 3px solid var(--accent);
+  /* HUD progress fill (theme guide §5) — print runs in ink, not cobalt */
+  --cobalt: var(--ink);
   color-scheme: light;
 }
 

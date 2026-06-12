@@ -45,6 +45,9 @@
 
   /* Default track accent */
   --acc:var(--cobalt);
+
+  /* mobile HUD + card-map baseline tokens (theme guide §5) */
+  --accent:var(--yellow);
 }
 
 /* ----------------------------------------------------------------------------

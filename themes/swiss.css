@@ -48,6 +48,12 @@
   --track-distsys:   var(--t-distsys);
   --track-db:        var(--t-db);
   --track-cs:        var(--t-cs);
+
+  /* mobile HUD + card-map baseline tokens (theme guide §5) — streak runs in
+     the lone red, progress in ink; corners stay hard */
+  --accent: var(--red);
+  --cobalt: var(--ink);
+  --r: 0px;
 }
 
 /* ====================== BASE / RESET ====================== */

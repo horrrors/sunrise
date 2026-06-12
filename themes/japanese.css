@@ -36,6 +36,9 @@
   --shadow-lg:0 22px 60px -26px rgba(19,41,63,.45);
 
   --r-lg:14px; --r-md:10px; --r-sm:7px;
+
+  /* mobile HUD + card-map baseline tokens (theme guide §5) */
+  --paper-2:var(--card); --accent:var(--vermilion); --cobalt:var(--ai); --r:var(--r-md);
   --serif:'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', 'Songti SC', Georgia, 'Times New Roman', serif;
   --sans:'Zen Kaku Gothic New', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Helvetica Neue', system-ui, -apple-system, sans-serif;
 

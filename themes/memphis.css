@@ -51,6 +51,12 @@
   --track-db:        #2f9bff;
   --track-cs:        #c44bff;
   --track-neutral:   #8a827a;
+
+  /* mobile HUD + card-map baseline tokens (theme guide §5) */
+  --paper:   var(--cream);
+  --paper-2: var(--cream-2);
+  --accent:  var(--pink);
+  --cobalt:  var(--cyan);
 }
 
 /* ====================== BASE / RESET ====================== */

@@ -55,6 +55,13 @@
   --tr-db:        #8f6a31;  /* dark brass         */
   --tr-cs:        #5a6e3a;  /* olive              */
   --tr-rest:      #8a8676;  /* neutral stone      */
+
+  /* mobile HUD + card-map baseline tokens (theme guide §5) */
+  --paper:   var(--panel);
+  --paper-2: var(--marble-2);
+  --accent:  var(--brass);
+  --cobalt:  var(--emerald);
+  --r:       var(--radius);
 }
 
 /* fallback if data-theme is not set before load */

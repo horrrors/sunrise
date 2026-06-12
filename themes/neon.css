@@ -47,6 +47,12 @@
   --t-db:       #00b3ff;
   --t-cs:       #ff8bd1;
   --t-rest:     #6d7f8f;
+
+  /* mobile HUD + card-map baseline tokens (theme guide §5) */
+  --paper:   var(--panel);
+  --paper-2: var(--panel-2);
+  --accent:  var(--lime);
+  --cobalt:  var(--cyan);
 }
 
 /* ====================== BASE / RESET ====================== */

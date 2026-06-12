@@ -59,6 +59,12 @@
   --track-db:        #2a5d3a;   /* moss */
   --track-cs:        #7a8c3e;   /* olive */
   --track-rest:      #8a9379;   /* dim sage */
+
+  /* mobile HUD + card-map baseline tokens (theme guide §5) */
+  --paper:   var(--cream-lt);
+  --paper-2: var(--cream-2);
+  --accent:  var(--gold);
+  --cobalt:  var(--leaf);
 }
 
 /* ====================== BASE / RESET ====================== */

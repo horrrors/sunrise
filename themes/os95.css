@@ -61,6 +61,11 @@
   --font-fixed: "Courier New", ui-monospace, monospace;
   --r: 0px;
   --focus-ring: 2px dotted var(--lo-2);
+  /* mobile HUD + card-map baseline tokens (theme guide §5): the dock is the
+     taskbar (chrome gray), bar wells are white like the copy-dialog */
+  --paper: var(--hi);
+  --paper-2: var(--face);
+  --cobalt: var(--title);
   color-scheme: light;
 }
 

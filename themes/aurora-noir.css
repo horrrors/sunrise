@@ -11,6 +11,8 @@
   --font-body:Inter,system-ui,sans-serif;
   --font-display:"Playfair Display",Georgia,serif;
   --font-mono:"JetBrains Mono",ui-monospace,monospace;
+  /* mobile HUD + card-map baseline tokens (theme guide §5) */
+  --paper:var(--bg); --paper-2:var(--panel); --cobalt:var(--good); --r:14px;
   color-scheme:dark;
 }
 
