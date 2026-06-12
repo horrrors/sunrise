@@ -38,9 +38,13 @@ test('index.html wires the PWA shell into <head>', () => {
 
 test('sw.js precaches every shippable asset (themes can never be forgotten)', () => {
   const sw = readFileSync(join(root, 'sw.js'), 'utf8');
-  for (const must of ['index.html', 'manifest.webmanifest', 'dist/sunrise.js']) {
+  for (const must of ['./', 'manifest.webmanifest', 'dist/sunrise.js']) {
     assert.ok(sw.includes(`"${must}"`), `${must} precached`);
   }
+  // Cloudflare Pages 308-redirects /index.html to /; a precached redirected
+  // response makes Chrome fail every SW-handled navigation with ERR_FAILED.
+  // The shell must be cached and served as "./", never as "index.html".
+  assert.ok(!sw.includes('"index.html"'), 'shell cached as "./", not "index.html"');
   for (const [dir, ext] of [
     ['themes', '.css'],
     ['data/packs', '.js'],
