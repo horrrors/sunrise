@@ -722,17 +722,3 @@
   }
 }
 
-/* ---- small screens ---------------------------------------------------------------- */
-
-@media (max-width: 720px) {
-  :root[data-theme="gazette"] .day-rail { grid-template-columns: 40px minmax(0, 1fr) 40px; gap: 8px; }
-  :root[data-theme="gazette"] .day-nav { font-size: 28px; }
-  :root[data-theme="gazette"] .today { flex-direction: column; }
-  :root[data-theme="gazette"] .today-side {
-    flex: 0 0 48px;
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-    border-left: 6px solid var(--track-local, var(--ink));
-  }
-  :root[data-theme="gazette"] .vert { writing-mode: horizontal-tb; transform: none; letter-spacing: 0.3em; }
-}

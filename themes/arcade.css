@@ -895,18 +895,3 @@
   }
 }
 
-/* ====================== RESPONSIVE ====================== */
-@media (max-width:720px){
-  :root[data-theme="arcade"] .app-header{ flex-direction:column; align-items:stretch; }
-  :root[data-theme="arcade"] .dash{ grid-template-columns:repeat(2,1fr); }
-  :root[data-theme="arcade"] .toolbar{ justify-content:flex-start; }
-  :root[data-theme="arcade"] select{ max-width:none; }
-}
-@media (max-width:520px){
-  :root[data-theme="arcade"] .dash{ grid-template-columns:1fr; }
-  :root[data-theme="arcade"] .day-rail{ flex-direction:column; }
-  :root[data-theme="arcade"] .day-nav{ display:none; }
-  :root[data-theme="arcade"] .today{ flex-direction:column; }
-  :root[data-theme="arcade"] .today-side{ flex-basis:auto; border-right:none; border-bottom:3px solid rgba(13,2,33,.7); padding:8px; }
-  :root[data-theme="arcade"] .vert{ writing-mode:horizontal-tb; }
-}

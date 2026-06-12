@@ -923,17 +923,3 @@
   }
 }
 
-/* ====================== RESPONSIVE ====================== */
-@media (max-width:720px){
-  :root[data-theme="bauhaus"] .app-header{ flex-direction:column; align-items:flex-start; }
-  :root[data-theme="bauhaus"] .toolbar{ width:100%; }
-  :root[data-theme="bauhaus"] .dash{ grid-template-columns:repeat(2,1fr); gap:14px; }
-}
-@media (max-width:480px){
-  :root[data-theme="bauhaus"] .dash{ grid-template-columns:1fr; }
-  :root[data-theme="bauhaus"] .day-rail{ flex-direction:column; }
-  :root[data-theme="bauhaus"] .day-nav{ display:none; }
-  :root[data-theme="bauhaus"] .today{ flex-direction:column; }
-  :root[data-theme="bauhaus"] .today-side{ flex-basis:auto; border-right:none; border-bottom:var(--bw) solid var(--ink); padding:8px; }
-  :root[data-theme="bauhaus"] .vert{ writing-mode:horizontal-tb; }
-}

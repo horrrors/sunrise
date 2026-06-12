@@ -773,11 +773,3 @@
   100%{ transform:translateY(105vh) rotate(720deg); opacity:0; }
 }
 
-/* responsive */
-@media (max-width:640px){
-  :root[data-theme="neon"] .day-rail{ grid-template-columns:1fr; }
-  :root[data-theme="neon"] .day-nav{ display:none; }
-  :root[data-theme="neon"] .today{ flex-direction:column; }
-  :root[data-theme="neon"] .today-side{ flex-basis:auto; border-right:none; border-bottom:1px solid var(--line-soft); padding:8px; }
-  :root[data-theme="neon"] .vert{ writing-mode:horizontal-tb; }
-}

@@ -214,9 +214,6 @@
 @media (max-width:900px){
   :root[data-theme="japanese"] .dash{ grid-template-columns:repeat(2,1fr); }
 }
-@media (max-width:520px){
-  :root[data-theme="japanese"] .dash{ grid-template-columns:1fr; }
-}
 
 :root[data-theme="japanese"] .stat-card{
   position:relative;
@@ -929,14 +926,4 @@
 }
 :root[data-theme="japanese"] #motd.motd-out{ opacity:0; }
 
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
-@media (max-width:600px){
-  :root[data-theme="japanese"] .app-header{ gap:12px; }
-  :root[data-theme="japanese"] .brand-name{ letter-spacing:.22em; font-size:17px; }
-  :root[data-theme="japanese"] .today-side{ padding:14px 4px; }
-  :root[data-theme="japanese"] .vert{ font-size:12px; letter-spacing:.2em; }
-  :root[data-theme="japanese"] .day-nav{ width:40px; height:40px; font-size:22px; }
-}
 

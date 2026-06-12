@@ -818,13 +818,3 @@
   }
 }
 
-/* ---- small screens ------------------------------------------------------------------ */
-
-@media (max-width: 720px) {
-  :root[data-theme="os95"] .day-rail { grid-template-columns: 38px minmax(0, 1fr) 38px; gap: 7px; }
-  :root[data-theme="os95"] .day-nav { font-size: 20px; }
-  :root[data-theme="os95"] .today { flex-direction: column; }
-  :root[data-theme="os95"] .today-side { flex: 0 0 40px; }
-  :root[data-theme="os95"] .vert { writing-mode: horizontal-tb; transform: none; letter-spacing: 0.3em; }
-  :root[data-theme="os95"] .brand-sub { display: none; }
-}

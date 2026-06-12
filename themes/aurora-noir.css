@@ -275,9 +275,3 @@
   100% { transform:translate(calc(-50% + var(--dx) * 280px), calc(120px + var(--dy) * 460px)) rotate(var(--rot)); opacity:0; }
 }
 
-@media (max-width:720px) {
-  :root[data-theme="aurora-noir"] .day-rail { grid-template-columns:42px minmax(0,1fr) 42px; gap:8px; }
-  :root[data-theme="aurora-noir"] .today { flex-direction:column; }
-  :root[data-theme="aurora-noir"] .today-side { flex:0 0 58px; }
-  :root[data-theme="aurora-noir"] .vert { writing-mode:horizontal-tb; transform:none; }
-}

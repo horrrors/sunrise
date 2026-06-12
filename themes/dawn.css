@@ -872,13 +872,3 @@
 @media (max-width:1000px){
   :root[data-theme="dawn"] .dash{ grid-template-columns:repeat(2,1fr); }
 }
-@media (max-width:720px){
-  :root[data-theme="dawn"] .app-header{ flex-direction:column; align-items:stretch; }
-  :root[data-theme="dawn"] .toolbar{ justify-content:flex-start; }
-  :root[data-theme="dawn"] .dash{ grid-template-columns:1fr; }
-  :root[data-theme="dawn"] .day-rail{ flex-wrap:wrap; }
-  :root[data-theme="dawn"] .day-nav{ display:none; }
-  :root[data-theme="dawn"] .today{ flex-direction:column; }
-  :root[data-theme="dawn"] .today-side{ flex-basis:auto; border-right:none; border-bottom:1px solid var(--line-soft); padding:8px; }
-  :root[data-theme="dawn"] .vert{ writing-mode:horizontal-tb; letter-spacing:3px; }
-}

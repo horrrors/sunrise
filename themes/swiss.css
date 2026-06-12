@@ -752,22 +752,3 @@
   }
 }
 
-/* ====================== RESPONSIVE ====================== */
-@media (max-width:720px){
-  :root[data-theme="swiss"] .app-header{ flex-direction:column; align-items:flex-start; }
-  :root[data-theme="swiss"] .toolbar{ width:100%; }
-  :root[data-theme="swiss"] .dash{ grid-template-columns:repeat(2,1fr); }
-  :root[data-theme="swiss"] .stat-card:nth-child(4n){ border-right:1px solid var(--rule); }
-  :root[data-theme="swiss"] .stat-card:nth-child(2n){ border-right:none; }
-}
-@media (max-width:480px){
-  :root[data-theme="swiss"] .dash{ grid-template-columns:1fr; }
-  :root[data-theme="swiss"] .stat-card{ border-right:none !important; }
-  :root[data-theme="swiss"] .day-rail{ flex-direction:column; }
-  :root[data-theme="swiss"] .day-prev{ border-right:none; border-bottom:1px solid var(--rule); }
-  :root[data-theme="swiss"] .day-next{ border-left:none; border-top:1px solid var(--rule); }
-  :root[data-theme="swiss"] .day-nav{ flex-basis:auto; height:46px; }
-  :root[data-theme="swiss"] .today{ flex-direction:column; }
-  :root[data-theme="swiss"] .today-side{ flex-basis:auto; border-right:none; border-bottom:1px solid var(--rule); padding:8px 0; }
-  :root[data-theme="swiss"] .vert{ writing-mode:horizontal-tb; letter-spacing:.16em; }
-}

@@ -1074,34 +1074,6 @@ textarea:focus{
   transform:rotate(-1deg) translateY(6px);
 }
 
-/* ----------------------------------------------------------------------------
-   RESPONSIVE
-   ---------------------------------------------------------------------------- */
-@media (max-width:680px){
-  .day-rail{
-    grid-template-columns:1fr;
-  }
-  .day-nav{
-    position:static;
-    width:100%;
-    height:46px;
-  }
-  .day-prev{ order:2; }
-  .today-wrap{ order:1; }
-  .day-next{ order:3; }
-  .today{ grid-template-columns:1fr; }
-  .today-side{
-    border-right:none;
-    border-bottom:var(--bw-fat) solid var(--ink);
-    padding:8px;
-  }
-  .vert{
-    writing-mode:horizontal-tb;
-    transform:none;
-  }
-  .brand-name{ text-shadow:2px 2px 0 var(--ink), 4px 4px 0 var(--cobalt); }
-  select{ max-width:60vw; }
-}
 
 /* ============================================================================
    RESTORED risograph features (after modular refactor) — pure CSS

@@ -945,17 +945,3 @@
 :root[data-theme="blueprint"] .stat-card:nth-child(5){ animation-delay:.36s; }
 :root[data-theme="blueprint"] .today{ animation-delay:.30s; }
 
-/* ====================== RESPONSIVE ====================== */
-@media (max-width:720px){
-  :root[data-theme="blueprint"] .dash{ grid-template-columns:repeat(2,1fr); }
-  :root[data-theme="blueprint"] .app-header{ flex-direction:column; align-items:stretch; }
-  :root[data-theme="blueprint"] .toolbar{ justify-content:flex-start; }
-}
-@media (max-width:560px){
-  :root[data-theme="blueprint"] .dash{ grid-template-columns:1fr; }
-  :root[data-theme="blueprint"] .day-rail{ flex-direction:column; }
-  :root[data-theme="blueprint"] .day-nav{ display:none; }
-  :root[data-theme="blueprint"] .today{ flex-direction:column; }
-  :root[data-theme="blueprint"] .today-side{ flex-basis:auto; border-right:none; border-bottom:1px dashed var(--line-soft); padding:8px; }
-  :root[data-theme="blueprint"] .vert{ writing-mode:horizontal-tb; }
-}
