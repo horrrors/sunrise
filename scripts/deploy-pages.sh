@@ -15,12 +15,17 @@ PROJECT="${1:-sunrise}"
 if [ -n "$(git status --porcelain)" ]; then
   echo "note: uncommitted changes will NOT be deployed (deploy ships HEAD)" >&2
 fi
-# Refuse to ship a commit whose build artifacts (dist/sunrise.js, sw.js) are
-# stale relative to their sources.
-if ! node --test test/build/dist-sync.test.ts test/pwa/pwa-shell.test.ts >/dev/null 2>&1; then
-  echo "stale build artifacts or broken PWA shell — run: npm run build, commit, retry" >&2
+
+# Full local CI gate before spending a deploy: typecheck, lint, format, all
+# tests (incl. the dist/sw staleness guards, i.e. the "is the committed build
+# fresh" check — building here would be pointless since we ship HEAD).
+echo "running local CI gate (npm run ci)…" >&2
+if ! LOG="$(npm run ci 2>&1)"; then
+  printf '%s\n' "$LOG" | tail -30 >&2
+  echo "CI gate failed — nothing deployed. Reproduce with: npm run ci" >&2
   exit 1
 fi
+echo "CI green — deploying HEAD" >&2
 
 STAGE="$(mktemp -d /tmp/sunrise-deploy.XXXXXX)"
 trap 'rm -rf "$STAGE"' EXIT
