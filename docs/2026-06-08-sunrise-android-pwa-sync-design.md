@@ -1,7 +1,7 @@
 # Sunrise on Android — Installable PWA + Home-Base LAN Sync
 
 - **Date:** 2026-06-08
-- **Status:** Approved design — ready for implementation planning
+- **Status:** Superseded by `2026-06-12-sunrise-android-pwa-sync-design.md` (review-ladder schema drift, merge simplified to grow-only, Lamport machinery dropped)
 - **Author:** brainstormed with Claude
 - **Effort:** two sequential sub-projects (Phase 1 PWA, Phase 2 sync), each its own plan/build cycle
 
