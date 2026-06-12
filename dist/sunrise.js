@@ -786,6 +786,15 @@
     ui(key) {
       return this.uiText(key);
     }
+    // Pre-prompt for the "AI copy" button: the task/warmup text wrapped in a
+    // tutor template with the current item's context, ready to paste into a chat.
+    aiPrompt(text, guidance) {
+      const it = this.itemOf(this.currentItemId);
+      const g = guidance ? `
+${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
+` : "";
+      return this.uiText("aiPrompt").replace("{title}", it.title ?? "").replace("{track}", this.trackMeta(it.track).label).replace("{text}", text).replace("{guidance}", g);
+    }
     itemLabel() {
       return this.lbl("item", "weekAbbr");
     }
@@ -1060,6 +1069,13 @@
     pack: "\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u0430",
     menu: "\u041C\u0435\u043D\u044E",
     hint: "\u0427\u0442\u043E \u0441\u0447\u0438\u0442\u0430\u0435\u0442\u0441\u044F \u0441\u0438\u043B\u044C\u043D\u044B\u043C \u043E\u0442\u0432\u0435\u0442\u043E\u043C",
+    copy: "\u041A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C",
+    copyAi: "\u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0441 \u043F\u0440\u043E\u043C\u043F\u0442\u043E\u043C \u0434\u043B\u044F \u0418\u0418",
+    copied: "\u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D\u043E",
+    copiedAi: "\u041F\u0440\u043E\u043C\u043F\u0442 \u0434\u043B\u044F \u0418\u0418 \u0441\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D \u2014 \u0432\u0441\u0442\u0430\u0432\u044C \u0435\u0433\u043E \u0432 \u0447\u0430\u0442 \u0441 \u0418\u0418",
+    // {guidance} is replaced with a filled aiPromptGuidance line (or '') by Tracker.aiPrompt
+    aiPrompt: "\u042F \u043F\u0440\u043E\u0445\u043E\u0436\u0443 \u0443\u0447\u0435\u0431\u043D\u0443\u044E \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u0443 \u0438 \u0441\u0435\u0439\u0447\u0430\u0441 \u043D\u0430 \u0442\u0435\u043C\u0435 \xAB{title}\xBB (\u0442\u0440\u0435\u043A: {track}). \u0420\u0430\u0437\u0431\u0435\u0440\u0438 \u044D\u0442\u043E \u0437\u0430\u0434\u0430\u043D\u0438\u0435 \u043A\u0430\u043A \u043E\u043F\u044B\u0442\u043D\u044B\u0439 \u043D\u0430\u0441\u0442\u0430\u0432\u043D\u0438\u043A:\n\n{text}\n{guidance}\n\u0421\u043D\u0430\u0447\u0430\u043B\u0430 \u043E\u0431\u044A\u044F\u0441\u043D\u0438 \u0438\u0434\u0435\u044E \u0438 \u0438\u043D\u0442\u0443\u0438\u0446\u0438\u044E \u043F\u0440\u043E\u0441\u0442\u044B\u043C\u0438 \u0441\u043B\u043E\u0432\u0430\u043C\u0438, \u0437\u0430\u0442\u0435\u043C \u0434\u0430\u0439 \u0440\u0430\u0437\u0432\u0451\u0440\u043D\u0443\u0442\u044B\u0439 \u0440\u0430\u0437\u0431\u043E\u0440: \u0434\u043B\u044F \u0437\u0430\u0434\u0430\u0447\u0438 \u2014 \u043D\u0430\u0437\u043E\u0432\u0438 \u043F\u0430\u0442\u0442\u0435\u0440\u043D, \u043F\u043E\u0434\u0445\u043E\u0434 \u0438 \u0441\u043B\u043E\u0436\u043D\u043E\u0441\u0442\u044C \u043F\u043E \u0432\u0440\u0435\u043C\u0435\u043D\u0438 \u0438 \u043F\u0430\u043C\u044F\u0442\u0438, \u0438 \u0442\u043E\u043B\u044C\u043A\u043E \u043F\u043E\u0441\u043B\u0435 \u044D\u0442\u043E\u0433\u043E \u043A\u043E\u0434; \u0434\u043B\u044F \u0442\u0435\u043E\u0440\u0438\u0438 \u2014 \u0441\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u043E\u0435 \u043E\u0431\u044A\u044F\u0441\u043D\u0435\u043D\u0438\u0435 \u0441 \u043F\u0440\u0438\u043C\u0435\u0440\u0430\u043C\u0438. \u041E\u0442\u0432\u0435\u0447\u0430\u0439 \u043D\u0430 \u0440\u0443\u0441\u0441\u043A\u043E\u043C.",
+    aiPromptGuidance: "\u041A\u0440\u0438\u0442\u0435\u0440\u0438\u0439 \u0441\u0438\u043B\u044C\u043D\u043E\u0433\u043E \u043E\u0442\u0432\u0435\u0442\u0430: {guidance}",
     shortcuts: "\u0413\u043E\u0440\u044F\u0447\u0438\u0435 \u043A\u043B\u0430\u0432\u0438\u0448\u0438",
     scDay: "\u041F\u0440\u0435\u0434\u044B\u0434\u0443\u0449\u0438\u0439 / \u0441\u043B\u0435\u0434\u0443\u044E\u0449\u0438\u0439 \u0434\u0435\u043D\u044C",
     scTick: "\u041F\u0435\u0440\u0435\u0445\u043E\u0434 \u043C\u0435\u0436\u0434\u0443 \u0437\u0430\u0434\u0430\u0447\u0430\u043C\u0438",
@@ -1471,13 +1487,14 @@
         el.innerHTML = `<div class="today-side"><span class="vert">${this.esc(lbl.restVert)}</span></div><div class="today-main"><h2 class="today-title">${this.esc(vm.title)}</h2>` + (vm.reflectPrompt ? `<p class="warm"><span class="warm-i">\u263E</span> ${this.esc(vm.reflectPrompt)}</p>` : "") + (vm.notLast ? `<button class="next-day-cta" id="nextDayCta" type="button">${this.esc(lbl.nextDay)}</button>` : "") + `</div>`;
         return;
       }
-      el.innerHTML = `<div class="today-side"><span class="vert">${this.esc(lbl.todayVert)}</span></div><div class="today-main"><span class="trackpill"><span class="k">${this.esc(vm.trackIcon)}</span> ${this.esc(vm.trackLabel)}</span><h2 class="today-title">${this.esc(vm.title)}</h2>` + (vm.show.warmup && vm.warmup ? `<div class="warm"><span class="warm-i">\u2726</span> <span class="muted">${this.esc(lbl.warmup)}</span> ${this.esc(vm.warmup)}</div>` : "") + `<div class="tasks" id="taskList"></div>` + (vm.show.reflection ? `<div class="reflect-block"><label class="reflect-label" for="reflect"><span class="kanji">\u7701</span> ${this.esc(lbl.reflect)}${vm.reflectPrompt ? ` \u2014 ${this.esc(vm.reflectPrompt)}` : ""}</label><textarea id="reflect" placeholder="${this.esc(lbl.taskPlaceholder)}">${this.esc(vm.reflection || "")}</textarea></div>` : "") + (vm.resources.length ? `<div class="res-row">${vm.resources.map((r) => `<span class="chip"><b>${this.esc(r.label)}</b> ${this.esc(r.note)}</span>`).join("")}</div>` : "") + (vm.complete && vm.notLast ? `<button class="next-day-cta" id="nextDayCta" type="button">${this.esc(lbl.nextDay)}</button>` : "") + `</div>`;
+      const tools = (copyId, aiId) => `<span class="task-tools"><button class="copy-btn" id="${copyId}" type="button" data-tip="${this.esc(lbl.copy)}" aria-label="${this.esc(lbl.copy)}">\u29C9</button><button class="copy-btn ai" id="${aiId}" type="button" data-tip="${this.esc(lbl.copyAi)}" aria-label="${this.esc(lbl.copyAi)}">\u2728</button></span>`;
+      el.innerHTML = `<div class="today-side"><span class="vert">${this.esc(lbl.todayVert)}</span></div><div class="today-main"><span class="trackpill"><span class="k">${this.esc(vm.trackIcon)}</span> ${this.esc(vm.trackLabel)}</span><h2 class="today-title">${this.esc(vm.title)}</h2>` + (vm.show.warmup && vm.warmup ? `<div class="warm"><span class="warm-i">\u2726</span> <span class="muted">${this.esc(lbl.warmup)}</span> ${this.esc(vm.warmup)}${tools("copyWarm", "copyaiWarm")}</div>` : "") + `<div class="tasks" id="taskList"></div>` + (vm.show.reflection ? `<div class="reflect-block"><label class="reflect-label" for="reflect"><span class="kanji">\u7701</span> ${this.esc(lbl.reflect)}${vm.reflectPrompt ? ` \u2014 ${this.esc(vm.reflectPrompt)}` : ""}</label><textarea id="reflect" placeholder="${this.esc(lbl.taskPlaceholder)}">${this.esc(vm.reflection || "")}</textarea></div>` : "") + (vm.resources.length ? `<div class="res-row">${vm.resources.map((r) => `<span class="chip"><b>${this.esc(r.label)}</b> ${this.esc(r.note)}</span>`).join("")}</div>` : "") + (vm.complete && vm.notLast ? `<button class="next-day-cta" id="nextDayCta" type="button">${this.esc(lbl.nextDay)}</button>` : "") + `</div>`;
       const taskList = this.$("taskList");
       if (taskList) {
         taskList.innerHTML = vm.tasks.map((t, k) => {
-          const label = `<label class="task ${t.done ? "done" : ""}" style="animation-delay:${k * 55}ms"><input type="checkbox" id="cb_${this.esc(t.id)}"${t.done ? " checked" : ""}/><span class="box"></span><span class="task-text">${this.esc(t.text)}</span></label>`;
-          if (!t.guidance) return label;
-          return `<div class="task-wrap">${label}<details class="task-hint"><summary>${this.esc(lbl.hint)}</summary><div class="task-hint-body">${this.esc(t.guidance)}</div></details></div>`;
+          const id = this.esc(t.id);
+          const label = `<label class="task ${t.done ? "done" : ""}" style="animation-delay:${k * 55}ms"><input type="checkbox" id="cb_${id}"${t.done ? " checked" : ""}/><span class="box"></span><span class="task-text">${this.esc(t.text)}</span></label>`;
+          return `<div class="task-wrap">${label}${tools(`copy_${id}`, `copyai_${id}`)}` + (t.guidance ? `<details class="task-hint"><summary>${this.esc(lbl.hint)}</summary><div class="task-hint-body">${this.esc(t.guidance)}</div></details>` : "") + `</div>`;
         }).join("");
       }
     }
@@ -1697,6 +1714,8 @@
         taskPlaceholder: u("taskPlaceholder"),
         nextDay: u("nextDay"),
         hint: u("hint"),
+        copy: u("copy"),
+        copyAi: u("copyAi"),
         overallTitle: u("overallTitle"),
         streakTitle: u("streakTitle"),
         inARow: u("inARow"),
@@ -1789,6 +1808,13 @@
         if (cb) {
           cb.onchange = (e) => this.setTaskChecked(t.id, e.target.checked);
         }
+        this.bindCopy("copy_" + t.id, () => t.text, false);
+        this.bindCopy("copyai_" + t.id, () => this.t.aiPrompt(t.text, t.guidance), true);
+      }
+      if (vm.show.warmup && vm.warmup) {
+        const warmup = vm.warmup;
+        this.bindCopy("copyWarm", () => warmup, false);
+        this.bindCopy("copyaiWarm", () => this.t.aiPrompt(warmup), true);
       }
       if (vm.show.reflection) {
         const reflect = this.r.$("reflect");
@@ -1798,6 +1824,36 @@
           };
         }
       }
+    }
+    // ----- copy / AI-copy -------------------------------------------------------
+    bindCopy(id, text, ai) {
+      const el = this.r.$(id);
+      if (!el) return;
+      el.onclick = () => {
+        this.copyText(text());
+        this.r.toast("toast", this.r.esc(this.t.ui(ai ? "copiedAi" : "copied")));
+      };
+    }
+    // Seam for tests (the fake DOM has no clipboard); the default writes through
+    // navigator.clipboard with a hidden-textarea fallback for older engines.
+    copyText = (text) => {
+      const nav = globalThis.navigator;
+      const write = nav?.clipboard?.writeText(text);
+      if (write) write.catch(() => this.copyFallback(text));
+      else this.copyFallback(text);
+    };
+    copyFallback(text) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand("copy");
+      } catch {
+      }
+      document.body.removeChild(ta);
     }
     setTaskChecked(taskId, checked) {
       const was = this.t.todayCard().complete;

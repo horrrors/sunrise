@@ -11,6 +11,8 @@ export interface RenderLabels {
   taskPlaceholder: string;
   nextDay: string;
   hint: string;
+  copy: string;
+  copyAi: string;
   overallTitle: string;
   streakTitle: string;
   inARow: string;

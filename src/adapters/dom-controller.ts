@@ -44,6 +44,8 @@ export class DomController {
       taskPlaceholder: u('taskPlaceholder'),
       nextDay: u('nextDay'),
       hint: u('hint'),
+      copy: u('copy'),
+      copyAi: u('copyAi'),
       overallTitle: u('overallTitle'),
       streakTitle: u('streakTitle'),
       inARow: u('inARow'),
@@ -150,6 +152,13 @@ export class DomController {
       if (cb) {
         cb.onchange = (e) => this.setTaskChecked(t.id, (e.target as HTMLInputElement).checked);
       }
+      this.bindCopy('copy_' + t.id, () => t.text, false);
+      this.bindCopy('copyai_' + t.id, () => this.t.aiPrompt(t.text, t.guidance), true);
+    }
+    if (vm.show.warmup && vm.warmup) {
+      const warmup = vm.warmup;
+      this.bindCopy('copyWarm', () => warmup, false);
+      this.bindCopy('copyaiWarm', () => this.t.aiPrompt(warmup), true);
     }
     if (vm.show.reflection) {
       const reflect = this.r.$('reflect') as HTMLTextAreaElement | null;
@@ -159,6 +168,41 @@ export class DomController {
         };
       }
     }
+  }
+
+  // ----- copy / AI-copy -------------------------------------------------------
+
+  private bindCopy(id: string, text: () => string, ai: boolean): void {
+    const el = this.r.$(id);
+    if (!el) return;
+    (el as HTMLElement).onclick = () => {
+      this.copyText(text());
+      this.r.toast('toast', this.r.esc(this.t.ui(ai ? 'copiedAi' : 'copied')));
+    };
+  }
+
+  // Seam for tests (the fake DOM has no clipboard); the default writes through
+  // navigator.clipboard with a hidden-textarea fallback for older engines.
+  public copyText: (text: string) => void = (text) => {
+    const nav = (globalThis as { navigator?: Navigator }).navigator;
+    const write = nav?.clipboard?.writeText(text);
+    if (write) write.catch(() => this.copyFallback(text));
+    else this.copyFallback(text);
+  };
+
+  private copyFallback(text: string): void {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+    } catch {
+      /* best effort — file:// engines without clipboard API */
+    }
+    document.body.removeChild(ta);
   }
 
   private setTaskChecked(taskId: string, checked: boolean): void {

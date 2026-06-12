@@ -379,6 +379,20 @@ export class Tracker {
     return this.uiText(key);
   }
 
+  // Pre-prompt for the "AI copy" button: the task/warmup text wrapped in a
+  // tutor template with the current item's context, ready to paste into a chat.
+  public aiPrompt(text: string, guidance?: string): string {
+    const it = this.itemOf(this.currentItemId);
+    const g = guidance
+      ? `\n${this.uiText('aiPromptGuidance').replace('{guidance}', guidance)}\n`
+      : '';
+    return this.uiText('aiPrompt')
+      .replace('{title}', it.title ?? '')
+      .replace('{track}', this.trackMeta(it.track).label)
+      .replace('{text}', text)
+      .replace('{guidance}', g);
+  }
+
   public itemLabel(): string {
     return this.lbl('item', 'weekAbbr');
   }

@@ -397,6 +397,38 @@ test('rest-day item renders the rest branch', async () => {
   assert.ok((registry['todayCard']!.innerHTML || '').includes('休'), 'rest branch rendered');
 });
 
+test('today card renders copy + AI-copy tools on tasks and warmup', async () => {
+  const { registry } = await boot();
+  const tasks = registry['taskList']!.innerHTML || '';
+  assert.ok(tasks.includes('id="copy_'), 'plain copy button per task');
+  assert.ok(tasks.includes('id="copyai_'), 'AI copy button per task');
+  assert.ok(tasks.includes('task-tools'), 'canonical .task-tools hook');
+  const card = registry['todayCard']!.innerHTML || '';
+  assert.ok(card.includes('id="copyWarm"'), 'warmup plain copy button');
+  assert.ok(card.includes('id="copyaiWarm"'), 'warmup AI copy button');
+});
+
+test('copy buttons copy text / AI prompt via the clipboard seam, never toggle the task', async () => {
+  const h = await boot();
+  const { registry, tracker, renderer } = h;
+  const copied: string[] = [];
+  h.controller!.copyText = (s: string) => void copied.push(s);
+  const toasts: string[] = [];
+  renderer.toast = (cls: string) => void toasts.push(cls);
+  const vm = tracker.todayCard();
+  const t1 = vm.tasks[0]!;
+  registry['copy_' + t1.id]!.onclick!();
+  assert.deepEqual(copied, [t1.text], 'plain copy = raw task text');
+  registry['copyai_' + t1.id]!.onclick!();
+  assert.equal(copied[1], tracker.aiPrompt(t1.text, t1.guidance), 'AI copy = built prompt');
+  registry['copyWarm']!.onclick!();
+  assert.equal(copied[2], vm.warmup, 'warmup plain copy');
+  registry['copyaiWarm']!.onclick!();
+  assert.equal(copied[3], tracker.aiPrompt(vm.warmup!), 'warmup AI copy');
+  assert.equal(tracker.todayCard().tasks[0]!.done, false, 'copying never ticks the task');
+  assert.equal(toasts.length, 4, 'each copy confirms with a toast');
+});
+
 test('renderCardMap renders rows + cells with data-id', async () => {
   const { registry, tracker, renderer } = await boot();
   renderer.renderCardMap(tracker.cardMap(), 'Map');

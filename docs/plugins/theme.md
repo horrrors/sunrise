@@ -135,7 +135,9 @@ are yours to neutralize.
                                                           each only when the item has it: -->
             <span class="trackpill"><span class="k"></span> Track name</span>
             <h2 class="today-title">…</h2>
-            <div class="warm"><span class="warm-i">✦</span> <span class="muted">Warm-up</span> text…</div>  <!-- only if warmup -->
+            <div class="warm"><span class="warm-i">✦</span> <span class="muted">Warm-up</span> text…
+              <span class="task-tools"><button class="copy-btn" id="copyWarm">⧉</button><button class="copy-btn ai" id="copyaiWarm">✨</button></span>
+            </div>                                          <!-- only if warmup; tools = copy / AI-copy -->
             <div class="tasks" id="taskList"><!-- task rows, see below --></div>
             <div class="reflect-block"><label class="reflect-label" for="reflect"><span class="kanji">省</span> …</label><textarea id="reflect"></textarea></div>  <!-- only if reflection on -->
             <div class="res-row"><span class="chip"><b>label</b> note</span></div>   <!-- only if resources -->
@@ -184,7 +186,7 @@ triangle is already injected):
 
 ```css
 .section-title{font:600 12px ui-monospace,SFMono-Regular,monospace;letter-spacing:.18em;text-transform:uppercase;opacity:.5;margin:20px 2px 10px}
-.task-wrap{display:flex;flex-direction:column;gap:8px}
+.task-wrap{display:flex;flex-direction:column;gap:8px;position:relative}
 .task-hint{font-size:13px;margin-left:6px}
 .task-hint>summary{cursor:pointer;list-style:none;opacity:.55;font-weight:600;letter-spacing:.02em;display:inline-flex;align-items:center;gap:6px;width:fit-content}
 .task-hint>summary::-webkit-details-marker{display:none}
@@ -192,6 +194,17 @@ triangle is already injected):
 .task-hint[open]>summary::before{content:"\25BE"}
 .task-hint[open]>summary{margin-bottom:6px}
 .task-hint-body{font-size:13px;line-height:1.55;opacity:.78;border-left:2px solid currentColor;padding-left:10px;margin-left:3px}
+
+/* copy / AI-copy tools — FUNCTIONAL baseline, tinted by your HUD tokens
+   (--paper/--paper-2/--ink/--r). Hover/focus-revealed overlay on desktop;
+   [data-mobile] forces them visible, drops them into the flow (static, right-
+   aligned under the task / after the warm-up text) and bumps the tap target
+   to 34px. Override only the look. */
+.warm{position:relative}
+.task-tools{position:absolute;top:6px;right:6px;display:inline-flex;gap:5px;opacity:0;transition:opacity .12s ease}
+.task-wrap:hover>.task-tools,.task-wrap:focus-within>.task-tools,.warm:hover>.task-tools,.warm:focus-within>.task-tools{opacity:1}
+.copy-btn{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:2px solid var(--ink,#222);border-radius:var(--r,6px);background:var(--paper-2,#e7e3d8);color:var(--ink,#222);font-size:13px;line-height:1;cursor:pointer}
+.copy-btn:hover{background:var(--paper,#fff)}
 
 /* card map — a FUNCTIONAL baseline: the grid already lays out and the tooltip
    already works in every theme. Override the look (colors, size, radius) only
@@ -666,7 +679,9 @@ longer write your own. For reference, the shipped guard is:
 > native-checkbox hide (`.task input`), the reduced-motion guard, the keyboard
 > focus outline (set `--focus-ring` to restyle focus), the functional card-map
 > grid + its `data-tip` tooltip (`.cm-*`), the icon-button tooltips (`.toolbar`/
-> `.day-nav`/`.tr-head` `[data-tip]`), and the entire shortcuts list (`.sc-*`).
+> `.day-nav`/`.tr-head`/`.task-tools` `[data-tip]`), the copy / AI-copy tools
+> (`.task-tools>.copy-btn` — token-tinted, hover-revealed, forced visible on
+> mobile), and the entire shortcuts list (`.sc-*`).
 
 Style **every** one of these (grouped by where they render). Tag in parentheses
 when it matters.
@@ -675,8 +690,8 @@ when it matters.
 - **Column:** `.wrap`, `.section-title` (h2; `#summaryTitle`, `#todayTitle`), `#comeback`
 - **Dashboard:** `.dash`, `.stat-card[data-kind="progress|streak|phases|tracks"]`, `.eyebrow`, `.ring`+`.ring>div>b`+`small`, `.stat-sub`, `.muted`, `.flame`, `.streak-num`, `.prow`(`.lbl>i`, `.val`) + sibling `.bar>i`, `[data-track]`
 - **Day rail:** `.day-rail`, `.day-nav.day-prev#prevDay` / `.day-nav.day-next#nextDay` (`[data-tip]`, baseline tooltip), `.today-wrap`, `.today#todayCard[data-track]`
-  - active item: `.today-side>.vert`, `.today-main`, `.trackpill`(span)`>.k`, `.today-title`(h2), `.warm`(div)`>.warm-i`+`.muted`, `.tasks#taskList`, `.reflect-block>.reflect-label[for=reflect]>.kanji` + `textarea#reflect`, `.res-row>.chip`(span)`>b`, `.next-day-cta#nextDayCta`
-  - task: `label.task(.done)[style=animation-delay] > input#cb_<id>` + `.box` + `.task-text`; with guidance: `.task-wrap > (label) + details.task-hint > summary + .task-hint-body`
+  - active item: `.today-side>.vert`, `.today-main`, `.trackpill`(span)`>.k`, `.today-title`(h2), `.warm`(div)`>.warm-i`+`.muted` (+ `.task-tools` with `#copyWarm`/`#copyaiWarm`), `.tasks#taskList`, `.reflect-block>.reflect-label[for=reflect]>.kanji` + `textarea#reflect`, `.res-row>.chip`(span)`>b`, `.next-day-cta#nextDayCta`
+  - task: `.task-wrap > label.task(.done)[style=animation-delay] (> input#cb_<id>` + `.box` + `.task-text)` + `.task-tools > button.copy-btn#copy_<id> + button.copy-btn.ai#copyai_<id>`; with guidance also `+ details.task-hint > summary + .task-hint-body`
   - rest item: `.warm`(p)`>.warm-i` (only with a reflect prompt), optional `.next-day-cta#nextDayCta`
 - **Footer:** `.foot > #motd(.motd-out)`
 - **Modals:** `.modal(.open)[role=dialog]` → `.modal-panel.cardmap-panel|.tr-panel|.sc-panel`, each headed by `.tr-head`

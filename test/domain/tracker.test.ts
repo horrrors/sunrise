@@ -176,6 +176,26 @@ test('badge awards are eager: a reflection-driven trophy persists without item c
   assert.equal(t.trophies().find((x) => x.id === 'noted')!.unlocked, true);
 });
 
+test('aiPrompt wraps text in the tutor pre-prompt with item context', () => {
+  const { t } = buildTracker({ packs: [PACK] });
+  const p = t.aiPrompt('Solve Two Sum', 'name the pattern first');
+  assert.ok(p.includes('Solve Two Sum'), 'task text embedded');
+  assert.ok(p.includes('«A»'), 'current item title embedded');
+  assert.ok(p.includes('DSA'), 'track label embedded');
+  assert.ok(p.includes('name the pattern first'), 'guidance embedded');
+  assert.ok(!/[{}]/.test(p), 'all placeholders filled');
+  const bare = t.aiPrompt('Solve Two Sum');
+  assert.ok(bare.includes('Solve Two Sum'));
+  assert.ok(!bare.includes('name the pattern'), 'no guidance line without guidance');
+  assert.ok(!/[{}]/.test(bare), 'all placeholders filled without guidance');
+});
+
+test('aiPrompt template is pack-overridable like any ui string', () => {
+  const pack: Pack = { ...PACK, ui: { aiPrompt: 'ASK: {text}' } };
+  const { t } = buildTracker({ packs: [pack] });
+  assert.equal(t.aiPrompt('Q'), 'ASK: Q');
+});
+
 test('streak word uses Slavic plural rules (21 → one-form, 22 → few-form)', () => {
   const mk = (n: number) => {
     const items: Record<string, ItemProgress> = {};

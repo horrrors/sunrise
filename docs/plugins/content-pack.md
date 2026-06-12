@@ -163,6 +163,16 @@ setting per pack:
 - `hint` — label on the per-task `guidance` spoiler (default: a localized "what
   counts as a strong answer").
 - `restTitle` — the rest-day card heading.
+- `aiPrompt` — the pre-prompt the "AI copy" button wraps a task/warm-up in, so
+  the learner can paste it straight into a chat assistant. Placeholders:
+  `{title}` (current item title), `{track}` (track label), `{text}` (the copied
+  task/warm-up text), `{guidance}` (replaced with a filled `aiPromptGuidance`
+  line when the task has `guidance`, else removed). The default is a Russian
+  tutor prompt — **override this when your pack is in another language**, and
+  keep all four placeholders.
+- `aiPromptGuidance` — the guidance line inside `aiPrompt` (`{guidance}` = the
+  task's `guidance` text).
+- `copy` / `copyAi` (button tooltips), `copied` / `copiedAi` (toasts).
 
 ```js
 ui: { phaseLabel:"Phase {p} · Week {w}", todayVert:"TODAY", restVert:"REST" }

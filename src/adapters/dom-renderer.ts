@@ -99,13 +99,20 @@ export class DomRenderer {
       return;
     }
 
+    // copy / AI-copy pair rendered over every copyable text block
+    const tools = (copyId: string, aiId: string): string =>
+      `<span class="task-tools">` +
+      `<button class="copy-btn" id="${copyId}" type="button" data-tip="${this.esc(lbl.copy)}" aria-label="${this.esc(lbl.copy)}">⧉</button>` +
+      `<button class="copy-btn ai" id="${aiId}" type="button" data-tip="${this.esc(lbl.copyAi)}" aria-label="${this.esc(lbl.copyAi)}">✨</button>` +
+      `</span>`;
+
     el.innerHTML =
       `<div class="today-side"><span class="vert">${this.esc(lbl.todayVert)}</span></div>` +
       `<div class="today-main">` +
       `<span class="trackpill"><span class="k">${this.esc(vm.trackIcon)}</span> ${this.esc(vm.trackLabel)}</span>` +
       `<h2 class="today-title">${this.esc(vm.title)}</h2>` +
       (vm.show.warmup && vm.warmup
-        ? `<div class="warm"><span class="warm-i">✦</span> <span class="muted">${this.esc(lbl.warmup)}</span> ${this.esc(vm.warmup)}</div>`
+        ? `<div class="warm"><span class="warm-i">✦</span> <span class="muted">${this.esc(lbl.warmup)}</span> ${this.esc(vm.warmup)}${tools('copyWarm', 'copyaiWarm')}</div>`
         : '') +
       `<div class="tasks" id="taskList"></div>` +
       (vm.show.reflection
@@ -126,15 +133,18 @@ export class DomRenderer {
     if (taskList) {
       taskList.innerHTML = vm.tasks
         .map((t, k) => {
+          const id = this.esc(t.id);
           const label =
             `<label class="task ${t.done ? 'done' : ''}" style="animation-delay:${k * 55}ms">` +
-            `<input type="checkbox" id="cb_${this.esc(t.id)}"${t.done ? ' checked' : ''}/>` +
+            `<input type="checkbox" id="cb_${id}"${t.done ? ' checked' : ''}/>` +
             `<span class="box"></span><span class="task-text">${this.esc(t.text)}</span></label>`;
-          if (!t.guidance) return label;
           return (
-            `<div class="task-wrap">${label}` +
-            `<details class="task-hint"><summary>${this.esc(lbl.hint)}</summary>` +
-            `<div class="task-hint-body">${this.esc(t.guidance)}</div></details></div>`
+            `<div class="task-wrap">${label}${tools(`copy_${id}`, `copyai_${id}`)}` +
+            (t.guidance
+              ? `<details class="task-hint"><summary>${this.esc(lbl.hint)}</summary>` +
+                `<div class="task-hint-body">${this.esc(t.guidance)}</div></details>`
+              : '') +
+            `</div>`
           );
         })
         .join('');
