@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Sunrise mark in the bonus riso palette. The cobalt copy under the sun is
+       the riso misregistration offset; keep shapes bold — must read at 48px. -->
+  <rect width="512" height="512" fill="#f5f1e6"/>
+  <g stroke="#14110d" stroke-width="14" stroke-linecap="round">
+    <line x1="256" y1="96"  x2="256" y2="150"/>
+    <line x1="139" y1="144" x2="177" y2="182"/>
+    <line x1="373" y1="144" x2="335" y2="182"/>
+    <line x1="92"  y1="260" x2="146" y2="260"/>
+    <line x1="420" y1="260" x2="366" y2="260"/>
+  </g>
+  <path d="M148 340 a108 108 0 0 1 216 0 Z" fill="#2b4cf0"/>
+  <path d="M136 328 a120 120 0 0 1 240 0 Z" fill="#ff5436" stroke="#14110d" stroke-width="14"/>
+  <path d="M196 328 a60 60 0 0 1 120 0 Z" fill="#ffd23f"/>
+  <line x1="56" y1="328" x2="456" y2="328" stroke="#14110d" stroke-width="16" stroke-linecap="round"/>
+  <line x1="120" y1="396" x2="392" y2="396" stroke="#14110d" stroke-width="12" stroke-linecap="round" stroke-dasharray="56 34"/>
+  <line x1="176" y1="448" x2="336" y2="448" stroke="#14110d" stroke-width="12" stroke-linecap="round" stroke-dasharray="34 40"/>
+</svg>
