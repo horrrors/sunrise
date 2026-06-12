@@ -359,8 +359,8 @@ nav#dock
   by the renderer on every render. Any `width` rule in your stylesheet will be
   beaten by the inline style and has no effect.
 
-Tapping `#dockBars` opens the stats sheet (`.toolbar.open`). The three buttons
-open the card-map modal, trophies modal, and the menu sheet (`#dashboard.open`)
+Tapping `#dockBars` opens the stats sheet (`#dashboard.open`). The three buttons
+open the card-map modal, trophies modal, and the menu sheet (`.toolbar.open`)
 respectively.
 
 ### Overriding the mobile HUD look
