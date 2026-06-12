@@ -2,7 +2,7 @@
 <html lang="ru" data-theme="bonus">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Sunrise · 日の出</title>
 <!-- canonical defaults for optional section titles + the per-task guidance spoiler; themes override -->
 <style>.section-title{font:600 12px ui-monospace,SFMono-Regular,monospace;letter-spacing:.18em;text-transform:uppercase;opacity:.5;margin:20px 2px 10px}
@@ -40,13 +40,46 @@
 .task input{position:absolute;opacity:0;width:0;height:0;pointer-events:none}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
 /* keyboard focus highlight — theme sets the look via --focus-ring */
-#taskList .task:has(input:focus-visible){outline:var(--focus-ring,3px solid var(--accent,#f6c343));outline-offset:3px;border-radius:var(--r,8px)}</style>
+#taskList .task:has(input:focus-visible){outline:var(--focus-ring,3px solid var(--accent,#f6c343));outline-offset:3px;border-radius:var(--r,8px)}
+/* ===== mobile HUD — mechanism + token-tinted appearance. Hidden until main.ts
+   sets <html data-mobile> (≤640px). !important beats themes' id-based desktop
+   rules; a theme overrides mobile by matching these selectors under
+   [data-mobile] (its file loads later, so equal specificity wins). ===== */
+#dock{display:none}
+#dock .dock-bars{flex:1;display:flex;flex-direction:column;gap:4px;background:none;border:0;padding:0;cursor:pointer;min-width:0}
+#dock .dock-bar{position:relative;display:block;height:12px;border:2px solid var(--ink,#222);border-radius:var(--r,6px);background:var(--paper,#fff);overflow:hidden}
+#dock .dock-bar-fill{display:block;height:100%;width:0;background:var(--accent,#f6c343)}
+#dock .dock-bar[data-kind="progress"] .dock-bar-fill{background:var(--cobalt,#2b6cb0)}
+#dock .dock-bar-val{position:absolute;right:5px;top:50%;transform:translateY(-50%);font:700 8px ui-monospace,SFMono-Regular,monospace;line-height:1;color:var(--ink,#222);letter-spacing:.04em}
+#dock>.btn{flex:0 0 auto;font-size:16px;padding:7px 10px}
+:root[data-mobile] #dock{display:flex!important;position:fixed!important;left:0!important;right:0!important;bottom:0!important;z-index:70!important;align-items:center!important;gap:8px!important;margin:0!important;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px))!important;background:var(--paper-2,var(--paper,#f4f1e8))!important;border-top:2px solid var(--ink,#222)!important}
+:root[data-mobile] .app-header{display:flex!important;flex-wrap:nowrap!important;align-items:center!important;gap:10px!important;padding:8px 12px!important;position:static!important}
+:root[data-mobile] .brand{display:flex!important;align-items:baseline!important;gap:8px!important;min-width:0!important;flex:1 1 auto!important}
+:root[data-mobile] .brand-sub{margin-left:auto!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+:root[data-mobile] .toolbar{position:fixed!important;left:0!important;right:0!important;bottom:0!important;top:auto!important;z-index:60!important;display:none!important;flex-direction:column!important;align-items:stretch!important;gap:10px!important;margin:0!important;padding:14px 16px 84px!important;background:var(--paper-2,var(--paper,#f4f1e8))!important;border-top:2px solid var(--ink,#222)!important;max-width:none!important;width:auto!important}
+:root[data-mobile] .toolbar.open{display:flex!important}
+:root[data-mobile] .toolbar .field{display:block!important;width:100%!important;max-width:none!important}
+:root[data-mobile] .toolbar .field select{width:100%!important;max-width:none!important}
+:root[data-mobile] #dashboard{position:fixed!important;left:0!important;right:0!important;bottom:0!important;top:auto!important;z-index:60!important;display:none!important;grid-template-columns:1fr!important;flex-direction:column!important;gap:10px!important;margin:0!important;padding:14px 16px 84px!important;max-height:72vh!important;overflow:auto!important;background:var(--paper-2,var(--paper,#f4f1e8))!important;border-top:2px solid var(--ink,#222)!important}
+:root[data-mobile] #dashboard.open{display:grid!important}
+:root[data-mobile] .section-title{display:none!important}
+:root[data-mobile] .wrap{margin:0!important;padding:10px 10px 88px!important;max-width:none!important}
+:root[data-mobile] .day-rail{display:flex!important;flex-wrap:wrap!important;justify-content:flex-end!important;gap:8px!important}
+:root[data-mobile] .day-nav{order:1!important;position:static!important;width:36px!important;height:36px!important;flex:0 0 auto!important}
+:root[data-mobile] .today-wrap{order:3!important;flex:1 1 100%!important;width:auto!important;max-width:none!important}
+:root[data-mobile] .today{flex-direction:column!important;min-height:58vh!important}
+:root[data-mobile] .today-side{display:none!important}
+:root[data-mobile] .today-main{padding:14px 12px!important}
+:root[data-mobile] .task{min-height:44px!important;align-items:center!important}
+:root[data-mobile] .foot{margin:8px 8px 84px!important;text-align:center!important}
+:root[data-mobile] .modal-panel{width:100vw!important;height:100dvh!important;max-width:none!important;max-height:none!important;border-radius:0!important;overflow:auto!important}
+:root[data-mobile] .cm-card{width:42px!important;height:42px!important}</style>
 <link id="themeCss" rel="stylesheet" href="themes/bonus.css" />
 </head>
 <body>
 <header class="app-header">
   <div class="brand"><span class="brand-mark" lang="ja">日の出</span><span class="brand-name">SUNRISE</span><span class="brand-sub" id="phaseLabel"></span></div>
-  <div class="toolbar">
+  <div class="toolbar" id="toolbar">
     <label class="field"><select id="packSelect"></select></label>
     <label class="field"><select id="themeSelect"></select></label>
     <label class="field"><select id="daySelect"></select></label>
@@ -69,6 +102,16 @@
   </section>
 </main>
 <div class="foot"><span id="motd"></span></div>
+
+<nav id="dock" aria-label="HUD">
+  <button class="dock-bars" id="dockBars" type="button">
+    <span class="dock-bar" data-kind="streak"><i class="dock-bar-fill" id="dockStreakFill"></i><span class="dock-bar-val" id="dockStreakVal"></span></span>
+    <span class="dock-bar" data-kind="progress"><i class="dock-bar-fill" id="dockProgressFill"></i><span class="dock-bar-val" id="dockProgressVal"></span></span>
+  </button>
+  <button class="btn ghost" id="dockMapBtn" type="button">🗺️</button>
+  <button class="btn ghost" id="dockTrophiesBtn" type="button">🏆</button>
+  <button class="btn ghost" id="dockMenuBtn" type="button">☰</button>
+</nav>
 
 <div class="modal" id="cardMapModal" role="dialog" aria-modal="true" aria-labelledby="cardMapTitle">
   <div class="modal-panel cardmap-panel">
