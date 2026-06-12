@@ -34,7 +34,7 @@ rendering of every theme stays exactly as today.
 | Mobile detection | `matchMedia('(max-width: 640px)')` in the composition root toggles **`data-mobile` on `<html>`**, live | This *is* the "auto-detection" — a mode, not a theme switch. All mobile CSS keys off `[data-mobile]`; the breakpoint lives in exactly one place (TS). No `@media` in the baseline, and none in the phone range in themes (wider tablet refinements may stay, §4). |
 | Beating theme CSS | Baseline mobile rules carry **`!important`** on layout-critical declarations, strictly scoped under `[data-mobile]` | Themes legitimately style `#dashboard`/`#todayCard` by id; no realistic specificity stack clears ids without an arms race. One contained `!important` block is the honest, predictable mechanism. |
 | Per-theme mobile customization | A theme overrides by matching the baseline selector under `[data-mobile]` (+`!important` where the baseline uses it) — later in cascade, the theme wins ties | "Full customizability" survives, documented in `theme.md`. Themes never write width `@media`; `[data-mobile]` is the abstraction. |
-| The 17 existing themes | **Delete their phone-squeeze `@media` blocks** (max-width ≤ 640px — the HUD's range). Tablet refinements above 640px may stay. Desktop rules untouched | They'd fight the HUD. Deletions only; a guard test keeps phone-range media queries out of themes forever. |
+| The 17 existing themes | **Delete their phone-squeeze `@media` blocks** (every block with max-width < 900px — the observed squeezes sit at 480–720px). Tablet refinements at ≥ 900px may stay. Desktop rules untouched | They'd fight the HUD. Deletions only; a guard test keeps phone-range media queries out of themes forever. |
 | Separate HUD theme | **Dropped** (with its art-direction question) | Dissolved by the app-level model — there's nothing to enable. |
 | Relation to the 06-09 theme-base doc | Deliberately amends its "responsive stacking stays in themes" exclusion: **mobile** layout becomes app mechanism; **desktop** layout remains theme-owned | That exclusion was decided while deduplicating desktop rules, not designing mobile. |
 
@@ -80,9 +80,9 @@ rendering of every theme stays exactly as today.
 
 ## 4. Theme cleanup & contract
 
-- **Cleanup:** from each of the 17 `themes/*.css`, delete the `@media` blocks targeting
-  the phone range (max-width ≤ 640px). Keep wider tablet refinements (e.g. a 900px
-  two-column fallback) — they don't overlap the HUD. Desktop rules untouched.
+- **Cleanup:** from each of the 17 `themes/*.css`, delete the `@media` blocks
+  with max-width < 900px (the observed phone squeezes: 480–720px). Keep wider tablet refinements
+  (at ≥ 900px, e.g. japanese's 900px two-column fallback) — they don't overlap the HUD. Desktop rules untouched.
 - **`docs/plugins/theme.md`:** document the contract — the app sets `[data-mobile]`
   ≤ 640px; the baseline HUD consumes the listed tokens (with fallbacks), so a theme that
   defines its palette tokens gets a matching HUD for free; the override pattern
@@ -98,7 +98,7 @@ rendering of every theme stays exactly as today.
   day (sub-threshold / vertical / typing-target swipes don't); dock bar fill + value
   update after a task tick; `data-mobile` toggles with a faked `matchMedia`.
 - **Guard test (file-content, like the base-dedup tests):** no `themes/*.css` contains a
-  media query in the phone range (regex on `max-width` ≤ 640px); `index.html` baseline
+  media query with any `max-width` value below 900px; `index.html` baseline
   contains `#dock{display:none}` and the `[data-mobile]` block.
 - **Build:** `npm run build` + commit `dist/` in the same change (`dist-sync` test keeps
   that honest); `npm run typecheck`; full `node --test`.
