@@ -38,6 +38,17 @@ What the app does today, grouped by area. Each line is one feature with a one-se
 - **Validated at load** — every pack/theme is checked against its contract when it registers; an invalid one is rejected with a precise reason and simply doesn't appear (the app keeps running).
 - **AI-authorable** — the plugin contracts are documented standalone (`docs/plugins/`) so an LLM can produce a valid pack or theme from the docs alone.
 
+## Mobile HUD
+
+On phones (viewport ≤640px) every theme automatically switches to a game-HUD layout — no theme work required:
+
+- **One-line header** — the brand bar collapses; controls move off-screen.
+- **Hero today card** — the active day's card fills the viewport below the header.
+- **Bottom dock** — a fixed `nav#dock` sits at the screen bottom with two micro-bars (streak filled against a 30-day cap, progress as done/total) and three buttons: 🗺️ card map, 🏆 trophies, ☰ menu.
+- **Bottom sheets** — tapping the bars opens a stats/controls sheet; ☰ opens the pack/theme/day/export/import sheet; sheets are mutually exclusive and close on tap-outside or `Esc`.
+- **Swipe to change day** — swipe left/right on the today card (50px horizontal-dominant threshold) navigates to the next/previous day.
+- **Desktop untouched** — the only change on wide screens is `#dock { display: none }`; all desktop layout is pixel-identical.
+
 ## Appearance
 
 - **17 themes** — 5 built-in (Neo-Brutalist Riso, Neon, Japanese, Emerald, Colorful Dashboard) + 12 registered in `index.html` — switchable live and remembered across sessions.

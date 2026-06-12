@@ -86,7 +86,7 @@ to your own id so they only apply when your theme is active:
 > per active theme. Your theme must still scope everything — unscoped rules
 > bleed through the moment the stylesheet is loaded alongside another.
 
-The reduced-motion guard (**§6**) is the one block you may leave global.
+The reduced-motion guard (**§8**) is the one block you may leave global.
 
 ---
 
@@ -248,7 +248,7 @@ define them, or (cleaner) restyle `.cm-card` directly with your own tokens.
 
 - `--track-<id>` — set inline on `<html>` for every track whose pack declares a
   `color`. Overrides any `--track-<id>` you set on `:root`. Track ids are
-  pack-specific (see §6 for how to use them). To paint per track you still need
+  pack-specific (see §7 for how to use them). To paint per track you still need
   per-id selectors — CSS can't read `var(--track-{attr})` dynamically.
 - `--p` on `.ring` — overall-progress percent as a **unitless number 0–100**.
   Use it as `calc(var(--p) * 1%)` (writing `--p:42%` would break the `calc`).
@@ -287,7 +287,108 @@ define them, or (cleaner) restyle `.cm-card` directly with your own tokens.
 
 ---
 
-## 5. Layout — the part that stops elements overlapping
+## 5. Mobile HUD (`[data-mobile]`)
+
+At viewport widths ≤640px the app sets the `data-mobile` attribute on `<html>`
+via `matchMedia` (tracked live — it updates if the window is resized). A
+baseline block shipped with the app then re-lays **every** theme as a game HUD:
+
+- **One-line header** — `.app-header` collapses to a single compact bar.
+- **Bottom sheets** — `.toolbar` and `#dashboard` are hidden and become slide-up
+  sheets. The app toggles `.toolbar.open` / `#dashboard.open` (mutually
+  exclusive); tapping outside or pressing `Esc` closes the open sheet.
+- **Hero today card** — `#todayCard` becomes the primary hero element, filling
+  the visible area below the header.
+- **Fixed bottom dock** — a `nav#dock` is pinned to the screen bottom with
+  streak/progress micro-bars and quick-action buttons.
+
+**This applies to every theme with zero theme work.** You do not need to write
+a single line of mobile CSS — the HUD layout is automatic.
+
+### Hard rule: never write phone-range width media queries
+
+A guard test (`test/themes/mobile-guard.test.ts`) **rejects** any theme file
+that contains a `max-width` query below 900px. Width queries in the phone range
+conflict with the `[data-mobile]` abstraction. If you need to refine the HUD
+look, use `[data-mobile]` attribute selectors instead. Tablet-range refinements
+(`min-width: 900px` or `max-width` ≥900px) are allowed.
+
+### HUD tokens — define these or get generic fallbacks
+
+The baseline HUD reads the following tokens **with hardcoded fallbacks**. Most
+existing themes define only some of them; the HUD works without them but uses
+generic colors, not your theme palette. To get a fully matched HUD, define all
+of these in your token block:
+
+| token | fallback | used for |
+|---|---|---|
+| `--paper-2` | `--paper` → `#f4f1e8` | dock background, sheet backgrounds |
+| `--ink` | `#222` | borders, text |
+| `--accent` | `#f6c343` | streak bar fill |
+| `--cobalt` | `#2b6cb0` | progress bar fill |
+| `--r` | `6px` | bar corner radius |
+
+> **Honest note:** almost no existing theme defines `--cobalt`; very few define
+> `--paper-2`. Without them the HUD is functional but uses generic fallbacks
+> that may not match your palette. Define these tokens if the HUD look matters
+> to your design.
+
+### Dock anatomy and renderer fill contract
+
+```
+nav#dock
+  button.dock-bars#dockBars
+    span.dock-bar[data-kind="streak"]
+      i.dock-bar-fill          ← renderer sets inline width: NN%  (min(streak/30, 1) × 100)
+      span.dock-bar-val        ← renderer sets text: e.g. "7d"
+    span.dock-bar[data-kind="progress"]
+      i.dock-bar-fill          ← renderer sets inline width: NN%  (done/total × 100)
+      span.dock-bar-val        ← renderer sets text: e.g. "12/80"
+  button#dockMapBtn            🗺️
+  button#dockTrophiesBtn       🏆
+  button#dockMenuBtn           ☰
+```
+
+- **Streak bar** fills against a 30-day capped target: `min(streak / 30, 1)`.
+  The val text is the raw streak in days, e.g. `"7d"`.
+- **Progress bar** is overall completion percentage. The val text is
+  `"done/total"`, e.g. `"12/80"`.
+- **Do not override `.dock-bar-fill`'s width** — it is set as an inline style
+  by the renderer on every render. Any `width` rule in your stylesheet will be
+  beaten by the inline style and has no effect.
+
+Tapping `#dockBars` opens the stats sheet (`.toolbar.open`). The three buttons
+open the card-map modal, trophies modal, and the menu sheet (`#dashboard.open`)
+respectively.
+
+### Overriding the mobile HUD look
+
+The baseline's `[data-mobile]` rules carry `!important` on layout-critical
+declarations because themes legitimately style `#dashboard` and `#todayCard` by
+id. To override: match the baseline selector under `[data-mobile]` in your
+theme file. Your file loads **after** the baseline, so at equal specificity
++ `!important`, the last declaration wins — i.e. yours.
+
+```css
+/* Example — give the dock a black background in your theme */
+:root[data-mobile][data-theme="yourtheme"] #dock {
+  background: #000 !important;
+}
+```
+
+The rule of thumb: prefix the baseline selector with your `data-theme` and
+mirror its `!important` on any layout-critical declarations you change.
+
+### Sheet class names are owned by the app
+
+`.toolbar.open` and `#dashboard.open` are toggled by the app's mobile
+controller — these class names are **reserved**. You may restyle what an open
+sheet looks like (background, shadow, transition), but do not repurpose those
+class names for your own toggle logic.
+
+---
+
+## 6. Layout — the part that stops elements overlapping
 
 The app gives you raw, unpositioned elements. **Build these containers or things
 collide.** Recipes below are the proven house values.
@@ -322,7 +423,7 @@ toolbar, or the selects/buttons stack:
 :root[data-theme="my-theme"] .prow .lbl { display:flex; align-items:center; gap:8px; min-width:0; }         /* .lbl>i is the track dot */
 :root[data-theme="my-theme"] .bar       { height:8px; border-radius:99px; overflow:hidden; background:var(--rail); }
 :root[data-theme="my-theme"] .bar > i   { display:block; height:100%; }   /* width set inline by the app */
-:root[data-theme="my-theme"] .ring      { width:132px; aspect-ratio:1; display:grid; place-items:center; border-radius:50%; margin-inline:auto; }   /* the BOX — §6 paints the donut into it; margin-inline centers it, else it sits flush left in the card */
+:root[data-theme="my-theme"] .ring      { width:132px; aspect-ratio:1; display:grid; place-items:center; border-radius:50%; margin-inline:auto; }   /* the BOX — §7 paints the donut into it; margin-inline centers it, else it sits flush left in the card */
 :root[data-theme="my-theme"] .ring > div{ width:74%; aspect-ratio:1; display:grid; place-content:center; place-items:center; border-radius:50%; background:var(--panel); }   /* readout disc = the hole; holds <b>% + <small>. place-content packs the two rows as one centered group — without it grid stretches them apart vertically */
 ```
 
@@ -440,7 +541,7 @@ the `.task` label.
 
 ---
 
-## 6. House style — make it look designed, not generic
+## 7. House style — make it look designed, not generic
 
 These are the conventions the shipped themes share. Apply them or the result
 reads as flat/AI-generic.
@@ -514,7 +615,7 @@ so the burst looks hand-made rather than uniform.
 
 ---
 
-## 7. Reduced motion (app-provided)
+## 8. Reduced motion (app-provided)
 
 **The app ships a blanket reduced-motion guard in its baseline (§3)** — it catches
 every keyframe/transition you add (including the `.task` stagger), so you no
@@ -533,7 +634,7 @@ longer write your own. For reference, the shipped guard is:
 
 ---
 
-## 8. Canonical hook checklist
+## 9. Canonical hook checklist
 
 > **App-provided baseline (don't write these):** the `box-sizing` reset, the
 > native-checkbox hide (`.task input`), the reduced-motion guard, the keyboard
@@ -567,13 +668,14 @@ when it matters.
 
 ---
 
-## 9. Prompt — fill the blanks, paste together with everything above
+## 10. Prompt — fill the blanks, paste together with everything above
 
 > You are authoring a **Sunrise theme** (contract `sunrise.theme/v1`). The full
 > contract is in the document above — the page skeleton (§3), runtime
-> variables/state classes/inline styles (§4), the layout recipes that prevent
-> overlap (§5), house style (§6), reduced motion (§7), and the hook checklist
-> (§8). Follow all of it. The app ships **no base CSS**, so you own all layout.
+> variables/state classes/inline styles (§4), mobile HUD contract (§5), the
+> layout recipes that prevent overlap (§6), house style (§7), reduced motion
+> (§8), and the hook checklist (§9). Follow all of it. The app ships **no base
+> CSS**, so you own all layout.
 >
 > **Vibe:** {DESCRIBE THE LOOK — mood, palette, era, typography, motion feel}.
 >
@@ -587,7 +689,7 @@ when it matters.
 >      `flex-start`, panel not covering the backdrop, panel `overflow:visible`) —
 >      so nothing overlaps;
 >    - **hides the native checkbox** and drives the check via `.box` / `.task.done`;
->    - styles **every** hook in the §8 checklist, both states of each runtime
+>    - styles **every** hook in the §9 checklist, both states of each runtime
 >      class (`.modal.open`, `.task.done`, `.badge.on/.off`, `.toast.show`,
 >      `#motd.motd-out`), and both `.warm` variants; the card-map cells
 >      (`.cm-card.done/.rest/.current`) and shortcuts list already work via the
@@ -601,5 +703,5 @@ when it matters.
 >      a layered atmospheric background, hover/active micro-interactions, and the
 >      `.task` entrance keyframe keyed off the inline `animation-delay`;
 >    - adds **no** reduced-motion block of its own — the app baseline ships the
->      guard (§7), and the theme test rejects a stylesheet that re-declares it.
+>      guard (§8), and the theme test rejects a stylesheet that re-declares it.
 > 2. The one-line `registerTheme({…})` manifest pointing at that file.
