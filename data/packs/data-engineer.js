@@ -256,19 +256,34 @@
               {
                 "id": "t1",
                 "text": {
-                  "en": "Create a project skeleton — a fresh venv, a pyproject.toml, a src/ package folder, and a README — and commit it as the first commit.",
-                  "ru": "Создай каркас проекта — свежий venv, pyproject.toml, папку-пакет src/ и README — и закоммить это первым коммитом."
-                },
-                "guidance": {
-                  "en": "A good layout keeps importable code under src/ and a single entry point separate from library logic, so the same functions can be both run and imported by tests.",
-                  "ru": "Хорошая раскладка держит импортируемый код в src/, а единственную точку входа — отдельно от библиотечной логики, чтобы одни и те же функции можно было и запускать, и импортировать в тестах."
+                  "en": "Theory: why notebooks do not scale — hidden state, out-of-order execution, no reuse/tests/version control.",
+                  "ru": "Теория: почему ноутбуки не масштабируются — скрытое состояние, выполнение не по порядку, отсутствие переиспользования/тестов/контроля версий."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Take one notebook cell that loads and transforms data and rewrite it as a main.py with a __main__ guard and an argparse flag (e.g. --input PATH), then run it from the terminal.",
-                  "ru": "Возьми одну ячейку ноутбука, которая загружает и преобразует данные, и перепиши её в main.py с защитой __main__ и флагом argparse (например, --input PATH), затем запусти из терминала."
+                  "en": "Theory: anatomy of a Python project — modules vs scripts, the import system, __name__/__main__, entry points; what a virtual environment isolates.",
+                  "ru": "Теория: устройство Python-проекта — модули против скриптов, система импорта, __name__/__main__, точки входа; что изолирует виртуальное окружение."
+                }
+              },
+              {
+                "id": "t3",
+                "text": {
+                  "en": "Practice: turn one notebook cell into a runnable script with a CLI flag.",
+                  "ru": "Практика: превратите одну ячейку ноутбука в запускаемый скрипт с флагом командной строки."
+                }
+              }
+            ],
+            "resources": [
+              {
+                "label": {
+                  "en": "Python docs",
+                  "ru": "Python docs"
+                },
+                "note": {
+                  "en": "Read the Modules tutorial — the import system and the __name__ == '__main__' idiom.",
+                  "ru": "Прочитайте раздел Modules в учебнике — систему импорта и идиому __name__ == '__main__'."
                 }
               }
             ]
@@ -282,7 +297,7 @@
             },
             "warmup": {
               "en": "Your reporting query scans millions of rows — why would the database your app writes to hate that workload?",
-              "ru": "Твой отчётный запрос сканирует миллионы строк — почему база, в которую пишет приложение, ненавидит такую нагрузку?"
+              "ru": "Ваш отчётный запрос сканирует миллионы строк — почему база, в которую пишет приложение, ненавидит такую нагрузку?"
             },
             "reflectPrompt": {
               "en": "Which normalization rule that helps an OLTP system actively hurts an analytical one, and why?",
@@ -292,19 +307,22 @@
               {
                 "id": "t1",
                 "text": {
-                  "en": "Classify 4-5 sample schemas (e.g. an orders table, a wide event log, a normalized customer/address pair, a star-shaped report table) as OLTP or OLAP, with one line per schema justifying the call by access pattern and write rate.",
-                  "ru": "Классифицируй 4-5 примерных схем (например, таблицу заказов, широкий журнал событий, нормализованную пару customer/address, отчётную таблицу-звезду) как OLTP или OLAP, по одной строке на схему, обосновывая решение паттерном доступа и частотой записи."
-                },
-                "guidance": {
-                  "en": "Anchor each verdict in concrete signals — many small writes vs. large scans, point lookups vs. aggregations — not just row count.",
-                  "ru": "Привязывай каждый вердикт к конкретным признакам — много мелких записей против больших сканов, точечные выборки против агрегаций — а не только к числу строк."
+                  "en": "Theory: transactional vs analytical workloads, row vs columnar storage — why each fits its access pattern.",
+                  "ru": "Теория: транзакционные и аналитические нагрузки, строковое против колоночного хранения — почему каждое подходит своему паттерну доступа."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Take a deliberately denormalized table (repeating groups and transitive dependencies) and split it into 3NF tables, naming the dependency you removed at each step.",
-                  "ru": "Возьми намеренно денормализованную таблицу (повторяющиеся группы и транзитивные зависимости) и разбей её на таблицы 3NF, называя на каждом шаге устранённую зависимость."
+                  "en": "Theory: normalized vs dimensional schemas; normalization 1NF->3NF and the anomaly each form removes.",
+                  "ru": "Теория: нормализованные против размерных схем; нормализация 1NF->3NF и аномалия, устраняемая каждой формой."
+                }
+              },
+              {
+                "id": "t3",
+                "text": {
+                  "en": "Practice: classify a few sample schemas as OLTP or OLAP and name the deciding signal for each.",
+                  "ru": "Практика: классифицируйте несколько примерных схем как OLTP или OLAP и назовите решающий признак для каждой."
                 }
               }
             ]
@@ -318,36 +336,44 @@
             },
             "warmup": {
               "en": "What does a teammate learn from your commit history that they can't learn from the final code alone?",
-              "ru": "Что коллега узнаёт из истории твоих коммитов, чего не узнать из одного лишь финального кода?"
+              "ru": "Что коллега узнаёт из истории Ваших коммитов, чего не узнать из одного лишь финального кода?"
             },
             "reflectPrompt": {
               "en": "Reading your own diff before pushing — what would a reviewer have flagged that you almost shipped?",
-              "ru": "Читая собственный diff перед push — что отметил бы ревьюер из того, что ты чуть не отправил?"
+              "ru": "Читая собственный diff перед отправкой — что отметил бы ревьюер из того, что Вы чуть не отправили?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "Add a .gitignore that excludes the venv, __pycache__, and any local data files, then create a feature branch off main for the week-1 script.",
-                  "ru": "Добавь .gitignore, исключающий venv, __pycache__ и любые локальные файлы данных, затем создай feature-ветку от main для скрипта недели 1."
+                  "en": "Theory: what version control models — snapshots, the commit graph, branches and merges.",
+                  "ru": "Теория: что моделирует контроль версий — снимки, граф коммитов, ветки и слияния."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Make exactly 2 atomic commits on that branch — each self-contained, with a message stating what changed and why (not just \"wip\").",
-                  "ru": "Сделай ровно 2 атомарных коммита в этой ветке — каждый самодостаточный, с сообщением о том, что изменилось и зачем (а не просто «wip»)."
-                },
-                "guidance": {
-                  "en": "Atomic means the repo builds and the tests pass at that commit, and the diff tells one story — splitting unrelated changes into separate commits.",
-                  "ru": "Атомарный значит, что на этом коммите проект собирается и тесты проходят, а diff рассказывает одну историю — несвязанные изменения разнесены по разным коммитам."
+                  "en": "Theory: working tree vs staging vs commit; what makes an atomic commit and why history is communication.",
+                  "ru": "Теория: рабочее дерево против индекса против коммита; что делает коммит атомарным и почему история — это коммуникация."
                 }
               },
               {
                 "id": "t3",
                 "text": {
-                  "en": "Run git diff main against your branch and write one line reviewing your own change as if you were the reviewer.",
-                  "ru": "Запусти git diff main против своей ветки и напиши одну строку с ревью собственного изменения, будто ты ревьюер."
+                  "en": "Practice: make 2 atomic commits and review your own diff before pushing.",
+                  "ru": "Практика: сделайте 2 атомарных коммита и просмотрите собственный diff перед отправкой."
+                }
+              }
+            ],
+            "resources": [
+              {
+                "label": {
+                  "en": "Pro Git",
+                  "ru": "Pro Git"
+                },
+                "note": {
+                  "en": "Read \"Git Basics\" and \"Branching in a Nutshell\" — the staging area and the commit graph.",
+                  "ru": "Прочитайте «Git Basics» и «Branching in a Nutshell» — область индексации и граф коммитов."
                 }
               }
             ]
@@ -360,30 +386,45 @@
               "ru": "Введение в размерное моделирование"
             },
             "warmup": {
-              "en": "In a sales report, which numbers do you sum and which ones do you slice by? That split is facts vs. dimensions.",
-              "ru": "В отчёте по продажам какие числа ты суммируешь, а по каким — режешь? Это и есть деление на факты и измерения."
+              "en": "In a sales report, which numbers do you sum and which ones do you slice by? That split is facts vs dimensions.",
+              "ru": "В отчёте по продажам какие числа Вы суммируете, а по каким режете? Это и есть деление на факты и измерения."
             },
             "reflectPrompt": {
               "en": "How would the grain you chose change which questions the fact table can and cannot answer?",
-              "ru": "Как выбранная тобой grain меняет то, на какие вопросы fact-таблица может и не может ответить?"
+              "ru": "Как выбранное Вами зерно (grain) меняет то, на какие вопросы таблица фактов может и не может ответить?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "State the grain of an orders fact table in exactly one sentence (\"one row per ___\"), choosing between order header and order line.",
-                  "ru": "Сформулируй grain fact-таблицы заказов ровно одним предложением («одна строка на ___»), выбрав между шапкой заказа и строкой заказа."
-                },
-                "guidance": {
-                  "en": "A precise grain names the single business event a row represents; \"one row per order line\" and \"one row per order\" give very different fact tables.",
-                  "ru": "Точная grain называет единственное бизнес-событие, которое представляет строка; «одна строка на строку заказа» и «одна строка на заказ» дают очень разные fact-таблицы."
+                  "en": "Theory: facts vs dimensions, measures vs attributes — what each role carries in a model.",
+                  "ru": "Теория: факты против измерений, меры против атрибутов — что несёт каждая роль в модели."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "List every dimension that the orders fact joins to (e.g. date, customer, product, store) and mark which measures live on the fact itself.",
-                  "ru": "Перечисли все измерения, к которым присоединяется fact заказов (например, date, customer, product, store), и отметь, какие меры живут в самом факте."
+                  "en": "Theory: the grain of a fact table and why grain is decided first; the star schema and why it beats normalized models for analytics.",
+                  "ru": "Теория: зерно (grain) таблицы фактов и почему его определяют первым; схема-звезда и почему она лучше нормализованных моделей для аналитики."
+                }
+              },
+              {
+                "id": "t3",
+                "text": {
+                  "en": "Practice: state the grain and list the dimensions of an orders fact.",
+                  "ru": "Практика: сформулируйте зерно (grain) и перечислите измерения для таблицы фактов заказов."
+                }
+              }
+            ],
+            "resources": [
+              {
+                "label": {
+                  "en": "Kimball, \"The Data Warehouse Toolkit\"",
+                  "ru": "Kimball, «The Data Warehouse Toolkit»"
+                },
+                "note": {
+                  "en": "Read Chapter 1 — facts, dimensions, grain, and the four-step dimensional design process.",
+                  "ru": "Прочитайте главу 1 — факты, измерения, зерно (grain) и четырёхшаговый процесс размерного проектирования."
                 }
               }
             ]
@@ -392,30 +433,37 @@
             "id": "w1d5",
             "track": "python",
             "title": {
-              "en": "pytest basics",
-              "ru": "Основы pytest"
+              "en": "Unit testing & pure functions",
+              "ru": "Юнит-тесты и чистые функции"
             },
             "warmup": {
-              "en": "Why is a pure transform function — same input, same output, no I/O — the easiest thing in your pipeline to test?",
-              "ru": "Почему чистая функция-преобразование — тот же вход, тот же выход, без I/O — самое простое для тестирования звено пайплайна?"
+              "en": "Which part of a pipeline can you test without a database, a clock, or the network — and why is that the part worth testing first?",
+              "ru": "Какую часть пайплайна можно протестировать без базы, часов и сети — и почему именно её стоит тестировать первой?"
             },
             "reflectPrompt": {
-              "en": "Writing the failing test first — what did seeing it fail confirm that a passing test never would have?",
-              "ru": "Написав сначала падающий тест — что подтвердило его падение, чего проходящий тест никогда бы не показал?"
+              "en": "Where did writing a test force you to pull I/O out of a function so it became testable?",
+              "ru": "Где написание теста заставило Вас вынести ввод-вывод из функции, чтобы её стало можно тестировать?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "Write 2-3 pytest cases for a small pure transform function from your week-1 script (e.g. parsing a row, cleaning a value), covering a normal input and an edge case.",
-                  "ru": "Напиши 2-3 теста pytest для маленькой чистой функции-преобразования из скрипта недели 1 (например, разбор строки, очистка значения), покрыв обычный вход и граничный случай."
+                  "en": "Theory: why pure functions — deterministic, no I/O — are the testable core of a pipeline.",
+                  "ru": "Теория: почему чистые функции — детерминированные, без ввода-вывода — это тестируемое ядро пайплайна."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Add one test that fails first (red), then change the function so it passes (green), and confirm the whole suite is green with one pytest run.",
-                  "ru": "Добавь один тест, который сначала падает (red), затем измени функцию так, чтобы он прошёл (green), и убедись, что весь набор зелёный за один запуск pytest."
+                  "en": "Theory: anatomy of a unit test (arrange/act/assert), what to test (boundaries, edge cases) vs what not, the red->green loop — with pytest.",
+                  "ru": "Теория: устройство юнит-теста (arrange/act/assert), что тестировать (границы, краевые случаи), а что нет, цикл red->green — на pytest."
+                }
+              },
+              {
+                "id": "t3",
+                "text": {
+                  "en": "Practice: write 2-3 pytest cases for a small transform.",
+                  "ru": "Практика: напишите 2-3 теста на pytest для небольшого преобразования."
                 }
               }
             ],
@@ -426,8 +474,8 @@
                   "ru": "pytest docs"
                 },
                 "note": {
-                  "en": "Read the \"Get Started\" page — how pytest discovers test files/functions and how plain assert statements work.",
-                  "ru": "Прочитай страницу «Get Started» — как pytest находит тестовые файлы/функции и как работают обычные assert."
+                  "en": "Read \"Get Started\" — how pytest discovers tests and how plain assert statements work.",
+                  "ru": "Прочитайте «Get Started» — как pytest находит тесты и как работают обычные assert."
                 }
               }
             ]
@@ -436,34 +484,49 @@
             "id": "w1d6",
             "track": "modeling",
             "title": {
-              "en": "Design a star schema",
-              "ru": "Спроектируй star schema"
+              "en": "Star schema in depth",
+              "ru": "Схема-звезда в глубину"
             },
             "warmup": {
-              "en": "Recall: what makes a dimension \"conformed\" — and why does the warehouse care?",
-              "ru": "Вспомни: что делает измерение «conformed» — и почему это важно для хранилища?"
+              "en": "Two fact tables share a date and a customer — what has to be true about those dimensions for the numbers to line up across both?",
+              "ru": "Две таблицы фактов делят дату и клиента — что должно быть верно об этих измерениях, чтобы числа сходились в обеих?"
             },
             "reflectPrompt": {
-              "en": "Where in your star did you have to choose between a clean model and an easy query — and how did you decide?",
-              "ru": "Где в своей звезде тебе пришлось выбирать между чистой моделью и удобным запросом — и как ты решил?"
+              "en": "Which measure in your star is non-additive, and what would break if someone summed it across the wrong dimension?",
+              "ru": "Какая мера в Вашей звезде неаддитивна, и что сломается, если её просуммируют по неверному измерению?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "Sketch the full orders star: the fact table at its chosen grain in the center, surrounded by its conformed dimensions, with foreign-key lines drawn.",
-                  "ru": "Нарисуй полную звезду заказов: fact-таблицу на выбранной grain в центре, окружённую conformed-измерениями, с проведёнными линиями внешних ключей."
-                },
-                "guidance": {
-                  "en": "A strong sketch shows the fact holding only foreign keys plus numeric measures, and each dimension carrying its descriptive attributes plus a surrogate key.",
-                  "ru": "Сильный набросок показывает, что в факте только внешние ключи плюс числовые меры, а каждое измерение несёт свои описательные атрибуты плюс surrogate key."
+                  "en": "Theory: conformed dimensions, surrogate vs natural keys — why a warehouse owns its own keys.",
+                  "ru": "Теория: согласованные измерения, суррогатные против натуральных ключей — почему хранилище владеет собственными ключами."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Write the CREATE TABLE DDL for the orders fact and for one dimension (e.g. dim_customer), with surrogate keys, foreign keys, and explicit column types.",
-                  "ru": "Напиши DDL CREATE TABLE для fact заказов и для одного измерения (например, dim_customer), с surrogate-ключами, внешними ключами и явными типами колонок."
+                  "en": "Theory: additive / semi-additive / non-additive measures; fact table types — transaction, periodic snapshot, accumulating snapshot.",
+                  "ru": "Теория: аддитивные / полуаддитивные / неаддитивные меры; типы таблиц фактов — транзакционная, периодический снимок, накопительный снимок."
+                }
+              },
+              {
+                "id": "t3",
+                "text": {
+                  "en": "Practice: sketch a star and write DDL for the fact plus one dimension.",
+                  "ru": "Практика: набросайте звезду и напишите DDL для таблицы фактов и одного измерения."
+                }
+              }
+            ],
+            "resources": [
+              {
+                "label": {
+                  "en": "Kimball, \"The Data Warehouse Toolkit\"",
+                  "ru": "Kimball, «The Data Warehouse Toolkit»"
+                },
+                "note": {
+                  "en": "Read the chapters on additivity and conformed dimensions, and the three fact table types.",
+                  "ru": "Прочитайте главы об аддитивности и согласованных измерениях, а также о трёх типах таблиц фактов."
                 }
               }
             ]
@@ -473,8 +536,8 @@
             "track": "rest",
             "rest": true,
             "reflectPrompt": {
-              "en": "Looking back at the week: which idea changed how you'll structure your next data project — the script discipline, the model thinking, or the testing habit?",
-              "ru": "Оглядываясь на неделю: какая идея изменила то, как ты будешь строить следующий data-проект — дисциплина скриптов, мышление моделями или привычка тестировать?"
+              "en": "This week split the world into code that runs and models that hold data — which idea reshaped how you'll structure your next pipeline most?",
+              "ru": "Эта неделя разделила мир на код, который выполняется, и модели, которые хранят данные — какая идея сильнее всего изменит то, как Вы построите следующий пайплайн?"
             }
           }
         ]
@@ -491,34 +554,42 @@
             "id": "w2d1",
             "track": "python",
             "title": {
-              "en": "Type hints & records",
+              "en": "Type hints & typed records",
               "ru": "Type hints и типизированные записи"
             },
             "warmup": {
-              "en": "Recall: what is the practical difference between a dict row and a typed record?",
-              "ru": "Вспомни: в чём практическая разница между строкой-dict и типизированной записью?"
+              "en": "What does mypy know about your code that the Python interpreter never checks?",
+              "ru": "Что mypy знает о вашем коде такого, что интерпретатор Python никогда не проверяет?"
             },
             "reflectPrompt": {
-              "en": "What did mypy catch today that would otherwise have shipped to production unnoticed?",
-              "ru": "Что сегодня поймал mypy, что иначе уехало бы в прод незамеченным?"
+              "en": "Where would a typed record have caught a bug in your past analyst code that a raw dict silently let through?",
+              "ru": "Где типизированная запись поймала бы ошибку в вашем прошлом аналитическом коде, которую голый dict молча пропустил?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "Add type hints to every function signature in your week-1 script, and model one row as a dataclass (or a pydantic model) instead of a raw dict.",
-                  "ru": "Добавь type hints к каждой сигнатуре функции в скрипте из недели 1 и опиши одну строку как dataclass (или модель pydantic) вместо голого dict."
+                  "en": "Theory: what static typing buys (errors before runtime, self-documenting interfaces), type hints vs runtime validation, dataclasses vs pydantic, modeling a row as a typed record — when each fits.",
+                  "ru": "Теория: что даёт статическая типизация (ошибки до запуска, самодокументируемые интерфейсы), type hints против валидации в рантайме, dataclasses против pydantic, моделирование строки как типизированной записи — когда что подходит."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Run mypy in strict mode on the script and fix every error it reports until it passes clean.",
-                  "ru": "Запусти mypy в строгом режиме на скрипте и почини все ошибки, пока проверка не пройдёт чисто."
+                  "en": "Practice: add type hints to one transform module, model a row as a dataclass or pydantic model, run mypy until clean.",
+                  "ru": "Практика: добавьте type hints к одному модулю-преобразованию, опишите строку как dataclass или модель pydantic, прогоните mypy до чистого результата."
+                }
+              }
+            ],
+            "resources": [
+              {
+                "label": {
+                  "en": "Python docs",
+                  "ru": "Python docs"
                 },
-                "guidance": {
-                  "en": "Resist silencing errors with Any or type: ignore. If mypy complains, it usually found a real shape mismatch (an unhandled Optional, a wrong return type) — fix the data flow, not the annotation.",
-                  "ru": "Не глуши ошибки через Any или type: ignore. Если mypy ругается, обычно он нашёл реальное несоответствие формы (необработанный Optional, неверный return type) — чини поток данных, а не аннотацию."
+                "note": {
+                  "en": "typing module — read the intro and Optional/Union; skim the dataclasses page.",
+                  "ru": "Модуль typing — прочитайте введение и Optional/Union; пробегите страницу dataclasses."
                 }
               }
             ]
@@ -531,30 +602,33 @@
               "ru": "Колоночные хранилища и MPP"
             },
             "warmup": {
-              "en": "Recall: in an analytical query, do you read most columns or most rows?",
-              "ru": "Вспомни: в аналитическом запросе ты читаешь большинство колонок или большинство строк?"
+              "en": "In an analytical scan, do you touch most columns or most rows — and which storage layout is built for that?",
+              "ru": "В аналитическом скане вы трогаете большинство колонок или большинство строк — и какая раскладка хранения создана для этого?"
             },
             "reflectPrompt": {
-              "en": "Where in your past analyst work did you fight a row-store that a columnar warehouse would have made trivial?",
-              "ru": "Где в прошлой аналитической работе ты боролся с row-store, который колоночное хранилище сделало бы тривиальным?"
+              "en": "Which past report fought a row-store that a columnar MPP warehouse would have made trivial — and what was the mechanism?",
+              "ru": "Какой прошлый отчёт боролся с row-store, который колоночное MPP-хранилище сделало бы тривиальным — и в чём был механизм?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "Write a half-page note: name three workloads where columnar storage wins over a row-oriented OLTP store like Postgres, and explain the mechanism (column pruning, compression, vectorized scans).",
-                  "ru": "Напиши заметку на полстраницы: назови три нагрузки, где колоночное хранилище выигрывает у строкового OLTP-хранилища вроде Postgres, и объясни механизм (отсечение колонок, сжатие, векторные сканы)."
+                  "en": "Theory: columnar storage internals (per-column compression, projection and predicate pushdown, vectorized scans) — why columnar wins for big aggregations.",
+                  "ru": "Теория: внутреннее устройство колоночного хранения (сжатие по колонкам, projection и predicate pushdown, векторные сканы) — почему колоночность выигрывает на больших агрегациях."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Given two queries over the same table — one selecting 2 columns, one selecting * — write down which scans less data and which filter on the partition/clustering key avoids a full scan, with the reason for each.",
-                  "ru": "Даны два запроса по одной таблице — один выбирает 2 колонки, другой выбирает *. Запиши, какой просканирует меньше данных и какой фильтр по ключу партиционирования/кластеризации избежит полного скана, с обоснованием для каждого."
-                },
-                "guidance": {
-                  "en": "A strong answer separates two independent levers: columnar layout cuts data by which columns you touch; partitioning/clustering cuts it by which rows survive the filter. SELECT * defeats the first lever; a filter that doesn't match the partition key defeats the second.",
-                  "ru": "Сильный ответ разделяет два независимых рычага: колоночная раскладка режет данные по тому, какие колонки ты трогаешь; партиционирование/кластеризация — по тому, какие строки переживут фильтр. SELECT * убивает первый рычаг; фильтр не по ключу партиции — второй."
+                  "en": "Theory: massively parallel processing (shared-nothing, data distribution, shuffles), partitioning vs clustering, how partition pruning works.",
+                  "ru": "Теория: massively parallel processing (shared-nothing, распределение данных, shuffles), партиционирование против кластеризации, как работает partition pruning."
+                }
+              },
+              {
+                "id": "t3",
+                "text": {
+                  "en": "Practice: given two queries over one table, predict which scans less data and which avoids a full scan — say why for each.",
+                  "ru": "Практика: для двух запросов по одной таблице предскажите, какой просканирует меньше данных и какой избежит полного скана — обоснуйте каждый."
                 }
               }
             ]
@@ -567,30 +641,38 @@
               "ru": "Медленно меняющиеся измерения"
             },
             "warmup": {
-              "en": "Recall: when a customer changes city, should the old fact rows keep the old city or the new one?",
-              "ru": "Вспомни: когда клиент сменил город, старые строки фактов должны хранить старый город или новый?"
+              "en": "When a customer moves city, should old fact rows keep the old city or the new one — and who decides?",
+              "ru": "Когда клиент сменил город, старые строки фактов должны хранить старый город или новый — и кто это решает?"
             },
             "reflectPrompt": {
-              "en": "Which of your real-world dimensions actually need history (SCD type 2), and which are fine to just overwrite (type 1)?",
-              "ru": "Какие из твоих реальных измерений действительно нуждаются в истории (SCD type 2), а какие можно просто перезаписывать (type 1)?"
+              "en": "Which of your real dimensions truly need history (SCD2) and which are fine to overwrite (SCD1) — what made the difference?",
+              "ru": "Каким из ваших реальных измерений действительно нужна история (SCD2), а какие можно перезаписывать (SCD1) — что определило выбор?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "Design an SCD type-2 dimension table: write out its columns including a surrogate key, the natural/business key, effective-from and effective-to dates, and a current-flag.",
-                  "ru": "Спроектируй таблицу измерения SCD type 2: выпиши её колонки, включая surrogate key, натуральный/бизнес-ключ, даты effective-from и effective-to и флаг текущей версии."
+                  "en": "Theory: why dimensions change over time, SCD types 0/1/2/3 and what history each preserves, surrogate keys and effective-dating for SCD2 — the history-vs-complexity trade-off.",
+                  "ru": "Теория: почему измерения меняются со временем, типы SCD 0/1/2/3 и какую историю хранит каждый, surrogate keys и effective-dating для SCD2 — компромисс между историей и сложностью."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Write the rule, in plain words, for what happens to the existing row and what new row is inserted when a tracked attribute changes — and contrast it with what SCD type 1 would do instead.",
-                  "ru": "Сформулируй словами правило: что происходит с существующей строкой и какая новая строка вставляется при изменении отслеживаемого атрибута — и противопоставь это тому, что сделал бы SCD type 1."
+                  "en": "Practice: design an SCD2 dimension table — columns including surrogate key, business key, effective-from/to, and a current-flag.",
+                  "ru": "Практика: спроектируйте таблицу измерения SCD2 — колонки с surrogate key, бизнес-ключом, effective-from/to и флагом текущей версии."
+                }
+              }
+            ],
+            "resources": [
+              {
+                "label": {
+                  "en": "Kimball, \"The Data Warehouse Toolkit\"",
+                  "ru": "Kimball, «The Data Warehouse Toolkit»"
                 },
-                "guidance": {
-                  "en": "A correct type-2 rule closes the old row (set effective-to and clear current-flag) AND inserts a new row with a fresh surrogate key — never mutate the business key. The point of the surrogate key is that one business entity can own many dimension rows over time.",
-                  "ru": "Корректное правило type 2 закрывает старую строку (проставить effective-to и снять current-flag) И вставляет новую строку с новым surrogate key — бизнес-ключ никогда не мутируется. Смысл surrogate key в том, что одна бизнес-сущность владеет многими строками измерения во времени."
+                "note": {
+                  "en": "Read the slowly-changing-dimension techniques (types 1/2/3) section.",
+                  "ru": "Прочитайте раздел о техниках медленно меняющихся измерений (типы 1/2/3)."
                 }
               }
             ]
@@ -599,34 +681,30 @@
             "id": "w2d4",
             "track": "warehouse",
             "title": {
-              "en": "dbt: first model",
-              "ru": "dbt: первая модель"
+              "en": "How dbt models work",
+              "ru": "Как устроены модели dbt"
             },
             "warmup": {
-              "en": "Recall: what is the difference between a source you read from and a model you build?",
-              "ru": "Вспомни: чем источник, из которого читаешь, отличается от модели, которую строишь?"
+              "en": "If your transformations are just SELECTs, what builds the order they run in?",
+              "ru": "Если ваши преобразования — это просто SELECT, что строит порядок их запуска?"
             },
             "reflectPrompt": {
-              "en": "How does ref() change the way you think about dependencies compared to hand-written CREATE TABLE scripts?",
-              "ru": "Как ref() меняет твой взгляд на зависимости по сравнению с рукописными скриптами CREATE TABLE?"
+              "en": "How does ref() change how you reason about dependencies compared to hand-written CREATE TABLE scripts?",
+              "ru": "Как ref() меняет ваше рассуждение о зависимостях по сравнению с рукописными скриптами CREATE TABLE?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "Scaffold a dbt project (dbt init), point it at your warehouse, and declare your raw table as a source in a sources YAML file.",
-                  "ru": "Создай dbt-проект (dbt init), направь его на своё хранилище и объяви свою сырую таблицу как source в YAML-файле sources."
+                  "en": "Theory: what dbt is (ELT as templated SELECTs), sources and ref() and the DAG dbt builds, materializations (view / table / incremental / ephemeral) and their trade-offs — the analytics-engineering workflow.",
+                  "ru": "Теория: что такое dbt (ELT как шаблонные SELECT), sources, ref() и DAG, который строит dbt, materializations (view / table / incremental / ephemeral) и их компромиссы — workflow аналитической инженерии."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Build one staging model that selects from the source via source() and a downstream model that selects from it via ref(); run dbt run and confirm both materialize.",
-                  "ru": "Построй одну staging-модель, которая читает из источника через source(), и нижестоящую модель, которая читает из неё через ref(); запусти dbt run и убедись, что обе материализуются."
-                },
-                "guidance": {
-                  "en": "Use source() only for raw inputs you don't manage and ref() for everything dbt builds — that's what lets dbt infer the DAG. Hardcode a table name instead and notice you lose lineage and build ordering.",
-                  "ru": "Используй source() только для сырых входов, которыми ты не управляешь, и ref() для всего, что строит dbt — именно это позволяет dbt вывести DAG. Захардкодь имя таблицы вместо этого и заметь, что теряешь lineage и порядок сборки."
+                  "en": "Practice: build one staging model that reads a raw table via source() and a downstream model that reads it via ref().",
+                  "ru": "Практика: постройте одну staging-модель, читающую сырую таблицу через source(), и нижестоящую модель, читающую её через ref()."
                 }
               }
             ],
@@ -637,8 +715,8 @@
                   "ru": "dbt docs"
                 },
                 "note": {
-                  "en": "Build your first models — sources, ref(), and materializations",
-                  "ru": "Build your first models — про sources, ref() и materializations"
+                  "en": "\"Build your first models\" — sources, ref(), and materializations.",
+                  "ru": "«Build your first models» — про sources, ref() и materializations."
                 }
               }
             ]
@@ -647,34 +725,30 @@
             "id": "w2d5",
             "track": "python",
             "title": {
-              "en": "Packaging & reproducible env",
-              "ru": "Упаковка и воспроизводимое окружение"
+              "en": "Dependencies & reproducibility",
+              "ru": "Зависимости и воспроизводимость"
             },
             "warmup": {
-              "en": "Recall: why does \"it works on my machine\" happen, in dependency terms?",
-              "ru": "Вспомни: почему случается «у меня работает», если говорить языком зависимостей?"
+              "en": "\"Works on my machine\" — in dependency terms, what exactly differs between two machines?",
+              "ru": "«У меня работает» — на языке зависимостей, что именно различается между двумя машинами?"
             },
             "reflectPrompt": {
-              "en": "If a teammate cloned your repo today, what exact set of commands gets them a working environment — and did anything surprise you?",
-              "ru": "Если коллега склонирует твой репозиторий сегодня, какой точный набор команд даст ему рабочее окружение — и что-то тебя удивило?"
+              "en": "What is the precise gap between a declared dependency set and a reproducible one — and where does it bite?",
+              "ru": "В чём точная разница между объявленным набором зависимостей и воспроизводимым — и где она бьёт?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "Add a pyproject.toml that declares your project and its direct dependencies, replacing any loose requirements you had before.",
-                  "ru": "Добавь pyproject.toml, который описывает твой проект и его прямые зависимости, заменив прежние разрозненные requirements."
+                  "en": "Theory: why \"works on my machine\" happens, abstract dependencies vs a pinned/locked set, semantic versioning, environments, pyproject and lockfiles — what makes a build reproducible.",
+                  "ru": "Теория: почему случается «у меня работает», абстрактные зависимости против зафиксированного/залоченного набора, семантическое версионирование, окружения, pyproject и lockfiles — что делает сборку воспроизводимой."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Pin the dependency versions (a lockfile or explicit versions), then delete your venv, create a fresh one, install from scratch, and confirm the week-1 script still runs.",
-                  "ru": "Зафиксируй версии зависимостей (lockfile или явные версии), затем удали свой venv, создай новый, установи всё с нуля и убедись, что скрипт из недели 1 всё ещё работает."
-                },
-                "guidance": {
-                  "en": "Pinning direct deps isn't enough for true reproducibility — a transitive dependency can still drift. A lockfile captures the full resolved graph; that's the difference between \"declared\" and \"reproducible\".",
-                  "ru": "Фиксации прямых зависимостей мало для настоящей воспроизводимости — транзитивная зависимость всё ещё может уплыть. Lockfile фиксирует весь разрешённый граф; в этом разница между «объявлено» и «воспроизводимо»."
+                  "en": "Practice: pin your dependencies, reproduce the environment in a clean venv, and confirm the script still runs.",
+                  "ru": "Практика: зафиксируйте зависимости, воспроизведите окружение в чистом venv и убедитесь, что скрипт всё ещё работает."
                 }
               }
             ],
@@ -685,8 +759,8 @@
                   "ru": "Python docs"
                 },
                 "note": {
-                  "en": "Packaging Python Projects — the pyproject.toml tutorial",
-                  "ru": "Packaging Python Projects — туториал по pyproject.toml"
+                  "en": "\"Packaging Python Projects\" — the pyproject.toml tutorial.",
+                  "ru": "«Packaging Python Projects» — туториал по pyproject.toml."
                 }
               }
             ]
@@ -695,34 +769,42 @@
             "id": "w2d6",
             "track": "warehouse",
             "title": {
-              "en": "dbt tests & docs",
-              "ru": "dbt-тесты и документация"
+              "en": "Testing data in dbt",
+              "ru": "Тестирование данных в dbt"
             },
             "warmup": {
-              "en": "Recall: what is the cheapest data-quality bug to catch — at write time or three dashboards downstream?",
-              "ru": "Вспомни: какой баг качества данных дешевле всего поймать — при записи или через три дашборда ниже по потоку?"
+              "en": "What is the cheapest data-quality bug to catch — at the model boundary or three dashboards downstream?",
+              "ru": "Какой баг качества данных дешевле всего поймать — на границе модели или через три дашборда ниже по потоку?"
             },
             "reflectPrompt": {
-              "en": "Which generic tests would have caught a real data incident from your analyst days, and where do they fall short?",
-              "ru": "Какие generic-тесты поймали бы реальный инцидент с данными из твоей аналитической практики и где их не хватает?"
+              "en": "Which generic tests would have caught a real incident from your analyst days, and where do they fall short?",
+              "ru": "Какие generic-тесты поймали бы реальный инцидент из вашей аналитической практики, и где их не хватает?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "Add generic schema tests to your staging model: unique and not_null on its key, plus a relationships test pointing a foreign key at its parent model.",
-                  "ru": "Добавь generic schema-тесты к своей staging-модели: unique и not_null на её ключ плюс relationships-тест, связывающий внешний ключ с родительской моделью."
+                  "en": "Theory: declarative data tests (unique, not_null, relationships, accepted_values) vs singular tests, tests as executable assumptions and contracts, where tests sit in the DAG, docs as a model artifact.",
+                  "ru": "Теория: декларативные тесты данных (unique, not_null, relationships, accepted_values) против singular-тестов, тесты как исполняемые допущения и контракты, место тестов в DAG, документация как артефакт модели."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Run dbt test, then deliberately introduce a duplicate or a broken reference, re-run, and write down how dbt reports the failing rows.",
-                  "ru": "Запусти dbt test, затем намеренно внеси дубликат или сломанную ссылку, перезапусти и запиши, как dbt сообщает о падающих строках."
+                  "en": "Practice: add tests to one model (unique/not_null on its key plus a relationships test) and run dbt test.",
+                  "ru": "Практика: добавьте тесты к одной модели (unique/not_null на ключ плюс relationships-тест) и запустите dbt test."
+                }
+              }
+            ],
+            "resources": [
+              {
+                "label": {
+                  "en": "dbt docs",
+                  "ru": "dbt docs"
                 },
-                "guidance": {
-                  "en": "Generic tests cover shape (uniqueness, nullability, referential integrity); a singular test is a custom SQL query that returns the offending rows. Reach for a singular test when the rule is business-specific, like \"revenue is never negative\".",
-                  "ru": "Generic-тесты покрывают форму (уникальность, заполненность, ссылочную целостность); singular-тест — это кастомный SQL-запрос, возвращающий нарушающие строки. Бери singular-тест, когда правило бизнес-специфичное, например «выручка никогда не отрицательна»."
+                "note": {
+                  "en": "\"Add data tests to your DAG\" — generic vs singular tests.",
+                  "ru": "«Add data tests to your DAG» — generic против singular-тестов."
                 }
               }
             ]
@@ -732,8 +814,8 @@
             "track": "rest",
             "rest": true,
             "reflectPrompt": {
-              "en": "This week you moved from notebooks to typed code and from queries to a modeled, tested warehouse. Which single habit — type checking, pinned environments, or testable models — will most change how you ship, and why?",
-              "ru": "На этой неделе ты перешёл от ноутбуков к типизированному коду и от запросов к смоделированному, протестированному хранилищу. Какая одна привычка — проверка типов, зафиксированные окружения или тестируемые модели — сильнее всего изменит то, как ты выкатываешь, и почему?"
+              "en": "This week moved you from notebooks to typed, reproducible code and from queries to a modeled, tested warehouse. Which single idea — static typing, columnar/MPP internals, SCD history, the dbt DAG, locked environments, or data tests — most changed how you will build, and why?",
+              "ru": "Эта неделя перевела вас от ноутбуков к типизированному, воспроизводимому коду и от запросов к смоделированному, протестированному хранилищу. Какая одна идея — статическая типизация, внутреннее устройство колоночных/MPP-систем, история SCD, DAG в dbt, зафиксированные окружения или тесты данных — сильнее всего изменила то, как вы будете строить, и почему?"
             }
           }
         ]
@@ -754,30 +836,33 @@
               "ru": "ETL против ELT и идемпотентность"
             },
             "warmup": {
-              "en": "If tonight's load fires twice by accident, does the table stay correct?",
-              "ru": "Если сегодняшняя загрузка случайно сработает дважды, останется ли таблица корректной?"
+              "en": "If a load job dies halfway and you simply re-run it, does the table end up the same — or doubled?",
+              "ru": "Если задача загрузки умирает на полпути и Вы просто перезапускаете её — таблица станет такой же или удвоится?"
             },
             "reflectPrompt": {
-              "en": "Which of your current loads would break on a re-run, and why did 'load once' feel safe enough until now?",
-              "ru": "Какая из ваших текущих загрузок сломалась бы при повторном запуске, и почему до сих пор казалось, что грузить ровно один раз — достаточно надёжно?"
+              "en": "Which of your current jobs would corrupt its target on a blind re-run, and what is the smallest change that fixes it?",
+              "ru": "Какая из Ваших текущих задач испортила бы целевую таблицу при слепом перезапуске, и какое минимальное изменение это чинит?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "Take a load that does a blind INSERT and rewrite it as a merge/upsert (or delete-then-insert) keyed on a stable business key.",
-                  "ru": "Возьмите загрузку, которая делает слепой INSERT, и перепишите её как merge/upsert (или delete-then-insert) по устойчивому бизнес-ключу."
-                },
-                "guidance": {
-                  "en": "Idempotency prevents duplicate rows after a retry: a job that crashes mid-load and re-runs (or fires twice from the scheduler) must converge to the same final state, not accumulate copies.",
-                  "ru": "Идемпотентность защищает от дублей после повторного запуска: задача, упавшая на середине и перезапущенная (или дважды сработавшая в планировщике), должна приходить к тому же конечному состоянию, а не накапливать копии."
+                  "en": "Theory: ETL vs ELT, where transformation runs, why ELT won with cheap warehouse compute, full vs incremental loads — transform where the data already lives.",
+                  "ru": "Теория: ETL против ELT, где выполняется трансформация, почему ELT победил при дешёвых вычислениях в хранилище, полная против инкрементальной загрузки — трансформируйте там, где данные уже лежат."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Run the rewritten load twice in a row against the same source and confirm the row count and key values are identical after both runs.",
-                  "ru": "Запустите переписанную загрузку дважды подряд на том же источнике и убедитесь, что число строк и значения ключей одинаковы после обоих запусков."
+                  "en": "Theory: idempotency, convergent re-runs, delivery semantics (at-least-once needs dedup/upsert), exactly-once as an illusion — design for replay.",
+                  "ru": "Теория: идемпотентность, сходимость повторных запусков, семантика доставки (at-least-once требует dedup/upsert), exactly-once как иллюзия — проектируйте под повтор."
+                }
+              },
+              {
+                "id": "t3",
+                "text": {
+                  "en": "Practice: take one non-idempotent load and make it idempotent via a merge/upsert keyed on a natural key.",
+                  "ru": "Практика: возьмите одну неидемпотентную загрузку и сделайте её идемпотентной через merge/upsert по натуральному ключу."
                 }
               }
             ]
@@ -787,33 +872,36 @@
             "track": "warehouse",
             "title": {
               "en": "Incremental models & snapshots",
-              "ru": "Инкрементальные модели и snapshots"
+              "ru": "Инкрементальные модели и снимки"
             },
             "warmup": {
-              "en": "Yesterday's data hasn't changed — so why rebuild the whole table tonight?",
-              "ru": "Вчерашние данные не менялись — так зачем перестраивать всю таблицу сегодня ночью?"
+              "en": "Your table has 2 billion rows but yesterday only 10,000 changed — why is your job still reading all 2 billion?",
+              "ru": "В Вашей таблице 2 миллиарда строк, но вчера изменились лишь 10 000 — почему задача всё ещё читает все 2 миллиарда?"
             },
             "reflectPrompt": {
-              "en": "When does an incremental model save real time, and when does its added complexity cost more than the full refresh it replaces?",
-              "ru": "Когда инкрементальная модель действительно экономит время, а когда её усложнение стоит дороже, чем полный пересчёт, который она заменяет?"
+              "en": "An incremental model trades correctness-on-rebuild for speed — where does that trade quietly bite you?",
+              "ru": "Инкрементальная модель меняет корректность-при-пересборке на скорость — где этот компромисс тихо Вас укусит?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "Convert one full-refresh dbt model to incremental: add the materialization config and an is_incremental() block that filters to rows newer than the max timestamp already in the table.",
-                  "ru": "Переведите одну dbt-модель с полного пересчёта на инкрементальную: добавьте конфиг материализации и блок is_incremental(), который отбирает строки новее максимальной отметки времени, уже лежащей в таблице."
+                  "en": "Theory: why you do not rebuild the world each run, incremental models, the is_incremental pattern, late-arriving data, merge strategies.",
+                  "ru": "Теория: почему не нужно пересобирать весь мир за каждый запуск, инкрементальные модели, паттерн is_incremental, поздно приходящие данные, стратегии merge."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Add a dbt snapshot over a slowly changing dimension (e.g. a customer or product table), choosing a strategy and the columns that define a change.",
-                  "ru": "Добавьте dbt snapshot на медленно меняющееся измерение (например, таблицу клиентов или товаров), выбрав стратегию и столбцы, по которым определяется изменение."
-                },
-                "guidance": {
-                  "en": "A snapshot gives you SCD2 history: change one source row, run the snapshot twice, and confirm the old version closes (dbt_valid_to set) while a new version opens.",
-                  "ru": "Snapshot даёт историю по SCD2: измените одну строку источника, запустите snapshot дважды и убедитесь, что старая версия закрывается (заполняется dbt_valid_to), а новая открывается."
+                  "en": "Theory: dbt snapshots as point-in-time history, SCD2 mechanics (valid_from/valid_to, current flag) — capturing how a row looked over time.",
+                  "ru": "Теория: снимки dbt как история на момент времени, механика SCD2 (valid_from/valid_to, признак текущей записи) — фиксация того, как выглядела строка во времени."
+                }
+              },
+              {
+                "id": "t3",
+                "text": {
+                  "en": "Practice: convert one model to incremental and add a dbt snapshot over a slowly-changing dimension.",
+                  "ru": "Практика: переведите одну модель в инкрементальную и добавьте снимок dbt над медленно меняющимся измерением."
                 }
               }
             ],
@@ -824,8 +912,8 @@
                   "ru": "dbt docs"
                 },
                 "note": {
-                  "en": "Read the 'Incremental models' and 'Snapshots' pages — focus on is_incremental() and snapshot strategies.",
-                  "ru": "Прочитайте страницы «Incremental models» и «Snapshots» — сосредоточьтесь на is_incremental() и стратегиях snapshot."
+                  "en": "Read the \"Incremental models\" and \"Snapshots\" pages — is_incremental(), unique_key, and SCD2 strategies.",
+                  "ru": "Прочитайте страницы «Incremental models» и «Snapshots» — is_incremental(), unique_key и стратегии SCD2."
                 }
               }
             ]
@@ -834,37 +922,37 @@
             "id": "w3d3",
             "track": "pipelines",
             "title": {
-              "en": "Extract to raw, then staging",
-              "ru": "Извлечение в raw, затем staging"
+              "en": "Ingestion & the raw layer",
+              "ru": "Приём данных и сырой слой"
             },
             "warmup": {
-              "en": "If you clean data before storing it, where do you turn when the cleaning logic was wrong?",
-              "ru": "Если вы чистите данные до сохранения, куда обращаться, когда логика очистки оказалась неверной?"
+              "en": "A source API changes a field's type overnight — should that break your raw layer, or your staging layer?",
+              "ru": "Источник-API за ночь меняет тип поля — что должно сломаться: Ваш сырой слой или слой staging?"
             },
             "reflectPrompt": {
-              "en": "Why is keeping an untouched raw copy worth the extra storage, even when staging looks 'good enough' on its own?",
-              "ru": "Почему хранить нетронутую копию raw стоит дополнительного места, даже когда staging сам по себе выглядит «достаточно хорошим»?"
+              "en": "If you kept raw data byte-for-byte unchanged, what past incident could you now replay your way out of?",
+              "ru": "Если бы Вы хранили сырые данные неизменными байт-в-байт, из какого прошлого инцидента Вы могли бы выйти повторной обработкой?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "Write a Python extractor that pulls from an API or set of files and lands records into a raw layer exactly as received — no renaming, no casting, just the payload plus an ingestion timestamp and source filename.",
-                  "ru": "Напишите экстрактор на Python, который тянет данные из API или набора файлов и складывает записи в raw-слой ровно в том виде, как получены — без переименований и приведения типов, только полезная нагрузка плюс отметка времени загрузки и имя исходного файла."
+                  "en": "Theory: extract patterns — full vs incremental, push vs pull, API pagination, rate limits — getting data out without missing or duplicating it.",
+                  "ru": "Теория: паттерны извлечения — полное против инкрементального, push против pull, пагинация API, лимиты запросов — забрать данные, не потеряв и не задвоив их."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Add a staging model on top of that raw data that renames columns to a consistent convention and casts each field to its proper type.",
-                  "ru": "Добавьте staging-модель поверх этих raw-данных, которая переименовывает столбцы к единому соглашению и приводит каждое поле к правильному типу."
+                  "en": "Theory: the raw/landing layer kept unchanged (replayability, schema drift), staging as the first cleaning step — immutability buys a redo button.",
+                  "ru": "Теория: сырой/landing-слой хранится неизменным (повторяемость, дрейф схемы), staging как первый шаг очистки — неизменяемость даёт кнопку «повторить»."
                 }
               },
               {
                 "id": "t3",
                 "text": {
-                  "en": "Make the extractor safe to re-run for the same source pull: overwrite or skip the existing raw partition instead of appending a duplicate.",
-                  "ru": "Сделайте экстрактор безопасным для повторного запуска по той же выборке источника: перезаписывайте или пропускайте существующую raw-партицию, а не добавляйте дубликат."
+                  "en": "Practice: land a batch of raw records untouched and build one staging model that types and renames over them.",
+                  "ru": "Практика: посадите пачку сырых записей нетронутыми и постройте одну модель staging, которая типизирует и переименовывает поверх них."
                 }
               }
             ]
@@ -874,33 +962,48 @@
             "track": "modeling",
             "title": {
               "en": "Layering: staging to marts",
-              "ru": "Слои: от staging к marts"
+              "ru": "Слои: от staging к витринам"
             },
             "warmup": {
-              "en": "Name the three layers a row passes through before a dashboard reads it.",
-              "ru": "Назовите три слоя, через которые проходит строка, прежде чем её прочитает дашборд."
+              "en": "Why should the table an analyst queries never be the same table that first touches the source?",
+              "ru": "Почему таблица, которую запрашивает аналитик, никогда не должна быть той же таблицей, что первой касается источника?"
             },
             "reflectPrompt": {
-              "en": "Looking at your real project, which models are doing two jobs at once — and which layer does each job actually belong in?",
-              "ru": "Глядя на ваш реальный проект, какие модели делают два дела сразу — и к какому слою на самом деле относится каждое из этих дел?"
+              "en": "Which of your existing models is doing three jobs at once, and where would you cut it apart?",
+              "ru": "Какая из Ваших моделей делает три дела сразу, и где бы Вы её разрезали?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "List 6 example model names (yours or made up), label each as staging, intermediate, or mart, and write one line per model justifying the label.",
-                  "ru": "Выпишите 6 примеров имён моделей (свои или придуманные), пометьте каждую как staging, intermediate или mart и напишите по одной строке на модель, обосновывая метку."
-                },
-                "guidance": {
-                  "en": "Staging = one source cleaned 1:1; intermediate = reusable joins/aggregations not exposed directly; mart = the business-facing fact/dim a consumer queries.",
-                  "ru": "Staging = один источник, почищенный один к одному; intermediate = переиспользуемые джойны/агрегации, не отдаваемые напрямую; mart = бизнес-ориентированный факт/измерение, который запрашивает потребитель."
+                  "en": "Theory: separation of concerns in transformations (clean, reshape, serve), staging / intermediate / marts (medallion), DRY via intermediate models.",
+                  "ru": "Теория: разделение ответственности в трансформациях (очистить, переформировать, подать), staging / intermediate / marts (medallion), DRY через промежуточные модели."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Take one fat model that mixes cleaning and business logic and split it into a thin staging model plus a mart that selects from it.",
-                  "ru": "Возьмите одну «толстую» модель, смешивающую очистку и бизнес-логику, и разделите её на тонкую staging-модель плюс mart, который из неё выбирает."
+                  "en": "Theory: why marts are business-facing and stable, naming and contracts per layer — the mart is a promise, not a scratchpad.",
+                  "ru": "Теория: почему витрины обращены к бизнесу и стабильны, именование и контракты на каждом слое — витрина это обещание, а не черновик."
+                }
+              },
+              {
+                "id": "t3",
+                "text": {
+                  "en": "Practice: classify your models into layers and refactor one fat model into a staging + intermediate + mart chain.",
+                  "ru": "Практика: распределите свои модели по слоям и отрефакторьте одну раздутую модель в цепочку staging + intermediate + mart."
+                }
+              }
+            ],
+            "resources": [
+              {
+                "label": {
+                  "en": "dbt docs",
+                  "ru": "dbt docs"
+                },
+                "note": {
+                  "en": "Read \"How we structure our dbt projects\" — staging, intermediate, and marts layers and their responsibilities.",
+                  "ru": "Прочитайте «How we structure our dbt projects» — слои staging, intermediate и marts и их зоны ответственности."
                 }
               }
             ]
@@ -910,33 +1013,36 @@
             "track": "pipelines",
             "title": {
               "en": "Backfills & watermarks",
-              "ru": "Бэкфилл и watermarks"
+              "ru": "Бэкфилы и водяные знаки"
             },
             "warmup": {
-              "en": "How does tonight's run know which rows yesterday's run already handled?",
-              "ru": "Откуда сегодняшний ночной запуск знает, какие строки уже обработал вчерашний?"
+              "en": "You need to reprocess last March without re-touching April — what does your job need to know to do that safely?",
+              "ru": "Нужно переобработать прошлый март, не задевая апрель — что задача должна знать, чтобы сделать это безопасно?"
             },
             "reflectPrompt": {
-              "en": "What goes wrong if the high-water mark advances before the load that produced it actually committed?",
-              "ru": "Что пойдёт не так, если high-water mark сдвинется раньше, чем зафиксируется загрузка, которая его породила?"
+              "en": "Where did you place the watermark, and what late data does that choice silently drop or delay?",
+              "ru": "Где Вы поставили водяной знак, и какие поздние данные этот выбор молча отбрасывает или задерживает?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "Implement a watermark-based incremental load: read the stored high-water mark, pull only rows past it, and advance the mark only after the load succeeds.",
-                  "ru": "Реализуйте инкрементальную загрузку на основе watermark: прочитайте сохранённый high-water mark, заберите только строки после него и сдвиньте отметку только после успешной загрузки."
-                },
-                "guidance": {
-                  "en": "Advancing the mark only on success makes a failed run replay the same window next time instead of silently skipping it — combine with the idempotent load from Day 1.",
-                  "ru": "Сдвиг отметки только при успехе заставляет упавший запуск в следующий раз переиграть то же окно, а не молча его пропустить — сочетайте с идемпотентной загрузкой из Дня 1."
+                  "en": "Theory: high-water marks, incremental windows, idempotent backfills, safe history reprocessing — re-running a window must converge.",
+                  "ru": "Теория: водяные знаки (high-water marks), инкрементальные окна, идемпотентные бэкфилы, безопасная переобработка истории — повтор окна должен сходиться."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Parameterize the load by a start/end date window and run a backfill for a past date range, confirming it doesn't disturb already-loaded current data.",
-                  "ru": "Параметризуйте загрузку окном начальной/конечной даты и выполните бэкфилл за прошлый диапазон дат, убедившись, что он не задевает уже загруженные актуальные данные."
+                  "en": "Theory: late and out-of-order data, the watermark trade-off (completeness vs latency) — how long you wait before closing a window.",
+                  "ru": "Теория: поздние и неупорядоченные данные, компромисс водяного знака (полнота против задержки) — как долго ждать перед закрытием окна."
+                }
+              },
+              {
+                "id": "t3",
+                "text": {
+                  "en": "Practice: implement a watermark-based load and backfill one past window without disturbing newer data.",
+                  "ru": "Практика: реализуйте загрузку на основе водяного знака и бэкфильте одно прошлое окно, не задев более новые данные."
                 }
               }
             ]
@@ -949,30 +1055,33 @@
               "ru": "Производительность запросов"
             },
             "warmup": {
-              "en": "Your query scanned 400M rows to return 12 — where did the other 399,999,988 come from?",
-              "ru": "Ваш запрос просканировал 400 млн строк, чтобы вернуть 12 — откуда взялись остальные 399 999 988?"
+              "en": "Two queries return the same rows but one scans 10x more data — what did the cheap one let the engine skip?",
+              "ru": "Два запроса возвращают одни и те же строки, но один сканирует в 10 раз больше данных — что дешёвый позволил движку пропустить?"
             },
             "reflectPrompt": {
-              "en": "Reading the plan, what assumption about your data did the slow query reveal — and would partitioning or clustering fix it at the source?",
-              "ru": "Что план запроса раскрыл о ваших данных через медленный запрос — и решили бы это партиционирование или кластеризация в самом источнике?"
+              "en": "After reading the plan, which cost driver surprised you most — and what would you change in the table layout, not the SQL?",
+              "ru": "После чтения плана какой драйвер стоимости удивил Вас больше всего — и что бы Вы изменили в раскладке таблицы, а не в SQL?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "Run EXPLAIN (or open the query plan view) on a slow query and identify the single most costly step — a full scan, a large sort, or a join blowing up row counts.",
-                  "ru": "Запустите EXPLAIN (или откройте просмотр плана запроса) на медленном запросе и определите самый дорогой шаг — полный скан, крупную сортировку или джойн, раздувающий число строк."
+                  "en": "Theory: how an engine executes a query (scan, filter, join, aggregate), partition pruning, clustering — laying data out so the engine reads less.",
+                  "ru": "Теория: как движок выполняет запрос (scan, filter, join, aggregate), отсечение партиций (partition pruning), кластеризация — раскладка данных так, чтобы движок читал меньше."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Rewrite one query so it prunes a partition: add a filter on the partition column and re-read the plan to confirm the engine now scans fewer partitions.",
-                  "ru": "Перепишите один запрос так, чтобы он отсекал партицию: добавьте фильтр по столбцу партиционирования и перечитайте план, убедившись, что движок теперь сканирует меньше партиций."
-                },
-                "guidance": {
-                  "en": "Pruning only works when the filter is on the actual partition key and isn't wrapped in a function the engine can't see through — compare bytes/rows scanned before and after.",
-                  "ru": "Отсечение работает только когда фильтр стоит на самом ключе партиционирования и не обёрнут в функцию, сквозь которую движок не видит — сравните просканированные байты/строки до и после."
+                  "en": "Theory: reading a query plan / EXPLAIN, cost drivers (data scanned, shuffles, spilled joins) — finding the expensive step before you tune.",
+                  "ru": "Теория: чтение плана запроса / EXPLAIN, драйверы стоимости (объём сканирования, shuffle, проливающиеся на диск join) — найти дорогой шаг до того, как тюнить."
+                }
+              },
+              {
+                "id": "t3",
+                "text": {
+                  "en": "Practice: read the EXPLAIN of a slow query, then rewrite it so the engine prunes a partition.",
+                  "ru": "Практика: прочитайте EXPLAIN медленного запроса, затем перепишите его так, чтобы движок отсекал партицию."
                 }
               }
             ]
@@ -982,8 +1091,8 @@
             "track": "rest",
             "rest": true,
             "reflectPrompt": {
-              "en": "This week you turned loads from 'run once and hope' into idempotent, incremental, layered pipelines. Which single habit — re-runnable loads, the raw/staging split, layering, or watermarks — will change how you build your next pipeline, and what made it click?",
-              "ru": "На этой неделе вы превратили загрузки из «запусти один раз и надейся» в идемпотентные, инкрементальные, послойные пайплайны. Какая одна привычка — перезапускаемые загрузки, разделение raw/staging, слои или watermarks — изменит то, как вы строите следующий пайплайн, и что помогло это осознать?"
+              "en": "This week you built ELT pipelines that survive re-runs — incremental models, layered transforms, watermarks, backfills. Which idea most changed how you would design a pipeline, and what is still fuzzy?",
+              "ru": "На этой неделе Вы строили ELT-конвейеры, переживающие повторные запуски — инкрементальные модели, слоистые трансформации, водяные знаки, бэкфилы. Какая идея сильнее всего изменила Ваш подход к проектированию конвейера, и что осталось неясным?"
             }
           }
         ]
@@ -1000,34 +1109,37 @@
             "id": "w4d1",
             "track": "pipelines",
             "title": {
-              "en": "Airflow concepts",
-              "ru": "Основы Airflow"
+              "en": "Why orchestration",
+              "ru": "Зачем нужна оркестрация"
             },
             "warmup": {
-              "en": "A nightly job has three steps that must run in order. What decides what runs, and when?",
-              "ru": "У ночной задачи три шага, которые должны идти по порядку. Что решает, что и когда запускается?"
+              "en": "Three steps must run in order, on a schedule, and survive failures. What does an orchestrator give you that cron does not?",
+              "ru": "Три шага должны идти по порядку, по расписанию и переживать сбои. Что даёт оркестратор такого, чего нет у cron?"
             },
             "reflectPrompt": {
               "en": "An operator, a task, and a DAG are three different things. In your own words, where does the boundary between them sit?",
-              "ru": "Оператор, задача (task) и DAG — это три разные вещи. Своими словами: где проходит граница между ними?"
+              "ru": "Оператор, задача (task) и DAG — три разные вещи. Своими словами: где проходит граница между ними?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "Install Airflow locally and start the scheduler and webserver (or, if that is not feasible tonight, read the Core Concepts docs end to end)",
-                  "ru": "Установите Airflow локально и запустите scheduler и webserver (или, если сегодня это нереально, прочитайте раздел Core Concepts в документации целиком)"
-                },
-                "guidance": {
-                  "en": "A local standalone install is enough; the goal is to see the scheduler heartbeat and the UI list of DAGs, not a production setup.",
-                  "ru": "Достаточно локальной standalone-установки; цель — увидеть heartbeat scheduler'а и список DAG в UI, а не продакшен-конфигурацию."
+                  "en": "Theory: what an orchestrator adds over cron — dependencies, retries, observability, backfills; the DAG abstraction; tasks / operators / executors; the scheduler loop.",
+                  "ru": "Теория: что оркестратор добавляет поверх cron — зависимости, повторы, наблюдаемость, бэкфилы; абстракция DAG; tasks / operators / executors; цикл scheduler'а."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Diagram a 3-task DAG (extract, transform, load) and draw the dependency edges between the tasks",
-                  "ru": "Нарисуйте схему DAG из трёх задач (extract, transform, load) и проведите рёбра зависимостей между ними"
+                  "en": "Theory: in Airflow's vocabulary, map each concept above to its concrete object — DAG, task, operator, executor.",
+                  "ru": "Теория: в терминах Airflow сопоставьте каждое понятие выше с конкретным объектом — DAG, task, operator, executor."
+                }
+              },
+              {
+                "id": "t3",
+                "text": {
+                  "en": "Practice: diagram a 3-task DAG (extract, transform, load) and draw the dependency edges.",
+                  "ru": "Практика: нарисуйте схему DAG из трёх задач (extract, transform, load) и проведите рёбра зависимостей."
                 }
               }
             ],
@@ -1048,30 +1160,37 @@
             "id": "w4d2",
             "track": "pipelines",
             "title": {
-              "en": "Write a DAG",
-              "ru": "Пишем DAG"
+              "en": "Authoring DAGs",
+              "ru": "Написание DAG"
             },
             "warmup": {
               "en": "A task fails once because an API blinked. Should the whole run die, or should the task retry first?",
               "ru": "Задача упала один раз, потому что API моргнул. Должен ли упасть весь run, или задаче стоит сначала повторить попытку?"
             },
             "reflectPrompt": {
-              "en": "You set a retry count and a schedule interval tonight. Which one would cause more damage if you got it wrong, and why?",
-              "ru": "Сегодня вы задали число повторов (retries) и интервал расписания. Какой из них нанёс бы больше вреда при ошибке и почему?"
+              "en": "You set a schedule interval and a retry policy today. Which one would do more damage if you got it wrong, and why?",
+              "ru": "Сегодня вы задали интервал расписания и политику повторов. Какой из них нанёс бы больше вреда при ошибке и почему?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "Author a DAG with at least three tasks wired using >> dependencies, a defined schedule interval, and a retries setting on the tasks",
-                  "ru": "Напишите DAG минимум из трёх задач, связанных через зависимости >>, с заданным интервалом расписания и настройкой retries у задач"
+                  "en": "Theory: declaring dependencies; schedule intervals and the execution / data interval; retries and backoff — what each one controls.",
+                  "ru": "Теория: объявление зависимостей; интервалы расписания и execution / data interval; retries и backoff — что чем управляется."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Trigger one run (manually or by waiting for the schedule) and confirm in the UI that the tasks ran in dependency order",
-                  "ru": "Запустите один run (вручную или дождавшись расписания) и убедитесь в UI, что задачи отработали в порядке зависимостей"
+                  "en": "Theory: task isolation and idempotency — why an operator must produce the same result when re-run on the same interval.",
+                  "ru": "Теория: изоляция задач и идемпотентность — почему оператор должен давать тот же результат при повторе на том же интервале."
+                }
+              },
+              {
+                "id": "t3",
+                "text": {
+                  "en": "Practice: write a small DAG with dependencies, a schedule interval, and a retries setting, then trigger one run.",
+                  "ru": "Практика: напишите небольшой DAG с зависимостями, интервалом расписания и настройкой retries, затем запустите один run."
                 }
               }
             ]
@@ -1080,12 +1199,12 @@
             "id": "w4d3",
             "track": "quality",
             "title": {
-              "en": "Tests as contracts",
-              "ru": "Тесты как контракты"
+              "en": "Data-quality dimensions",
+              "ru": "Измерения качества данных"
             },
             "warmup": {
-              "en": "Last night a load silently dropped half the rows; nobody noticed until the dashboard looked wrong. How could the pipeline have caught it?",
-              "ru": "Вчера загрузка тихо потеряла половину строк, и никто не заметил, пока дашборд не выглядел странно. Как пайплайн мог это поймать?"
+              "en": "A load silently dropped half the rows last night; nobody noticed until the dashboard looked wrong. Which property of the data was violated?",
+              "ru": "Вчера загрузка тихо потеряла половину строк, и никто не заметил, пока дашборд не выглядел странно. Какое свойство данных было нарушено?"
             },
             "reflectPrompt": {
               "en": "A warning gets ignored; a hard failure stops the line. Which checks in your pipeline deserve to be fatal, and which are just noise?",
@@ -1095,19 +1214,22 @@
               {
                 "id": "t1",
                 "text": {
-                  "en": "Add one check to your pipeline that hard-fails the run (raises and stops downstream tasks) when a load is bad — for example a row-count drop or an unexpected null rate, not a logged warning",
-                  "ru": "Добавьте в пайплайн одну проверку, которая жёстко роняет run (бросает исключение и останавливает зависимые задачи) при плохой загрузке — например, при падении row count или неожиданной доле null, а не лог-предупреждение"
-                },
-                "guidance": {
-                  "en": "A strong check states an explicit threshold and what it protects (e.g. \"fail if today's row count is below 80% of the 7-day median\"), so the failure message tells the next person exactly what broke.",
-                  "ru": "Сильная проверка задаёт явный порог и то, что она защищает (например, «падать, если row count за сегодня ниже 80% от медианы за 7 дней»), чтобы сообщение об ошибке сразу объясняло следующему человеку, что сломалось."
+                  "en": "Theory: the data-quality dimensions — completeness, validity, uniqueness, timeliness, consistency, accuracy — and what each one fails to catch.",
+                  "ru": "Теория: измерения качества данных — полнота, валидность, уникальность, своевременность, согласованность, точность — и что каждое из них не ловит."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Write down the data-quality dimensions that matter for your dataset (completeness, uniqueness, freshness, validity, consistency) and mark which one each existing check covers",
-                  "ru": "Выпишите измерения качества данных, важные для вашего датасета (полнота, уникальность, свежесть, валидность, согласованность), и отметьте, какое из них покрывает каждая существующая проверка"
+                  "en": "Theory: checks as gates vs warnings; fail-fast vs quarantine; where each check belongs in a pipeline.",
+                  "ru": "Теория: проверки как заслоны против предупреждений; fail-fast против карантина; где каждая проверка должна стоять в пайплайне."
+                }
+              },
+              {
+                "id": "t3",
+                "text": {
+                  "en": "Practice: add one check that hard-fails the run on bad data, with an explicit threshold in its failure message.",
+                  "ru": "Практика: добавьте одну проверку, которая жёстко роняет run на плохих данных, с явным порогом в сообщении об ошибке."
                 }
               }
             ]
@@ -1120,30 +1242,33 @@
               "ru": "Бэкфилы и catchup"
             },
             "warmup": {
-              "en": "You add a DAG today with a start date two weeks ago. How many runs is Airflow about to fire, and is that what you wanted?",
-              "ru": "Вы добавляете DAG сегодня со start date две недели назад. Сколько run'ов Airflow сейчас запустит, и этого ли вы хотели?"
+              "en": "You add a DAG today with a start date two weeks ago. How many runs is the scheduler about to fire, and is that what you wanted?",
+              "ru": "Вы добавляете DAG сегодня со start date две недели назад. Сколько run'ов сейчас запустит scheduler, и этого ли вы хотели?"
             },
             "reflectPrompt": {
-              "en": "Idempotency is what makes a backfill safe. Where in your pipeline does re-running a task quietly double-count or corrupt data, and what would it take to fix that?",
-              "ru": "Идемпотентность — это то, что делает бэкфил безопасным. Где в вашем пайплайне повторный запуск задачи тихо удваивает или портит данные, и что нужно, чтобы это исправить?"
+              "en": "Idempotency is what makes a backfill safe. Where in your pipeline does re-running a task quietly double-count, and what would it take to fix that?",
+              "ru": "Идемпотентность — то, что делает бэкфил безопасным. Где в вашем пайплайне повторный запуск задачи тихо удваивает данные, и что нужно, чтобы это исправить?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "Run a catchup backfill that produces several dated runs over past intervals, and watch the scheduler create one run per interval",
-                  "ru": "Запустите catchup-бэкфил, который создаёт несколько датированных run'ов за прошлые интервалы, и понаблюдайте, как scheduler создаёт по одному run на интервал"
+                  "en": "Theory: catchup and execution-date-driven runs; why each run must be idempotent and parameterized by its own interval; reprocessing vs duplicating.",
+                  "ru": "Теория: catchup и run'ы, управляемые execution date; почему каждый run должен быть идемпотентным и параметризован своим интервалом; переобработка против дублирования."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Make one task idempotent (delete-then-insert by partition/date, or upsert) and prove it: run it twice for the same interval and show the output is identical, not duplicated",
-                  "ru": "Сделайте одну задачу идемпотентной (delete-then-insert по партиции/дате или upsert) и докажите это: запустите её дважды для одного интервала и покажите, что результат идентичен, а не задублирован"
-                },
-                "guidance": {
-                  "en": "The proof is a before/after row count or a checksum of the target partition that stays the same across the second run — not just \"it didn't error\".",
-                  "ru": "Доказательство — это row count или контрольная сумма целевой партиции до/после, которые не меняются при втором запуске, а не просто «не упало»."
+                  "en": "Theory: max_active_runs and concurrency — what they bound and how they protect the source and the warehouse during a backfill.",
+                  "ru": "Теория: max_active_runs и concurrency — что они ограничивают и как защищают источник и хранилище во время бэкфила."
+                }
+              },
+              {
+                "id": "t3",
+                "text": {
+                  "en": "Practice: run a catchup backfill, then prove one task is safe to re-run (identical row count or checksum on the second run).",
+                  "ru": "Практика: запустите catchup-бэкфил, затем докажите, что одна задача безопасна для повтора (тот же row count или контрольная сумма при втором запуске)."
                 }
               }
             ]
@@ -1167,19 +1292,22 @@
               {
                 "id": "t1",
                 "text": {
-                  "en": "Define a data contract for one incoming source: the expected schema (field names + types) plus constraints (required fields, allowed ranges/enums, uniqueness)",
-                  "ru": "Опишите контракт данных для одного входящего источника: ожидаемую схему (имена полей + типы) плюс ограничения (обязательные поля, допустимые диапазоны/enum, уникальность)"
-                },
-                "guidance": {
-                  "en": "Express it as something executable at the boundary — a pydantic model, a JSON Schema, or explicit assertions — not just prose, so the contract can actually reject input.",
-                  "ru": "Выразите его как нечто исполняемое на границе — модель pydantic, JSON Schema или явные проверки — а не просто текстом, чтобы контракт мог реально отклонять вход."
+                  "en": "Theory: schema-on-write vs schema-on-read; a contract as an agreement between producer and consumer — what each side promises.",
+                  "ru": "Теория: schema-on-write против schema-on-read; контракт как соглашение между поставщиком и потребителем — что обещает каждая сторона."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Feed ingestion a record that violates the contract (wrong type or out-of-range value) and confirm the record is rejected (raised, quarantined, or routed to a dead-letter path), not loaded",
-                  "ru": "Подайте на ингест запись, нарушающую контракт (неверный тип или значение вне диапазона), и убедитесь, что запись отклонена (брошено исключение, помещена в карантин или отправлена в dead-letter), а не загружена"
+                  "en": "Theory: schema enforcement and evolution — compatible vs breaking changes; rejecting vs quarantining bad records.",
+                  "ru": "Теория: проверка и эволюция схемы — совместимые против ломающих изменений; отклонение против карантина плохих записей."
+                }
+              },
+              {
+                "id": "t3",
+                "text": {
+                  "en": "Practice: define an executable contract for one source (pydantic or JSON Schema) and feed it a violating record to confirm it is rejected.",
+                  "ru": "Практика: опишите исполняемый контракт для одного источника (pydantic или JSON Schema) и подайте нарушающую запись, чтобы убедиться, что она отклонена."
                 }
               }
             ]
@@ -1188,30 +1316,37 @@
             "id": "w4d6",
             "track": "pipelines",
             "title": {
-              "en": "Orchestrate dbt from Airflow",
-              "ru": "Запуск dbt из Airflow"
+              "en": "Orchestrating dbt & sensors",
+              "ru": "Оркестрация dbt и сенсоры"
             },
             "warmup": {
               "en": "Your dbt models are only as fresh as the data under them. What guarantees dbt does not run on yesterday's load?",
               "ru": "Ваши модели dbt свежи ровно настолько, насколько свежи данные под ними. Что гарантирует, что dbt не запустится на вчерашней загрузке?"
             },
             "reflectPrompt": {
-              "en": "You connected ingestion and dbt into one DAG today. What now lives in Airflow's dependency graph that used to live only in someone's head or a runbook?",
-              "ru": "Сегодня вы соединили ингест и dbt в один DAG. Что теперь живёт в графе зависимостей Airflow, а раньше жило только в чьей-то голове или в runbook'е?"
+              "en": "You connected ingestion and dbt into one DAG today. What now lives in the dependency graph that used to live only in someone's head or a runbook?",
+              "ru": "Сегодня вы соединили ингест и dbt в один DAG. Что теперь живёт в графе зависимостей, а раньше жило только в чьей-то голове или в runbook'е?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "Add a dbt run task (BashOperator calling dbt, or a dbt operator) downstream of the ingestion task in your DAG",
-                  "ru": "Добавьте задачу dbt run (BashOperator, вызывающий dbt, или dbt-оператор) ниже по потоку от задачи ингеста в вашем DAG"
+                  "en": "Theory: composing ingestion and transformation in one DAG; where dbt runs in the schedule; decoupling tasks via data availability.",
+                  "ru": "Теория: объединение ингеста и трансформации в одном DAG; где dbt стоит в расписании; развязка задач через доступность данных."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Add a sensor or an explicit >> dependency so the dbt task only starts after fresh data has actually landed, then trigger a run to confirm the ordering holds",
-                  "ru": "Добавьте сенсор или явную зависимость >>, чтобы задача dbt стартовала только после того, как свежие данные реально приземлились, и запустите run, чтобы подтвердить, что порядок соблюдается"
+                  "en": "Theory: sensors vs explicit dependencies — when to wait for upstream data to land vs wire a direct edge, and the cost of each.",
+                  "ru": "Теория: сенсоры против явных зависимостей — когда ждать прихода данных против прямого ребра, и цена каждого варианта."
+                }
+              },
+              {
+                "id": "t3",
+                "text": {
+                  "en": "Practice: add a dbt run task downstream of ingestion plus a sensor so dbt starts only after fresh data lands.",
+                  "ru": "Практика: добавьте задачу dbt run ниже по потоку от ингеста плюс сенсор, чтобы dbt стартовал только после прихода свежих данных."
                 }
               }
             ],
@@ -1222,8 +1357,8 @@
                   "ru": "Документация dbt"
                 },
                 "note": {
-                  "en": "How dbt run and dbt build execute models, so you know what the Airflow task is actually invoking.",
-                  "ru": "Как dbt run и dbt build исполняют модели, чтобы понимать, что именно вызывает задача Airflow."
+                  "en": "How dbt run and dbt build execute models, so you know what the orchestrated task is actually invoking.",
+                  "ru": "Как dbt run и dbt build исполняют модели, чтобы понимать, что именно вызывает оркестрируемая задача."
                 }
               }
             ]
@@ -1233,8 +1368,8 @@
             "track": "rest",
             "rest": true,
             "reflectPrompt": {
-              "en": "This week you moved from running steps by hand to having a scheduler run them for you — with retries, backfills, quality gates, and contracts. Where do you still trust your own memory more than the pipeline, and what would it take to trust the orchestration instead?",
-              "ru": "На этой неделе вы перешли от запуска шагов вручную к тому, что их за вас запускает scheduler — с retries, бэкфилами, проверками качества и контрактами. Где вы всё ещё доверяете своей памяти больше, чем пайплайну, и что нужно, чтобы доверять оркестрации вместо этого?"
+              "en": "This week you moved from running steps by hand to having a scheduler run them — with dependencies, retries, backfills, quality gates, and contracts. Where do you still trust your own memory more than the pipeline, and what would it take to trust the orchestration instead?",
+              "ru": "На этой неделе вы перешли от запуска шагов вручную к тому, что их запускает scheduler — с зависимостями, повторами, бэкфилами, проверками качества и контрактами. Где вы всё ещё доверяете своей памяти больше, чем пайплайну, и что нужно, чтобы доверять оркестрации вместо этого?"
             }
           }
         ]
@@ -1251,41 +1386,37 @@
             "id": "w5d1",
             "track": "quality",
             "title": {
-              "en": "Observability",
-              "ru": "Наблюдаемость"
+              "en": "Data observability",
+              "ru": "Наблюдаемость данных"
             },
             "warmup": {
-              "en": "If a table silently stopped updating three days ago, how would you find out?",
-              "ru": "Если таблица тихо перестала обновляться три дня назад — как вы об этом узнаете?"
+              "en": "If a table silently stopped updating three days ago, what would tell you before a stakeholder does?",
+              "ru": "Если таблица тихо перестала обновляться три дня назад — что сообщит Вам об этом раньше, чем стейкхолдер?"
             },
             "reflectPrompt": {
-              "en": "Which of your current tables would break silently, with no one noticing for days? What signal would have caught it?",
-              "ru": "Какая из ваших нынешних таблиц сломалась бы молча, и этого не заметили бы несколько дней? Какой сигнал поймал бы это?"
+              "en": "Which of your current tables could break silently for days — and which observability pillar would have caught it first?",
+              "ru": "Какая из ваших нынешних таблиц могла бы молча ломаться несколько дней — и какой столп наблюдаемости поймал бы это первым?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "Add a freshness check to a table: assert its newest timestamp is within an expected lag, and make the check fail when it is not.",
-                  "ru": "Добавьте к таблице проверку свежести: убедитесь, что самая поздняя метка времени укладывается в ожидаемый лаг, и сделайте так, чтобы проверка падала, когда это не так."
-                },
-                "guidance": {
-                  "en": "Derive the threshold from the table's real cadence (a daily load tolerates ~26h, an hourly one far less), not a round number you guessed.",
-                  "ru": "Выводите порог из реальной частоты обновления таблицы (суточная загрузка терпит ~26 ч, часовая — гораздо меньше), а не из круглого числа наугад."
+                  "en": "Theory: the five observability pillars (freshness, volume, schema, distribution, lineage); data SLAs vs SLOs; detect, triage, resolve as one loop.",
+                  "ru": "Теория: пять столпов наблюдаемости (свежесть, объём, схема, распределение, происхождение данных); SLA против SLO для данных; обнаружение, сортировка, устранение как единый цикл."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Add a volume check: assert the row count (or rows added today) falls inside an expected range, and trip it on both an empty load and an unexpected spike.",
-                  "ru": "Добавьте проверку объёма: убедитесь, что число строк (или добавленных за сегодня) попадает в ожидаемый диапазон, и проверьте срабатывание и на пустой загрузке, и на неожиданном всплеске."
+                  "en": "Theory: alerting design — thresholds vs anomaly detection, severity levels, avoiding alert fatigue.",
+                  "ru": "Теория: проектирование оповещений — пороги против выявления аномалий, уровни критичности, борьба с усталостью от оповещений."
                 }
               },
               {
                 "id": "t3",
                 "text": {
-                  "en": "Wire one alert condition: route a failing check to a real notification channel (email, Slack, or a log the on-call actually reads) and trigger it once on purpose.",
-                  "ru": "Подключите одно условие алерта: направьте падающую проверку в настоящий канал уведомлений (email, Slack или лог, который дежурный реально читает) и намеренно вызовите его один раз."
+                  "en": "Practice: add a freshness check and a volume check to one table, plus one alert condition.",
+                  "ru": "Практика: добавьте к одной таблице проверку свежести и проверку объёма плюс одно условие оповещения."
                 }
               }
             ]
@@ -1294,37 +1425,49 @@
             "id": "w5d2",
             "track": "quality",
             "title": {
-              "en": "File formats",
-              "ru": "Форматы файлов"
+              "en": "File formats & storage",
+              "ru": "Форматы файлов и хранение"
             },
             "warmup": {
-              "en": "A query reads two of forty columns. Why does the storage format decide how much disk it touches?",
-              "ru": "Запрос читает два столбца из сорока. Почему именно формат хранения определяет, сколько диска он затронет?"
+              "en": "A query reads two of forty columns — why does the file format decide how much disk it touches?",
+              "ru": "Запрос читает два столбца из сорока — почему именно формат файла определяет, сколько диска он затронет?"
             },
             "reflectPrompt": {
-              "en": "Where in your stack are you still moving data as CSV, and what would switching to a columnar format actually cost or save you there?",
-              "ru": "Где в вашем стеке данные всё ещё ходят как CSV, и что на самом деле даст или будет стоить переход на колоночный формат именно там?"
+              "en": "Where in your stack is data still moving as CSV or JSON, and what would columnar storage actually cost or save there?",
+              "ru": "Где в вашем стеке данные всё ещё ходят как CSV или JSON, и что на самом деле даст или будет стоить там колоночное хранилище?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "Write the same non-trivial dataset (at least 100k rows, mixed types) to both CSV and Parquet from one script.",
-                  "ru": "Запишите один и тот же нетривиальный датасет (не менее 100 тыс. строк, смешанные типы) и в CSV, и в Parquet из одного скрипта."
+                  "en": "Theory: row vs columnar on disk (CSV/JSON vs Parquet/ORC/Avro); embedded schema and schema evolution; compression and encoding; why format dictates scan cost.",
+                  "ru": "Теория: строчное против колоночного на диске (CSV/JSON против Parquet/ORC/Avro); встроенная схема и эволюция схемы; сжатие и кодирование; почему формат определяет стоимость сканирования."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Measure and record the on-disk file size of each, plus the time to read only two columns from each.",
-                  "ru": "Замерьте и зафиксируйте размер файла на диске для каждого, а также время чтения только двух столбцов из каждого."
+                  "en": "Theory: when each format fits — Avro for row-by-row/write-heavy, Parquet/ORC for analytical reads, CSV/JSON for interchange only.",
+                  "ru": "Теория: когда какой формат уместен — Avro для построчной и интенсивной записи, Parquet/ORC для аналитического чтения, CSV/JSON только для обмена."
                 }
               },
               {
                 "id": "t3",
                 "text": {
-                  "en": "Write a short note (5-8 lines) explaining the size and read-cost gap in terms of columnar layout and compression — name why Parquet skipped the unread columns.",
-                  "ru": "Напишите короткую заметку (5–8 строк), объясняющую разницу в размере и стоимости чтения через колоночную раскладку и сжатие — назовите, почему Parquet пропустил непрочитанные столбцы."
+                  "en": "Practice: write the same dataset to CSV and Parquet, then compare on-disk size and time to read two columns.",
+                  "ru": "Практика: запишите один и тот же датасет в CSV и в Parquet, затем сравните размер на диске и время чтения двух столбцов."
+                }
+              }
+            ],
+            "resources": [
+              {
+                "label": {
+                  "en": "Apache Parquet docs",
+                  "ru": "Документация Apache Parquet"
+                },
+                "note": {
+                  "en": "The file-format overview — how row groups and column chunks let a reader skip unread columns.",
+                  "ru": "Обзор формата файла — как группы строк и фрагменты столбцов позволяют читателю пропускать непрочитанные столбцы."
                 }
               }
             ]
@@ -1338,29 +1481,44 @@
             },
             "warmup": {
               "en": "Why does a Spark transformation run nothing until you call an action?",
-              "ru": "Почему трансформация в Spark ничего не выполняет, пока вы не вызовете действие?"
+              "ru": "Почему трансформация в Spark ничего не выполняет, пока Вы не вызовете действие?"
             },
             "reflectPrompt": {
-              "en": "Be honest: how often does your data actually exceed what a warehouse handles well — and how often is 'use Spark' just resume-driven?",
-              "ru": "Честно: как часто ваши данные действительно превышают то, с чем хорошо справляется хранилище — и как часто «возьмём Spark» это просто строчка в резюме?"
+              "en": "Honestly: how often does your data exceed what a warehouse handles well — and how often is 'use Spark' resume-driven?",
+              "ru": "Честно: как часто ваши данные превышают то, с чем хорошо справляется хранилище — и как часто «возьмём Spark» — это строчка в резюме?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "Read the Spark execution model: lazy evaluation, the transformation/action split, and what a shuffle is and why it is the expensive operation.",
-                  "ru": "Прочитайте про модель выполнения Spark: ленивые вычисления, разделение на трансформации и действия, что такое shuffle и почему это дорогая операция."
+                  "en": "Theory: why scale-out (data bigger than one machine); the MapReduce idea; the Spark model — DataFrame, lazy DAG, transformations vs actions, shuffles, partitions.",
+                  "ru": "Теория: зачем масштабирование вширь (данные больше одной машины); идея MapReduce; модель Spark — DataFrame, ленивый DAG, трансформации против действий, перемешивания (shuffles), партиции."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "For two concrete scenarios — (a) a 5 GB nightly aggregation that fits in your warehouse, (b) a 4 TB reprocessing of raw event logs with heavy custom Python — decide warehouse vs Spark for each and write one sentence justifying each call.",
-                  "ru": "Для двух конкретных сценариев — (а) ночная агрегация на 5 ГБ, влезающая в ваше хранилище, (б) переобработка 4 ТБ сырых логов событий с тяжёлым кастомным Python — решите для каждого «хранилище или Spark» и обоснуйте каждый выбор одним предложением."
+                  "en": "Theory: the warehouse-vs-Spark decision — what tips it toward distributed compute, what keeps SQL on a warehouse simpler and cheaper.",
+                  "ru": "Теория: решение «хранилище против Spark» — что склоняет к распределённым вычислениям, а что оставляет SQL в хранилище проще и дешевле."
+                }
+              },
+              {
+                "id": "t3",
+                "text": {
+                  "en": "Practice: for two scenarios (a 5 GB nightly aggregation; a 4 TB raw-log reprocess with heavy Python), decide warehouse vs Spark and justify each in one line.",
+                  "ru": "Практика: для двух сценариев (ночная агрегация на 5 ГБ; переобработка 4 ТБ сырых логов с тяжёлым Python) решите «хранилище или Spark» и обоснуйте каждый одной строкой."
+                }
+              }
+            ],
+            "resources": [
+              {
+                "label": {
+                  "en": "Apache Spark docs",
+                  "ru": "Документация Apache Spark"
                 },
-                "guidance": {
-                  "en": "What tips it toward Spark: data that won't fit the warehouse, logic the warehouse can't express (arbitrary Python/ML), or needing engine-agnostic compute over files. What tips it back: if SQL on a warehouse already does the job, that is almost always simpler and cheaper.",
-                  "ru": "Что склоняет к Spark: данные не влезают в хранилище, логика, которую хранилище не выражает (произвольный Python/ML), или нужны вычисления над файлами вне привязки к движку. Что склоняет обратно: если SQL в хранилище уже решает задачу — почти всегда это проще и дешевле."
+                "note": {
+                  "en": "The DataFrame programming guide on lazy evaluation and the transformation/action split.",
+                  "ru": "Руководство по DataFrame о ленивых вычислениях и разделении на трансформации и действия."
                 }
               }
             ]
@@ -1369,30 +1527,30 @@
             "id": "w5d4",
             "track": "pipelines",
             "title": {
-              "en": "Lake partitioning & layout",
-              "ru": "Партиционирование и раскладка озера"
+              "en": "Data lakes & file layout",
+              "ru": "Озёра данных и раскладка файлов"
             },
             "warmup": {
-              "en": "A query filters on one day but scans a year of files. What about the layout let that happen?",
-              "ru": "Запрос фильтрует по одному дню, но сканирует файлы за год. Что в раскладке это допустило?"
+              "en": "A query filters on one day but scans a year of files — what about the layout let that happen?",
+              "ru": "Запрос фильтрует по одному дню, но сканирует файлы за год — что в раскладке это допустило?"
             },
             "reflectPrompt": {
-              "en": "Partitioning trades query speed against more, smaller files. Where is the line — what would make you stop adding partition keys?",
-              "ru": "Партиционирование меняет скорость запроса на большее число мелких файлов. Где граница — что заставит вас перестать добавлять ключи партиционирования?"
+              "en": "Partitioning trades query speed for more, smaller files. Where is your line — what would make you stop adding partition keys?",
+              "ru": "Партиционирование меняет скорость запроса на большее число мелких файлов. Где ваша граница — что заставит Вас перестать добавлять ключи партиционирования?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "Partition a dataset by date on disk into a dt=YYYY-MM-DD/ directory layout, and confirm a single-day read opens only that day's files.",
-                  "ru": "Разложите датасет по дате на диске в структуру каталогов dt=YYYY-MM-DD/ и убедитесь, что чтение за один день открывает только файлы этого дня."
+                  "en": "Theory: lake vs warehouse vs lakehouse; partitioning strategy and partition pruning on a lake; the small-files problem and compaction; open table formats (Iceberg / Delta) at a high level.",
+                  "ru": "Теория: озеро против хранилища против lakehouse; стратегия партиционирования и partition pruning на озере; проблема мелких файлов и компакция; открытые табличные форматы (Iceberg / Delta) на высоком уровне."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Write a short note on the small-files problem (why thousands of tiny files starve a query engine) and one concrete fix — e.g. a compaction job that rewrites a partition into fewer, larger files.",
-                  "ru": "Напишите короткую заметку о проблеме мелких файлов (почему тысячи крошечных файлов душат движок запросов) и об одном конкретном решении — например, задаче компакции, переписывающей партицию в меньшее число крупных файлов."
+                  "en": "Practice: partition a dataset by date on disk and confirm a single-day read opens only that day's files.",
+                  "ru": "Практика: разложите датасет по дате на диске и убедитесь, что чтение за один день открывает только файлы этого дня."
                 }
               }
             ]
@@ -1409,29 +1567,29 @@
               "ru": "Ещё до кода: на какой один вопрос результат этого пайплайна должен надёжно отвечать?"
             },
             "reflectPrompt": {
-              "en": "Looking at your design, where is it most likely to break in production — and did you specify a test or check that would catch exactly that?",
-              "ru": "Глядя на свой дизайн: где он скорее всего сломается в продакшене — и заложили ли вы тест или проверку, которая поймает именно это?"
+              "en": "Where is your design most likely to break in production — and did you specify a test or check that catches exactly that?",
+              "ru": "Где ваш дизайн скорее всего сломается в продакшене — и заложили ли Вы тест или проверку, которая ловит именно это?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "Write a one-page design: a DAG sketch of the stages ingest -> raw -> warehouse -> dbt marts -> tests, naming each stage's input, output, and what triggers it.",
-                  "ru": "Напишите одностраничный дизайн: эскиз DAG со стадиями ingest -> raw -> warehouse -> dbt marts -> tests, указав для каждой стадии вход, выход и что её запускает."
+                  "en": "Write a one-page design / DAG sketch of ingest -> raw -> warehouse -> dbt marts -> tests, naming each stage's input, output, and trigger.",
+                  "ru": "Напишите одностраничный дизайн / эскиз DAG для ingest -> raw -> warehouse -> dbt marts -> tests, указав для каждой стадии вход, выход и триггер."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Define the data contract for the final mart: column names, types, nullability, primary key, and freshness expectation.",
-                  "ru": "Опишите контракт данных для финальной витрины: имена столбцов, типы, допустимость NULL, первичный ключ и ожидание по свежести."
+                  "en": "Define the final marts data contract: column names, types, nullability, primary key, and freshness expectation.",
+                  "ru": "Опишите контракт данных финальных витрин: имена столбцов, типы, допустимость NULL, первичный ключ и ожидание по свежести."
                 }
               },
               {
                 "id": "t3",
                 "text": {
-                  "en": "List the tests the pipeline must pass — at minimum a uniqueness test on the key, a not-null test on required columns, and one referential or business-rule test — naming the stage each runs at.",
-                  "ru": "Перечислите тесты, которые пайплайн обязан проходить — минимум тест на уникальность ключа, тест not-null на обязательные столбцы и один тест на ссылочную целостность или бизнес-правило — указав, на какой стадии каждый выполняется."
+                  "en": "List the tests the pipeline must pass and name the stage each one runs at.",
+                  "ru": "Перечислите тесты, которые пайплайн обязан проходить, и укажите, на какой стадии выполняется каждый."
                 }
               }
             ]
@@ -1445,25 +1603,25 @@
             },
             "warmup": {
               "en": "If the 3 a.m. run fails, what does the next person need on hand to fix it without you?",
-              "ru": "Если запуск в 3 часа ночи упадёт — что должно быть под рукой у следующего, чтобы починить без вас?"
+              "ru": "Если запуск в 3 часа ночи упадёт — что должно быть под рукой у следующего, чтобы починить без Вас?"
             },
             "reflectPrompt": {
-              "en": "You shipped it end to end. Which single step was the most fragile, and what would you harden first if this had to run unattended for a month?",
-              "ru": "Вы довели его до конца. Какой один шаг оказался самым хрупким, и что бы вы укрепили первым, если бы это работало без присмотра месяц?"
+              "en": "You shipped it end to end. Which single step was most fragile, and what would you harden first if it had to run unattended for a month?",
+              "ru": "Вы довели его до конца. Какой один шаг оказался самым хрупким, и что бы Вы укрепили первым, если бы это работало без присмотра месяц?"
             },
             "tasks": [
               {
                 "id": "t1",
                 "text": {
-                  "en": "Orchestrate the pipeline end to end: one DAG runs the stages in order and invokes dbt, and a single trigger produces the populated mart from a clean start.",
-                  "ru": "Оркестрируйте пайплайн от начала до конца: один DAG прогоняет стадии по порядку и вызывает dbt, и один запуск с чистого состояния выдаёт заполненную витрину."
+                  "en": "Orchestrate the pipeline end to end: one DAG runs the stages and dbt in order, and one trigger produces the populated mart from a clean start.",
+                  "ru": "Оркестрируйте пайплайн от начала до конца: один DAG прогоняет стадии и dbt по порядку, и один запуск с чистого состояния выдаёт заполненную витрину."
                 }
               },
               {
                 "id": "t2",
                 "text": {
-                  "en": "Add freshness and volume quality checks to the run so the DAG fails loudly when the mart is stale or the row count is out of range.",
-                  "ru": "Добавьте в запуск проверки качества на свежесть и объём, чтобы DAG громко падал, когда витрина устарела или число строк вне диапазона."
+                  "en": "Add freshness and volume quality checks that fail the run loudly when the mart is stale or the row count is out of range.",
+                  "ru": "Добавьте проверки качества на свежесть и объём, которые громко роняют запуск, когда витрина устарела или число строк вне диапазона."
                 }
               },
               {
@@ -1480,8 +1638,8 @@
             "track": "rest",
             "rest": true,
             "reflectPrompt": {
-              "en": "Five weeks in, you built a real pipeline end to end. Comparing how you thought about data on day one with how you think now — what is the biggest shift, and what is the next gap you most want to close?",
-              "ru": "Спустя пять недель вы построили настоящий пайплайн от начала до конца. Сравнивая, как вы думали о данных в первый день и как думаете сейчас — какой сдвиг самый большой, и какой следующий пробел вы больше всего хотите закрыть?"
+              "en": "Five weeks in, you built a real pipeline end to end. Comparing how you thought about data on day one with how you think now — what is the biggest shift, and which gap do you most want to close next?",
+              "ru": "Спустя пять недель Вы построили настоящий пайплайн от начала до конца. Сравнивая, как Вы думали о данных в первый день и как думаете сейчас — какой сдвиг самый большой и какой пробел Вы больше всего хотите закрыть следующим?"
             }
           }
         ]
