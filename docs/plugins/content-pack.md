@@ -115,8 +115,8 @@ simply shows the same text regardless of the toggle.
   reflections:true, warmups:true }
 ```
 
-- `labels` — display nouns; only `phase` and `item` are used (values must be
-  strings).
+- `labels` — display nouns; only `phase` and `item` are read (each value is a
+  `Localized` — a string or a `{ en, ru }` map).
 - `reflections` / `warmups` are **on unless you set them to `false`**.
 
 ## `phases[]` / `groups[]` / `items[]`
@@ -203,9 +203,9 @@ fall back to the app defaults; every value is a `Localized` — a string or a
   the learner can paste it straight into a chat assistant. Placeholders:
   `{title}` (current item title), `{track}` (track label), `{text}` (the copied
   task/warm-up text), `{guidance}` (replaced with a filled `aiPromptGuidance`
-  line when the task has `guidance`, else removed). The default is a Russian
-  tutor prompt — **override this when your pack is in another language**, and
-  keep all four placeholders.
+  line when the task has `guidance`, else removed). The default is a built-in
+  **bilingual (EN/RU)** tutor prompt (EN is the fallback) — **override it when
+  your pack's language is neither**, and keep all four placeholders.
 - `aiPromptGuidance` — the guidance line inside `aiPrompt` (`{guidance}` = the
   task's `guidance` text).
 - `copy` / `copyAi` (button tooltips), `copied` / `copiedAi` (toasts).

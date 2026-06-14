@@ -86,9 +86,9 @@ rejected (reason logged to the console) and skipped — it never breaks the app.
 | `cssHref` | string | ⬦ | path to your CSS file — required for install methods A/B |
 | `css` | string | ⬦ | inline CSS text — required for JSON import (method C) |
 
-> ⬦ Provide **exactly one** of `cssHref` or `css`. Script-tag/built-in themes use
-> `cssHref` (a file path); JSON-imported themes use `css` (inline). A manifest with
-> neither is rejected.
+> ⬦ Provide **one** of `cssHref` or `css`: script-tag/built-in themes use `cssHref`
+> (a file path), JSON-imported themes use `css` (inline). A manifest with **neither**
+> is rejected; if you supply both, `cssHref` wins.
 
 ---
 
@@ -106,7 +106,8 @@ to your own id so they only apply when your theme is active:
 > 🪤 **Gotcha:** until the user selects your theme in the picker, `data-theme`
 > stays `"bonus"`, so none of your `[data-theme="my-theme"]` rules apply and the
 > page looks unstyled/wrong. That is expected — select your theme to see it.
-> `lang` is also rewritten by JS per pack locale, so don't rely on `:lang()`.
+> `lang` is rewritten by JS to the **active UI language** (the 🌐 toggle), not the
+> pack locale, so don't rely on `:lang()`.
 
 > Two legacy built-ins (`bonus.css`, `dashboard.css`) predate this rule and ship
 > unscoped; they get away with it only because the app swaps a single `<link>`
