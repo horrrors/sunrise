@@ -1,4 +1,5 @@
 import type { BadgeRule } from './badge-rule.ts';
+import type { Localized } from './entities.ts';
 import type {
   Clock,
   Random,
@@ -21,8 +22,9 @@ export interface TrackerDeps {
   streaks: Streaks;
   stats: ProgressStats;
   badges: BadgeEngine;
-  defaultUi: Record<string, string>;
+  defaultUi: Record<string, Localized>;
   genericBadges: readonly BadgeRule[];
-  defaultStreakWords: readonly string[];
-  defaultMottos: readonly string[];
+  defaultStreakWords: Record<string, readonly string[]>;
+  defaultMottos: readonly Localized[];
+  supportedLangs: readonly { id: string; label: string }[];
 }

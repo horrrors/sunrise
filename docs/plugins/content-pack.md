@@ -39,24 +39,52 @@ one `<script>` line to `index.html` **after** the app bundle:
 | `id` | string | ✅ | lowercase `[a-z0-9-]`, must start with a letter or digit; namespaces the user's saved progress |
 | `name` | string | ✅ | shown in the pack switcher |
 | `version` | string | ✅ | e.g. `"1.0.0"` |
-| `locale` | string | — | sets `<html lang>`, e.g. `"ru"`, `"en"`, `"ja"` |
+| `locale` | string | — | optional source-language hint; the **displayed** language is chosen by the in-app 🌐 switcher, not this field |
 | `settings` | object | — | display / behaviour knobs (below) |
 | `tracks` | array | ✅ (≥1) | the subject columns |
 | `phases` | array | — | optional top grouping for the dashboard "phases" card |
 | `groups` | array | ✅ (≥1) | ordered sections, each holding items |
 | `badges` | array | — | extra achievements (declarative rules) |
-| `ui` | object | — | overrides app-default UI strings (free-form `{key:string}`; see **UI overrides**) |
-| `mottos` | string[] | — | footer lines; falls back to app defaults |
-| `surprises` | string[] | — | occasional congratulation messages |
+| `ui` | object | — | overrides app-default UI strings (free-form `{key: Localized}`; see **UI overrides**) |
+| `mottos` | Localized[] | — | footer lines; falls back to app defaults |
+| `surprises` | Localized[] | — | occasional congratulation messages |
 
 All `id`s match `^[a-z0-9][a-z0-9-]*$` and must be **unique within their list**
 (track ids, phase ids, group ids, badge ids); **item ids are globally unique**
 across the whole pack, and **task ids are unique within their item**.
 
 No array (`tracks`, `phases`, `groups`, `items`, `tasks`, `resources`, `badges`,
-`mottos`, `surprises`) may contain `null` entries. Values in `ui` and
-`settings.labels` must be strings. A pack whose `id` is already registered is
-rejected at registration time.
+`mottos`, `surprises`) may contain `null` entries. A pack whose `id` is already
+registered is rejected at registration time.
+
+## Localized text (`Localized`)
+
+Every **human-visible text field** accepts a `Localized` value — either:
+
+- a plain **string** (language-neutral: shown as-is in every language), or
+- a **per-language map** `{ "en": "…", "ru": "…", … }`.
+
+English (`en`) is the primary/fallback language: when the active language is
+missing from a map, the app falls back to `en`, then to any present value. So a
+field that is only `{ "ru": "…" }` still renders (showing the Russian) but won't
+switch. The user toggles language with the header 🌐 button (built-in: EN / RU).
+
+The fields that take `Localized`: `name`, every `tracks[].label`,
+`phases[].title`, `groups[].title`, `items[].{title,warmup,reflectPrompt}`,
+`tasks[].{text,guidance}`, `resources[].{label,note}`, `badges[].{title,desc}`,
+each `mottos[]` / `surprises[]` element, and every value in `ui` and
+`settings.labels`. All `id`s, `track`/`phase` references, `icon`s, and `color`s
+stay plain strings. Example:
+
+```js
+{ "id": "w1d1", "track": "dsa",
+  "title": { "en": "Complexity + arrays", "ru": "Сложность + массивы" },
+  "tasks": [ { "id": "t1",
+    "text": { "en": "Theory: Big-O and amortization.", "ru": "Теория: Big-O и амортизация." } } ] }
+```
+
+A single-language pack that uses plain strings everywhere is still valid — it
+simply shows the same text regardless of the toggle.
 
 ## `tracks[]` — the subject columns
 
@@ -152,9 +180,9 @@ The `track` / `phase` / `item` referenced by `track-complete`, `tasks-done`,
 ## UI overrides (`ui`)
 
 A pack may override any app-default UI string via a top-level `ui` object (it is
-a free-form `{ key: string }` map; unknown keys are harmless, missing ones fall
-back to the app defaults; every value must be a string). The ones most worth
-setting per pack:
+a free-form `{ key: Localized }` map; unknown keys are harmless, missing ones
+fall back to the app defaults; every value is a `Localized` — a string or a
+`{ en, ru, … }` map). The ones most worth setting per pack:
 
 - `phaseLabel` — the small header label; supports `{p}` (current group's phase
   id) and `{w}` (current group's 1-based ordinal). The app default is empty, so
@@ -217,7 +245,8 @@ ui: { phaseLabel:"Phase {p} · Week {w}", todayVert:"TODAY", restVert:"REST" }
 > tasks); every task has both `id` and `text`; end each group with a `rest:true`
 > item on `track:"rest"`; all ids match `^[a-z0-9][a-z0-9-]*$`, item ids are
 > globally unique, task ids unique within their item; no array contains `null`
-> entries; `ui` and `settings.labels` values are strings; weekday badge `days`
+> entries; every text field is a `Localized` (a string, or a `{ en, ru }` map —
+> en is the fallback); weekday badge `days`
 > are integers 1..7 and hour-range `from`/`to` are hours 0..23; any
 > badge/track/phase/item it references must exist.
 >

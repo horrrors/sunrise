@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru" data-theme="bonus">
+<html lang="en" data-theme="bonus">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -113,6 +113,7 @@ body{transition:opacity .16s ease}
     <label class="field"><select id="daySelect"></select></label>
     <button class="btn ghost" id="cardMapBtn" type="button">🗺️</button>
     <button class="btn ghost" id="trophiesBtn" type="button">🏆</button>
+    <button class="btn ghost" id="langBtn" type="button">🌐<span id="langCode"></span></button>
     <button class="btn ghost" id="exportBtn" type="button">📤</button>
     <button class="btn ghost" id="importBtn" type="button">📥</button>
     <input type="file" id="importFile" accept="application/json" hidden />
@@ -138,6 +139,7 @@ body{transition:opacity .16s ease}
   </button>
   <button class="btn ghost" id="dockMapBtn" type="button">🗺️</button>
   <button class="btn ghost" id="dockTrophiesBtn" type="button">🏆</button>
+  <button class="btn ghost" id="dockLangBtn" type="button">🌐<span id="dockLangCode"></span></button>
   <button class="btn ghost" id="dockMenuBtn" type="button">☰</button>
 </nav>
 
@@ -165,18 +167,18 @@ body{transition:opacity .16s ease}
 <script src="data/packs/dev-roadmap.js"></script>
 <script>
   if (window.SUNRISE) {
-    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "dawn",      name: "Dawn · Рассвет",  version: "1.0.0", cssHref: "themes/dawn.css" });
+    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "dawn",      name: "Dawn · Daybreak",  version: "1.0.0", cssHref: "themes/dawn.css" });
     SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "arcade",    name: "Arcade · 8-bit",  version: "1.0.0", cssHref: "themes/arcade.css" });
-    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "solarpunk", name: "Solarpunk · Сад", version: "1.0.0", cssHref: "themes/solarpunk.css" });
-    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "swiss",     name: "Swiss · Сетка",     version: "1.0.0", cssHref: "themes/swiss.css" });
+    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "solarpunk", name: "Solarpunk · Garden", version: "1.0.0", cssHref: "themes/solarpunk.css" });
+    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "swiss",     name: "Swiss · Grid",      version: "1.0.0", cssHref: "themes/swiss.css" });
     SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "bauhaus",   name: "Bauhaus · 1919",    version: "1.0.0", cssHref: "themes/bauhaus.css" });
-    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "blueprint", name: "Blueprint · Чертёж", version: "1.0.0", cssHref: "themes/blueprint.css" });
+    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "blueprint", name: "Blueprint · Draft", version: "1.0.0", cssHref: "themes/blueprint.css" });
     SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "memphis",   name: "Memphis · 1984",    version: "1.0.0", cssHref: "themes/memphis.css" });
     SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "arcade-animated", name: "Arcade · Synthwave Sun", version: "1.0.0", cssHref: "themes/arcade-animated.css" });
     SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "arcade-animated-v2", name: "Arcade · Cyber Grid", version: "1.0.0", cssHref: "themes/arcade-animated-v2.css" });
-    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "aurora-noir", name: "Aurora Noir · Сияние", version: "1.0.0", cssHref: "themes/aurora-noir.css" });
-    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "gazette",   name: "Gazette · Утренний выпуск", version: "1.0.0", cssHref: "themes/gazette.css" });
-    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "os95",      name: "OS '95 · Рабочий стол", version: "1.0.0", cssHref: "themes/os95.css" });
+    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "aurora-noir", name: "Aurora Noir · Glow", version: "1.0.0", cssHref: "themes/aurora-noir.css" });
+    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "gazette",   name: "Gazette · Morning Edition", version: "1.0.0", cssHref: "themes/gazette.css" });
+    SUNRISE.registerTheme({ schema: "sunrise.theme/v1", id: "os95",      name: "OS '95 · Desktop", version: "1.0.0", cssHref: "themes/os95.css" });
   }
 </script>
 </body>

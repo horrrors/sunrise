@@ -13,20 +13,23 @@ import {
   GENERIC_BADGES,
   DEFAULT_STREAK_WORDS,
   DEFAULT_MOTTOS,
+  SUPPORTED_LANGS,
 } from '../../src/domain/builtins.ts';
 import { ImportError } from '../../src/domain/errors.ts';
 
 const PACK: Pack = {
   schema: 'sunrise.pack/v1',
   id: 'p',
-  name: 'P',
+  name: { en: 'P', ru: 'П' },
   version: '1.0.0',
   tracks: [{ id: 'dsa', label: 'DSA' }],
   groups: [
     {
       id: 'g1',
       title: 'Week 1',
-      items: [{ id: 'i1', track: 'dsa', title: 'A', tasks: [{ id: 't1', text: 'x' }] }],
+      items: [
+        { id: 'i1', track: 'dsa', title: { en: 'A', ru: 'А' }, tasks: [{ id: 't1', text: 'x' }] },
+      ],
     },
   ],
 };
@@ -66,6 +69,7 @@ function buildTracker(opts: {
     genericBadges: GENERIC_BADGES,
     defaultStreakWords: DEFAULT_STREAK_WORDS,
     defaultMottos: DEFAULT_MOTTOS,
+    supportedLangs: SUPPORTED_LANGS,
   });
   t.init();
   return { t, store, getSession: () => session, setToday: (d: string) => void (today = d) };
@@ -82,6 +86,54 @@ test('dashboard + today + trophies shapes', () => {
   assert.equal(typeof t.dashboard().overall.pct, 'number');
   assert.equal(t.todayCard().itemId, 'i1');
   assert.equal(t.trophies().length, GENERIC_BADGES.length);
+});
+
+test('todayCard resolves the active language; setLang flips it', () => {
+  const { t } = buildTracker({ packs: [PACK], session: { lang: 'en' } });
+  assert.equal(t.todayCard().title, 'A');
+  t.setLang('ru');
+  assert.equal(t.todayCard().title, 'А');
+  assert.equal(t.currentLang(), 'ru');
+});
+
+test('default language is en when the session has none', () => {
+  const { t } = buildTracker({ packs: [PACK] });
+  assert.equal(t.currentLang(), 'en');
+  assert.equal(t.todayCard().title, 'A');
+});
+
+test('setLang persists to the session', () => {
+  const { t, getSession } = buildTracker({ packs: [PACK] });
+  t.setLang('ru');
+  assert.equal(getSession().lang, 'ru');
+});
+
+test('switching language preserves progress (same packId)', () => {
+  const store = new Map<string, Progress>();
+  const a = buildTracker({ packs: [PACK], store });
+  a.t.setTaskDone('t1', true); // complete item i1
+  assert.equal(a.t.dashboard().overall.done, 1);
+  // Re-open the same pack under RU — progress is keyed on packId, not language.
+  const b = buildTracker({ packs: [PACK], store, session: { lang: 'ru' } });
+  assert.equal(b.t.dashboard().overall.done, 1);
+});
+
+test('chrome strings resolve per language (ui + trophies)', () => {
+  const { t } = buildTracker({ packs: [PACK], session: { lang: 'en' } });
+  assert.equal(t.ui('summaryTitle'), 'Summary');
+  assert.equal(t.trophies().find((b) => b.id === 'halfway')!.title, 'Halfway');
+  t.setLang('ru');
+  assert.equal(t.ui('summaryTitle'), 'Сводка');
+  assert.equal(t.trophies().find((b) => b.id === 'halfway')!.title, 'Экватор');
+});
+
+test('dashboard streak word uses the per-language plural forms', () => {
+  const { t } = buildTracker({ packs: [PACK], session: { lang: 'en' } });
+  t.setTaskDone('t1', true); // 1-day streak
+  assert.equal(t.dashboard().streak, 1);
+  assert.equal(t.dashboard().streakWord, 'day'); // en, index 0
+  t.setLang('ru');
+  assert.equal(t.dashboard().streakWord, 'день'); // ru, index 0
 });
 test('export → import round-trips', () => {
   const { t } = buildTracker({ packs: [PACK] });
@@ -177,16 +229,18 @@ test('badge awards are eager: a reflection-driven trophy persists without item c
 });
 
 test('aiPrompt wraps text in the tutor pre-prompt with item context', () => {
-  const { t } = buildTracker({ packs: [PACK] });
+  const { t } = buildTracker({ packs: [PACK] }); // en is the default language
   const p = t.aiPrompt('Solve Two Sum', 'name the pattern first');
   assert.ok(p.includes('Solve Two Sum'), 'task text embedded');
-  assert.ok(p.includes('«A»'), 'current item title embedded');
+  assert.ok(p.includes('“A”'), 'current item title embedded (en)');
   assert.ok(p.includes('DSA'), 'track label embedded');
   assert.ok(p.includes('name the pattern first'), 'guidance embedded');
   assert.ok(!/[{}]/.test(p), 'all placeholders filled');
   const bare = t.aiPrompt('Solve Two Sum');
   assert.ok(bare.includes('Solve Two Sum'));
-  assert.ok(!bare.includes('name the pattern'), 'no guidance line without guidance');
+  // The guidance value (not a substring that collides with the template body).
+  assert.ok(!bare.includes('name the pattern first'), 'no guidance line without guidance');
+  assert.ok(!bare.includes('Criterion for a strong answer'), 'no guidance label without guidance');
   assert.ok(!/[{}]/.test(bare), 'all placeholders filled without guidance');
 });
 
@@ -196,7 +250,8 @@ test('aiPrompt template is pack-overridable like any ui string', () => {
   assert.equal(t.aiPrompt('Q'), 'ASK: Q');
 });
 
-test('streak word uses Slavic plural rules (21 → one-form, 22 → few-form)', () => {
+test('streak word uses Slavic plural rules under ru (21 → one-form, 22 → few-form)', () => {
+  const ru = DEFAULT_STREAK_WORDS['ru']!;
   const mk = (n: number) => {
     const items: Record<string, ItemProgress> = {};
     for (let i = 0; i < n; i++) {
@@ -210,12 +265,12 @@ test('streak word uses Slavic plural rules (21 → one-form, 22 → few-form)', 
     }
     const store = new Map<string, Progress>();
     store.set('p', new Progress({ schema: 'sunrise.progress/v1', items, badges: {} }));
-    return buildTracker({ packs: [PACK], store }).t;
+    return buildTracker({ packs: [PACK], store, session: { lang: 'ru' } }).t;
   };
-  assert.equal(mk(21).dashboard().streakWord, DEFAULT_STREAK_WORDS[0]); // 21 день
-  assert.equal(mk(22).dashboard().streakWord, DEFAULT_STREAK_WORDS[1]); // 22 дня
-  assert.equal(mk(11).dashboard().streakWord, DEFAULT_STREAK_WORDS[2]); // 11 дней
-  assert.equal(mk(5).dashboard().streakWord, DEFAULT_STREAK_WORDS[2]); // 5 дней
+  assert.equal(mk(21).dashboard().streakWord, ru[0]); // 21 день
+  assert.equal(mk(22).dashboard().streakWord, ru[1]); // 22 дня
+  assert.equal(mk(11).dashboard().streakWord, ru[2]); // 11 дней
+  assert.equal(mk(5).dashboard().streakWord, ru[2]); // 5 дней
 });
 
 test('selectPack reloads per-pack progress + resets current item', () => {

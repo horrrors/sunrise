@@ -126,9 +126,26 @@
   function typeOf(v) {
     return Array.isArray(v) ? "array" : v === null ? "null" : typeof v;
   }
+  function localizedOk(v) {
+    if (typeof v === "string") return true;
+    if (isObj(v)) return Object.values(v).every((x) => typeof x === "string");
+    return false;
+  }
   function check(value, schema, path, errors) {
     if (value === void 0 || value === null) {
       if (schema.required) errors.push({ path, msg: "required" });
+      return;
+    }
+    if (schema.localized) {
+      if (typeof value === "string") return;
+      if (isObj(value)) {
+        for (const k in value) {
+          if (typeof value[k] !== "string")
+            errors.push({ path: `${path}.${k}`, msg: "expected string" });
+        }
+        return;
+      }
+      errors.push({ path, msg: "expected string or {lang:string} map" });
       return;
     }
     const t = typeOf(value);
@@ -168,12 +185,12 @@
   var TASK = {
     type: "object",
     required: true,
-    props: { id: ID, text: { type: "string", required: true }, guidance: { type: "string" } }
+    props: { id: ID, text: { localized: true, required: true }, guidance: { localized: true } }
   };
   var RES = {
     type: "object",
     required: true,
-    props: { label: { type: "string", required: true }, note: { type: "string", required: true } }
+    props: { label: { localized: true, required: true }, note: { localized: true, required: true } }
   };
   var ITEM = {
     type: "object",
@@ -181,9 +198,9 @@
     props: {
       id: ID,
       track: { type: "string", required: true },
-      title: { type: "string" },
-      warmup: { type: "string" },
-      reflectPrompt: { type: "string" },
+      title: { localized: true },
+      warmup: { localized: true },
+      reflectPrompt: { localized: true },
       tasks: { type: "array", of: TASK },
       resources: { type: "array", of: RES },
       rest: { type: "boolean" }
@@ -194,7 +211,7 @@
     required: true,
     props: {
       id: ID,
-      title: { type: "string", required: true },
+      title: { localized: true, required: true },
       phase: { type: "string" },
       items: { type: "array", required: true, min: 1, of: ITEM }
     }
@@ -204,7 +221,7 @@
     required: true,
     props: {
       id: ID,
-      label: { type: "string", required: true },
+      label: { localized: true, required: true },
       icon: { type: "string" },
       color: { type: "string" }
     }
@@ -212,15 +229,15 @@
   var PHASE = {
     type: "object",
     required: true,
-    props: { id: ID, title: { type: "string", required: true } }
+    props: { id: ID, title: { localized: true, required: true } }
   };
   var BADGE = {
     type: "object",
     required: true,
     props: {
       id: ID,
-      title: { type: "string", required: true },
-      desc: { type: "string" },
+      title: { localized: true, required: true },
+      desc: { localized: true },
       icon: { type: "string" },
       type: { type: "string", required: true }
     }
@@ -231,7 +248,7 @@
     props: {
       schema: { type: "string", required: true },
       id: ID,
-      name: { type: "string", required: true },
+      name: { localized: true, required: true },
       version: { type: "string", required: true },
       locale: { type: "string" },
       settings: { type: "object" },
@@ -240,8 +257,8 @@
       groups: { type: "array", required: true, min: 1, of: GROUP },
       badges: { type: "array", of: BADGE },
       ui: { type: "object" },
-      mottos: { type: "array", of: { type: "string", required: true } },
-      surprises: { type: "array", of: { type: "string", required: true } }
+      mottos: { type: "array", of: { localized: true, required: true } },
+      surprises: { type: "array", of: { localized: true, required: true } }
     }
   };
   var BADGE_PARAMS = {
@@ -371,7 +388,8 @@
       const ui = pack["ui"];
       if (isObj(ui)) {
         for (const k in ui) {
-          if (typeof ui[k] !== "string") errors.push({ path: `ui.${k}`, msg: "expected string" });
+          if (!localizedOk(ui[k]))
+            errors.push({ path: `ui.${k}`, msg: "expected string or {lang:string} map" });
         }
       }
       const settings = pack["settings"];
@@ -380,8 +398,11 @@
         errors.push({ path: "settings.labels", msg: "expected object" });
       } else if (isObj(labels)) {
         for (const k in labels) {
-          if (typeof labels[k] !== "string")
-            errors.push({ path: `settings.labels.${k}`, msg: "expected string" });
+          if (!localizedOk(labels[k]))
+            errors.push({
+              path: `settings.labels.${k}`,
+              msg: "expected string or {lang:string} map"
+            });
         }
       }
       if (errors.length) throw new ValidationError(errors);
@@ -479,6 +500,26 @@
     }
   };
 
+  // src/domain/i18n.ts
+  var DEFAULT_LANG = "en";
+  function tr(v, lang) {
+    if (v == null) return "";
+    if (typeof v === "string") return v;
+    return v[lang] ?? v[DEFAULT_LANG] ?? Object.values(v)[0] ?? "";
+  }
+
+  // src/domain/plural.ts
+  function pluralIndex(lang, n) {
+    if (lang === "ru") {
+      const m10 = n % 10;
+      const m100 = n % 100;
+      if (m10 === 1 && m100 !== 11) return 0;
+      if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return 1;
+      return 2;
+    }
+    return n === 1 ? 0 : 1;
+  }
+
   // src/domain/tracker.ts
   var SURPRISE_CHANCE = 0.12;
   var Tracker = class {
@@ -491,6 +532,7 @@
     allItems = [];
     groupOfItem = {};
     mottosList = [];
+    lang = DEFAULT_LANG;
     constructor(deps) {
       this.deps = deps;
     }
@@ -499,6 +541,7 @@
       const packs = this.deps.packs.packs();
       if (packs.length === 0) throw new Error("no packs registered");
       const sess = this.deps.sessionStore.load();
+      this.lang = sess.lang ?? DEFAULT_LANG;
       const pack = packs.find((p) => p.id === sess.activePackId) ?? packs[0];
       this.loadPack(pack.id);
       const themes = this.deps.themes.themes();
@@ -525,13 +568,14 @@
     // ----- helpers -------------------------------------------------------------
     uiText(k) {
       const fromPack = this.pack.ui && this.pack.ui[k];
-      if (fromPack != null) return fromPack;
-      return this.deps.defaultUi[k] ?? "";
+      if (fromPack != null) return tr(fromPack, this.lang);
+      const def = this.deps.defaultUi[k];
+      return def != null ? tr(def, this.lang) : "";
     }
     lbl(k, fallbackKey) {
       const l = this.pack.settings && this.pack.settings.labels;
       const v = l && l[k];
-      return v != null ? v : this.uiText(fallbackKey);
+      return v != null ? tr(v, this.lang) : this.uiText(fallbackKey);
     }
     itemOf(id) {
       const it = this.allItems.find((x) => x.id === id);
@@ -589,7 +633,7 @@
       if (this.deps.random.next() < SURPRISE_CHANCE) {
         const pool = this.pack.surprises ?? [];
         const msg = pool.length ? pool[Math.floor(this.deps.random.next() * pool.length)] : void 0;
-        if (msg) result.surprise = msg;
+        if (msg) result.surprise = tr(msg, this.lang);
       }
       return result;
     }
@@ -623,6 +667,12 @@
       this.deps.sessionStore.save(sess);
       this.themeId = id;
     }
+    setLang(id) {
+      const sess = this.deps.sessionStore.load();
+      sess.lang = id;
+      this.deps.sessionStore.save(sess);
+      this.lang = id;
+    }
     importProgress(json) {
       let raw;
       try {
@@ -647,7 +697,7 @@
     selectors() {
       const packs = this.deps.packs.packs().map((p) => ({
         id: p.id,
-        label: p.name,
+        label: tr(p.name, this.lang),
         selected: p.id === this.pack.id
       }));
       const themes = this.deps.themes.themes().map((t) => ({
@@ -657,8 +707,12 @@
       }));
       const items = this.allItems.map((it) => {
         const g = this.groupOfItem[it.id];
-        const tl = it.rest ? this.uiText("restVert") : this.trackMeta(it.track).label;
-        return { id: it.id, label: `${g.title} \xB7 ${tl}`, selected: it.id === this.currentItemId };
+        const tl = it.rest ? this.uiText("restVert") : tr(this.trackMeta(it.track).label, this.lang);
+        return {
+          id: it.id,
+          label: `${tr(g.title, this.lang)} \xB7 ${tl}`,
+          selected: it.id === this.currentItemId
+        };
       });
       return { packs, themes, items };
     }
@@ -675,11 +729,11 @@
           itemId: it.id,
           rest: true,
           track: it.track,
-          trackLabel: m.label,
+          trackLabel: tr(m.label, this.lang),
           trackIcon: m.icon ?? "",
           title: this.uiText("restTitle"),
           phaseLabel,
-          reflectPrompt: it.reflectPrompt,
+          reflectPrompt: it.reflectPrompt != null ? tr(it.reflectPrompt, this.lang) : void 0,
           reflection: "",
           tasks: [],
           resources: [],
@@ -691,8 +745,8 @@
       const complete = this.progress.isItemComplete(it);
       const tasks = (it.tasks ?? []).map((t) => ({
         id: t.id,
-        text: t.text,
-        ...t.guidance !== void 0 ? { guidance: t.guidance } : {},
+        text: tr(t.text, this.lang),
+        ...t.guidance !== void 0 ? { guidance: tr(t.guidance, this.lang) } : {},
         done: this.progress.taskChecked(it.id, t.id)
       }));
       const showWarmup = cfg.warmups !== false && it.warmup != null;
@@ -701,15 +755,18 @@
         itemId: it.id,
         rest: false,
         track: it.track,
-        trackLabel: m.label,
+        trackLabel: tr(m.label, this.lang),
         trackIcon: m.icon ?? "",
-        title: it.title ?? "",
+        title: it.title != null ? tr(it.title, this.lang) : "",
         phaseLabel,
-        warmup: it.warmup,
-        reflectPrompt: it.reflectPrompt,
+        warmup: it.warmup != null ? tr(it.warmup, this.lang) : void 0,
+        reflectPrompt: it.reflectPrompt != null ? tr(it.reflectPrompt, this.lang) : void 0,
         reflection: this.progress.reflection(it.id),
         tasks,
-        resources: (it.resources ?? []).map((r) => ({ label: r.label, note: r.note })),
+        resources: (it.resources ?? []).map((r) => ({
+          label: tr(r.label, this.lang),
+          note: tr(r.note, this.lang)
+        })),
         complete,
         notLast,
         show: { warmup: showWarmup, reflection: showReflection }
@@ -720,17 +777,15 @@
       const streak = this.deps.streaks.current(this.progress, this.deps.clock.today());
       const byPhase = this.deps.stats.byPhase(this.pack, this.progress);
       const byTrack = this.deps.stats.byTrack(this.pack, this.progress);
-      const sw = this.deps.defaultStreakWords;
-      const m10 = streak % 10;
-      const m100 = streak % 100;
-      const streakWord = m10 === 1 && m100 !== 11 ? sw[0] ?? "" : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? sw[1] ?? "" : sw[2] ?? "";
+      const words = this.deps.defaultStreakWords[this.lang] ?? this.deps.defaultStreakWords[DEFAULT_LANG] ?? [];
+      const streakWord = words[pluralIndex(this.lang, streak)] ?? words[words.length - 1] ?? "";
       const phaseList = this.pack.phases ?? [];
       const phases = phaseList.length ? phaseList.map((ph) => ({
         id: ph.id,
-        title: ph.title || `${this.lbl("phase", "phaseWord")} ${ph.id}`,
+        title: tr(ph.title, this.lang) || `${this.lbl("phase", "phaseWord")} ${ph.id}`,
         stat: byPhase[ph.id] ?? { done: 0, total: 0, pct: 0 }
       })) : null;
-      const tracks = this.pack.tracks.filter((t) => byTrack[t.id]).map((t) => ({ id: t.id, label: t.label, stat: byTrack[t.id] }));
+      const tracks = this.pack.tracks.filter((t) => byTrack[t.id]).map((t) => ({ id: t.id, label: tr(t.label, this.lang), stat: byTrack[t.id] }));
       return {
         overall,
         streak,
@@ -744,10 +799,10 @@
       const overall = this.deps.stats.overall(this.pack, this.progress);
       const groups = this.pack.groups.map((g) => ({
         id: g.id,
-        title: g.title,
+        title: tr(g.title, this.lang),
         items: g.items.map((it) => ({
           id: it.id,
-          title: it.title ?? "",
+          title: it.title != null ? tr(it.title, this.lang) : "",
           done: this.progress.isItemComplete(it),
           rest: !!it.rest,
           current: it.id === this.currentItemId
@@ -761,8 +816,8 @@
         const meta = this.rules.find((r) => r.id === b.id);
         return {
           id: b.id,
-          title: meta?.title ?? b.id,
-          desc: meta?.desc ?? "",
+          title: meta ? tr(meta.title, this.lang) : b.id,
+          desc: tr(meta?.desc, this.lang),
           icon: meta?.icon ?? "\u2022",
           unlocked: b.unlocked
         };
@@ -781,7 +836,7 @@
       return out;
     }
     mottos() {
-      return this.mottosList;
+      return this.mottosList.map((m) => tr(m, this.lang));
     }
     ui(key) {
       return this.uiText(key);
@@ -793,7 +848,7 @@
       const g = guidance ? `
 ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
 ` : "";
-      return this.uiText("aiPrompt").replace("{title}", it.title ?? "").replace("{track}", this.trackMeta(it.track).label).replace("{text}", text).replace("{guidance}", g);
+      return this.uiText("aiPrompt").replace("{title}", it.title != null ? tr(it.title, this.lang) : "").replace("{track}", tr(this.trackMeta(it.track).label, this.lang)).replace("{text}", text).replace("{guidance}", g);
     }
     itemLabel() {
       return this.lbl("item", "weekAbbr");
@@ -808,8 +863,11 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
     activePackId() {
       return this.pack.id;
     }
-    locale() {
-      return this.pack.locale ?? "en";
+    currentLang() {
+      return this.lang;
+    }
+    langs() {
+      return this.deps.supportedLangs;
     }
   };
 
@@ -1036,190 +1094,215 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
   };
 
   // src/domain/builtins.ts
+  var SUPPORTED_LANGS = [
+    { id: "en", label: "EN" },
+    { id: "ru", label: "RU" }
+  ];
   var DEFAULT_UI = {
-    summaryTitle: "\u0421\u0432\u043E\u0434\u043A\u0430",
-    todayTitle: "\u0421\u0435\u0433\u043E\u0434\u043D\u044F",
-    warmup: "\u0420\u0430\u0437\u043C\u0438\u043D\u043A\u0430",
-    reflect: "\u0420\u0435\u0444\u043B\u0435\u043A\u0441\u0438\u044F",
-    export: "\u042D\u043A\u0441\u043F\u043E\u0440\u0442",
-    import: "\u0418\u043C\u043F\u043E\u0440\u0442",
-    cardMap: "\u041A\u0430\u0440\u0442\u0430 \u043F\u0440\u043E\u0433\u0440\u0435\u0441\u0441\u0430",
-    trophies: "\u0422\u0440\u043E\u0444\u0435\u0438",
-    nextDay: "\u0421\u043B\u0435\u0434\u0443\u044E\u0449\u0438\u0439 \u0434\u0435\u043D\u044C \u2192",
-    restTitle: "\u0420\u0430\u0437\u0433\u0440\u0443\u0437\u043A\u0430",
-    overallTitle: "\u041E\u0431\u0449\u0438\u0439 \u043F\u0440\u043E\u0433\u0440\u0435\u0441\u0441",
-    streakTitle: "\u0421\u0435\u0440\u0438\u044F",
-    phasesTitle: "\u0424\u0430\u0437\u044B",
-    tracksTitle: "\u0422\u0440\u0435\u043A\u0438",
-    daysOf: "\u043F\u0440\u043E\u0439\u0434\u0435\u043D\u043E \u0434\u043D\u0435\u0439 \u0438\u0437 {n}",
-    newTrophy: "\u{1F3C6} \u041D\u043E\u0432\u044B\u0439 \u0442\u0440\u043E\u0444\u0435\u0439!",
-    comeback: "\u0421 \u0432\u043E\u0437\u0432\u0440\u0430\u0449\u0435\u043D\u0438\u0435\u043C \u2014 \u0432\u0441\u0435\u0433\u043E \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u043E {n} \u0434\u043D\u0435\u0439. \u041F\u0440\u043E\u0434\u043E\u043B\u0436\u0430\u0435\u043C.",
-    importOk: "\u041F\u0440\u043E\u0433\u0440\u0435\u0441\u0441 \u0438\u043C\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u043D.",
-    importFail: "\u0418\u043C\u043F\u043E\u0440\u0442 \u043D\u0435 \u0443\u0434\u0430\u043B\u0441\u044F: {e}\n\u0422\u0435\u043A\u0443\u0449\u0438\u0439 \u043F\u0440\u043E\u0433\u0440\u0435\u0441\u0441 \u043D\u0435 \u0438\u0437\u043C\u0435\u043D\u0451\u043D.",
-    weekAbbr: "\u041D\u0435\u0434",
-    inARow: "\u043F\u043E\u0434\u0440\u044F\u0434",
-    phaseWord: "\u0424\u0430\u0437\u0430",
-    phaseLabel: "",
-    todayVert: "TODAY",
-    restVert: "REST",
-    taskPlaceholder: "\u041A\u043E\u0440\u043E\u0442\u043A\u0430\u044F \u0437\u0430\u043C\u0435\u0442\u043A\u0430...",
-    prevDayAria: "\u041F\u0440\u0435\u0434\u044B\u0434\u0443\u0449\u0438\u0439 \u0434\u0435\u043D\u044C",
-    nextDayAria: "\u0421\u043B\u0435\u0434\u0443\u044E\u0449\u0438\u0439 \u0434\u0435\u043D\u044C",
-    theme: "\u0422\u0435\u043C\u0430",
-    pack: "\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u0430",
-    menu: "\u041C\u0435\u043D\u044E",
-    hint: "\u0427\u0442\u043E \u0441\u0447\u0438\u0442\u0430\u0435\u0442\u0441\u044F \u0441\u0438\u043B\u044C\u043D\u044B\u043C \u043E\u0442\u0432\u0435\u0442\u043E\u043C",
-    copy: "\u041A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C",
-    copyAi: "\u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0441 \u043F\u0440\u043E\u043C\u043F\u0442\u043E\u043C \u0434\u043B\u044F \u0418\u0418",
-    copied: "\u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D\u043E",
-    copiedAi: "\u041F\u0440\u043E\u043C\u043F\u0442 \u0434\u043B\u044F \u0418\u0418 \u0441\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D \u2014 \u0432\u0441\u0442\u0430\u0432\u044C \u0435\u0433\u043E \u0432 \u0447\u0430\u0442 \u0441 \u0418\u0418",
+    summaryTitle: { en: "Summary", ru: "\u0421\u0432\u043E\u0434\u043A\u0430" },
+    todayTitle: { en: "Today", ru: "\u0421\u0435\u0433\u043E\u0434\u043D\u044F" },
+    warmup: { en: "Warm-up", ru: "\u0420\u0430\u0437\u043C\u0438\u043D\u043A\u0430" },
+    reflect: { en: "Reflection", ru: "\u0420\u0435\u0444\u043B\u0435\u043A\u0441\u0438\u044F" },
+    export: { en: "Export", ru: "\u042D\u043A\u0441\u043F\u043E\u0440\u0442" },
+    import: { en: "Import", ru: "\u0418\u043C\u043F\u043E\u0440\u0442" },
+    cardMap: { en: "Progress map", ru: "\u041A\u0430\u0440\u0442\u0430 \u043F\u0440\u043E\u0433\u0440\u0435\u0441\u0441\u0430" },
+    trophies: { en: "Trophies", ru: "\u0422\u0440\u043E\u0444\u0435\u0438" },
+    nextDay: { en: "Next day \u2192", ru: "\u0421\u043B\u0435\u0434\u0443\u044E\u0449\u0438\u0439 \u0434\u0435\u043D\u044C \u2192" },
+    restTitle: { en: "Rest day", ru: "\u0420\u0430\u0437\u0433\u0440\u0443\u0437\u043A\u0430" },
+    overallTitle: { en: "Overall progress", ru: "\u041E\u0431\u0449\u0438\u0439 \u043F\u0440\u043E\u0433\u0440\u0435\u0441\u0441" },
+    streakTitle: { en: "Streak", ru: "\u0421\u0435\u0440\u0438\u044F" },
+    phasesTitle: { en: "Phases", ru: "\u0424\u0430\u0437\u044B" },
+    tracksTitle: { en: "Tracks", ru: "\u0422\u0440\u0435\u043A\u0438" },
+    daysOf: { en: "days done of {n}", ru: "\u043F\u0440\u043E\u0439\u0434\u0435\u043D\u043E \u0434\u043D\u0435\u0439 \u0438\u0437 {n}" },
+    newTrophy: { en: "\u{1F3C6} New trophy!", ru: "\u{1F3C6} \u041D\u043E\u0432\u044B\u0439 \u0442\u0440\u043E\u0444\u0435\u0439!" },
+    comeback: {
+      en: "Welcome back \u2014 {n} days done in total. Let\u2019s keep going.",
+      ru: "\u0421 \u0432\u043E\u0437\u0432\u0440\u0430\u0449\u0435\u043D\u0438\u0435\u043C \u2014 \u0432\u0441\u0435\u0433\u043E \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u043E {n} \u0434\u043D\u0435\u0439. \u041F\u0440\u043E\u0434\u043E\u043B\u0436\u0430\u0435\u043C."
+    },
+    importOk: { en: "Progress imported.", ru: "\u041F\u0440\u043E\u0433\u0440\u0435\u0441\u0441 \u0438\u043C\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u043D." },
+    importFail: {
+      en: "Import failed: {e}\nCurrent progress unchanged.",
+      ru: "\u0418\u043C\u043F\u043E\u0440\u0442 \u043D\u0435 \u0443\u0434\u0430\u043B\u0441\u044F: {e}\n\u0422\u0435\u043A\u0443\u0449\u0438\u0439 \u043F\u0440\u043E\u0433\u0440\u0435\u0441\u0441 \u043D\u0435 \u0438\u0437\u043C\u0435\u043D\u0451\u043D."
+    },
+    weekAbbr: { en: "Wk", ru: "\u041D\u0435\u0434" },
+    inARow: { en: "in a row", ru: "\u043F\u043E\u0434\u0440\u044F\u0434" },
+    phaseWord: { en: "Phase", ru: "\u0424\u0430\u0437\u0430" },
+    phaseLabel: { en: "", ru: "" },
+    todayVert: { en: "TODAY", ru: "TODAY" },
+    restVert: { en: "REST", ru: "REST" },
+    taskPlaceholder: { en: "Short note...", ru: "\u041A\u043E\u0440\u043E\u0442\u043A\u0430\u044F \u0437\u0430\u043C\u0435\u0442\u043A\u0430..." },
+    prevDayAria: { en: "Previous day", ru: "\u041F\u0440\u0435\u0434\u044B\u0434\u0443\u0449\u0438\u0439 \u0434\u0435\u043D\u044C" },
+    nextDayAria: { en: "Next day", ru: "\u0421\u043B\u0435\u0434\u0443\u044E\u0449\u0438\u0439 \u0434\u0435\u043D\u044C" },
+    theme: { en: "Theme", ru: "\u0422\u0435\u043C\u0430" },
+    pack: { en: "Program", ru: "\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u0430" },
+    menu: { en: "Menu", ru: "\u041C\u0435\u043D\u044E" },
+    language: { en: "Language", ru: "\u042F\u0437\u044B\u043A" },
+    hint: { en: "What counts as a strong answer", ru: "\u0427\u0442\u043E \u0441\u0447\u0438\u0442\u0430\u0435\u0442\u0441\u044F \u0441\u0438\u043B\u044C\u043D\u044B\u043C \u043E\u0442\u0432\u0435\u0442\u043E\u043C" },
+    copy: { en: "Copy", ru: "\u041A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C" },
+    copyAi: { en: "Copy with AI prompt", ru: "\u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0441 \u043F\u0440\u043E\u043C\u043F\u0442\u043E\u043C \u0434\u043B\u044F \u0418\u0418" },
+    copied: { en: "Copied", ru: "\u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D\u043E" },
+    copiedAi: {
+      en: "AI prompt copied \u2014 paste it into an AI chat",
+      ru: "\u041F\u0440\u043E\u043C\u043F\u0442 \u0434\u043B\u044F \u0418\u0418 \u0441\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D \u2014 \u0432\u0441\u0442\u0430\u0432\u044C \u0435\u0433\u043E \u0432 \u0447\u0430\u0442 \u0441 \u0418\u0418"
+    },
     // {guidance} is replaced with a filled aiPromptGuidance line (or '') by Tracker.aiPrompt
-    aiPrompt: "\u042F \u043F\u0440\u043E\u0445\u043E\u0436\u0443 \u0443\u0447\u0435\u0431\u043D\u0443\u044E \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u0443 \u0438 \u0441\u0435\u0439\u0447\u0430\u0441 \u043D\u0430 \u0442\u0435\u043C\u0435 \xAB{title}\xBB (\u0442\u0440\u0435\u043A: {track}). \u0420\u0430\u0437\u0431\u0435\u0440\u0438 \u044D\u0442\u043E \u0437\u0430\u0434\u0430\u043D\u0438\u0435 \u043A\u0430\u043A \u043E\u043F\u044B\u0442\u043D\u044B\u0439 \u043D\u0430\u0441\u0442\u0430\u0432\u043D\u0438\u043A:\n\n{text}\n{guidance}\n\u0421\u043D\u0430\u0447\u0430\u043B\u0430 \u043E\u0431\u044A\u044F\u0441\u043D\u0438 \u0438\u0434\u0435\u044E \u0438 \u0438\u043D\u0442\u0443\u0438\u0446\u0438\u044E \u043F\u0440\u043E\u0441\u0442\u044B\u043C\u0438 \u0441\u043B\u043E\u0432\u0430\u043C\u0438, \u0437\u0430\u0442\u0435\u043C \u0434\u0430\u0439 \u0440\u0430\u0437\u0432\u0451\u0440\u043D\u0443\u0442\u044B\u0439 \u0440\u0430\u0437\u0431\u043E\u0440: \u0434\u043B\u044F \u0437\u0430\u0434\u0430\u0447\u0438 \u2014 \u043D\u0430\u0437\u043E\u0432\u0438 \u043F\u0430\u0442\u0442\u0435\u0440\u043D, \u043F\u043E\u0434\u0445\u043E\u0434 \u0438 \u0441\u043B\u043E\u0436\u043D\u043E\u0441\u0442\u044C \u043F\u043E \u0432\u0440\u0435\u043C\u0435\u043D\u0438 \u0438 \u043F\u0430\u043C\u044F\u0442\u0438, \u0438 \u0442\u043E\u043B\u044C\u043A\u043E \u043F\u043E\u0441\u043B\u0435 \u044D\u0442\u043E\u0433\u043E \u043A\u043E\u0434; \u0434\u043B\u044F \u0442\u0435\u043E\u0440\u0438\u0438 \u2014 \u0441\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u043E\u0435 \u043E\u0431\u044A\u044F\u0441\u043D\u0435\u043D\u0438\u0435 \u0441 \u043F\u0440\u0438\u043C\u0435\u0440\u0430\u043C\u0438. \u041E\u0442\u0432\u0435\u0447\u0430\u0439 \u043D\u0430 \u0440\u0443\u0441\u0441\u043A\u043E\u043C.",
-    aiPromptGuidance: "\u041A\u0440\u0438\u0442\u0435\u0440\u0438\u0439 \u0441\u0438\u043B\u044C\u043D\u043E\u0433\u043E \u043E\u0442\u0432\u0435\u0442\u0430: {guidance}",
-    shortcuts: "\u0413\u043E\u0440\u044F\u0447\u0438\u0435 \u043A\u043B\u0430\u0432\u0438\u0448\u0438",
-    scDay: "\u041F\u0440\u0435\u0434\u044B\u0434\u0443\u0449\u0438\u0439 / \u0441\u043B\u0435\u0434\u0443\u044E\u0449\u0438\u0439 \u0434\u0435\u043D\u044C",
-    scTick: "\u041F\u0435\u0440\u0435\u0445\u043E\u0434 \u043C\u0435\u0436\u0434\u0443 \u0437\u0430\u0434\u0430\u0447\u0430\u043C\u0438",
-    scMark: "\u041E\u0442\u043C\u0435\u0442\u0438\u0442\u044C \u0437\u0430\u0434\u0430\u0447\u0443",
-    scMap: "\u041A\u0430\u0440\u0442\u0430 \u043F\u0440\u043E\u0433\u0440\u0435\u0441\u0441\u0430",
-    scTrophies: "\u0422\u0440\u043E\u0444\u0435\u0438",
-    scHelp: "\u042D\u0442\u0430 \u043F\u043E\u0434\u0441\u043A\u0430\u0437\u043A\u0430",
-    scClose: "\u0417\u0430\u043A\u0440\u044B\u0442\u044C \u043E\u043A\u043D\u043E"
+    aiPrompt: {
+      en: "I\u2019m working through a study program and I\u2019m currently on the topic \u201C{title}\u201D (track: {track}). Break down this task like an experienced mentor:\n\n{text}\n{guidance}\nFirst explain the idea and intuition in plain words, then give a full breakdown: for a problem \u2014 name the pattern, the approach, and the time/space complexity, and only after that the code; for theory \u2014 a structured explanation with examples. Answer in English.",
+      ru: "\u042F \u043F\u0440\u043E\u0445\u043E\u0436\u0443 \u0443\u0447\u0435\u0431\u043D\u0443\u044E \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u0443 \u0438 \u0441\u0435\u0439\u0447\u0430\u0441 \u043D\u0430 \u0442\u0435\u043C\u0435 \xAB{title}\xBB (\u0442\u0440\u0435\u043A: {track}). \u0420\u0430\u0437\u0431\u0435\u0440\u0438 \u044D\u0442\u043E \u0437\u0430\u0434\u0430\u043D\u0438\u0435 \u043A\u0430\u043A \u043E\u043F\u044B\u0442\u043D\u044B\u0439 \u043D\u0430\u0441\u0442\u0430\u0432\u043D\u0438\u043A:\n\n{text}\n{guidance}\n\u0421\u043D\u0430\u0447\u0430\u043B\u0430 \u043E\u0431\u044A\u044F\u0441\u043D\u0438 \u0438\u0434\u0435\u044E \u0438 \u0438\u043D\u0442\u0443\u0438\u0446\u0438\u044E \u043F\u0440\u043E\u0441\u0442\u044B\u043C\u0438 \u0441\u043B\u043E\u0432\u0430\u043C\u0438, \u0437\u0430\u0442\u0435\u043C \u0434\u0430\u0439 \u0440\u0430\u0437\u0432\u0451\u0440\u043D\u0443\u0442\u044B\u0439 \u0440\u0430\u0437\u0431\u043E\u0440: \u0434\u043B\u044F \u0437\u0430\u0434\u0430\u0447\u0438 \u2014 \u043D\u0430\u0437\u043E\u0432\u0438 \u043F\u0430\u0442\u0442\u0435\u0440\u043D, \u043F\u043E\u0434\u0445\u043E\u0434 \u0438 \u0441\u043B\u043E\u0436\u043D\u043E\u0441\u0442\u044C \u043F\u043E \u0432\u0440\u0435\u043C\u0435\u043D\u0438 \u0438 \u043F\u0430\u043C\u044F\u0442\u0438, \u0438 \u0442\u043E\u043B\u044C\u043A\u043E \u043F\u043E\u0441\u043B\u0435 \u044D\u0442\u043E\u0433\u043E \u043A\u043E\u0434; \u0434\u043B\u044F \u0442\u0435\u043E\u0440\u0438\u0438 \u2014 \u0441\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u043E\u0435 \u043E\u0431\u044A\u044F\u0441\u043D\u0435\u043D\u0438\u0435 \u0441 \u043F\u0440\u0438\u043C\u0435\u0440\u0430\u043C\u0438. \u041E\u0442\u0432\u0435\u0447\u0430\u0439 \u043D\u0430 \u0440\u0443\u0441\u0441\u043A\u043E\u043C."
+    },
+    aiPromptGuidance: {
+      en: "Criterion for a strong answer: {guidance}",
+      ru: "\u041A\u0440\u0438\u0442\u0435\u0440\u0438\u0439 \u0441\u0438\u043B\u044C\u043D\u043E\u0433\u043E \u043E\u0442\u0432\u0435\u0442\u0430: {guidance}"
+    },
+    shortcuts: { en: "Keyboard shortcuts", ru: "\u0413\u043E\u0440\u044F\u0447\u0438\u0435 \u043A\u043B\u0430\u0432\u0438\u0448\u0438" },
+    scDay: { en: "Previous / next day", ru: "\u041F\u0440\u0435\u0434\u044B\u0434\u0443\u0449\u0438\u0439 / \u0441\u043B\u0435\u0434\u0443\u044E\u0449\u0438\u0439 \u0434\u0435\u043D\u044C" },
+    scTick: { en: "Move between tasks", ru: "\u041F\u0435\u0440\u0435\u0445\u043E\u0434 \u043C\u0435\u0436\u0434\u0443 \u0437\u0430\u0434\u0430\u0447\u0430\u043C\u0438" },
+    scMark: { en: "Toggle a task", ru: "\u041E\u0442\u043C\u0435\u0442\u0438\u0442\u044C \u0437\u0430\u0434\u0430\u0447\u0443" },
+    scMap: { en: "Progress map", ru: "\u041A\u0430\u0440\u0442\u0430 \u043F\u0440\u043E\u0433\u0440\u0435\u0441\u0441\u0430" },
+    scTrophies: { en: "Trophies", ru: "\u0422\u0440\u043E\u0444\u0435\u0438" },
+    scHelp: { en: "This help", ru: "\u042D\u0442\u0430 \u043F\u043E\u0434\u0441\u043A\u0430\u0437\u043A\u0430" },
+    scClose: { en: "Close dialog", ru: "\u0417\u0430\u043A\u0440\u044B\u0442\u044C \u043E\u043A\u043D\u043E" }
   };
-  var DEFAULT_STREAK_WORDS = ["\u0434\u0435\u043D\u044C", "\u0434\u043D\u044F", "\u0434\u043D\u0435\u0439"];
-  var DEFAULT_MOTTOS = ["\u4E00\u6B69\u4E00\u6B69 \xB7 \u0448\u0430\u0433 \u0437\u0430 \u0448\u0430\u0433\u043E\u043C"];
+  var DEFAULT_STREAK_WORDS = {
+    en: ["day", "days"],
+    ru: ["\u0434\u0435\u043D\u044C", "\u0434\u043D\u044F", "\u0434\u043D\u0435\u0439"]
+  };
+  var DEFAULT_MOTTOS = [
+    { en: "\u4E00\u6B69\u4E00\u6B69 \xB7 step by step", ru: "\u4E00\u6B69\u4E00\u6B69 \xB7 \u0448\u0430\u0433 \u0437\u0430 \u0448\u0430\u0433\u043E\u043C" }
+  ];
   var GENERIC_BADGES = [
     {
       id: "first-light",
       type: "days-done",
       gte: 1,
-      title: "First Light",
-      desc: "\u041F\u0435\u0440\u0432\u044B\u0439 \u043F\u043E\u043B\u043D\u043E\u0441\u0442\u044C\u044E \u0437\u0430\u043A\u0440\u044B\u0442\u044B\u0439 \u0434\u0435\u043D\u044C",
+      title: { en: "First Light", ru: "First Light" },
+      desc: { en: "First fully completed day", ru: "\u041F\u0435\u0440\u0432\u044B\u0439 \u043F\u043E\u043B\u043D\u043E\u0441\u0442\u044C\u044E \u0437\u0430\u043A\u0440\u044B\u0442\u044B\u0439 \u0434\u0435\u043D\u044C" },
       icon: "\u{1F305}"
     },
     {
       id: "streak-3",
       type: "streak",
       gte: 3,
-      title: "\u0420\u0430\u0437\u043E\u0433\u0440\u0435\u0432",
-      desc: "\u0421\u0435\u0440\u0438\u044F 3 \u0434\u043D\u044F \u043F\u043E\u0434\u0440\u044F\u0434",
+      title: { en: "Warm-up", ru: "\u0420\u0430\u0437\u043E\u0433\u0440\u0435\u0432" },
+      desc: { en: "3-day streak", ru: "\u0421\u0435\u0440\u0438\u044F 3 \u0434\u043D\u044F \u043F\u043E\u0434\u0440\u044F\u0434" },
       icon: "\u{1F331}"
     },
     {
       id: "streak-7",
       type: "streak",
       gte: 7,
-      title: "7 \u0434\u043D\u0435\u0439",
-      desc: "\u0421\u0435\u0440\u0438\u044F 7 \u0434\u043D\u0435\u0439 \u043F\u043E\u0434\u0440\u044F\u0434",
+      title: { en: "7 Days", ru: "7 \u0434\u043D\u0435\u0439" },
+      desc: { en: "7-day streak", ru: "\u0421\u0435\u0440\u0438\u044F 7 \u0434\u043D\u0435\u0439 \u043F\u043E\u0434\u0440\u044F\u0434" },
       icon: "\u{1F525}"
     },
     {
       id: "streak-14",
       type: "streak",
       gte: 14,
-      title: "14 \u0434\u043D\u0435\u0439",
-      desc: "\u0421\u0435\u0440\u0438\u044F 14 \u0434\u043D\u0435\u0439 \u043F\u043E\u0434\u0440\u044F\u0434",
+      title: { en: "14 Days", ru: "14 \u0434\u043D\u0435\u0439" },
+      desc: { en: "14-day streak", ru: "\u0421\u0435\u0440\u0438\u044F 14 \u0434\u043D\u0435\u0439 \u043F\u043E\u0434\u0440\u044F\u0434" },
       icon: "\u{1F30B}"
     },
     {
       id: "streak-30",
       type: "streak",
       gte: 30,
-      title: "30 \u0434\u043D\u0435\u0439",
-      desc: "\u0421\u0435\u0440\u0438\u044F 30 \u0434\u043D\u0435\u0439 \u043F\u043E\u0434\u0440\u044F\u0434",
+      title: { en: "30 Days", ru: "30 \u0434\u043D\u0435\u0439" },
+      desc: { en: "30-day streak", ru: "\u0421\u0435\u0440\u0438\u044F 30 \u0434\u043D\u0435\u0439 \u043F\u043E\u0434\u0440\u044F\u0434" },
       icon: "\u26A1"
     },
     {
       id: "streak-100",
       type: "streak",
       gte: 100,
-      title: "100 \u0434\u043D\u0435\u0439",
-      desc: "\u0421\u0435\u0440\u0438\u044F 100 \u0434\u043D\u0435\u0439 \u043F\u043E\u0434\u0440\u044F\u0434",
+      title: { en: "100 Days", ru: "100 \u0434\u043D\u0435\u0439" },
+      desc: { en: "100-day streak", ru: "\u0421\u0435\u0440\u0438\u044F 100 \u0434\u043D\u0435\u0439 \u043F\u043E\u0434\u0440\u044F\u0434" },
       icon: "\u{1F4AF}"
     },
     {
       id: "days-10",
       type: "days-done",
       gte: 10,
-      title: "10 \u0434\u043D\u0435\u0439",
-      desc: "10 \u0434\u043D\u0435\u0439 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u043E",
+      title: { en: "10 Days", ru: "10 \u0434\u043D\u0435\u0439" },
+      desc: { en: "10 days of the program done", ru: "10 \u0434\u043D\u0435\u0439 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u043E" },
       icon: "\u{1F4C5}"
     },
     {
       id: "days-25",
       type: "days-done",
       gte: 25,
-      title: "25 \u0434\u043D\u0435\u0439",
-      desc: "25 \u0434\u043D\u0435\u0439 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u043E",
+      title: { en: "25 Days", ru: "25 \u0434\u043D\u0435\u0439" },
+      desc: { en: "25 days of the program done", ru: "25 \u0434\u043D\u0435\u0439 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u043E" },
       icon: "\u{1F5D3}\uFE0F"
     },
     {
       id: "days-50",
       type: "days-done",
       gte: 50,
-      title: "50 \u0434\u043D\u0435\u0439",
-      desc: "50 \u0434\u043D\u0435\u0439 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u043E",
+      title: { en: "50 Days", ru: "50 \u0434\u043D\u0435\u0439" },
+      desc: { en: "50 days of the program done", ru: "50 \u0434\u043D\u0435\u0439 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u043E" },
       icon: "\u{1F4C6}"
     },
     {
       id: "halfway",
       type: "percent",
       gte: 50,
-      title: "\u042D\u043A\u0432\u0430\u0442\u043E\u0440",
-      desc: "\u041F\u0440\u043E\u0439\u0434\u0435\u043D\u0430 \u043F\u043E\u043B\u043E\u0432\u0438\u043D\u0430 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B",
+      title: { en: "Halfway", ru: "\u042D\u043A\u0432\u0430\u0442\u043E\u0440" },
+      desc: { en: "Half of the program done", ru: "\u041F\u0440\u043E\u0439\u0434\u0435\u043D\u0430 \u043F\u043E\u043B\u043E\u0432\u0438\u043D\u0430 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B" },
       icon: "\u{1F317}"
     },
     {
       id: "finisher",
       type: "all-done",
-      title: "\u0424\u0438\u043D\u0438\u0448\u0435\u0440",
-      desc: "\u041F\u0440\u043E\u0439\u0434\u0435\u043D\u044B \u0432\u0441\u0435 \u0434\u043D\u0438 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B",
+      title: { en: "Finisher", ru: "\u0424\u0438\u043D\u0438\u0448\u0435\u0440" },
+      desc: { en: "Every day of the program done", ru: "\u041F\u0440\u043E\u0439\u0434\u0435\u043D\u044B \u0432\u0441\u0435 \u0434\u043D\u0438 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B" },
       icon: "\u{1F393}"
     },
     {
       id: "tasks-100",
       type: "tasks-done",
       gte: 100,
-      title: "100 \u0437\u0430\u0434\u0430\u0447",
-      desc: "100 \u0437\u0430\u0434\u0430\u0447 \u0432\u044B\u043F\u043E\u043B\u043D\u0435\u043D\u043E",
+      title: { en: "100 Tasks", ru: "100 \u0437\u0430\u0434\u0430\u0447" },
+      desc: { en: "100 tasks completed", ru: "100 \u0437\u0430\u0434\u0430\u0447 \u0432\u044B\u043F\u043E\u043B\u043D\u0435\u043D\u043E" },
       icon: "\u2705"
     },
     {
       id: "scribe-10",
       type: "reflections",
       gte: 10,
-      title: "\u041B\u0435\u0442\u043E\u043F\u0438\u0441\u0435\u0446",
-      desc: "10 \u0440\u0435\u0444\u043B\u0435\u043A\u0441\u0438\u0439 \u043D\u0430\u043F\u0438\u0441\u0430\u043D\u043E",
+      title: { en: "Scribe", ru: "\u041B\u0435\u0442\u043E\u043F\u0438\u0441\u0435\u0446" },
+      desc: { en: "10 reflections written", ru: "10 \u0440\u0435\u0444\u043B\u0435\u043A\u0441\u0438\u0439 \u043D\u0430\u043F\u0438\u0441\u0430\u043D\u043E" },
       icon: "\u270D\uFE0F"
     },
     {
       id: "scribe-30",
       type: "reflections",
       gte: 30,
-      title: "\u0425\u0440\u043E\u043D\u0438\u0441\u0442",
-      desc: "30 \u0440\u0435\u0444\u043B\u0435\u043A\u0441\u0438\u0439 \u043D\u0430\u043F\u0438\u0441\u0430\u043D\u043E",
+      title: { en: "Chronicler", ru: "\u0425\u0440\u043E\u043D\u0438\u0441\u0442" },
+      desc: { en: "30 reflections written", ru: "30 \u0440\u0435\u0444\u043B\u0435\u043A\u0441\u0438\u0439 \u043D\u0430\u043F\u0438\u0441\u0430\u043D\u043E" },
       icon: "\u{1F4DC}"
     },
     {
       id: "perfect-week",
       type: "groups-complete",
       gte: 1,
-      title: "\u0418\u0434\u0435\u0430\u043B\u044C\u043D\u0430\u044F \u043D\u0435\u0434\u0435\u043B\u044F",
-      desc: "\u041D\u0435\u0434\u0435\u043B\u044F \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u0430 \u0446\u0435\u043B\u0438\u043A\u043E\u043C",
+      title: { en: "Perfect Week", ru: "\u0418\u0434\u0435\u0430\u043B\u044C\u043D\u0430\u044F \u043D\u0435\u0434\u0435\u043B\u044F" },
+      desc: { en: "A full week completed", ru: "\u041D\u0435\u0434\u0435\u043B\u044F \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u0430 \u0446\u0435\u043B\u0438\u043A\u043E\u043C" },
       icon: "\u{1F31F}"
     },
     {
       id: "weeks-4",
       type: "groups-complete",
       gte: 4,
-      title: "\u041C\u0435\u0441\u044F\u0446 \u0432 \u0434\u0435\u043B\u0435",
-      desc: "4 \u043D\u0435\u0434\u0435\u043B\u0438 \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u044B \u0446\u0435\u043B\u0438\u043A\u043E\u043C",
+      title: { en: "A Month In", ru: "\u041C\u0435\u0441\u044F\u0446 \u0432 \u0434\u0435\u043B\u0435" },
+      desc: { en: "4 full weeks completed", ru: "4 \u043D\u0435\u0434\u0435\u043B\u0438 \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u044B \u0446\u0435\u043B\u0438\u043A\u043E\u043C" },
       icon: "\u{1F4C8}"
     },
     {
       id: "comeback",
       type: "comeback",
-      title: "Comeback",
-      desc: "\u0412\u0435\u0440\u043D\u0443\u043B\u0441\u044F \u043F\u043E\u0441\u043B\u0435 \u043F\u0440\u043E\u043F\u0443\u0441\u043A\u0430",
+      title: { en: "Comeback", ru: "Comeback" },
+      desc: { en: "Came back after a break", ru: "\u0412\u0435\u0440\u043D\u0443\u043B\u0441\u044F \u043F\u043E\u0441\u043B\u0435 \u043F\u0440\u043E\u043F\u0443\u0441\u043A\u0430" },
       icon: "\u{1FA79}"
     },
     {
@@ -1227,8 +1310,11 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
       type: "hour-range",
       from: 22,
       to: 5,
-      title: "Night Owl",
-      desc: "\u0417\u0430\u043A\u0440\u044B\u043B \u0434\u0435\u043D\u044C \u043F\u043E\u0441\u043B\u0435 22:00 \u0438\u043B\u0438 \u0434\u043E 5:00",
+      title: { en: "Night Owl", ru: "Night Owl" },
+      desc: {
+        en: "Closed a day after 22:00 or before 5:00",
+        ru: "\u0417\u0430\u043A\u0440\u044B\u043B \u0434\u0435\u043D\u044C \u043F\u043E\u0441\u043B\u0435 22:00 \u0438\u043B\u0438 \u0434\u043E 5:00"
+      },
       icon: "\u{1F989}"
     },
     {
@@ -1236,16 +1322,19 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
       type: "hour-range",
       from: 5,
       to: 8,
-      title: "Early Lark",
-      desc: "\u0417\u0430\u043A\u0440\u044B\u043B \u0434\u0435\u043D\u044C \u0434\u043E 8:00 \u0443\u0442\u0440\u0430",
+      title: { en: "Early Lark", ru: "Early Lark" },
+      desc: { en: "Closed a day before 8:00 AM", ru: "\u0417\u0430\u043A\u0440\u044B\u043B \u0434\u0435\u043D\u044C \u0434\u043E 8:00 \u0443\u0442\u0440\u0430" },
       icon: "\u{1F426}"
     },
     {
       id: "weekend",
       type: "weekday",
       days: [6, 7],
-      title: "\u0412\u043E\u0438\u043D \u0432\u044B\u0445\u043E\u0434\u043D\u043E\u0433\u043E",
-      desc: "\u0417\u0430\u043A\u0440\u044B\u043B \u0434\u0435\u043D\u044C \u0432 \u0441\u0443\u0431\u0431\u043E\u0442\u0443 \u0438\u043B\u0438 \u0432\u043E\u0441\u043A\u0440\u0435\u0441\u0435\u043D\u044C\u0435",
+      title: { en: "Weekend Warrior", ru: "\u0412\u043E\u0438\u043D \u0432\u044B\u0445\u043E\u0434\u043D\u043E\u0433\u043E" },
+      desc: {
+        en: "Closed a day on Saturday or Sunday",
+        ru: "\u0417\u0430\u043A\u0440\u044B\u043B \u0434\u0435\u043D\u044C \u0432 \u0441\u0443\u0431\u0431\u043E\u0442\u0443 \u0438\u043B\u0438 \u0432\u043E\u0441\u043A\u0440\u0435\u0441\u0435\u043D\u044C\u0435"
+      },
       icon: "\u{1F334}"
     }
   ];
@@ -1260,7 +1349,7 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
     {
       schema: "sunrise.theme/v1",
       id: "neon",
-      name: "Neon \xB7 \u041A\u0438\u0441\u043B\u043E\u0442\u0430",
+      name: "Neon \xB7 Acid",
       version: "1.0.0",
       cssHref: "themes/neon.css"
     },
@@ -1274,7 +1363,7 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
     {
       schema: "sunrise.theme/v1",
       id: "emerald",
-      name: "Emerald \xB7 \u041C\u0440\u0430\u043C\u043E\u0440",
+      name: "Emerald \xB7 Marble",
       version: "1.0.0",
       cssHref: "themes/emerald.css"
     },
@@ -1741,7 +1830,7 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
       const href = this.t.activeThemeHref();
       if (href != null) this.r.applyTheme(href, this.t.activeThemeId() ?? "");
       this.r.applyTrackColors(this.t.trackColors());
-      this.r.setLang(this.t.locale());
+      this.r.setLang(this.t.currentLang());
       this.wire();
       this.renderAll();
       this.startMotd();
@@ -1794,6 +1883,12 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
       this.r.setAttr("daySelect", "aria-label", this.t.itemLabel());
       this.r.setText("summaryTitle", u("summaryTitle"));
       this.r.setText("todayTitle", u("todayTitle"));
+      const next = this.t.langs().find((l) => l.id !== this.t.currentLang()) ?? this.t.langs()[0];
+      for (const id of ["langBtn", "dockLangBtn"]) {
+        this.r.setText(id === "langBtn" ? "langCode" : "dockLangCode", next.label);
+        this.r.setAttr(id, "aria-label", u("language"));
+        this.r.setAttr(id, "data-tip", u("language"));
+      }
     }
     // ----- render --------------------------------------------------------------
     renderAll() {
@@ -2001,7 +2096,7 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
           this.closeSheets();
           this.t.selectPack(pack.value);
           this.r.applyTrackColors(this.t.trackColors());
-          this.r.setLang(this.t.locale());
+          this.r.setLang(this.t.currentLang());
           this.applyStaticLabels();
           this.startMotd();
           this.renderAll();
@@ -2016,6 +2111,19 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
           if (href != null) this.r.applyTheme(href, theme.value);
         };
       }
+      const switchLang = () => {
+        this.closeSheets();
+        const next2 = this.t.langs().find((l) => l.id !== this.t.currentLang()) ?? this.t.langs()[0];
+        this.t.setLang(next2.id);
+        this.r.setLang(this.t.currentLang());
+        this.applyStaticLabels();
+        this.startMotd();
+        this.renderAll();
+      };
+      const langBtn = this.r.$("langBtn");
+      if (langBtn) langBtn.onclick = switchLang;
+      const dockLangBtn = this.r.$("dockLangBtn");
+      if (dockLangBtn) dockLangBtn.onclick = switchLang;
       const day = this.r.$("daySelect");
       if (day) {
         day.onchange = () => {
@@ -2229,7 +2337,8 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
         defaultUi: DEFAULT_UI,
         genericBadges: GENERIC_BADGES,
         defaultStreakWords: DEFAULT_STREAK_WORDS,
-        defaultMottos: DEFAULT_MOTTOS
+        defaultMottos: DEFAULT_MOTTOS,
+        supportedLangs: SUPPORTED_LANGS
       });
       tracker.init();
       new DomController(tracker, renderer).start();

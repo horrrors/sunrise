@@ -10,6 +10,7 @@ import {
   DEFAULT_MOTTOS,
   GENERIC_BADGES,
   BUILTIN_THEMES,
+  SUPPORTED_LANGS,
 } from '../../src/domain/builtins.ts';
 import { SystemClock } from '../../src/adapters/system-clock.ts';
 import { MathRandom } from '../../src/adapters/math-random.ts';
@@ -212,6 +213,7 @@ function harness(seed?: { store?: Record<string, string> }): Harness {
     genericBadges: GENERIC_BADGES,
     defaultStreakWords: DEFAULT_STREAK_WORDS,
     defaultMottos: DEFAULT_MOTTOS,
+    supportedLangs: SUPPORTED_LANGS,
   });
 
   const renderer = new DomRenderer();

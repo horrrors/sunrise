@@ -1,9 +1,11 @@
-import type { Pack, Item, Group, Track } from './types/entities.ts';
+import type { Pack, Item, Group, Track, Localized } from './types/entities.ts';
 import type { BadgeRule } from './types/badge-rule.ts';
 import type { TrackerDeps } from './types/tracker.ts';
 import { Progress } from './progress.ts';
 import { ProgressValidator } from './validators.ts';
 import { ImportError } from './errors.ts';
+import { tr, DEFAULT_LANG } from './i18n.ts';
+import { pluralIndex } from './plural.ts';
 import type {
   TodayVM,
   DashboardVM,
@@ -26,7 +28,8 @@ export class Tracker {
   private rules: readonly BadgeRule[] = [];
   private allItems: Item[] = [];
   private groupOfItem: Record<string, Group> = {};
-  private mottosList: readonly string[] = [];
+  private mottosList: readonly Localized[] = [];
+  private lang: string = DEFAULT_LANG;
 
   constructor(deps: TrackerDeps) {
     this.deps = deps;
@@ -38,6 +41,7 @@ export class Tracker {
     const packs = this.deps.packs.packs();
     if (packs.length === 0) throw new Error('no packs registered');
     const sess = this.deps.sessionStore.load();
+    this.lang = sess.lang ?? DEFAULT_LANG;
     const pack = packs.find((p) => p.id === sess.activePackId) ?? packs[0]!;
     this.loadPack(pack.id);
     const themes = this.deps.themes.themes();
@@ -71,8 +75,9 @@ export class Tracker {
 
   private uiText(k: string): string {
     const fromPack = this.pack.ui && this.pack.ui[k];
-    if (fromPack != null) return fromPack;
-    return this.deps.defaultUi[k] ?? '';
+    if (fromPack != null) return tr(fromPack, this.lang);
+    const def = this.deps.defaultUi[k];
+    return def != null ? tr(def, this.lang) : '';
   }
   private lbl(
     k: keyof NonNullable<NonNullable<Pack['settings']>['labels']>,
@@ -80,7 +85,7 @@ export class Tracker {
   ): string {
     const l = this.pack.settings && this.pack.settings.labels;
     const v = l && l[k];
-    return v != null ? v : this.uiText(fallbackKey);
+    return v != null ? tr(v, this.lang) : this.uiText(fallbackKey);
   }
   private itemOf(id: string): Item {
     const it = this.allItems.find((x) => x.id === id);
@@ -142,7 +147,7 @@ export class Tracker {
     if (this.deps.random.next() < SURPRISE_CHANCE) {
       const pool = this.pack.surprises ?? [];
       const msg = pool.length ? pool[Math.floor(this.deps.random.next() * pool.length)] : undefined;
-      if (msg) result.surprise = msg;
+      if (msg) result.surprise = tr(msg, this.lang);
     }
     return result;
   }
@@ -182,6 +187,13 @@ export class Tracker {
     this.themeId = id;
   }
 
+  public setLang(id: string): void {
+    const sess = this.deps.sessionStore.load();
+    sess.lang = id;
+    this.deps.sessionStore.save(sess);
+    this.lang = id;
+  }
+
   public importProgress(json: string): void {
     let raw: unknown;
     try {
@@ -214,9 +226,10 @@ export class Tracker {
   public selectors(): SelectorsVM {
     const packs = this.deps.packs.packs().map((p) => ({
       id: p.id,
-      label: p.name,
+      label: tr(p.name, this.lang),
       selected: p.id === this.pack.id,
     }));
+    // Theme names are fixed brand strings and are not localized.
     const themes = this.deps.themes.themes().map((t) => ({
       id: t.id,
       label: t.name,
@@ -224,8 +237,12 @@ export class Tracker {
     }));
     const items = this.allItems.map((it) => {
       const g = this.groupOfItem[it.id]!;
-      const tl = it.rest ? this.uiText('restVert') : this.trackMeta(it.track).label;
-      return { id: it.id, label: `${g.title} · ${tl}`, selected: it.id === this.currentItemId };
+      const tl = it.rest ? this.uiText('restVert') : tr(this.trackMeta(it.track).label, this.lang);
+      return {
+        id: it.id,
+        label: `${tr(g.title, this.lang)} · ${tl}`,
+        selected: it.id === this.currentItemId,
+      };
     });
     return { packs, themes, items };
   }
@@ -246,11 +263,11 @@ export class Tracker {
         itemId: it.id,
         rest: true,
         track: it.track,
-        trackLabel: m.label,
+        trackLabel: tr(m.label, this.lang),
         trackIcon: m.icon ?? '',
         title: this.uiText('restTitle'),
         phaseLabel,
-        reflectPrompt: it.reflectPrompt,
+        reflectPrompt: it.reflectPrompt != null ? tr(it.reflectPrompt, this.lang) : undefined,
         reflection: '',
         tasks: [],
         resources: [],
@@ -263,8 +280,8 @@ export class Tracker {
     const complete = this.progress.isItemComplete(it);
     const tasks: TaskVM[] = (it.tasks ?? []).map((t) => ({
       id: t.id,
-      text: t.text,
-      ...(t.guidance !== undefined ? { guidance: t.guidance } : {}),
+      text: tr(t.text, this.lang),
+      ...(t.guidance !== undefined ? { guidance: tr(t.guidance, this.lang) } : {}),
       done: this.progress.taskChecked(it.id, t.id),
     }));
     const showWarmup = cfg.warmups !== false && it.warmup != null;
@@ -273,15 +290,18 @@ export class Tracker {
       itemId: it.id,
       rest: false,
       track: it.track,
-      trackLabel: m.label,
+      trackLabel: tr(m.label, this.lang),
       trackIcon: m.icon ?? '',
-      title: it.title ?? '',
+      title: it.title != null ? tr(it.title, this.lang) : '',
       phaseLabel,
-      warmup: it.warmup,
-      reflectPrompt: it.reflectPrompt,
+      warmup: it.warmup != null ? tr(it.warmup, this.lang) : undefined,
+      reflectPrompt: it.reflectPrompt != null ? tr(it.reflectPrompt, this.lang) : undefined,
       reflection: this.progress.reflection(it.id),
       tasks,
-      resources: (it.resources ?? []).map((r) => ({ label: r.label, note: r.note })),
+      resources: (it.resources ?? []).map((r) => ({
+        label: tr(r.label, this.lang),
+        note: tr(r.note, this.lang),
+      })),
       complete,
       notLast,
       show: { warmup: showWarmup, reflection: showReflection },
@@ -293,27 +313,20 @@ export class Tracker {
     const streak = this.deps.streaks.current(this.progress, this.deps.clock.today());
     const byPhase = this.deps.stats.byPhase(this.pack, this.progress);
     const byTrack = this.deps.stats.byTrack(this.pack, this.progress);
-    const sw = this.deps.defaultStreakWords;
-    // Slavic plural pick: one (1, 21, 31… but not 11), few (2-4, 22-24… but not 12-14), many.
-    const m10 = streak % 10;
-    const m100 = streak % 100;
-    const streakWord =
-      m10 === 1 && m100 !== 11
-        ? (sw[0] ?? '')
-        : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)
-          ? (sw[1] ?? '')
-          : (sw[2] ?? '');
+    const words =
+      this.deps.defaultStreakWords[this.lang] ?? this.deps.defaultStreakWords[DEFAULT_LANG] ?? [];
+    const streakWord = words[pluralIndex(this.lang, streak)] ?? words[words.length - 1] ?? '';
     const phaseList = this.pack.phases ?? [];
     const phases = phaseList.length
       ? phaseList.map((ph) => ({
           id: ph.id,
-          title: ph.title || `${this.lbl('phase', 'phaseWord')} ${ph.id}`,
+          title: tr(ph.title, this.lang) || `${this.lbl('phase', 'phaseWord')} ${ph.id}`,
           stat: byPhase[ph.id] ?? { done: 0, total: 0, pct: 0 },
         }))
       : null;
     const tracks = this.pack.tracks
       .filter((t) => byTrack[t.id])
-      .map((t) => ({ id: t.id, label: t.label, stat: byTrack[t.id]! }));
+      .map((t) => ({ id: t.id, label: tr(t.label, this.lang), stat: byTrack[t.id]! }));
     return {
       overall,
       streak,
@@ -328,10 +341,10 @@ export class Tracker {
     const overall = this.deps.stats.overall(this.pack, this.progress);
     const groups = this.pack.groups.map((g) => ({
       id: g.id,
-      title: g.title,
+      title: tr(g.title, this.lang),
       items: g.items.map((it) => ({
         id: it.id,
-        title: it.title ?? '',
+        title: it.title != null ? tr(it.title, this.lang) : '',
         done: this.progress.isItemComplete(it),
         rest: !!it.rest,
         current: it.id === this.currentItemId,
@@ -346,8 +359,8 @@ export class Tracker {
       const meta = this.rules.find((r) => r.id === b.id);
       return {
         id: b.id,
-        title: meta?.title ?? b.id,
-        desc: meta?.desc ?? '',
+        title: meta ? tr(meta.title, this.lang) : b.id,
+        desc: tr(meta?.desc, this.lang),
         icon: meta?.icon ?? '•',
         unlocked: b.unlocked,
       };
@@ -372,7 +385,7 @@ export class Tracker {
   }
 
   public mottos(): readonly string[] {
-    return this.mottosList;
+    return this.mottosList.map((m) => tr(m, this.lang));
   }
 
   public ui(key: string): string {
@@ -387,8 +400,8 @@ export class Tracker {
       ? `\n${this.uiText('aiPromptGuidance').replace('{guidance}', guidance)}\n`
       : '';
     return this.uiText('aiPrompt')
-      .replace('{title}', it.title ?? '')
-      .replace('{track}', this.trackMeta(it.track).label)
+      .replace('{title}', it.title != null ? tr(it.title, this.lang) : '')
+      .replace('{track}', tr(this.trackMeta(it.track).label, this.lang))
       .replace('{text}', text)
       .replace('{guidance}', g);
   }
@@ -410,7 +423,11 @@ export class Tracker {
     return this.pack.id;
   }
 
-  public locale(): string {
-    return this.pack.locale ?? 'en';
+  public currentLang(): string {
+    return this.lang;
+  }
+
+  public langs(): readonly { id: string; label: string }[] {
+    return this.deps.supportedLangs;
   }
 }

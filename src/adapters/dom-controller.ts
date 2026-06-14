@@ -26,7 +26,7 @@ export class DomController {
     const href = this.t.activeThemeHref();
     if (href != null) this.r.applyTheme(href, this.t.activeThemeId() ?? '');
     this.r.applyTrackColors(this.t.trackColors());
-    this.r.setLang(this.t.locale());
+    this.r.setLang(this.t.currentLang());
     this.wire();
     this.renderAll();
     this.startMotd();
@@ -85,6 +85,13 @@ export class DomController {
     this.r.setAttr('daySelect', 'aria-label', this.t.itemLabel());
     this.r.setText('summaryTitle', u('summaryTitle'));
     this.r.setText('todayTitle', u('todayTitle'));
+    // Language toggle: the button shows the language it switches TO.
+    const next = this.t.langs().find((l) => l.id !== this.t.currentLang()) ?? this.t.langs()[0]!;
+    for (const id of ['langBtn', 'dockLangBtn']) {
+      this.r.setText(id === 'langBtn' ? 'langCode' : 'dockLangCode', next.label);
+      this.r.setAttr(id, 'aria-label', u('language'));
+      this.r.setAttr(id, 'data-tip', u('language'));
+    }
   }
 
   // ----- render --------------------------------------------------------------
@@ -323,7 +330,7 @@ export class DomController {
         this.closeSheets();
         this.t.selectPack(pack.value);
         this.r.applyTrackColors(this.t.trackColors());
-        this.r.setLang(this.t.locale());
+        this.r.setLang(this.t.currentLang());
         this.applyStaticLabels(); // ui() answers come from the new pack now
         this.startMotd();
         this.renderAll();
@@ -338,6 +345,21 @@ export class DomController {
         if (href != null) this.r.applyTheme(href, theme.value);
       };
     }
+    // Language toggle (header + dock) — flips to the next supported language and
+    // re-resolves every string (mirrors the pack-switch refresh).
+    const switchLang = (): void => {
+      this.closeSheets();
+      const next = this.t.langs().find((l) => l.id !== this.t.currentLang()) ?? this.t.langs()[0]!;
+      this.t.setLang(next.id);
+      this.r.setLang(this.t.currentLang());
+      this.applyStaticLabels();
+      this.startMotd();
+      this.renderAll();
+    };
+    const langBtn = this.r.$('langBtn');
+    if (langBtn) (langBtn as HTMLElement).onclick = switchLang;
+    const dockLangBtn = this.r.$('dockLangBtn');
+    if (dockLangBtn) (dockLangBtn as HTMLElement).onclick = switchLang;
     const day = this.r.$('daySelect') as HTMLSelectElement | null;
     if (day) {
       day.onchange = () => {

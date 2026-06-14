@@ -36,7 +36,8 @@ Two ways; the first needs no build.
     SUNRISE.registerTheme({
       schema:  "sunrise.theme/v1",
       id:      "my-theme",          // lowercase [a-z0-9-], must start with a letter or digit
-      name:    "My Theme",          // shown in the theme picker
+      name:    "My Theme",          // shown in the theme picker — a fixed brand string, NOT localized
+                                    //   (theme names do not change with the 🌐 language toggle)
       version: "1.0.0",
       cssHref: "themes/my-theme.css",
     });

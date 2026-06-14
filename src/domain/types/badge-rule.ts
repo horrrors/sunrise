@@ -1,7 +1,9 @@
+import type { Localized } from './entities.ts';
+
 export interface BadgeMeta {
   readonly id: string;
-  readonly title: string;
-  readonly desc?: string;
+  readonly title: Localized;
+  readonly desc?: Localized;
   readonly icon?: string;
 }
 export type BadgeCondition =

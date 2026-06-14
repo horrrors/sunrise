@@ -22,6 +22,47 @@ const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
 test('valid pack parses to itself', () => {
   assert.deepEqual(new PackValidator().parse(clone(PACK)), PACK);
 });
+
+test('accepts {en,ru} maps in every text field (i18n)', () => {
+  const p = clone(PACK) as Record<string, unknown>;
+  p.name = { en: 'Dev', ru: 'Дев' };
+  (p.tracks as { label: unknown }[])[0]!.label = { en: 'DSA', ru: 'Алго' };
+  const g0 = (p.groups as Record<string, unknown>[])[0]!;
+  g0.title = { en: 'Week 1', ru: 'Неделя 1' };
+  const it0 = (g0.items as Record<string, unknown>[])[0]!;
+  it0.title = { en: 'A', ru: 'А' };
+  (it0.tasks as { text: unknown }[])[0]!.text = { en: 'x', ru: 'икс' };
+  p.mottos = [{ en: 'go', ru: 'вперёд' }];
+  p.ui = { summaryTitle: { en: 'Summary', ru: 'Сводка' } };
+  assert.doesNotThrow(() => new PackValidator().parse(p));
+});
+
+test('rejects a non-string value inside a localized map', () => {
+  const p = clone(PACK) as Record<string, unknown>;
+  const it0 = ((p.groups as Record<string, unknown>[])[0]!.items as Record<string, unknown>[])[0]!;
+  (it0.tasks as { text: unknown }[])[0]!.text = { en: 'x', ru: 123 };
+  assert.throws(
+    () => new PackValidator().parse(p),
+    (e: unknown) =>
+      e instanceof ValidationError &&
+      e.issues.some((i) => i.path === 'groups[0].items[0].tasks[0].text.ru'),
+  );
+});
+
+test('rejects a localized field that is neither string nor object', () => {
+  const p = clone(PACK) as Record<string, unknown>;
+  p.name = 42;
+  assert.throws(
+    () => new PackValidator().parse(p),
+    (e: unknown) =>
+      e instanceof ValidationError &&
+      e.issues.some((i) => /string or \{lang:string\} map/.test(i.msg)),
+  );
+});
+
+test('still accepts plain strings in text fields (back-compat)', () => {
+  assert.doesNotThrow(() => new PackValidator().parse(clone(PACK)));
+});
 test('issues: bad track ref, dup item id, unknown badge type, bad item-complete ref, leading-hyphen id, empty tracks', () => {
   const v = new PackValidator();
   const undeclared = clone(PACK);

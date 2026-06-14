@@ -11,16 +11,37 @@ interface Schema {
   props?: Record<string, Schema>;
   pattern?: RegExp;
   min?: number;
+  // A localized text field: accepts a plain string OR a {lang: string} map.
+  localized?: boolean;
 }
 
 function typeOf(v: unknown): string {
   return Array.isArray(v) ? 'array' : v === null ? 'null' : typeof v;
 }
 
+// A Localized value is a plain string, or an object whose every value is a string.
+function localizedOk(v: unknown): boolean {
+  if (typeof v === 'string') return true;
+  if (isObj(v)) return Object.values(v).every((x) => typeof x === 'string');
+  return false;
+}
+
 // Generic structural walker; pushes issues into `errors`.
 function check(value: unknown, schema: Schema, path: string, errors: ValidationIssue[]): void {
   if (value === undefined || value === null) {
     if (schema.required) errors.push({ path, msg: 'required' });
+    return;
+  }
+  if (schema.localized) {
+    if (typeof value === 'string') return;
+    if (isObj(value)) {
+      for (const k in value) {
+        if (typeof value[k] !== 'string')
+          errors.push({ path: `${path}.${k}`, msg: 'expected string' });
+      }
+      return;
+    }
+    errors.push({ path, msg: 'expected string or {lang:string} map' });
     return;
   }
   const t = typeOf(value);
@@ -65,12 +86,12 @@ const THEME_SCHEMA: Schema = {
 const TASK: Schema = {
   type: 'object',
   required: true,
-  props: { id: ID, text: { type: 'string', required: true }, guidance: { type: 'string' } },
+  props: { id: ID, text: { localized: true, required: true }, guidance: { localized: true } },
 };
 const RES: Schema = {
   type: 'object',
   required: true,
-  props: { label: { type: 'string', required: true }, note: { type: 'string', required: true } },
+  props: { label: { localized: true, required: true }, note: { localized: true, required: true } },
 };
 const ITEM: Schema = {
   type: 'object',
@@ -78,9 +99,9 @@ const ITEM: Schema = {
   props: {
     id: ID,
     track: { type: 'string', required: true },
-    title: { type: 'string' },
-    warmup: { type: 'string' },
-    reflectPrompt: { type: 'string' },
+    title: { localized: true },
+    warmup: { localized: true },
+    reflectPrompt: { localized: true },
     tasks: { type: 'array', of: TASK },
     resources: { type: 'array', of: RES },
     rest: { type: 'boolean' },
@@ -91,7 +112,7 @@ const GROUP: Schema = {
   required: true,
   props: {
     id: ID,
-    title: { type: 'string', required: true },
+    title: { localized: true, required: true },
     phase: { type: 'string' },
     items: { type: 'array', required: true, min: 1, of: ITEM },
   },
@@ -101,7 +122,7 @@ const TRACK: Schema = {
   required: true,
   props: {
     id: ID,
-    label: { type: 'string', required: true },
+    label: { localized: true, required: true },
     icon: { type: 'string' },
     color: { type: 'string' },
   },
@@ -109,15 +130,15 @@ const TRACK: Schema = {
 const PHASE: Schema = {
   type: 'object',
   required: true,
-  props: { id: ID, title: { type: 'string', required: true } },
+  props: { id: ID, title: { localized: true, required: true } },
 };
 const BADGE: Schema = {
   type: 'object',
   required: true,
   props: {
     id: ID,
-    title: { type: 'string', required: true },
-    desc: { type: 'string' },
+    title: { localized: true, required: true },
+    desc: { localized: true },
     icon: { type: 'string' },
     type: { type: 'string', required: true },
   },
@@ -129,7 +150,7 @@ const PACK_SCHEMA: Schema = {
   props: {
     schema: { type: 'string', required: true },
     id: ID,
-    name: { type: 'string', required: true },
+    name: { localized: true, required: true },
     version: { type: 'string', required: true },
     locale: { type: 'string' },
     settings: { type: 'object' },
@@ -138,8 +159,8 @@ const PACK_SCHEMA: Schema = {
     groups: { type: 'array', required: true, min: 1, of: GROUP },
     badges: { type: 'array', of: BADGE },
     ui: { type: 'object' },
-    mottos: { type: 'array', of: { type: 'string', required: true } },
-    surprises: { type: 'array', of: { type: 'string', required: true } },
+    mottos: { type: 'array', of: { localized: true, required: true } },
+    surprises: { type: 'array', of: { localized: true, required: true } },
   },
 };
 
@@ -299,11 +320,13 @@ export class PackValidator {
       checkBadgeRule(b, `badges[${bi}]`, { trackIds, phaseIds, itemIds }, errors),
     );
     // ui and settings.labels are free-form maps the app interpolates into the DOM —
-    // a non-string value would crash todayCard()/dashboard() at .replace().
+    // each value must be a string or a {lang:string} map (Tracker resolves via tr());
+    // a non-string leaf would crash todayCard()/dashboard() at .replace().
     const ui = pack['ui'];
     if (isObj(ui)) {
       for (const k in ui) {
-        if (typeof ui[k] !== 'string') errors.push({ path: `ui.${k}`, msg: 'expected string' });
+        if (!localizedOk(ui[k]))
+          errors.push({ path: `ui.${k}`, msg: 'expected string or {lang:string} map' });
       }
     }
     const settings = pack['settings'];
@@ -312,8 +335,11 @@ export class PackValidator {
       errors.push({ path: 'settings.labels', msg: 'expected object' });
     } else if (isObj(labels)) {
       for (const k in labels) {
-        if (typeof labels[k] !== 'string')
-          errors.push({ path: `settings.labels.${k}`, msg: 'expected string' });
+        if (!localizedOk(labels[k]))
+          errors.push({
+            path: `settings.labels.${k}`,
+            msg: 'expected string or {lang:string} map',
+          });
       }
     }
     if (errors.length) throw new ValidationError(errors);

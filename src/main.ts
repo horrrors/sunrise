@@ -8,6 +8,7 @@ import {
   DEFAULT_MOTTOS,
   GENERIC_BADGES,
   BUILTIN_THEMES,
+  SUPPORTED_LANGS,
 } from './domain/builtins.ts';
 import { SystemClock } from './adapters/system-clock.ts';
 import { MathRandom } from './adapters/math-random.ts';
@@ -63,6 +64,7 @@ function boot(): void {
       genericBadges: GENERIC_BADGES,
       defaultStreakWords: DEFAULT_STREAK_WORDS,
       defaultMottos: DEFAULT_MOTTOS,
+      supportedLangs: SUPPORTED_LANGS,
     });
     tracker.init(); // throws if no packs registered
     new DomController(tracker, renderer).start();
