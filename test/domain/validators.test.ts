@@ -115,6 +115,28 @@ test('theme parse: valid passes; wrong version throws', () => {
     ValidationError,
   );
 });
+test('theme parse: accepts inline css instead of cssHref', () => {
+  const t = new ThemeValidator().parse({
+    schema: 'sunrise.theme/v1',
+    id: 'x',
+    name: 'X',
+    version: '1.0.0',
+    css: ':root[data-theme="x"]{--ink:#000}',
+  });
+  assert.equal((t as { css?: string }).css, ':root[data-theme="x"]{--ink:#000}');
+});
+test('theme parse: rejects a theme with neither css nor cssHref', () => {
+  assert.throws(
+    () =>
+      new ThemeValidator().parse({
+        schema: 'sunrise.theme/v1',
+        id: 'x',
+        name: 'X',
+        version: '1.0.0',
+      }),
+    /css|cssHref/,
+  );
+});
 test('progress parse: valid passes; null item rejected; legacy days→items', () => {
   const v = new ProgressValidator();
   const ok = {

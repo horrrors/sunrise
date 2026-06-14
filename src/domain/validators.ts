@@ -77,7 +77,8 @@ const THEME_SCHEMA: Schema = {
     id: ID,
     name: { type: 'string', required: true },
     version: { type: 'string', required: true },
-    cssHref: { type: 'string', required: true },
+    cssHref: { type: 'string' },
+    css: { type: 'string' },
   },
 };
 
@@ -356,6 +357,13 @@ export class ThemeValidator {
     if (theme['schema'] !== 'sunrise.theme/v1') {
       throw new ValidationError([
         { path: 'schema', msg: `unsupported contract version "${String(theme['schema'])}"` },
+      ]);
+    }
+    // A file:// app can't ship a separate .css, so an imported theme carries inline
+    // css; built-ins/script-tag themes point at a file. Exactly one must be present.
+    if (typeof theme['cssHref'] !== 'string' && typeof theme['css'] !== 'string') {
+      throw new ValidationError([
+        { path: 'css', msg: 'theme needs either "cssHref" or inline "css"' },
       ]);
     }
     return raw as Theme;

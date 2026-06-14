@@ -69,7 +69,8 @@ export interface Theme {
   readonly id: string;
   readonly name: string;
   readonly version: string;
-  readonly cssHref: string;
+  readonly cssHref?: string; // built-in/script-tag themes ship a file path
+  readonly css?: string; // imported themes ship inline CSS (materialized to a blob URL)
 }
 export interface Session {
   activePackId?: string;

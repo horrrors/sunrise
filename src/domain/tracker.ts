@@ -412,7 +412,7 @@ export class Tracker {
 
   public activeThemeHref(): string | null {
     const theme = this.deps.themes.themes().find((t) => t.id === this.themeId);
-    return theme ? theme.cssHref : null;
+    return theme?.cssHref ?? null;
   }
 
   public activeThemeId(): string | null {
