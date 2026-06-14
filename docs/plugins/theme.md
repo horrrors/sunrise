@@ -49,6 +49,27 @@ Two ways; the first needs no build.
 `src/domain/builtins.ts` and rebuild (`npm run build`). Use this only if you are
 editing the app itself.
 
+**C) Import (JSON, no edits).** Save a single self-contained `.json` file and load
+it via the 📥 button (it classifies by `schema` and registers the theme on the
+spot, persisting it under `sunrise.plugins` so it returns on the next load). Since
+an imported theme has no companion file to `<link>`, it must carry its CSS **inline**
+in a `css` field instead of `cssHref`:
+
+```json
+{
+  "schema": "sunrise.theme/v1",
+  "id": "my-theme",
+  "name": "My Theme",
+  "version": "1.0.0",
+  "css": ":root[data-theme=\"my-theme\"]{--ink:#111} :root[data-theme=\"my-theme\"] body{/* … */}"
+}
+```
+
+The app turns the inline `css` into a blob URL and applies it exactly like a file.
+Importing a theme whose `id` already exists is **rejected** (no overwrite); give an
+updated theme a new `id`. ⚠️ Imported CSS is live CSS — `url(...)`/`@import` can
+fetch remote resources, so only import themes you trust.
+
 When the user picks your theme the app loads your `cssHref` in a background
 `<link>` first, and only once it's ready swaps `#themeCss` to it and sets
 `data-theme="<id>"` on `<html>` — switching never flashes unstyled, and a
@@ -62,7 +83,12 @@ rejected (reason logged to the console) and skipped — it never breaks the app.
 | `id` | string | ✅ | lowercase `[a-z0-9-]`, must start with a letter or digit |
 | `name` | string | ✅ | shown in the theme picker |
 | `version` | string | ✅ | e.g. `"1.0.0"` |
-| `cssHref` | string | ✅ | path to your CSS file |
+| `cssHref` | string | ⬦ | path to your CSS file — required for install methods A/B |
+| `css` | string | ⬦ | inline CSS text — required for JSON import (method C) |
+
+> ⬦ Provide **exactly one** of `cssHref` or `css`. Script-tag/built-in themes use
+> `cssHref` (a file path); JSON-imported themes use `css` (inline). A manifest with
+> neither is rejected.
 
 ---
 

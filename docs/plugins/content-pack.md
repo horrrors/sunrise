@@ -31,6 +31,14 @@ one `<script>` line to `index.html` **after** the app bundle:
 })(typeof window !== 'undefined' ? window : globalThis);
 ```
 
+**Or import as JSON (no edits).** Save the pack object on its own as a `.json`
+file (the bare object — `{ "schema": "sunrise.pack/v1", "id": …, "tracks": […],
+"groups": […] }`, no IIFE wrapper) and load it with the 📥 button. The app
+classifies it by `schema`, validates and registers it, switches to it, and
+persists it under `sunrise.plugins` so it returns on the next load. Importing a
+pack whose `id` already exists is **rejected** (no overwrite) — give an updated
+pack a new `id`.
+
 ## Envelope
 
 | field | type | required | notes |
