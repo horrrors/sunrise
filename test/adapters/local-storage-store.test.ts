@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   LocalStorageProgressStore,
   LocalStorageSessionStore,
+  LocalStoragePluginStore,
   migrateLegacy,
 } from '../../src/adapters/local-storage-store.ts';
 import { Progress } from '../../src/domain/progress.ts';
@@ -220,4 +221,27 @@ test('migrateLegacy swallows a throwing localStorage (never blocks boot)', () =>
   };
   (globalThis as unknown as { localStorage: Storage }).localStorage = broken;
   assert.doesNotThrow(() => migrateLegacy());
+});
+
+// ---------------------------------------------------------------------------
+// LocalStoragePluginStore
+// ---------------------------------------------------------------------------
+
+test('LocalStoragePluginStore round-trips appended raws', () => {
+  const store = new LocalStoragePluginStore();
+  assert.deepEqual(store.load(), []);
+  store.append({ schema: 'sunrise.theme/v1', id: 'x' });
+  store.append({ schema: 'sunrise.pack/v1', id: 'p' });
+  assert.equal(store.load().length, 2);
+  assert.equal((store.load()[0] as { id: string }).id, 'x');
+});
+
+test('LocalStoragePluginStore.load tolerates a corrupt blob', () => {
+  localStorage.setItem('sunrise.plugins', '{not json');
+  assert.deepEqual(new LocalStoragePluginStore().load(), []);
+});
+
+test('LocalStoragePluginStore.load tolerates a non-array blob', () => {
+  localStorage.setItem('sunrise.plugins', '{"id":"x"}');
+  assert.deepEqual(new LocalStoragePluginStore().load(), []);
 });

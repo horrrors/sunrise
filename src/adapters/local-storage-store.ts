@@ -1,10 +1,11 @@
-import type { ProgressStore, SessionStore } from '../ports/index.ts';
+import type { ProgressStore, SessionStore, PluginStore } from '../ports/index.ts';
 import type { Session } from '../domain/types/entities.ts';
 import { Progress } from '../domain/progress.ts';
 import { ProgressValidator } from '../domain/validators.ts';
 
 const PREFIX = 'sunrise.progress.';
 const SESSION = 'sunrise.session';
+const PLUGINS = 'sunrise.plugins';
 const LEGACY = 'devRoadmapState.v1';
 const LEGACY_THEME = 'sunriseTheme';
 
@@ -60,6 +61,30 @@ export class LocalStorageSessionStore implements SessionStore {
   public save(s: Session): void {
     try {
       localStorage.setItem(SESSION, JSON.stringify(s));
+    } catch {
+      /* quota */
+    }
+  }
+}
+
+// User-imported packs/themes, persisted as a flat list of raw, self-describing
+// (each carries its own `schema`) JSON objects so a new plugin kind needs no
+// storage-format change. Re-registered at boot by Importer.loadStored().
+export class LocalStoragePluginStore implements PluginStore {
+  public load(): unknown[] {
+    try {
+      const raw = localStorage.getItem(PLUGINS);
+      const o: unknown = raw ? JSON.parse(raw) : [];
+      return Array.isArray(o) ? o : [];
+    } catch {
+      return [];
+    }
+  }
+  public append(raw: unknown): void {
+    try {
+      const list = this.load();
+      list.push(raw);
+      localStorage.setItem(PLUGINS, JSON.stringify(list));
     } catch {
       /* quota */
     }
