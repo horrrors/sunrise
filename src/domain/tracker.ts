@@ -2,8 +2,9 @@ import type { Pack, Item, Group, Track, Localized } from './types/entities.ts';
 import type { BadgeRule } from './types/badge-rule.ts';
 import type { TrackerDeps } from './types/tracker.ts';
 import { Progress } from './progress.ts';
-import { ProgressValidator } from './validators.ts';
 import { ImportError } from './errors.ts';
+import type { ProgressData } from './types/progress.ts';
+import type { ProgressTarget } from './plugins/import-handler.ts';
 import { tr, DEFAULT_LANG } from './i18n.ts';
 import { pluralIndex } from './plural.ts';
 import type {
@@ -19,7 +20,7 @@ import type {
 
 const SURPRISE_CHANCE = 0.12;
 
-export class Tracker {
+export class Tracker implements ProgressTarget {
   private deps: TrackerDeps;
   private pack!: Pack;
   private progress!: Progress;
@@ -194,27 +195,23 @@ export class Tracker {
     this.lang = id;
   }
 
-  public importProgress(json: string): void {
-    let raw: unknown;
-    try {
-      raw = JSON.parse(json);
-    } catch {
-      throw new ImportError('Invalid JSON');
+  // ProgressTarget: apply an already-validated progress blob (the ProgressPlugin
+  // parses + validates; Tracker owns the active-pack aggregate). A file carrying a
+  // packId for another *loaded* pack switches to it; an unloaded one is rejected.
+  public importProgress(packId: string | null, data: ProgressData): string {
+    if (packId != null && packId !== this.pack.id) {
+      if (!this.deps.packs.packs().some((p) => p.id === packId)) {
+        throw new ImportError(`load the pack "${packId}" before importing its progress`);
+      }
+      this.selectPack(packId); // switches active pack + cursor + loads its store
     }
-    // Exports embed the pack id; a file from another pack would silently wipe
-    // this pack's progress (old exports without packId are accepted as-is).
-    const filePackId =
-      raw && typeof raw === 'object' ? (raw as Record<string, unknown>)['packId'] : undefined;
-    if (typeof filePackId === 'string' && filePackId !== this.pack.id) {
-      throw new ImportError(`file is for pack "${filePackId}", active pack is "${this.pack.id}"`);
-    }
-    const data = new ProgressValidator().parse(raw);
     this.progress = new Progress(data);
     // Same healing as loadPack: the file's completedAt may disagree with its
     // task checks under the current pack version (streaks vs dashboard).
     this.progress.reconcile(this.allItems);
     this.save();
     this.currentItemId = this.resumeItemId();
+    return this.pack.id;
   }
 
   public exportProgress(): string {

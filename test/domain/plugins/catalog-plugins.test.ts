@@ -16,7 +16,9 @@ const PACK = {
   name: 'P',
   version: '1',
   tracks: [{ id: 't', label: 'T' }],
-  groups: [{ id: 'g', title: 'G', items: [{ id: 'i', track: 't', tasks: [{ id: 'a', text: 'x' }] }] }],
+  groups: [
+    { id: 'g', title: 'G', items: [{ id: 'i', track: 't', tasks: [{ id: 'a', text: 'x' }] }] },
+  ],
 };
 const THEME = { schema: 'sunrise.theme/v1', id: 'x', name: 'X', version: '1', css: ':root{}' };
 

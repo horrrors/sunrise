@@ -21,6 +21,10 @@ import {
 import { WindowPluginRegistry } from '../../src/adapters/window-registry.ts';
 import { DomRenderer } from '../../src/adapters/dom-renderer.ts';
 import { DomController } from '../../src/adapters/dom-controller.ts';
+import { Importer } from '../../src/domain/plugins/importer.ts';
+import { PackPlugin } from '../../src/domain/plugins/pack-plugin.ts';
+import { ThemePlugin } from '../../src/domain/plugins/theme-plugin.ts';
+import { ProgressPlugin } from '../../src/domain/plugins/progress-plugin.ts';
 
 // ---------------------------------------------------------------------------
 // Fake DOM + localStorage harness (ported from the old app.test.js)
@@ -114,6 +118,7 @@ interface Harness {
   renderer: DomRenderer;
   controller?: DomController;
   registryPlugin: WindowPluginRegistry;
+  importer: Importer;
 }
 
 function harness(seed?: { store?: Record<string, string> }): Harness {
@@ -217,7 +222,11 @@ function harness(seed?: { store?: Record<string, string> }): Harness {
   });
 
   const renderer = new DomRenderer();
-  return { registry, store, tracker, renderer, registryPlugin };
+  const importer = new Importer(
+    [new PackPlugin(registryPlugin), new ThemePlugin(registryPlugin), new ProgressPlugin(tracker)],
+    { load: () => [], append: () => {} },
+  );
+  return { registry, store, tracker, renderer, registryPlugin, importer };
 }
 
 // The dev-roadmap pack registers via `root.SUNRISE.registerPack(pack)`, where
@@ -247,7 +256,7 @@ async function boot(seed?: { store?: Record<string, string> }): Promise<Harness>
   const h = harness(seed);
   await registerDevRoadmap(h.registryPlugin);
   h.tracker.init();
-  h.controller = new DomController(h.tracker, h.renderer);
+  h.controller = new DomController(h.tracker, h.renderer, h.importer);
   h.controller.start();
   return h;
 }
@@ -358,7 +367,7 @@ test('pack switch re-applies track colors and lang', async () => {
   h.registryPlugin.registerPack(pack2);
 
   h.tracker.init();
-  const ctrl = new DomController(h.tracker, h.renderer);
+  const ctrl = new DomController(h.tracker, h.renderer, h.importer);
   ctrl.start();
 
   // Install spies after start() so initial apply doesn't inflate counts.
@@ -614,7 +623,7 @@ test('item title and task text are HTML-escaped in the rendered card', async () 
     ],
   });
   h.tracker.init();
-  new DomController(h.tracker, h.renderer).start();
+  new DomController(h.tracker, h.renderer, h.importer).start();
 
   const today = h.registry['todayCard']!.innerHTML;
   const tasks = h.registry['taskList']!.innerHTML;
@@ -759,7 +768,7 @@ test('pack switch refreshes static labels and the motd', async () => {
     ],
   });
   h.tracker.init();
-  new DomController(h.tracker, h.renderer).start();
+  new DomController(h.tracker, h.renderer, h.importer).start();
 
   const before = h.registry['summaryTitle']!.textContent;
   assert.notEqual(before, 'B Summary', 'pack A renders its own summary title');
@@ -928,4 +937,55 @@ test('applyTheme: instant on first paint, cross-fades on a real switch', async (
   await new Promise((r) => setTimeout(r, 260));
   assert.equal(html.attrs['data-theme'], 'neon', 'new theme applied after the dip');
   assert.equal(html.classList.contains('theme-switching'), false, 'dip released to fade up');
+});
+
+test('importing a theme JSON registers, selects and applies it', async () => {
+  const h = await boot();
+  const THEME_JSON = JSON.stringify({
+    schema: 'sunrise.theme/v1',
+    id: 'imported-x',
+    name: 'Imported X',
+    version: '1.0.0',
+    css: ':root[data-theme="imported-x"]{--ink:#000}',
+  });
+  // Controllable FileReader: readAsText fires onload synchronously with the text.
+  (globalThis as { FileReader: unknown }).FileReader = function (this: {
+    result?: string;
+    onload?: () => void;
+    readAsText: (f: unknown) => void;
+  }) {
+    this.readAsText = (): void => {
+      this.result = THEME_JSON;
+      this.onload?.();
+    };
+  };
+  const importFile = h.registry['importFile']!;
+  importFile.files = [{}];
+  importFile.onchange!({ target: importFile });
+
+  assert.equal(h.tracker.activeThemeId(), 'imported-x', 'imported theme is active');
+  assert.ok(
+    h.registryPlugin.themes().some((t) => t.id === 'imported-x'),
+    'imported theme is registered',
+  );
+});
+
+test('importing an unrecognized JSON leaves state unchanged (no throw)', async () => {
+  const h = await boot();
+  const themeBefore = h.tracker.activeThemeId();
+  const BAD = '{"schema":"sunrise.nope/v1","id":"x"}';
+  (globalThis as { FileReader: unknown }).FileReader = function (this: {
+    result?: string;
+    onload?: () => void;
+    readAsText: (f: unknown) => void;
+  }) {
+    this.readAsText = (): void => {
+      this.result = BAD;
+      this.onload?.();
+    };
+  };
+  const importFile = h.registry['importFile']!;
+  importFile.files = [{}];
+  assert.doesNotThrow(() => importFile.onchange!({ target: importFile }));
+  assert.equal(h.tracker.activeThemeId(), themeBefore, 'theme unchanged on unrecognized import');
 });

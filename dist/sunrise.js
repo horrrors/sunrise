@@ -122,384 +122,6 @@
     }
   };
 
-  // src/domain/validators.ts
-  function typeOf(v) {
-    return Array.isArray(v) ? "array" : v === null ? "null" : typeof v;
-  }
-  function localizedOk(v) {
-    if (typeof v === "string") return true;
-    if (isObj(v)) return Object.values(v).every((x) => typeof x === "string");
-    return false;
-  }
-  function check(value, schema, path, errors) {
-    if (value === void 0 || value === null) {
-      if (schema.required) errors.push({ path, msg: "required" });
-      return;
-    }
-    if (schema.localized) {
-      if (typeof value === "string") return;
-      if (isObj(value)) {
-        for (const k in value) {
-          if (typeof value[k] !== "string")
-            errors.push({ path: `${path}.${k}`, msg: "expected string" });
-        }
-        return;
-      }
-      errors.push({ path, msg: "expected string or {lang:string} map" });
-      return;
-    }
-    const t = typeOf(value);
-    if (schema.type && t !== schema.type) {
-      errors.push({ path, msg: `expected ${schema.type}, got ${t}` });
-      return;
-    }
-    if (schema.type === "string" && schema.pattern && !schema.pattern.test(value)) {
-      errors.push({ path, msg: "invalid format" });
-    }
-    if (schema.type === "array") {
-      const arr = value;
-      if (schema.min != null && arr.length < schema.min) {
-        errors.push({ path, msg: `expected >= ${schema.min} items` });
-      }
-      if (schema.of) arr.forEach((v, i) => check(v, schema.of, `${path}[${i}]`, errors));
-    }
-    if (schema.type === "object" && schema.props) {
-      const obj = value;
-      for (const k in schema.props) {
-        check(obj[k], schema.props[k], path ? `${path}.${k}` : k, errors);
-      }
-    }
-  }
-  var ID = { type: "string", required: true, pattern: /^[a-z0-9][a-z0-9-]*$/ };
-  var THEME_SCHEMA = {
-    type: "object",
-    required: true,
-    props: {
-      schema: { type: "string", required: true },
-      id: ID,
-      name: { type: "string", required: true },
-      version: { type: "string", required: true },
-      cssHref: { type: "string", required: true }
-    }
-  };
-  var TASK = {
-    type: "object",
-    required: true,
-    props: { id: ID, text: { localized: true, required: true }, guidance: { localized: true } }
-  };
-  var RES = {
-    type: "object",
-    required: true,
-    props: { label: { localized: true, required: true }, note: { localized: true, required: true } }
-  };
-  var ITEM = {
-    type: "object",
-    required: true,
-    props: {
-      id: ID,
-      track: { type: "string", required: true },
-      title: { localized: true },
-      warmup: { localized: true },
-      reflectPrompt: { localized: true },
-      tasks: { type: "array", of: TASK },
-      resources: { type: "array", of: RES },
-      rest: { type: "boolean" }
-    }
-  };
-  var GROUP = {
-    type: "object",
-    required: true,
-    props: {
-      id: ID,
-      title: { localized: true, required: true },
-      phase: { type: "string" },
-      items: { type: "array", required: true, min: 1, of: ITEM }
-    }
-  };
-  var TRACK = {
-    type: "object",
-    required: true,
-    props: {
-      id: ID,
-      label: { localized: true, required: true },
-      icon: { type: "string" },
-      color: { type: "string" }
-    }
-  };
-  var PHASE = {
-    type: "object",
-    required: true,
-    props: { id: ID, title: { localized: true, required: true } }
-  };
-  var BADGE = {
-    type: "object",
-    required: true,
-    props: {
-      id: ID,
-      title: { localized: true, required: true },
-      desc: { localized: true },
-      icon: { type: "string" },
-      type: { type: "string", required: true }
-    }
-  };
-  var PACK_SCHEMA = {
-    type: "object",
-    required: true,
-    props: {
-      schema: { type: "string", required: true },
-      id: ID,
-      name: { localized: true, required: true },
-      version: { type: "string", required: true },
-      locale: { type: "string" },
-      settings: { type: "object" },
-      tracks: { type: "array", required: true, min: 1, of: TRACK },
-      phases: { type: "array", of: PHASE },
-      groups: { type: "array", required: true, min: 1, of: GROUP },
-      badges: { type: "array", of: BADGE },
-      ui: { type: "object" },
-      mottos: { type: "array", of: { localized: true, required: true } },
-      surprises: { type: "array", of: { localized: true, required: true } }
-    }
-  };
-  var BADGE_PARAMS = {
-    streak: { gte: "number" },
-    "days-done": { gte: "number" },
-    percent: { gte: "number" },
-    "all-done": {},
-    "tasks-done": { gte: "number", track: "string?" },
-    reflections: { gte: "number" },
-    "groups-complete": { gte: "number" },
-    "track-complete": { track: "string" },
-    "phase-complete": { phase: "string" },
-    "item-complete": { item: "string" },
-    "all-tracks": { eachGte: "number" },
-    weekday: { days: "number[]" },
-    "hour-range": { from: "number", to: "number" },
-    comeback: {}
-  };
-  function uniq(list, keyFn, label, errors) {
-    const seen = /* @__PURE__ */ new Set();
-    list.forEach((x, i) => {
-      const k = keyFn(x);
-      if (k == null) return;
-      if (seen.has(k)) errors.push({ path: `${label}[${i}]`, msg: `duplicate id "${k}"` });
-      seen.add(k);
-    });
-  }
-  function checkBadgeRule(b, path, refs, errors) {
-    const params = BADGE_PARAMS[b["type"]];
-    if (!params) {
-      errors.push({ path: `${path}.type`, msg: `unknown rule type "${String(b["type"])}"` });
-      return;
-    }
-    for (const k in params) {
-      const spec = params[k];
-      const optional = spec.endsWith("?");
-      const base = optional ? spec.slice(0, -1) : spec;
-      const v = b[k];
-      if (v === void 0) {
-        if (!optional) errors.push({ path: `${path}.${k}`, msg: "required" });
-        continue;
-      }
-      const ok = base === "number[]" ? Array.isArray(v) && v.every((n) => typeof n === "number") : typeof v === base;
-      if (!ok) errors.push({ path: `${path}.${k}`, msg: `expected ${base}` });
-    }
-    const type = b["type"];
-    if (type === "weekday") {
-      const days = b["days"];
-      if (Array.isArray(days) && !days.every((n) => Number.isInteger(n) && n >= 1 && n <= 7)) {
-        errors.push({ path: `${path}.days`, msg: "days are 1=Mon..7=Sun" });
-      }
-    }
-    if (type === "hour-range") {
-      for (const k of ["from", "to"]) {
-        const v = b[k];
-        if (typeof v === "number" && !(Number.isInteger(v) && v >= 0 && v <= 23)) {
-          errors.push({ path: `${path}.${k}`, msg: "expected an hour 0..23" });
-        }
-      }
-    }
-    const track = b["track"];
-    if ((type === "track-complete" || type === "tasks-done") && track != null && !refs.trackIds.has(track)) {
-      errors.push({ path: `${path}.track`, msg: `track "${String(track)}" not declared` });
-    }
-    const phase = b["phase"];
-    if (type === "phase-complete" && phase != null && !refs.phaseIds.has(phase)) {
-      errors.push({ path: `${path}.phase`, msg: `phase "${String(phase)}" not declared` });
-    }
-    const item = b["item"];
-    if (type === "item-complete" && item != null && !refs.itemIds.has(item)) {
-      errors.push({ path: `${path}.item`, msg: `item "${String(item)}" not declared` });
-    }
-  }
-  var PackValidator = class {
-    parse(raw) {
-      const errors = [];
-      check(raw, PACK_SCHEMA, "", errors);
-      if (errors.length) throw new ValidationError(errors);
-      const pack = raw;
-      if (pack["schema"] !== "sunrise.pack/v1") {
-        throw new ValidationError([
-          { path: "schema", msg: `unsupported contract version "${String(pack["schema"])}"` }
-        ]);
-      }
-      const tracks = pack["tracks"];
-      const phases = pack["phases"] || [];
-      const groups = pack["groups"];
-      const badges = pack["badges"] || [];
-      uniq(tracks, (t) => t["id"], "tracks", errors);
-      if (pack["phases"]) uniq(phases, (p) => p["id"], "phases", errors);
-      uniq(groups, (g) => g["id"], "groups", errors);
-      if (pack["badges"]) uniq(badges, (b) => b["id"], "badges", errors);
-      const trackIds = new Set(tracks.map((t) => t["id"]));
-      trackIds.add("rest");
-      const phaseIds = new Set(phases.map((p) => p["id"]));
-      const itemIds = /* @__PURE__ */ new Set();
-      groups.forEach((g, gi) => {
-        const gphase = g["phase"];
-        if (gphase != null && !phaseIds.has(gphase)) {
-          errors.push({ path: `groups[${gi}].phase`, msg: `phase "${String(gphase)}" not declared` });
-        }
-        const items = g["items"];
-        items.forEach((it, ii) => {
-          const p = `groups[${gi}].items[${ii}]`;
-          const itId = it["id"];
-          if (itemIds.has(itId)) errors.push({ path: `${p}.id`, msg: `duplicate item id "${itId}"` });
-          itemIds.add(itId);
-          if (!trackIds.has(it["track"])) {
-            errors.push({ path: `${p}.track`, msg: `track "${String(it["track"])}" not declared` });
-          }
-          if (!it["rest"] && !(Array.isArray(it["tasks"]) && it["tasks"].length > 0)) {
-            errors.push({ path: `${p}.tasks`, msg: "non-rest item needs at least one task" });
-          }
-          const tids = /* @__PURE__ */ new Set();
-          const tasks = it["tasks"] || [];
-          tasks.forEach((t, ti) => {
-            const tid = t["id"];
-            if (tids.has(tid))
-              errors.push({ path: `${p}.tasks[${ti}].id`, msg: `duplicate task id "${tid}"` });
-            tids.add(tid);
-          });
-        });
-      });
-      badges.forEach(
-        (b, bi) => checkBadgeRule(b, `badges[${bi}]`, { trackIds, phaseIds, itemIds }, errors)
-      );
-      const ui = pack["ui"];
-      if (isObj(ui)) {
-        for (const k in ui) {
-          if (!localizedOk(ui[k]))
-            errors.push({ path: `ui.${k}`, msg: "expected string or {lang:string} map" });
-        }
-      }
-      const settings = pack["settings"];
-      const labels = isObj(settings) ? settings["labels"] : void 0;
-      if (labels !== void 0 && !isObj(labels)) {
-        errors.push({ path: "settings.labels", msg: "expected object" });
-      } else if (isObj(labels)) {
-        for (const k in labels) {
-          if (!localizedOk(labels[k]))
-            errors.push({
-              path: `settings.labels.${k}`,
-              msg: "expected string or {lang:string} map"
-            });
-        }
-      }
-      if (errors.length) throw new ValidationError(errors);
-      return raw;
-    }
-  };
-  var ThemeValidator = class {
-    parse(raw) {
-      const errors = [];
-      check(raw, THEME_SCHEMA, "", errors);
-      if (errors.length) throw new ValidationError(errors);
-      const theme = raw;
-      if (theme["schema"] !== "sunrise.theme/v1") {
-        throw new ValidationError([
-          { path: "schema", msg: `unsupported contract version "${String(theme["schema"])}"` }
-        ]);
-      }
-      return raw;
-    }
-  };
-  var PROGRESS_SCHEMA = {
-    type: "object",
-    required: true,
-    props: {
-      schema: { type: "string" },
-      items: { type: "object", required: true },
-      badges: { type: "object" }
-    }
-  };
-  var isObj = (v) => typeof v === "object" && v !== null && !Array.isArray(v);
-  var DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-  var ProgressValidator = class {
-    parse(raw) {
-      let data;
-      if (isObj(raw)) data = raw;
-      else throw new ValidationError([{ path: "", msg: `expected object, got ${typeOf(raw)}` }]);
-      if (data["days"] && !data["items"]) {
-        data = {
-          schema: "sunrise.progress/v1",
-          items: data["days"],
-          badges: data["badges"] || {}
-        };
-      }
-      if (data["schema"] !== void 0 && data["schema"] !== "sunrise.progress/v1") {
-        throw new ValidationError([
-          { path: "schema", msg: `unsupported progress version "${String(data["schema"])}"` }
-        ]);
-      }
-      const errors = [];
-      check(data, PROGRESS_SCHEMA, "", errors);
-      if (errors.length) throw new ValidationError(errors);
-      const rawItems = data["items"];
-      const items = {};
-      for (const id in rawItems) {
-        const it = rawItems[id];
-        if (!isObj(it)) {
-          errors.push({ path: `items.${id}`, msg: "must be an object" });
-          continue;
-        }
-        const rawTasks = it["tasks"];
-        if (rawTasks !== void 0 && !isObj(rawTasks)) {
-          errors.push({ path: `items.${id}.tasks`, msg: "must be an object" });
-        }
-        const tasks = {};
-        if (isObj(rawTasks)) {
-          for (const t in rawTasks) if (rawTasks[t] === true) tasks[t] = true;
-        }
-        const completedAt = it["completedAt"];
-        if (completedAt != null && !(typeof completedAt === "string" && DATE_RE.test(completedAt))) {
-          errors.push({ path: `items.${id}.completedAt`, msg: 'expected "YYYY-MM-DD" or null' });
-        }
-        const completedHour = it["completedHour"];
-        if (completedHour != null && typeof completedHour !== "number") {
-          errors.push({ path: `items.${id}.completedHour`, msg: "expected number or null" });
-        }
-        const reflection = it["reflection"];
-        if (reflection !== void 0 && typeof reflection !== "string") {
-          errors.push({ path: `items.${id}.reflection`, msg: "expected string" });
-        }
-        items[id] = {
-          tasks,
-          reflection: typeof reflection === "string" ? reflection : "",
-          completedAt: typeof completedAt === "string" ? completedAt : null,
-          completedHour: typeof completedHour === "number" ? completedHour : null
-        };
-      }
-      if (errors.length) throw new ValidationError(errors);
-      const rawBadges = data["badges"];
-      const badges = isObj(rawBadges) ? rawBadges : {};
-      return {
-        schema: "sunrise.progress/v1",
-        items,
-        badges
-      };
-    }
-  };
-
   // src/domain/i18n.ts
   var DEFAULT_LANG = "en";
   function tr(v, lang) {
@@ -673,22 +295,21 @@
       this.deps.sessionStore.save(sess);
       this.lang = id;
     }
-    importProgress(json) {
-      let raw;
-      try {
-        raw = JSON.parse(json);
-      } catch {
-        throw new ImportError("Invalid JSON");
+    // ProgressTarget: apply an already-validated progress blob (the ProgressPlugin
+    // parses + validates; Tracker owns the active-pack aggregate). A file carrying a
+    // packId for another *loaded* pack switches to it; an unloaded one is rejected.
+    importProgress(packId, data) {
+      if (packId != null && packId !== this.pack.id) {
+        if (!this.deps.packs.packs().some((p) => p.id === packId)) {
+          throw new ImportError(`load the pack "${packId}" before importing its progress`);
+        }
+        this.selectPack(packId);
       }
-      const filePackId = raw && typeof raw === "object" ? raw["packId"] : void 0;
-      if (typeof filePackId === "string" && filePackId !== this.pack.id) {
-        throw new ImportError(`file is for pack "${filePackId}", active pack is "${this.pack.id}"`);
-      }
-      const data = new ProgressValidator().parse(raw);
       this.progress = new Progress(data);
       this.progress.reconcile(this.allItems);
       this.save();
       this.currentItemId = this.resumeItemId();
+      return this.pack.id;
     }
     exportProgress() {
       return JSON.stringify({ packId: this.pack.id, ...this.progress.toJSON() }, null, 2);
@@ -855,7 +476,7 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
     }
     activeThemeHref() {
       const theme = this.deps.themes.themes().find((t) => t.id === this.themeId);
-      return theme ? theme.cssHref : null;
+      return theme?.cssHref ?? null;
     }
     activeThemeId() {
       return this.themeId;
@@ -1120,6 +741,11 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
       ru: "\u0421 \u0432\u043E\u0437\u0432\u0440\u0430\u0449\u0435\u043D\u0438\u0435\u043C \u2014 \u0432\u0441\u0435\u0433\u043E \u043F\u0440\u043E\u0439\u0434\u0435\u043D\u043E {n} \u0434\u043D\u0435\u0439. \u041F\u0440\u043E\u0434\u043E\u043B\u0436\u0430\u0435\u043C."
     },
     importOk: { en: "Progress imported.", ru: "\u041F\u0440\u043E\u0433\u0440\u0435\u0441\u0441 \u0438\u043C\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u043D." },
+    importedPack: {
+      en: "Imported program \u201C{name}\u201D. \u{1F389}",
+      ru: "\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u0430 \xAB{name}\xBB \u0438\u043C\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u043D\u0430. \u{1F389}"
+    },
+    importedTheme: { en: "Imported theme \u201C{name}\u201D. \u{1F3A8}", ru: "\u0422\u0435\u043C\u0430 \xAB{name}\xBB \u0438\u043C\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u043D\u0430. \u{1F3A8}" },
     importFail: {
       en: "Import failed: {e}\nCurrent progress unchanged.",
       ru: "\u0418\u043C\u043F\u043E\u0440\u0442 \u043D\u0435 \u0443\u0434\u0430\u043B\u0441\u044F: {e}\n\u0422\u0435\u043A\u0443\u0449\u0438\u0439 \u043F\u0440\u043E\u0433\u0440\u0435\u0441\u0441 \u043D\u0435 \u0438\u0437\u043C\u0435\u043D\u0451\u043D."
@@ -1395,9 +1021,394 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
     }
   };
 
+  // src/domain/validators.ts
+  function typeOf(v) {
+    return Array.isArray(v) ? "array" : v === null ? "null" : typeof v;
+  }
+  function localizedOk(v) {
+    if (typeof v === "string") return true;
+    if (isObj(v)) return Object.values(v).every((x) => typeof x === "string");
+    return false;
+  }
+  function check(value, schema, path, errors) {
+    if (value === void 0 || value === null) {
+      if (schema.required) errors.push({ path, msg: "required" });
+      return;
+    }
+    if (schema.localized) {
+      if (typeof value === "string") return;
+      if (isObj(value)) {
+        for (const k in value) {
+          if (typeof value[k] !== "string")
+            errors.push({ path: `${path}.${k}`, msg: "expected string" });
+        }
+        return;
+      }
+      errors.push({ path, msg: "expected string or {lang:string} map" });
+      return;
+    }
+    const t = typeOf(value);
+    if (schema.type && t !== schema.type) {
+      errors.push({ path, msg: `expected ${schema.type}, got ${t}` });
+      return;
+    }
+    if (schema.type === "string" && schema.pattern && !schema.pattern.test(value)) {
+      errors.push({ path, msg: "invalid format" });
+    }
+    if (schema.type === "array") {
+      const arr = value;
+      if (schema.min != null && arr.length < schema.min) {
+        errors.push({ path, msg: `expected >= ${schema.min} items` });
+      }
+      if (schema.of) arr.forEach((v, i) => check(v, schema.of, `${path}[${i}]`, errors));
+    }
+    if (schema.type === "object" && schema.props) {
+      const obj = value;
+      for (const k in schema.props) {
+        check(obj[k], schema.props[k], path ? `${path}.${k}` : k, errors);
+      }
+    }
+  }
+  var ID = { type: "string", required: true, pattern: /^[a-z0-9][a-z0-9-]*$/ };
+  var THEME_SCHEMA = {
+    type: "object",
+    required: true,
+    props: {
+      schema: { type: "string", required: true },
+      id: ID,
+      name: { type: "string", required: true },
+      version: { type: "string", required: true },
+      cssHref: { type: "string" },
+      css: { type: "string" }
+    }
+  };
+  var TASK = {
+    type: "object",
+    required: true,
+    props: { id: ID, text: { localized: true, required: true }, guidance: { localized: true } }
+  };
+  var RES = {
+    type: "object",
+    required: true,
+    props: { label: { localized: true, required: true }, note: { localized: true, required: true } }
+  };
+  var ITEM = {
+    type: "object",
+    required: true,
+    props: {
+      id: ID,
+      track: { type: "string", required: true },
+      title: { localized: true },
+      warmup: { localized: true },
+      reflectPrompt: { localized: true },
+      tasks: { type: "array", of: TASK },
+      resources: { type: "array", of: RES },
+      rest: { type: "boolean" }
+    }
+  };
+  var GROUP = {
+    type: "object",
+    required: true,
+    props: {
+      id: ID,
+      title: { localized: true, required: true },
+      phase: { type: "string" },
+      items: { type: "array", required: true, min: 1, of: ITEM }
+    }
+  };
+  var TRACK = {
+    type: "object",
+    required: true,
+    props: {
+      id: ID,
+      label: { localized: true, required: true },
+      icon: { type: "string" },
+      color: { type: "string" }
+    }
+  };
+  var PHASE = {
+    type: "object",
+    required: true,
+    props: { id: ID, title: { localized: true, required: true } }
+  };
+  var BADGE = {
+    type: "object",
+    required: true,
+    props: {
+      id: ID,
+      title: { localized: true, required: true },
+      desc: { localized: true },
+      icon: { type: "string" },
+      type: { type: "string", required: true }
+    }
+  };
+  var PACK_SCHEMA = {
+    type: "object",
+    required: true,
+    props: {
+      schema: { type: "string", required: true },
+      id: ID,
+      name: { localized: true, required: true },
+      version: { type: "string", required: true },
+      locale: { type: "string" },
+      settings: { type: "object" },
+      tracks: { type: "array", required: true, min: 1, of: TRACK },
+      phases: { type: "array", of: PHASE },
+      groups: { type: "array", required: true, min: 1, of: GROUP },
+      badges: { type: "array", of: BADGE },
+      ui: { type: "object" },
+      mottos: { type: "array", of: { localized: true, required: true } },
+      surprises: { type: "array", of: { localized: true, required: true } }
+    }
+  };
+  var BADGE_PARAMS = {
+    streak: { gte: "number" },
+    "days-done": { gte: "number" },
+    percent: { gte: "number" },
+    "all-done": {},
+    "tasks-done": { gte: "number", track: "string?" },
+    reflections: { gte: "number" },
+    "groups-complete": { gte: "number" },
+    "track-complete": { track: "string" },
+    "phase-complete": { phase: "string" },
+    "item-complete": { item: "string" },
+    "all-tracks": { eachGte: "number" },
+    weekday: { days: "number[]" },
+    "hour-range": { from: "number", to: "number" },
+    comeback: {}
+  };
+  function uniq(list, keyFn, label, errors) {
+    const seen = /* @__PURE__ */ new Set();
+    list.forEach((x, i) => {
+      const k = keyFn(x);
+      if (k == null) return;
+      if (seen.has(k)) errors.push({ path: `${label}[${i}]`, msg: `duplicate id "${k}"` });
+      seen.add(k);
+    });
+  }
+  function checkBadgeRule(b, path, refs, errors) {
+    const params = BADGE_PARAMS[b["type"]];
+    if (!params) {
+      errors.push({ path: `${path}.type`, msg: `unknown rule type "${String(b["type"])}"` });
+      return;
+    }
+    for (const k in params) {
+      const spec = params[k];
+      const optional = spec.endsWith("?");
+      const base = optional ? spec.slice(0, -1) : spec;
+      const v = b[k];
+      if (v === void 0) {
+        if (!optional) errors.push({ path: `${path}.${k}`, msg: "required" });
+        continue;
+      }
+      const ok = base === "number[]" ? Array.isArray(v) && v.every((n) => typeof n === "number") : typeof v === base;
+      if (!ok) errors.push({ path: `${path}.${k}`, msg: `expected ${base}` });
+    }
+    const type = b["type"];
+    if (type === "weekday") {
+      const days = b["days"];
+      if (Array.isArray(days) && !days.every((n) => Number.isInteger(n) && n >= 1 && n <= 7)) {
+        errors.push({ path: `${path}.days`, msg: "days are 1=Mon..7=Sun" });
+      }
+    }
+    if (type === "hour-range") {
+      for (const k of ["from", "to"]) {
+        const v = b[k];
+        if (typeof v === "number" && !(Number.isInteger(v) && v >= 0 && v <= 23)) {
+          errors.push({ path: `${path}.${k}`, msg: "expected an hour 0..23" });
+        }
+      }
+    }
+    const track = b["track"];
+    if ((type === "track-complete" || type === "tasks-done") && track != null && !refs.trackIds.has(track)) {
+      errors.push({ path: `${path}.track`, msg: `track "${String(track)}" not declared` });
+    }
+    const phase = b["phase"];
+    if (type === "phase-complete" && phase != null && !refs.phaseIds.has(phase)) {
+      errors.push({ path: `${path}.phase`, msg: `phase "${String(phase)}" not declared` });
+    }
+    const item = b["item"];
+    if (type === "item-complete" && item != null && !refs.itemIds.has(item)) {
+      errors.push({ path: `${path}.item`, msg: `item "${String(item)}" not declared` });
+    }
+  }
+  var PackValidator = class {
+    parse(raw) {
+      const errors = [];
+      check(raw, PACK_SCHEMA, "", errors);
+      if (errors.length) throw new ValidationError(errors);
+      const pack = raw;
+      if (pack["schema"] !== "sunrise.pack/v1") {
+        throw new ValidationError([
+          { path: "schema", msg: `unsupported contract version "${String(pack["schema"])}"` }
+        ]);
+      }
+      const tracks = pack["tracks"];
+      const phases = pack["phases"] || [];
+      const groups = pack["groups"];
+      const badges = pack["badges"] || [];
+      uniq(tracks, (t) => t["id"], "tracks", errors);
+      if (pack["phases"]) uniq(phases, (p) => p["id"], "phases", errors);
+      uniq(groups, (g) => g["id"], "groups", errors);
+      if (pack["badges"]) uniq(badges, (b) => b["id"], "badges", errors);
+      const trackIds = new Set(tracks.map((t) => t["id"]));
+      trackIds.add("rest");
+      const phaseIds = new Set(phases.map((p) => p["id"]));
+      const itemIds = /* @__PURE__ */ new Set();
+      groups.forEach((g, gi) => {
+        const gphase = g["phase"];
+        if (gphase != null && !phaseIds.has(gphase)) {
+          errors.push({ path: `groups[${gi}].phase`, msg: `phase "${String(gphase)}" not declared` });
+        }
+        const items = g["items"];
+        items.forEach((it, ii) => {
+          const p = `groups[${gi}].items[${ii}]`;
+          const itId = it["id"];
+          if (itemIds.has(itId)) errors.push({ path: `${p}.id`, msg: `duplicate item id "${itId}"` });
+          itemIds.add(itId);
+          if (!trackIds.has(it["track"])) {
+            errors.push({ path: `${p}.track`, msg: `track "${String(it["track"])}" not declared` });
+          }
+          if (!it["rest"] && !(Array.isArray(it["tasks"]) && it["tasks"].length > 0)) {
+            errors.push({ path: `${p}.tasks`, msg: "non-rest item needs at least one task" });
+          }
+          const tids = /* @__PURE__ */ new Set();
+          const tasks = it["tasks"] || [];
+          tasks.forEach((t, ti) => {
+            const tid = t["id"];
+            if (tids.has(tid))
+              errors.push({ path: `${p}.tasks[${ti}].id`, msg: `duplicate task id "${tid}"` });
+            tids.add(tid);
+          });
+        });
+      });
+      badges.forEach(
+        (b, bi) => checkBadgeRule(b, `badges[${bi}]`, { trackIds, phaseIds, itemIds }, errors)
+      );
+      const ui = pack["ui"];
+      if (isObj(ui)) {
+        for (const k in ui) {
+          if (!localizedOk(ui[k]))
+            errors.push({ path: `ui.${k}`, msg: "expected string or {lang:string} map" });
+        }
+      }
+      const settings = pack["settings"];
+      const labels = isObj(settings) ? settings["labels"] : void 0;
+      if (labels !== void 0 && !isObj(labels)) {
+        errors.push({ path: "settings.labels", msg: "expected object" });
+      } else if (isObj(labels)) {
+        for (const k in labels) {
+          if (!localizedOk(labels[k]))
+            errors.push({
+              path: `settings.labels.${k}`,
+              msg: "expected string or {lang:string} map"
+            });
+        }
+      }
+      if (errors.length) throw new ValidationError(errors);
+      return raw;
+    }
+  };
+  var ThemeValidator = class {
+    parse(raw) {
+      const errors = [];
+      check(raw, THEME_SCHEMA, "", errors);
+      if (errors.length) throw new ValidationError(errors);
+      const theme = raw;
+      if (theme["schema"] !== "sunrise.theme/v1") {
+        throw new ValidationError([
+          { path: "schema", msg: `unsupported contract version "${String(theme["schema"])}"` }
+        ]);
+      }
+      if (typeof theme["cssHref"] !== "string" && typeof theme["css"] !== "string") {
+        throw new ValidationError([
+          { path: "css", msg: 'theme needs either "cssHref" or inline "css"' }
+        ]);
+      }
+      return raw;
+    }
+  };
+  var PROGRESS_SCHEMA = {
+    type: "object",
+    required: true,
+    props: {
+      schema: { type: "string" },
+      items: { type: "object", required: true },
+      badges: { type: "object" }
+    }
+  };
+  var isObj = (v) => typeof v === "object" && v !== null && !Array.isArray(v);
+  var DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+  var ProgressValidator = class {
+    parse(raw) {
+      let data;
+      if (isObj(raw)) data = raw;
+      else throw new ValidationError([{ path: "", msg: `expected object, got ${typeOf(raw)}` }]);
+      if (data["days"] && !data["items"]) {
+        data = {
+          schema: "sunrise.progress/v1",
+          items: data["days"],
+          badges: data["badges"] || {}
+        };
+      }
+      if (data["schema"] !== void 0 && data["schema"] !== "sunrise.progress/v1") {
+        throw new ValidationError([
+          { path: "schema", msg: `unsupported progress version "${String(data["schema"])}"` }
+        ]);
+      }
+      const errors = [];
+      check(data, PROGRESS_SCHEMA, "", errors);
+      if (errors.length) throw new ValidationError(errors);
+      const rawItems = data["items"];
+      const items = {};
+      for (const id in rawItems) {
+        const it = rawItems[id];
+        if (!isObj(it)) {
+          errors.push({ path: `items.${id}`, msg: "must be an object" });
+          continue;
+        }
+        const rawTasks = it["tasks"];
+        if (rawTasks !== void 0 && !isObj(rawTasks)) {
+          errors.push({ path: `items.${id}.tasks`, msg: "must be an object" });
+        }
+        const tasks = {};
+        if (isObj(rawTasks)) {
+          for (const t in rawTasks) if (rawTasks[t] === true) tasks[t] = true;
+        }
+        const completedAt = it["completedAt"];
+        if (completedAt != null && !(typeof completedAt === "string" && DATE_RE.test(completedAt))) {
+          errors.push({ path: `items.${id}.completedAt`, msg: 'expected "YYYY-MM-DD" or null' });
+        }
+        const completedHour = it["completedHour"];
+        if (completedHour != null && typeof completedHour !== "number") {
+          errors.push({ path: `items.${id}.completedHour`, msg: "expected number or null" });
+        }
+        const reflection = it["reflection"];
+        if (reflection !== void 0 && typeof reflection !== "string") {
+          errors.push({ path: `items.${id}.reflection`, msg: "expected string" });
+        }
+        items[id] = {
+          tasks,
+          reflection: typeof reflection === "string" ? reflection : "",
+          completedAt: typeof completedAt === "string" ? completedAt : null,
+          completedHour: typeof completedHour === "number" ? completedHour : null
+        };
+      }
+      if (errors.length) throw new ValidationError(errors);
+      const rawBadges = data["badges"];
+      const badges = isObj(rawBadges) ? rawBadges : {};
+      return {
+        schema: "sunrise.progress/v1",
+        items,
+        badges
+      };
+    }
+  };
+
   // src/adapters/local-storage-store.ts
   var PREFIX = "sunrise.progress.";
   var SESSION = "sunrise.session";
+  var PLUGINS = "sunrise.plugins";
   var LEGACY = "devRoadmapState.v1";
   var LEGACY_THEME = "sunriseTheme";
   var LocalStorageProgressStore = class {
@@ -1451,6 +1462,25 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
       }
     }
   };
+  var LocalStoragePluginStore = class {
+    load() {
+      try {
+        const raw = localStorage.getItem(PLUGINS);
+        const o = raw ? JSON.parse(raw) : [];
+        return Array.isArray(o) ? o : [];
+      } catch {
+        return [];
+      }
+    }
+    append(raw) {
+      try {
+        const list = this.load();
+        list.push(raw);
+        localStorage.setItem(PLUGINS, JSON.stringify(list));
+      } catch {
+      }
+    }
+  };
   function migrateLegacy() {
     try {
       const legacy = localStorage.getItem(LEGACY);
@@ -1484,6 +1514,32 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
     }
     addBuiltinThemes(themes) {
       this.themeList.push(...themes);
+    }
+    // ----- write side (PluginRegistry, used by the import pipeline) -------------
+    // Unlike registerPack/registerTheme (boot path: swallow + log), these THROW so
+    // the importer can surface validation/duplicate errors to the user.
+    hasPack(id) {
+      return this.packList.some((p) => p.id === id);
+    }
+    hasTheme(id) {
+      return this.themeList.some((t) => t.id === id);
+    }
+    addPack(raw) {
+      const pack = this.packValidator.parse(raw);
+      if (this.hasPack(pack.id)) throw new ImportError(`pack "${pack.id}" already exists`);
+      this.packList.push(pack);
+    }
+    addTheme(raw) {
+      const theme = this.themeValidator.parse(raw);
+      if (this.hasTheme(theme.id)) throw new ImportError(`theme "${theme.id}" already exists`);
+      this.themeList.push(this.materialize(theme));
+    }
+    // Inline-css themes have no file to <link>; turn the css text into a blob URL so
+    // the renderer's existing href path works unchanged.
+    materialize(theme) {
+      if (theme.cssHref || !theme.css) return theme;
+      const href = URL.createObjectURL(new Blob([theme.css], { type: "text/css" }));
+      return { ...theme, cssHref: href };
     }
     registerPack(raw) {
       try {
@@ -1818,12 +1874,14 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
   var DomController = class {
     t;
     r;
+    imp;
     activeModal = null;
     activeSheet = null;
     motdTimer = null;
-    constructor(tracker, renderer) {
+    constructor(tracker, renderer, importer) {
       this.t = tracker;
       this.r = renderer;
+      this.imp = importer;
     }
     start() {
       this.applyStaticLabels();
@@ -1992,6 +2050,13 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
       } catch {
       }
       document.body.removeChild(ta);
+    }
+    // Freshly-imported plugin's display name — selectors already carry resolved labels.
+    packName(id) {
+      return this.t.selectors().packs.find((p) => p.id === id)?.label ?? id;
+    }
+    themeName(id) {
+      return this.t.selectors().themes.find((t) => t.id === id)?.label ?? id;
     }
     setTaskChecked(taskId, checked) {
       const was = this.t.todayCard().complete;
@@ -2180,9 +2245,23 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
           const rd = new FileReader();
           rd.onload = () => {
             try {
-              this.t.importProgress(String(rd.result));
+              const out = this.imp.import(String(rd.result));
+              if (out.kind === "pack") {
+                this.t.selectPack(out.id);
+                this.r.applyTrackColors(this.t.trackColors());
+                this.r.setLang(this.t.currentLang());
+                this.applyStaticLabels();
+                this.startMotd();
+                alert(this.t.ui("importedPack").replace("{name}", this.packName(out.id)));
+              } else if (out.kind === "theme") {
+                this.t.selectTheme(out.id);
+                const href = this.t.activeThemeHref();
+                if (href != null) this.r.applyTheme(href, out.id);
+                alert(this.t.ui("importedTheme").replace("{name}", this.themeName(out.id)));
+              } else {
+                alert(this.t.ui("importOk"));
+              }
               this.renderAll();
-              alert(this.t.ui("importOk"));
             } catch (err) {
               if (err instanceof ImportError || err instanceof ValidationError) {
                 alert(this.t.ui("importFail").replace("{e}", err.message));
@@ -2305,6 +2384,109 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
     mq.addEventListener("change", (e) => apply(e.matches));
   }
 
+  // src/domain/plugins/importer.ts
+  var Importer = class {
+    handlers;
+    store;
+    constructor(handlers, store) {
+      this.handlers = handlers;
+      this.store = store;
+    }
+    import(json) {
+      let raw;
+      try {
+        raw = JSON.parse(json);
+      } catch {
+        throw new ImportError("Invalid JSON");
+      }
+      const h = this.handlers.find((x) => x.matches(raw));
+      if (!h) {
+        throw new ImportError("Unrecognized file \u2014 not a Sunrise pack, theme, or progress export");
+      }
+      const outcome = h.install(h.validate(raw));
+      if (h.persistable) this.store.append(raw);
+      return outcome;
+    }
+    // Boot: replay persisted catalog plugins (NO re-persist). A stored plugin gone
+    // bad (duplicate id, schema drift) must not crash boot — swallow + log.
+    loadStored() {
+      for (const raw of this.store.load()) {
+        const h = this.handlers.find((x) => x.matches(raw) && x.persistable);
+        if (!h) continue;
+        try {
+          h.install(h.validate(raw));
+        } catch (e) {
+          console.error("[sunrise] stored plugin rejected:", e);
+        }
+      }
+    }
+  };
+
+  // src/domain/plugins/import-handler.ts
+  var isObj2 = (v) => typeof v === "object" && v !== null && !Array.isArray(v);
+
+  // src/domain/plugins/pack-plugin.ts
+  var PackPlugin = class {
+    persistable = true;
+    registry;
+    constructor(registry2) {
+      this.registry = registry2;
+    }
+    matches(raw) {
+      return isObj2(raw) && raw["schema"] === "sunrise.pack/v1";
+    }
+    validate(raw) {
+      return raw;
+    }
+    install(raw) {
+      this.registry.addPack(raw);
+      return { kind: "pack", id: raw.id };
+    }
+  };
+
+  // src/domain/plugins/theme-plugin.ts
+  var ThemePlugin = class {
+    persistable = true;
+    registry;
+    constructor(registry2) {
+      this.registry = registry2;
+    }
+    matches(raw) {
+      return isObj2(raw) && raw["schema"] === "sunrise.theme/v1";
+    }
+    validate(raw) {
+      return raw;
+    }
+    install(raw) {
+      this.registry.addTheme(raw);
+      return { kind: "theme", id: raw.id };
+    }
+  };
+
+  // src/domain/plugins/progress-plugin.ts
+  var ProgressPlugin = class {
+    persistable = false;
+    validator = new ProgressValidator();
+    target;
+    constructor(target) {
+      this.target = target;
+    }
+    matches(raw) {
+      if (!isObj2(raw)) return false;
+      if (raw["schema"] === "sunrise.progress/v1") return true;
+      return raw["schema"] === void 0 && (isObj2(raw["items"]) || isObj2(raw["days"]));
+    }
+    validate(raw) {
+      const data = this.validator.parse(raw);
+      const packId = isObj2(raw) && typeof raw["packId"] === "string" ? raw["packId"] : null;
+      return { packId, data };
+    }
+    install(p) {
+      const id = this.target.importProgress(p.packId, p.data);
+      return { kind: "progress", id };
+    }
+  };
+
   // src/main.ts
   var registry = new WindowPluginRegistry();
   registry.addBuiltinThemes(BUILTIN_THEMES);
@@ -2340,8 +2522,13 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
         defaultMottos: DEFAULT_MOTTOS,
         supportedLangs: SUPPORTED_LANGS
       });
+      const importer = new Importer(
+        [new PackPlugin(registry), new ThemePlugin(registry), new ProgressPlugin(tracker)],
+        new LocalStoragePluginStore()
+      );
+      importer.loadStored();
       tracker.init();
-      new DomController(tracker, renderer).start();
+      new DomController(tracker, renderer, importer).start();
     } catch (err) {
       console.error("[sunrise] boot failed:", err);
       renderer.stub(

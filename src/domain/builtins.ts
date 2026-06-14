@@ -32,6 +32,11 @@ export const DEFAULT_UI: Record<string, Localized> = {
     ru: 'С возвращением — всего пройдено {n} дней. Продолжаем.',
   },
   importOk: { en: 'Progress imported.', ru: 'Прогресс импортирован.' },
+  importedPack: {
+    en: 'Imported program “{name}”. 🎉',
+    ru: 'Программа «{name}» импортирована. 🎉',
+  },
+  importedTheme: { en: 'Imported theme “{name}”. 🎨', ru: 'Тема «{name}» импортирована. 🎨' },
   importFail: {
     en: 'Import failed: {e}\nCurrent progress unchanged.',
     ru: 'Импорт не удался: {e}\nТекущий прогресс не изменён.',

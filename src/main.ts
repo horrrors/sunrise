@@ -15,12 +15,17 @@ import { MathRandom } from './adapters/math-random.ts';
 import {
   LocalStorageProgressStore,
   LocalStorageSessionStore,
+  LocalStoragePluginStore,
   migrateLegacy,
 } from './adapters/local-storage-store.ts';
 import { WindowPluginRegistry } from './adapters/window-registry.ts';
 import { DomRenderer } from './adapters/dom-renderer.ts';
 import { DomController } from './adapters/dom-controller.ts';
 import { watchMobileMode } from './adapters/mobile-mode.ts';
+import { Importer } from './domain/plugins/importer.ts';
+import { PackPlugin } from './domain/plugins/pack-plugin.ts';
+import { ThemePlugin } from './domain/plugins/theme-plugin.ts';
+import { ProgressPlugin } from './domain/plugins/progress-plugin.ts';
 
 declare global {
   interface Window {
@@ -66,8 +71,15 @@ function boot(): void {
       defaultMottos: DEFAULT_MOTTOS,
       supportedLangs: SUPPORTED_LANGS,
     });
-    tracker.init(); // throws if no packs registered
-    new DomController(tracker, renderer).start();
+    // Import pipeline: replay user-imported packs/themes from storage AFTER the
+    // built-in/script-tag plugins are registered, so a built-in wins any id clash.
+    const importer = new Importer(
+      [new PackPlugin(registry), new ThemePlugin(registry), new ProgressPlugin(tracker)],
+      new LocalStoragePluginStore(),
+    );
+    importer.loadStored();
+    tracker.init(); // throws if no packs registered (now sees stored plugins too)
+    new DomController(tracker, renderer, importer).start();
   } catch (err) {
     console.error('[sunrise] boot failed:', err);
     renderer.stub(

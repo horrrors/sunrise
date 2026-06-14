@@ -138,54 +138,34 @@ test('dashboard streak word uses the per-language plural forms', () => {
 test('export → import round-trips', () => {
   const { t } = buildTracker({ packs: [PACK] });
   t.setTaskDone('t1', true);
-  const json = t.exportProgress();
+  const parsed = JSON.parse(t.exportProgress());
   t.setTaskDone('t1', false);
-  t.importProgress(json);
+  t.importProgress(parsed.packId, parsed);
   assert.equal(t.todayCard().tasks[0]!.done, true);
 });
 
-test('importProgress throws ImportError on bad JSON', () => {
+test('importProgress rejects a packId for an unloaded pack; null targets the active pack', () => {
   const { t } = buildTracker({ packs: [PACK] });
   assert.throws(
-    () => t.importProgress('{bad json'),
-    (e: unknown) => e instanceof ImportError,
-  );
-});
-
-test("importProgress rejects another pack's export; tolerates old exports without packId", () => {
-  const { t } = buildTracker({ packs: [PACK] });
-  const foreign = JSON.stringify({
-    packId: 'other',
-    schema: 'sunrise.progress/v1',
-    items: {},
-    reviews: [],
-    badges: {},
-  });
-  assert.throws(
-    () => t.importProgress(foreign),
+    () => t.importProgress('other', { schema: 'sunrise.progress/v1', items: {}, badges: {} }),
     (e: unknown) => e instanceof ImportError && /other/.test((e as Error).message),
   );
-  const legacy = JSON.stringify({
-    schema: 'sunrise.progress/v1',
-    items: {},
-    reviews: [],
-    badges: {},
-  });
-  assert.doesNotThrow(() => t.importProgress(legacy));
+  // null packId (or a legacy export without packId) applies to the active pack.
+  assert.doesNotThrow(() =>
+    t.importProgress(null, { schema: 'sunrise.progress/v1', items: {}, badges: {} }),
+  );
 });
 
 test('importProgress reconciles a stale completedAt against the current pack', () => {
   const { t, store } = buildTracker({ packs: [PACK] });
   // completedAt set but i1's task unchecked — e.g. an export made under an
   // older pack version, before the item gained its task.
-  const stale = JSON.stringify({
-    packId: 'p',
-    schema: 'sunrise.progress/v1',
+  const stale = {
+    schema: 'sunrise.progress/v1' as const,
     items: { i1: { tasks: {}, reflection: '', completedAt: '2026-05-29', completedHour: 9 } },
-    reviews: [],
     badges: {},
-  });
-  t.importProgress(stale);
+  };
+  t.importProgress('p', stale);
   assert.equal(store.get('p')!.completedCount(), 0); // healed immediately, not on next load
 });
 

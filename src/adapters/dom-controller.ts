@@ -2,6 +2,7 @@ import type { Tracker } from '../domain/tracker.ts';
 import type { TodayVM } from '../domain/types/view-models.ts';
 import type { DomRenderer } from './dom-renderer.ts';
 import type { RenderLabels } from './types/dom-renderer.ts';
+import type { Importer } from '../domain/plugins/importer.ts';
 import { ImportError, ValidationError } from '../domain/errors.ts';
 
 /**
@@ -13,12 +14,14 @@ import { ImportError, ValidationError } from '../domain/errors.ts';
 export class DomController {
   private t: Tracker;
   private r: DomRenderer;
+  private imp: Importer;
   private activeModal: string | null = null;
   private activeSheet: 'menu' | 'stats' | null = null;
   private motdTimer: ReturnType<typeof setInterval> | null = null;
-  constructor(tracker: Tracker, renderer: DomRenderer) {
+  constructor(tracker: Tracker, renderer: DomRenderer, importer: Importer) {
     this.t = tracker;
     this.r = renderer;
+    this.imp = importer;
   }
 
   public start(): void {
@@ -210,6 +213,14 @@ export class DomController {
       /* best effort — file:// engines without clipboard API */
     }
     document.body.removeChild(ta);
+  }
+
+  // Freshly-imported plugin's display name — selectors already carry resolved labels.
+  private packName(id: string): string {
+    return this.t.selectors().packs.find((p) => p.id === id)?.label ?? id;
+  }
+  private themeName(id: string): string {
+    return this.t.selectors().themes.find((t) => t.id === id)?.label ?? id;
   }
 
   private setTaskChecked(taskId: string, checked: boolean): void {
@@ -423,9 +434,23 @@ export class DomController {
         const rd = new FileReader();
         rd.onload = () => {
           try {
-            this.t.importProgress(String(rd.result));
+            const out = this.imp.import(String(rd.result));
+            if (out.kind === 'pack') {
+              this.t.selectPack(out.id);
+              this.r.applyTrackColors(this.t.trackColors());
+              this.r.setLang(this.t.currentLang());
+              this.applyStaticLabels();
+              this.startMotd();
+              alert(this.t.ui('importedPack').replace('{name}', this.packName(out.id)));
+            } else if (out.kind === 'theme') {
+              this.t.selectTheme(out.id);
+              const href = this.t.activeThemeHref();
+              if (href != null) this.r.applyTheme(href, out.id);
+              alert(this.t.ui('importedTheme').replace('{name}', this.themeName(out.id)));
+            } else {
+              alert(this.t.ui('importOk')); // progress (already applied; pack switched if needed)
+            }
             this.renderAll();
-            alert(this.t.ui('importOk'));
           } catch (err) {
             if (err instanceof ImportError || err instanceof ValidationError) {
               alert(this.t.ui('importFail').replace('{e}', err.message));
