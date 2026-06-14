@@ -205,7 +205,10 @@
    background-position). Sits behind content; runs on mobile too. */
 :root[data-theme="dawn"] .wrap::before{
   content:""; position:absolute; z-index:-1; pointer-events:none;
-  left:-20%; right:-20%; top:-30%; height:120%;
+  /* full-width, no horizontal bleed — the radial wash is transparent past 78%,
+     so left/right:0 looks identical while never overflowing the viewport sideways
+     (left/right:-20% used to leak ~87px of scroll width on the phone). */
+  left:0; right:0; top:-30%; height:120%;
   background:radial-gradient(60% 50% at 50% 100%,
     rgba(255,180,84,.16), rgba(255,224,138,.06) 55%, transparent 78%);
   will-change:transform;

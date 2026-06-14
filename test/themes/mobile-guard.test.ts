@@ -129,6 +129,35 @@ test('mobile baseline centers resized controls and lets the brand shrink', () =>
   );
 });
 
+// Mobile motion-perf: the body/.app-header *element* kills don't reach their
+// pseudos or children, where the heavy idle loops live. The baseline must
+// (1) freeze the full-viewport background loops on those pseudos + .bar>i
+// (background-position scroll is a whole-screen repaint a phone GPU can't
+// sustain), and (2) drop the static drop-shadow/blur on the always-animating
+// decorative glyphs so their transform loops stay pure-compositor on a phone.
+// Removing either rule silently brings the jank back, so pin them here.
+test('mobile baseline freezes background loops + de-filters animated glyphs', () => {
+  const html = readFileSync(join(root, 'index.html'), 'utf8');
+  const freeze = /:root\[data-mobile\]\s*body::before[^{]*\{([^}]*)\}/.exec(html);
+  assert.ok(freeze, 'body/header-pseudo freeze rule present');
+  assert.ok(freeze![1]!.includes('animation:none!important'), 'pseudo loops must be frozen');
+  for (const sel of ['body::after', '.app-header::before', '.app-header::after', '.bar>i']) {
+    assert.ok(
+      html.includes(`:root[data-mobile] ${sel}`),
+      `freeze rule must cover ${sel}`,
+    );
+  }
+  const defilter = /:root\[data-mobile\]\s*\.flame[^{]*\{([^}]*)\}/.exec(html);
+  assert.ok(defilter, '.flame de-filter rule present');
+  assert.ok(defilter![1]!.includes('filter:none!important'), 'animated glyphs must drop static filter');
+  for (const sel of ['.ring', '.ring::before', '.badge .bi', '.wrap::before', '.wrap::after']) {
+    assert.ok(
+      html.includes(`:root[data-mobile] ${sel}`),
+      `de-filter rule must cover ${sel}`,
+    );
+  }
+});
+
 // Toasts are fixed at bottom:24px by themes — under [data-mobile] that is
 // behind/over the dock (z-index 70). The baseline must lift them clear.
 test('mobile baseline lifts toasts above the dock', () => {

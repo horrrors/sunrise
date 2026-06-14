@@ -688,18 +688,44 @@ Three rules keep it smooth and collision-free:
   this way, because translating the whole element can't tile a repeating grid
   seamlessly (it drags the mask/horizon with it). Keep it to one such layer, and
   **don't mechanically rewrite a working animation to "obey the rule"** —
-  verify the motion still reads right.
+  verify the motion still reads right. (On mobile such a layer is *frozen* by the
+  baseline — see the mobile bullet below — so it renders static on a phone; fine
+  for a grid, but don't build motion the user *needs* on top of it.)
+  Watch the **static-filter-on-a-moving-element** trap too: a `transform` loop on
+  a glyph that carries a static `filter:drop-shadow`/`blur` (a common `.flame`/
+  `.ring` glow) forces a full re-raster every frame — cheap on desktop, a steady
+  jank source on a phone. The baseline strips those filters on mobile for you.
 - **Prefix every keyframe name with your theme id** (`mytheme-…`). `@keyframes`
   names are global, and during a switch the outgoing and incoming sheets briefly
   coexist — a generic name (`flicker`, `taskIn`) defined by two themes bleeds
   (last parsed wins) for that ~200ms window.
-- **Anchor the signature where mobile keeps it.** `[data-mobile]` forces
-  `animation:none` on `body` and `.app-header` (§5), so put loops on a child or
-  pseudo element (`.brand-mark`, `.wrap`, `.ring`, `body::before`, a decorative
-  pseudo). If a loop must live on `body`/`.app-header`, re-enable it with
-  `:root[data-mobile] <sel>{ animation:… !important }` — cheap transform/opacity
-  loops only. Don't add a per-theme reduced-motion guard; the baseline (§8)
-  already neutralizes every keyframe you write.
+- **Mobile keeps the cheap motion and neutralizes the expensive kind — centrally,
+  for you.** `[data-mobile]` (§5) does more than zero `animation` on the bare
+  `body`/`.app-header` *elements*. Those kills never reached the pseudos and
+  children where the heavy loops actually live, so the baseline also, on mobile:
+  **(a)** freezes the full-viewport background loops on `body::before/::after`,
+  `.app-header::before/::after`, and `.bar>i` — these often scroll
+  `background-position`, a whole-screen repaint a phone GPU can't sustain; and
+  **(b)** drops the *static* `filter`/`drop-shadow`/`blur` on the always-animating
+  decorative glyphs — `.flame`, `.ring` (+ its pseudos), `.badge .bi`, and
+  `.wrap::before/::after` — so their transform loops stay pure-compositor instead
+  of re-rastering a filtered layer every frame. Net effect for an author: a
+  compositor-cheap `transform`/`opacity` loop on a child/pseudo (`.brand-mark`,
+  `.wrap`, `.ring`, a decorative pseudo) **runs on mobile exactly as written**; a
+  `background-position` scroll **freezes**; a transform loop on a statically
+  filtered glyph **keeps moving but loses its glow**. So don't make a static
+  filter essential to legibility, and don't expect a scrolling background to move
+  on a phone. If a loop must live on the bare `body`/`.app-header` element,
+  re-enable it with `:root[data-mobile] <sel>{ animation:… !important }` — cheap
+  transform/opacity only. Don't add a per-theme reduced-motion guard; the baseline
+  (§8) already neutralizes every keyframe you write.
+- **A full-viewport decorative layer must be `position:fixed`, not `absolute`.**
+  Fixed layers never enlarge the scrollable area; an `absolute` layer with
+  negative offsets (`left:-20%; right:-20%`) bleeds past the edge and creates a
+  stray scrollbar on the phone (it did — one theme's bottom glow added ~90px of
+  horizontal scroll). Pin background washes/grids with `position:fixed; inset:0`
+  (or fixed + viewport units), and keep mobile chrome (footer/header padding)
+  tight so a near-empty day fits one screen.
 
 ---
 
