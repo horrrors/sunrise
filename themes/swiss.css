@@ -103,6 +103,19 @@
   font-family:var(--font-ui); font-weight:700;
   font-size:18px; line-height:1; color:var(--red);
   letter-spacing:0;
+  position:relative;
+}
+/* IDLE SIGNATURE — slow metronomic accent on a red grid-structure bar set
+   flush to the baseline of the red brand mark. Almost imperceptible scaleX
+   from the left origin (~3.6s), transform-only, compositor-safe. Anchored on
+   a child pseudo-element so the index.html mobile kill switch (body/.app-header
+   only) never touches it. Entrance comes first, idle starts after via delay. */
+:root[data-theme="swiss"] .brand-mark::after{
+  content:""; position:absolute; left:0; right:0; bottom:-4px; height:2px;
+  background:var(--red); transform-origin:left center;
+  will-change:transform;
+  animation:sw-enterbar .45s cubic-bezier(.2,0,0,1) both,
+            sw-metronome 3.6s ease-in-out .45s infinite;
 }
 :root[data-theme="swiss"] .brand-name{
   font-family:var(--font-display);
@@ -714,8 +727,10 @@
 :root[data-theme="swiss"] .stat-card,
 :root[data-theme="swiss"] .day-rail,
 :root[data-theme="swiss"] .foot{
-  animation:swiss-reveal .42s cubic-bezier(.2,0,0,1) both;
+  animation:swiss-reveal .4s cubic-bezier(.2,0,0,1) both;
 }
+/* refined stagger — even ~40ms cadence top-to-bottom reads as a measured grid
+   reveal, not a loud cascade (the Swiss signature; tuned, intentionally quiet) */
 :root[data-theme="swiss"] .brand{ animation-delay:.02s; }
 :root[data-theme="swiss"] .toolbar{ animation-delay:.06s; }
 :root[data-theme="swiss"] #summaryTitle{ animation-delay:.10s; }
@@ -725,7 +740,7 @@
 :root[data-theme="swiss"] .stat-card:nth-child(4){ animation-delay:.26s; }
 :root[data-theme="swiss"] #todayTitle{ animation-delay:.30s; }
 :root[data-theme="swiss"] .day-rail{ animation-delay:.34s; }
-:root[data-theme="swiss"] .foot{ animation-delay:.40s; }
+:root[data-theme="swiss"] .foot{ animation-delay:.38s; }
 
 @keyframes swiss-reveal{
   from{ opacity:0; transform:translateY(10px); }
@@ -740,5 +755,18 @@
     transform:translate(calc(var(--dx) * 80px), calc(60vh + var(--dy) * 45vh)) rotate(var(--rot));
     opacity:0;
   }
+}
+
+/* ENTRANCE for the brand-mark accent bar — wipes in from the left, in step
+   with the staggered grid reveal. transform/opacity only. */
+@keyframes sw-enterbar{
+  from{ transform:scaleX(0); opacity:0; }
+  to{ transform:scaleX(1); opacity:1; }
+}
+/* IDLE — barely-there metronome: the red bar holds, then eases a hair narrower
+   and back from its left origin. Slow, restrained, editorial. compositor-only. */
+@keyframes sw-metronome{
+  0%,100%{ transform:scaleX(1); }
+  50%{ transform:scaleX(.965); }
 }
 

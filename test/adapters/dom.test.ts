@@ -896,3 +896,34 @@ test('swipe still navigates while a sheet is open (by design)', async () => {
   assert.equal(tracker.todayCard().itemId, items[1], 'swipe navigates under an open sheet');
   assert.equal(registry['dashboard']!.classList.contains('open'), true, 'sheet stays open');
 });
+
+test('applyTheme: instant on first paint, cross-fades on a real switch', async () => {
+  const h = harness();
+  const doc = (
+    globalThis as unknown as { document: { createElement: () => FakeEl; documentElement: FakeEl } }
+  ).document;
+  const created: FakeEl[] = [];
+  const orig = doc.createElement;
+  doc.createElement = (): FakeEl => {
+    const el = orig();
+    created.push(el);
+    return el;
+  };
+  const html = doc.documentElement;
+
+  // First application (boot): no dip, straight to swap once the sheet loads.
+  h.renderer.applyTheme('themes/dawn.css', 'dawn');
+  assert.equal(html.classList.contains('theme-switching'), false, 'no dip on first paint');
+  created.at(-1)!.onload!();
+  assert.equal(html.attrs['data-theme'], 'dawn', 'first theme applied instantly');
+
+  // Second application (real switch): dips immediately, old theme stays visible
+  // through the dip, new theme + dip-release land after the fade window.
+  h.renderer.applyTheme('themes/neon.css', 'neon');
+  assert.equal(html.classList.contains('theme-switching'), true, 'dips on switch');
+  assert.equal(html.attrs['data-theme'], 'dawn', 'old theme stays during the dip');
+  created.at(-1)!.onload!();
+  await new Promise((r) => setTimeout(r, 260));
+  assert.equal(html.attrs['data-theme'], 'neon', 'new theme applied after the dip');
+  assert.equal(html.classList.contains('theme-switching'), false, 'dip released to fade up');
+});

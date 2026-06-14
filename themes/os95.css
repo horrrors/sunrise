@@ -124,6 +124,12 @@
   color: var(--ink);
   font: 700 11px/1 var(--font-ui);
   box-shadow: var(--bevel-out);
+  /* personal signature: the title-bar logo tile idles with a slow, tiny
+     "system is alive" rock — child of .app-header, so it survives the mobile
+     kill switch. compositor-only (transform). */
+  transform-origin: 50% 100%;
+  will-change: transform;
+  animation: os95-mark-idle 6s ease-in-out infinite;
 }
 :root[data-theme="os95"] .brand-name {
   font: 700 clamp(1.05rem, 2.2vw, 1.35rem)/1 var(--font-ui);
@@ -178,7 +184,14 @@
 
 /* ---- desktop furniture ------------------------------------------------------ */
 
-:root[data-theme="os95"] .wrap { padding: 6px 0 26px; }
+:root[data-theme="os95"] .wrap {
+  padding: 6px 0 26px;
+  /* ENTRANCE: the classic Windows-95 window "open" zoom — scale-from-small +
+     opacity — plays once when this theme is switched in. .wrap is a child of
+     body, so it survives the mobile kill switch. compositor-only. */
+  transform-origin: 50% 18%;
+  animation: os95-zoom-in 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
 :root[data-theme="os95"] .section-title {
   /* desktop icon label: white with a hard 1px shadow on the teal */
   font: 700 12px var(--font-ui);
@@ -806,5 +819,16 @@
       rotate(calc(var(--rot) / 2)); /* cards tumble, but heavier than paper */
     opacity: 0;
   }
+}
+/* ENTRANCE: the W95 window-open zoom — small + transparent → full size, smooth
+   (this is the personal one on .wrap; os95-window-in stays stepped for chrome) */
+@keyframes os95-zoom-in {
+  from { opacity: 0; transform: scale(0.82); }
+  to { opacity: 1; transform: scale(1); }
+}
+/* IDLE signature: the brand tile rocks a hair, like a live desktop cursor */
+@keyframes os95-mark-idle {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  50% { transform: rotate(-2deg) translateY(-0.5px); }
 }
 

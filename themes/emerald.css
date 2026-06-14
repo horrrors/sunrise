@@ -127,8 +127,11 @@ a { color: var(--emerald); text-underline-offset: 3px; }
   top: 0;
   z-index: 50;
   backdrop-filter: saturate(1.05) blur(6px);
+  /* clip the traveling sheen horizontally; keep vertical visible so the
+     sticky bottom box-shadow + brass rule still show */
+  overflow-x: clip;
 }
-/* brass thread under header */
+/* brass thread under header — STATIC brass rule */
 .app-header::after {
   content: "";
   position: absolute;
@@ -136,6 +139,31 @@ a { color: var(--emerald); text-underline-offset: 3px; }
   height: 2px;
   background: linear-gradient(90deg, transparent, var(--brass) 18%, var(--brass-l) 50%, var(--brass) 82%, transparent);
   opacity: .55;
+}
+/* IDLE: brass sheen — an oversized highlight glint that translateX-travels
+   along the static brass rule. Compositor-only (transform), clipped by the
+   header's overflow-x. Lives on a pseudo so the mobile kill switch (which
+   only stops animation on body/.app-header themselves) leaves it running. */
+.app-header::before {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  width: 45%;
+  pointer-events: none;
+  z-index: 1;
+  background: linear-gradient(90deg, transparent, rgba(255,247,225,.95) 45%, var(--brass-l) 55%, transparent);
+  opacity: .9;
+  transform: translateX(-130%);
+  will-change: transform;
+  animation: em-sheen 7s cubic-bezier(.55,0,.45,1) 1.2s infinite;
+}
+@keyframes em-sheen {
+  0%   { transform: translateX(-130%); }
+  /* glint sweeps across, then a long dwell off-screen before the next pass */
+  38%  { transform: translateX(330%); }
+  100% { transform: translateX(330%); }
 }
 .app-header { position: relative; }
 
@@ -272,6 +300,29 @@ select:focus-visible {
   gap: 18px;
   margin-bottom: 30px;
 }
+
+/* ============================================================================
+   ENTRANCE — gallery fade-up (plays on switch-in)
+   Restrained: opacity + translateY only, lightly staggered across the brand
+   and the cards so the gallery "settles" into place. Compositor-only.
+   Anchored on child elements so the mobile kill switch leaves it intact.
+   ========================================================================== */
+@keyframes em-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.brand-mark,
+.brand-name,
+.stat-card,
+.today { animation: em-rise .5s cubic-bezier(.2,.8,.2,1) both; }
+.brand-name { animation-delay: .06s; }
+/* light stagger across dashboard cards */
+.dash > .stat-card:nth-child(1) { animation-delay: .08s; }
+.dash > .stat-card:nth-child(2) { animation-delay: .15s; }
+.dash > .stat-card:nth-child(3) { animation-delay: .22s; }
+.dash > .stat-card:nth-child(4) { animation-delay: .29s; }
+.dash > .stat-card:nth-child(n+5) { animation-delay: .34s; }
+.today { animation-delay: .3s; }
 
 /* ============================================================================
    SUMMARY · stat-card

@@ -1428,7 +1428,14 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
 
   // src/adapters/dom-renderer.ts
   var ESC = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
-  var DomRenderer = class {
+  function prefersReducedMotion() {
+    return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+  function nextFrame(cb) {
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => cb());
+    else setTimeout(cb, 0);
+  }
+  var DomRenderer = class _DomRenderer {
     esc(s) {
       return String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ESC[c]);
     }
@@ -1575,8 +1582,19 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
     // flashes the page unstyled. Instead the new sheet loads in a parallel
     // <link> while the old one keeps the page styled, and the swap happens only
     // once it's ready (then it's served from cache, so the flip is instant).
+    //
+    // Around that swap we run a brief cross-fade: the page dips to low opacity
+    // (`html.theme-switching body{opacity}` in index.html's baseline), the sheet
+    // is swapped at the trough so the change is invisible, then the dip is
+    // released so the page fades up under the new palette — at which point each
+    // theme's entrance keyframes fire. It's an opacity *transition*, so the
+    // global reduced-motion reset zeroes it and the mobile kill (animation /
+    // transform only) leaves it intact. The first application (boot) and
+    // reduced-motion go straight to the instant swap.
     themeLoader = null;
     themeToken = 0;
+    themeApplied = false;
+    static THEME_FADE_MS = 170;
     applyTheme(href, id) {
       const link = this.$("themeCss");
       if (!link) return;
@@ -1587,23 +1605,47 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
       }
       if (link.getAttribute("href") === href) {
         document.documentElement.setAttribute("data-theme", id);
+        document.documentElement.classList.remove("theme-switching");
+        this.themeApplied = true;
         return;
       }
-      const loader = document.createElement("link");
-      loader.rel = "stylesheet";
-      loader.href = href;
-      loader.onload = () => {
-        if (token !== this.themeToken) return;
+      const swap = () => {
         this.themeLoader = null;
         link.href = href;
         document.documentElement.setAttribute("data-theme", id);
-        setTimeout(() => loader.remove(), 200);
+        this.themeApplied = true;
       };
+      const loader = document.createElement("link");
+      loader.rel = "stylesheet";
+      loader.href = href;
       loader.onerror = () => {
         if (token !== this.themeToken) return;
         this.themeLoader = null;
         loader.remove();
+        document.documentElement.classList.remove("theme-switching");
         console.error(`[sunrise] theme css failed to load, keeping the current theme: ${href}`);
+      };
+      if (!this.themeApplied || prefersReducedMotion()) {
+        loader.onload = () => {
+          if (token !== this.themeToken) return;
+          swap();
+          setTimeout(() => loader.remove(), 200);
+        };
+        this.themeLoader = loader;
+        document.head.appendChild(loader);
+        return;
+      }
+      const dipStart = performance.now();
+      document.documentElement.classList.add("theme-switching");
+      loader.onload = () => {
+        if (token !== this.themeToken) return;
+        const wait = Math.max(0, _DomRenderer.THEME_FADE_MS - (performance.now() - dipStart));
+        setTimeout(() => {
+          if (token !== this.themeToken) return;
+          swap();
+          nextFrame(() => document.documentElement.classList.remove("theme-switching"));
+          setTimeout(() => loader.remove(), 200);
+        }, wait);
       };
       this.themeLoader = loader;
       document.head.appendChild(loader);

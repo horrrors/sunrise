@@ -75,6 +75,34 @@
   letter-spacing:.005em;
 }
 
+/* ---------- IDLE signature: gently panning seigaiha wave layer ----------
+   An oversized fixed pseudo-element carries its own seigaiha tiling and
+   pans horizontally via translateX. Compositor-only (transform), and it
+   lives on body::before (NOT body), so the mobile kill switch — which only
+   touches body + .app-header — leaves it running. The pan distance equals
+   exactly one 28px tile, so the loop is seamless. Sits behind all content. */
+:root[data-theme="japanese"] body::before{
+  content:"";
+  position:fixed;
+  top:0; left:0;
+  width:140vw; height:100vh;
+  z-index:0;
+  pointer-events:none;
+  background-image:var(--seigaiha);
+  background-size:28px 28px;
+  background-repeat:repeat;
+  opacity:.6;
+  will-change:transform;
+  animation:jp-seigaiha-pan 16s linear infinite;
+}
+/* keep flow content above the wave layer (#fx z-index:400, .modal z-index:200,
+   .app-header z-index:50 already establish their own stacking) */
+:root[data-theme="japanese"] .wrap{ position:relative; z-index:1; }
+@keyframes jp-seigaiha-pan{
+  from{ transform:translateX(0); }
+  to{ transform:translateX(-28px); }
+}
+
 :root[data-theme="japanese"] ::selection{ background:rgba(216,73,43,.22); color:var(--sumi); }
 
 /* soft focus for accessibility */
@@ -190,6 +218,13 @@
   max-width:1080px;
   margin:0 auto;
   padding:clamp(20px,4vw,40px) clamp(16px,4vw,40px) 30px;
+  /* ENTRANCE: sumi ink reveal on theme switch-in — opacity + a slight
+     translateY settle. Compositor-only (opacity/transform), no animated blur. */
+  animation:jp-sumi-reveal .55s cubic-bezier(.22,.61,.36,1) both;
+}
+@keyframes jp-sumi-reveal{
+  from{ opacity:0; transform:translateY(10px); }
+  to{ opacity:1; transform:translateY(0); }
 }
 
 /* ============================================================

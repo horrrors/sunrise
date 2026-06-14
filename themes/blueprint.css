@@ -85,13 +85,17 @@
   position:relative;
 }
 
-/* slow drafting scan sweep across the sheet */
+/* slow drafting scan sweep across the sheet — plotter beam.
+   Oversized fixed layer translated vertically (compositor-only): never
+   animate background-position. The beam band lives at the top and the whole
+   layer is pushed down past the viewport, so the band reads as a travelling
+   scan line. */
 :root[data-theme="blueprint"] body::before{
   content:"";
-  position:fixed; inset:0; z-index:9998; pointer-events:none;
-  background:linear-gradient(180deg, transparent 0%, rgba(54,197,255,.05) 48%, rgba(54,197,255,.09) 50%, rgba(54,197,255,.05) 52%, transparent 100%);
-  background-size:100% 240px;
-  background-repeat:no-repeat;
+  position:fixed; left:0; right:0; top:0; height:200vh; z-index:9998; pointer-events:none;
+  background:linear-gradient(180deg, transparent 0 9vh, rgba(54,197,255,.05) 11vh, rgba(54,197,255,.10) 12vh, rgba(54,197,255,.05) 13vh, transparent 15vh 100%);
+  will-change:transform;
+  transform:translateY(-12vh);
   animation:bp-scan 9s linear infinite;
 }
 /* faint vignette to keep edges deep */
@@ -216,6 +220,28 @@
   grid-template-columns:repeat(4,1fr);
   gap:16px;
   margin-bottom:8px;
+}
+
+/* ---- ENTRANCE: plotter draws the sheet in on theme switch-in ----
+   #dashboard is a child of body (NOT killed by the mobile switch). On
+   switch-in it does a top→bottom scaleY wipe (transform-origin top), like a
+   plotter laying down the drawing row by row, while a cyan pen-line pseudo
+   sweeps down the page. Idle: nothing on the container itself — the body::before
+   scan beam is the continuous signature, so the dashboard stays still once drawn. */
+:root[data-theme="blueprint"] #dashboard{
+  position:relative;
+  transform-origin:top center;
+  animation:bp-plot-in .55s cubic-bezier(.22,.61,.36,1) both;
+}
+/* the plotter pen: a bright cyan rule that races down the sheet as it draws */
+:root[data-theme="blueprint"] #dashboard::before{
+  content:""; position:absolute; left:-4%; right:-4%; top:0; height:2px;
+  z-index:40; pointer-events:none;
+  background:linear-gradient(90deg, transparent, var(--cyan) 18%, var(--white) 50%, var(--cyan) 82%, transparent);
+  box-shadow:0 0 12px rgba(54,197,255,.7);
+  opacity:0;
+  transform-origin:left center;
+  animation:bp-pen .6s cubic-bezier(.5,0,.5,1) .02s both;
 }
 
 /* ====================== STAT CARDS (drawing sheets) ====================== */
@@ -903,9 +929,23 @@
   from{ opacity:0; transform:translateY(-10px) scale(.98); }
   to{ opacity:1; transform:translateY(0) scale(1); }
 }
+/* plotter lays the dashboard down top→bottom (scaleY wipe) */
+@keyframes bp-plot-in{
+  0%{ opacity:0; transform:scaleY(.02); }
+  55%{ opacity:1; }
+  100%{ opacity:1; transform:scaleY(1); }
+}
+/* the pen-line races down the sheet, fading as the draw completes */
+@keyframes bp-pen{
+  0%{ opacity:0; transform:translateY(0) scaleX(.2); }
+  12%{ opacity:1; transform:translateY(2vh) scaleX(1); }
+  85%{ opacity:1; }
+  100%{ opacity:0; transform:translateY(46vh) scaleX(1); }
+}
+/* plotter beam travels top→bottom by translating the oversized layer */
 @keyframes bp-scan{
-  0%{ background-position:0 -240px; }
-  100%{ background-position:0 110vh; }
+  0%{ transform:translateY(-12vh); }
+  100%{ transform:translateY(100vh); }
 }
 @keyframes bp-flash{
   0%{ opacity:.9; } 100%{ opacity:0; }

@@ -89,6 +89,20 @@
   gap: 10px;
   padding: 26px 0 0;
 }
+/* IDLE signature — a hairline "press-rule" that pulses under the nameplate.
+   Anchored on .app-header::after (a pseudo, so the mobile kill switch on
+   .app-header itself does not stop it). It is a normal-flow flex item, so it
+   sits naturally just below the toolbar's heavy double rule. Scales/fades only
+   (compositor-only); slow + small so it reads as a live press, not a blink. */
+:root[data-theme="gazette"] .app-header::after {
+  content: "";
+  align-self: stretch;
+  height: 1px;
+  background: var(--line-strong);
+  transform-origin: center;
+  will-change: transform, opacity;
+  animation: gz-press 6s ease-in-out infinite;
+}
 :root[data-theme="gazette"] .brand { display: flex; align-items: center; gap: 16px; }
 :root[data-theme="gazette"] .brand-mark {
   display: grid;
@@ -157,7 +171,13 @@
 
 /* ---- column furniture ------------------------------------------------------ */
 
-:root[data-theme="gazette"] .wrap { padding: 8px 0 28px; }
+:root[data-theme="gazette"] .wrap {
+  padding: 8px 0 28px;
+  /* ENTRANCE — "off the press": the front-page column prints in (opacity + a
+     short upward slide) when the user switches into this theme. Anchored on
+     .wrap (a child, mobile-safe). Compositor-only. */
+  animation: gz-press-in 0.5s ease both;
+}
 :root[data-theme="gazette"] .section-title {
   display: flex;
   align-items: center;
@@ -688,6 +708,16 @@
 
 @keyframes gz-task-in {
   from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+/* IDLE — press-rule pulse (compositor-only: transform + opacity) */
+@keyframes gz-press {
+  0%, 100% { transform: scaleX(0.55); opacity: 0.4; }
+  50% { transform: scaleX(1); opacity: 0.95; }
+}
+/* ENTRANCE — "off the press" print-in (compositor-only) */
+@keyframes gz-press-in {
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: none; }
 }
 @keyframes gz-flash {

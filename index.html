@@ -54,6 +54,12 @@
 /* app baseline — mechanism every theme shares; themes set tokens / override behavior only */
 *,*::before,*::after{box-sizing:border-box}
 .task input{position:absolute;opacity:0;width:0;height:0;pointer-events:none}
+/* theme-switch cross-fade — DomRenderer.applyTheme dips the page to swap the
+   stylesheet invisibly, then releases to fade up under the new palette. It's an
+   opacity transition, so the reduced-motion reset below zeroes it and the
+   [data-mobile] kill (animation/transform only) leaves it intact. */
+body{transition:opacity .16s ease}
+:root.theme-switching body{opacity:.18}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
 /* keyboard focus highlight — theme sets the look via --focus-ring */
 #taskList .task:has(input:focus-visible){outline:var(--focus-ring,3px solid var(--accent,#f6c343));outline-offset:3px;border-radius:var(--r,8px)}

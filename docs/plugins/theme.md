@@ -658,6 +658,48 @@ spring ease (`cubic-bezier(.2,1.5,.4,1)`) on the checkbox check feels good.
 circle/rectangle shapes) and consume `--dx`/`--dy`/`--rot`/`--i` in the keyframe
 so the burst looks hand-made rather than uniform.
 
+**Signature motion (entrance + idle loop).** Give your theme a personality in
+motion: a one-shot *entrance* that plays when the user switches into it, plus a
+continuous *idle signature* that loops. The app cross-fades between themes for
+you — it dips the page, swaps the stylesheet invisibly, and fades up; you get
+this free, write nothing — and your entrance fires on that fade-up because the
+`:root[data-theme="<id>"]` rules start matching. The pattern, on one element:
+
+```css
+@keyframes mytheme-enter { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:none } }
+@keyframes mytheme-idle  { 0%,100% { transform:none } 50% { transform:translateY(-2px) } }
+:root[data-theme="mytheme"] .brand-mark {
+  animation: mytheme-enter .45s ease both, mytheme-idle 5s ease-in-out .45s infinite;
+  will-change: transform;
+}
+```
+
+Three rules keep it smooth and collision-free:
+
+- **Prefer `transform`/`opacity`; never animate `filter`/`backdrop-filter`.**
+  Transform and opacity run on the compositor (off the main thread) — make them
+  your default for loops and entrances. The real frame-killers are animated
+  `filter`, `backdrop-filter`, and `box-shadow`: keep those *static* (for look),
+  never inside a keyframe — stacking them is what dropped frames on the first
+  switch and on phones. Animating `background-position` is a middle ground: it
+  repaints, but a *single* scrolling-texture layer is fine and sometimes the
+  right tool — the bundled arcade themes scroll their perspective grid floor
+  this way, because translating the whole element can't tile a repeating grid
+  seamlessly (it drags the mask/horizon with it). Keep it to one such layer, and
+  **don't mechanically rewrite a working animation to "obey the rule"** —
+  verify the motion still reads right.
+- **Prefix every keyframe name with your theme id** (`mytheme-…`). `@keyframes`
+  names are global, and during a switch the outgoing and incoming sheets briefly
+  coexist — a generic name (`flicker`, `taskIn`) defined by two themes bleeds
+  (last parsed wins) for that ~200ms window.
+- **Anchor the signature where mobile keeps it.** `[data-mobile]` forces
+  `animation:none` on `body` and `.app-header` (§5), so put loops on a child or
+  pseudo element (`.brand-mark`, `.wrap`, `.ring`, `body::before`, a decorative
+  pseudo). If a loop must live on `body`/`.app-header`, re-enable it with
+  `:root[data-mobile] <sel>{ animation:… !important }` — cheap transform/opacity
+  loops only. Don't add a per-theme reduced-motion guard; the baseline (§8)
+  already neutralizes every keyframe you write.
+
 ---
 
 ## 8. Reduced motion (app-provided)

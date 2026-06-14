@@ -89,7 +89,6 @@
   image-rendering:pixelated;
   position:relative;
   letter-spacing:.4px;
-  animation:crt-flicker 4s steps(40,end) infinite;
 }
 
 /* ===== animated back layer: neon cell-grid floating away into the distance =====
@@ -126,6 +125,24 @@
     radial-gradient(130% 120% at 50% 50%, transparent 55%, rgba(0,0,0,.62) 100%);
   mix-blend-mode:multiply;
   opacity:.7;
+}
+
+/* IDLE: phone-safe CRT flicker (opacity sheet on a child pseudo — replaces the
+   body-element filter:brightness flicker). The cyber grid above is untouched. */
+:root[data-theme="arcade-animated-v2"] .wrap::before{
+  content:""; position:fixed; inset:0; z-index:80; pointer-events:none;
+  background:#05010f; opacity:0; will-change:opacity;
+  animation:arcv2-crt 4s steps(40,end) infinite;
+}
+/* ENTRANCE: CRT power-on flash. */
+:root[data-theme="arcade-animated-v2"] .wrap::after{
+  content:""; position:fixed; inset:0; z-index:81; pointer-events:none;
+  transform-origin:50% 50%;
+  background:
+    linear-gradient(0deg, transparent 49.3%, rgba(234,255,242,.85) 50%, transparent 50.7%),
+    radial-gradient(circle at 50% 50%, rgba(46,232,232,.30), transparent 60%);
+  opacity:0; will-change:transform,opacity;
+  animation:arcv2-crt-on .55s cubic-bezier(.6,.01,.25,1) both;
 }
 
 :root[data-theme="arcade-animated-v2"] .wrap,
@@ -859,11 +876,12 @@
   from{ opacity:0; transform:translateY(10px); }
   to{ opacity:1; transform:translateY(0); }
 }
-@keyframes crt-flicker{
-  0%,100%{ filter:brightness(1); }
-  48%{ filter:brightness(1.01); }
-  50%{ filter:brightness(.97); }
-  52%{ filter:brightness(1.02); }
+@keyframes arcv2-crt{ 0%,46%,54%,100%{ opacity:0; } 50%{ opacity:.10; } }
+@keyframes arcv2-crt-on{
+  0%{ opacity:0; transform:scaleY(.004); }
+  10%{ opacity:.85; transform:scaleY(.004); }
+  40%{ opacity:.45; transform:scaleY(1); }
+  100%{ opacity:0; transform:scaleY(1); }
 }
 @keyframes blink{
   0%,49%{ opacity:1; }

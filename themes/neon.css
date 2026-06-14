@@ -72,7 +72,7 @@
   position:relative;
 }
 
-/* CRT scanlines */
+/* CRT scanlines (static vignette + fine grid) */
 :root[data-theme="neon"] body::before{
   content:"";
   position:fixed; inset:0; z-index:9999;
@@ -82,6 +82,28 @@
     radial-gradient(140% 120% at 50% 50%, transparent 60%, rgba(0,0,0,.55) 100%);
   mix-blend-mode:multiply;
   opacity:.55;
+}
+
+/* IDLE — drifting scanline sweep: oversized (200vh) layer translated on
+   the compositor (NOT background-position) by an exact multiple of the
+   14px gradient tile, so the loop is seamless. Lives on body::after, a
+   pseudo, so the mobile body{animation:none} kill switch does not touch it. */
+:root[data-theme="neon"] body::after{
+  content:"";
+  position:fixed; left:0; right:0; top:0;
+  height:200vh; z-index:9998;
+  pointer-events:none;
+  background:repeating-linear-gradient(
+    0deg,
+    transparent 0 6px,
+    rgba(0,240,255,.05) 6px 7px,
+    transparent 7px 13px,
+    rgba(255,0,168,.04) 13px 14px
+  );
+  mix-blend-mode:screen;
+  opacity:.6;
+  will-change:transform;
+  animation:neon-scan 7s linear infinite;
 }
 
 :root[data-theme="neon"] ::selection{ background:rgba(0,240,255,.30); color:#fff; }
@@ -106,6 +128,10 @@
   content:""; position:absolute; left:0; right:0; bottom:-1px; height:1px;
   background:linear-gradient(90deg, transparent, var(--cyan), var(--magenta), transparent);
   box-shadow:var(--glow-cyan);
+  /* IDLE — neon-tube respiration (opacity only). On a pseudo of
+     .app-header, so it survives the mobile .app-header{animation:none}. */
+  will-change:opacity;
+  animation:neon-tube 5.5s ease-in-out infinite;
 }
 
 :root[data-theme="neon"] .brand{ display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
@@ -173,6 +199,9 @@
 :root[data-theme="neon"] .wrap{
   max-width:1100px; margin:0 auto;
   padding:clamp(18px,4vw,38px) clamp(14px,4vw,40px) 24px;
+  /* ENTRANCE — neon "power-on": a few opacity flickers as the theme boots.
+     .wrap is a child of body, so it is not hit by the mobile kill switch. */
+  animation:neon-poweron .6s steps(1,end) both;
 }
 
 :root[data-theme="neon"] .dash{
@@ -759,5 +788,34 @@
 @keyframes neon-confetti{
   0%{ transform:translateY(0) rotate(0deg); opacity:1; }
   100%{ transform:translateY(105vh) rotate(720deg); opacity:0; }
+}
+
+/* IDLE — scanline sweep: translate the oversized (200vh) layer up by
+   exactly 10 tile periods (140px = 10 x 14px gradient repeat) so the loop
+   restarts on a tile boundary and the drift is truly seamless. Anything
+   not a multiple of the 14px tile (e.g. 50vh) snaps on each restart.
+   transform only. */
+@keyframes neon-scan{
+  from{ transform:translateY(0); }
+  to{ transform:translateY(-140px); }
+}
+
+/* IDLE — neon-tube respiration: gentle opacity breathing. opacity only. */
+@keyframes neon-tube{
+  0%,100%{ opacity:.55; }
+  50%{ opacity:1; }
+}
+
+/* ENTRANCE — neon power-on flicker: 2-3 opacity stutters, then steady.
+   opacity only. */
+@keyframes neon-poweron{
+  0%{ opacity:0; }
+  12%{ opacity:.85; }
+  20%{ opacity:.1; }
+  34%{ opacity:1; }
+  44%{ opacity:.3; }
+  58%{ opacity:1; }
+  70%{ opacity:.6; }
+  100%{ opacity:1; }
 }
 

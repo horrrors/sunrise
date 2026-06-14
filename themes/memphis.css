@@ -122,6 +122,11 @@
   border-radius:50% 50% 50% 12px;   /* blob */
   transform:rotate(-6deg);
   box-shadow:var(--shadow-cyan);
+  /* SIGNATURE: springy pop-in on theme switch, then a gentle perpetual jiggle */
+  will-change:transform;
+  animation:
+    mem-mark-enter .5s cubic-bezier(.34,1.56,.64,1) both,
+    mem-mark-jiggle 5.5s ease-in-out .5s infinite;
 }
 :root[data-theme="memphis"] .brand-name{
   font-family:var(--font-display);
@@ -188,6 +193,30 @@
 :root[data-theme="memphis"] .wrap{
   max-width:1120px; margin:0 auto;
   padding:clamp(22px,4vw,40px) clamp(14px,4vw,40px) 24px;
+  position:relative;
+}
+/* SIGNATURE idle decor — a Memphis squiggle that sways (child of .wrap, so it
+   survives the mobile body/.app-header kill switch). transform/opacity only. */
+:root[data-theme="memphis"] .wrap::before{
+  content:""; position:absolute; z-index:-1; pointer-events:none;
+  top:-6px; left:50%;
+  width:80px; height:22px;
+  background:
+    radial-gradient(circle at 8px 17px, transparent 7px, var(--violet) 7px 9px, transparent 9px) 0 0 / 24px 22px;
+  background-repeat:repeat-x;
+  opacity:.85;
+  will-change:transform;
+  animation:mem-squiggle 6.5s ease-in-out infinite;
+}
+/* SIGNATURE idle decor — a hard-outlined dot that bobs + pulses. */
+:root[data-theme="memphis"] .wrap::after{
+  content:""; position:absolute; z-index:-1; pointer-events:none;
+  top:10px; right:6px;
+  width:18px; height:18px; border-radius:50%;
+  background:var(--yellow);
+  border:var(--bord) solid var(--black);
+  will-change:transform;
+  animation:mem-dot-bob 7s ease-in-out infinite;
 }
 
 :root[data-theme="memphis"] .section-title{
@@ -888,6 +917,33 @@
     transform:translate(calc(var(--dx) * 46vw), calc(60vh + var(--dy) * 45vh)) rotate(var(--rot));
     opacity:0;
   }
+}
+
+/* ---- personal signature: entrance pop + idle jiggle (compositor-only) ---- */
+/* ENTRANCE: springy "pop in" with overshoot. Lands on the brand-mark's
+   baked-in -6deg tilt so the static transform is preserved. */
+@keyframes mem-mark-enter{
+  0%{   opacity:0; transform:scale(.2) rotate(-26deg); }
+  60%{  opacity:1; transform:scale(1.22) rotate(4deg); }
+  100%{ opacity:1; transform:scale(1) rotate(-6deg); }
+}
+/* IDLE: the brand blob bobs + rotates around its tilted rest pose. */
+@keyframes mem-mark-jiggle{
+  0%,100%{ transform:translateY(0) rotate(-6deg); }
+  25%{    transform:translateY(-3px) rotate(-10deg); }
+  50%{    transform:translateY(0) rotate(-2deg); }
+  75%{    transform:translateY(-2px) rotate(-9deg); }
+}
+/* IDLE: a decorative squiggle slowly sways side to side. */
+@keyframes mem-squiggle{
+  0%,100%{ transform:translateX(-50%) translateY(0) rotate(-3deg); }
+  50%{     transform:translateX(-50%) translateY(-5px) rotate(5deg); }
+}
+/* IDLE: a decorative dot orbits a tiny loop and pulses in scale. */
+@keyframes mem-dot-bob{
+  0%,100%{ transform:translate(0,0) scale(1); }
+  33%{     transform:translate(4px,-6px) scale(1.18); }
+  66%{     transform:translate(-3px,-2px) scale(.9); }
 }
 
 /* ====================== RESPONSIVE ====================== */

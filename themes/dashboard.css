@@ -109,6 +109,20 @@ body{
   color:#fff;
   background:linear-gradient(135deg, var(--fuchsia), var(--violet));
   box-shadow:var(--sh-fuchsia);
+  /* living brand-mark: deal in on switch, then a slow compositor-only pulse.
+     opacity/transform only — gradient is left untouched (per look rules). */
+  will-change:transform, opacity;
+  transform-origin:center;
+  animation:dash-mark-in .5s cubic-bezier(.22,.9,.3,1) both,
+            dash-mark-pulse 6s ease-in-out .5s infinite;
+}
+@keyframes dash-mark-in{
+  from{ opacity:0; transform:scale(.82); }
+  to{ opacity:1; transform:scale(1); }
+}
+@keyframes dash-mark-pulse{
+  0%,100%{ opacity:1; transform:scale(1); }
+  50%{ opacity:.86; transform:scale(1.045); }
 }
 .brand-name{
   font-family:var(--display); font-weight:800; letter-spacing:.16em;
@@ -189,6 +203,18 @@ body{
   box-shadow:var(--sh-1);
   transition:transform .2s, box-shadow .25s, border-color .2s;
   overflow:hidden;
+  /* cards "deal in" on theme switch-in — staggered translateY + opacity. */
+  animation:dash-deal-in .5s cubic-bezier(.22,.9,.3,1) both;
+}
+/* stagger the deal — each card lands a beat after the last */
+.dash .stat-card:nth-child(1){ animation-delay:.04s; }
+.dash .stat-card:nth-child(2){ animation-delay:.12s; }
+.dash .stat-card:nth-child(3){ animation-delay:.2s; }
+.dash .stat-card:nth-child(4){ animation-delay:.28s; }
+.dash .stat-card:nth-child(n+5){ animation-delay:.36s; }
+@keyframes dash-deal-in{
+  from{ opacity:0; transform:translateY(16px); }
+  to{ opacity:1; transform:translateY(0); }
 }
 .stat-card::before{
   content:""; position:absolute; inset:0 0 auto 0; height:4px;
