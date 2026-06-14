@@ -3,6 +3,13 @@ import assert from 'node:assert/strict';
 import { WindowPluginRegistry } from '../../src/adapters/window-registry.ts';
 import type { Pack, Theme } from '../../src/domain/types/entities.ts';
 
+// addTheme materializes inline css via URL.createObjectURL — stub it for the test env.
+(globalThis as { URL: { createObjectURL?: (b: unknown) => string } }).URL.createObjectURL ??=
+  (() => {
+    let n = 0;
+    return () => `blob:test/${n++}`;
+  })();
+
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
@@ -184,4 +191,55 @@ test('packs() returns a snapshot that does not mutate when more packs register l
   reg.registerPack({ ...VALID_PACK, id: 'p2' });
   assert.equal(snapshot.length, 1); // snapshot unchanged
   assert.equal(reg.packs().length, 2); // fresh call reflects the new pack
+});
+
+// ---------------------------------------------------------------------------
+// Write-side PluginRegistry (used by the import pipeline)
+// ---------------------------------------------------------------------------
+
+test('addPack registers and hasPack reflects it', () => {
+  const r = new WindowPluginRegistry();
+  r.addPack(VALID_PACK);
+  assert.ok(r.hasPack('test-pack'));
+  assert.equal(r.packs().length, 1);
+});
+
+test('addPack throws on duplicate id', () => {
+  const r = new WindowPluginRegistry();
+  r.addPack(VALID_PACK);
+  assert.throws(() => r.addPack(VALID_PACK), /already exists/i);
+});
+
+test('addPack throws (not swallows) on invalid pack', () => {
+  const r = new WindowPluginRegistry();
+  assert.throws(() => r.addPack({ schema: 'sunrise.pack/v1', id: 'bad' }), /required|expected/);
+});
+
+test('addTheme materializes inline css to a cssHref', () => {
+  const r = new WindowPluginRegistry();
+  r.addTheme({ schema: 'sunrise.theme/v1', id: 'x', name: 'X', version: '1.0.0', css: ':root{}' });
+  const t = r.themes().find((t) => t.id === 'x')!;
+  assert.equal(typeof t.cssHref, 'string');
+  assert.ok(t.cssHref!.length > 0);
+  assert.ok(r.hasTheme('x'));
+});
+
+test('addTheme keeps an explicit cssHref untouched', () => {
+  const r = new WindowPluginRegistry();
+  r.addTheme(VALID_THEME);
+  assert.equal(r.themes().find((t) => t.id === 'neon')!.cssHref, 'themes/neon.css');
+});
+
+test('addTheme throws on a theme with neither css nor cssHref', () => {
+  const r = new WindowPluginRegistry();
+  assert.throws(
+    () => r.addTheme({ schema: 'sunrise.theme/v1', id: 'x', name: 'X', version: '1.0.0' }),
+    /css|cssHref/,
+  );
+});
+
+test('addTheme throws on duplicate id', () => {
+  const r = new WindowPluginRegistry();
+  r.addTheme(VALID_THEME);
+  assert.throws(() => r.addTheme(VALID_THEME), /already exists/i);
 });
