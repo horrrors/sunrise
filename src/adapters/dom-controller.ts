@@ -3,6 +3,7 @@ import type { TodayVM } from '../domain/types/view-models.ts';
 import type { DomRenderer } from './dom-renderer.ts';
 import type { RenderLabels } from './types/dom-renderer.ts';
 import type { Importer } from '../domain/plugins/importer.ts';
+import type { Projections } from '../domain/projections.ts';
 import { ImportError, ValidationError } from '../domain/errors.ts';
 
 /**
@@ -13,13 +14,20 @@ import { ImportError, ValidationError } from '../domain/errors.ts';
  */
 export class DomController {
   private t: Tracker;
+  private q: Projections;
   private r: DomRenderer;
   private imp: Importer;
   private activeModal: string | null = null;
   private activeSheet: 'menu' | 'stats' | null = null;
   private motdTimer: ReturnType<typeof setInterval> | null = null;
-  constructor(tracker: Tracker, renderer: DomRenderer, importer: Importer) {
+  constructor(
+    tracker: Tracker,
+    projections: Projections,
+    renderer: DomRenderer,
+    importer: Importer,
+  ) {
     this.t = tracker;
+    this.q = projections;
     this.r = renderer;
     this.imp = importer;
   }
@@ -28,7 +36,7 @@ export class DomController {
     this.applyStaticLabels();
     const href = this.t.activeThemeHref();
     if (href != null) this.r.applyTheme(href, this.t.activeThemeId() ?? '');
-    this.r.applyTrackColors(this.t.trackColors());
+    this.r.applyTrackColors(this.q.trackColors());
     this.r.setLang(this.t.currentLang());
     this.wire();
     this.renderAll();
@@ -38,7 +46,7 @@ export class DomController {
   // ----- labels --------------------------------------------------------------
 
   private labels(): RenderLabels {
-    const u = (k: string): string => this.t.ui(k);
+    const u = (k: string): string => this.q.ui(k);
     return {
       todayVert: u('todayVert'),
       restVert: u('restVert'),
@@ -60,7 +68,7 @@ export class DomController {
   }
 
   private applyStaticLabels(): void {
-    const u = (k: string): string => this.t.ui(k);
+    const u = (k: string): string => this.q.ui(k);
     // Icon-only controls: one ui string doubles as aria-label and hover
     // tooltip (data-tip, styled by the canonical baseline in index.html).
     // The ✕ buttons reuse scClose — the same "close" wording as the Esc row.
@@ -85,7 +93,7 @@ export class DomController {
     }
     this.r.setAttr('packSelect', 'aria-label', u('pack'));
     this.r.setAttr('themeSelect', 'aria-label', u('theme'));
-    this.r.setAttr('daySelect', 'aria-label', this.t.itemLabel());
+    this.r.setAttr('daySelect', 'aria-label', this.q.itemLabel());
     this.r.setText('summaryTitle', u('summaryTitle'));
     this.r.setText('todayTitle', u('todayTitle'));
     // Language toggle: the button shows the language it switches TO.
@@ -101,10 +109,10 @@ export class DomController {
 
   private renderAll(): void {
     const lbl = this.labels();
-    const today = this.t.todayCard();
-    this.r.renderSelectors(this.t.selectors());
+    const today = this.q.todayCard();
+    this.r.renderSelectors(this.q.selectors());
     this.r.renderToday(today, lbl);
-    this.r.renderDashboard(this.t.dashboard(), lbl);
+    this.r.renderDashboard(this.q.dashboard(), lbl);
     this.renderComeback();
     this.renderTrophies();
     this.bindTodayHandlers(today);
@@ -112,17 +120,17 @@ export class DomController {
   }
 
   private renderComeback(): void {
-    const cb = this.t.comeback();
-    const text = this.t.ui('comeback').replace('{n}', String(cb.days));
+    const cb = this.q.comeback();
+    const text = this.q.ui('comeback').replace('{n}', String(cb.days));
     this.r.renderComeback({ show: cb.show, text });
   }
 
   private renderTrophies(): void {
-    this.r.renderTrophies(this.t.trophies(), this.t.ui('trophies'));
+    this.r.renderTrophies(this.q.trophies(), this.q.ui('trophies'));
   }
 
   private renderCardMap(): void {
-    this.r.renderCardMap(this.t.cardMap(), this.t.ui('cardMap'));
+    this.r.renderCardMap(this.q.cardMap(), this.q.ui('cardMap'));
   }
 
   private openCardMap(): void {
@@ -136,7 +144,7 @@ export class DomController {
   }
 
   private renderShortcuts(): void {
-    const u = (k: string): string => this.t.ui(k);
+    const u = (k: string): string => this.q.ui(k);
     this.r.renderShortcuts(
       [
         { keys: '← / →', label: u('scDay') },
@@ -163,12 +171,12 @@ export class DomController {
         cb.onchange = (e) => this.setTaskChecked(t.id, (e.target as HTMLInputElement).checked);
       }
       this.bindCopy('copy_' + t.id, () => t.text, false);
-      this.bindCopy('copyai_' + t.id, () => this.t.aiPrompt(t.text, t.guidance), true);
+      this.bindCopy('copyai_' + t.id, () => this.q.aiPrompt(t.text, t.guidance), true);
     }
     if (vm.show.warmup && vm.warmup) {
       const warmup = vm.warmup;
       this.bindCopy('copyWarm', () => warmup, false);
-      this.bindCopy('copyaiWarm', () => this.t.aiPrompt(warmup), true);
+      this.bindCopy('copyaiWarm', () => this.q.aiPrompt(warmup), true);
     }
     if (vm.show.reflection) {
       const reflect = this.r.$('reflect') as HTMLTextAreaElement | null;
@@ -187,7 +195,7 @@ export class DomController {
     if (!el) return;
     (el as HTMLElement).onclick = () => {
       this.copyText(text());
-      this.r.toast('toast', this.r.esc(this.t.ui(ai ? 'copiedAi' : 'copied')));
+      this.r.toast('toast', this.r.esc(this.q.ui(ai ? 'copiedAi' : 'copied')));
     };
   }
 
@@ -217,21 +225,21 @@ export class DomController {
 
   // Freshly-imported plugin's display name — selectors already carry resolved labels.
   private packName(id: string): string {
-    return this.t.selectors().packs.find((p) => p.id === id)?.label ?? id;
+    return this.q.selectors().packs.find((p) => p.id === id)?.label ?? id;
   }
   private themeName(id: string): string {
-    return this.t.selectors().themes.find((t) => t.id === id)?.label ?? id;
+    return this.q.selectors().themes.find((t) => t.id === id)?.label ?? id;
   }
 
   private setTaskChecked(taskId: string, checked: boolean): void {
-    const was = this.t.todayCard().complete;
+    const was = this.q.todayCard().complete;
     const res = this.t.setTaskDone(taskId, checked);
     // Fire effects only on the not-complete → complete transition (parity).
-    if (!was && this.t.todayCard().complete) {
+    if (!was && this.q.todayCard().complete) {
       this.r.celebrate();
       if (res.unlockedBadges.length) {
-        const tro = this.t.trophies().find((x) => x.id === res.unlockedBadges[0]);
-        if (tro) this.r.badgeToast(this.t.ui('newTrophy'), tro.title, tro.icon);
+        const tro = this.q.trophies().find((x) => x.id === res.unlockedBadges[0]);
+        if (tro) this.r.badgeToast(this.q.ui('newTrophy'), tro.title, tro.icon);
       }
       if (res.surprise) this.r.toast('toast', this.r.esc(res.surprise));
     }
@@ -240,7 +248,7 @@ export class DomController {
   }
 
   private syncDayNav(): void {
-    const sel = this.t.selectors();
+    const sel = this.q.selectors();
     const i = sel.items.findIndex((o) => o.selected);
     const prev = this.r.$('prevDay') as HTMLButtonElement | null;
     const next = this.r.$('nextDay') as HTMLButtonElement | null;
@@ -317,11 +325,11 @@ export class DomController {
   }
 
   private taskDone(taskId: string): boolean {
-    return this.t.todayCard().tasks.find((t) => t.id === taskId)?.done ?? false;
+    return this.q.todayCard().tasks.find((t) => t.id === taskId)?.done ?? false;
   }
 
   private moveTaskFocus(delta: number): void {
-    const card = this.t.todayCard();
+    const card = this.q.todayCard();
     if (card.rest) return;
     const ids = card.tasks.map((t) => t.id);
     if (!ids.length) return;
@@ -340,7 +348,7 @@ export class DomController {
       pack.onchange = () => {
         this.closeSheets();
         this.t.selectPack(pack.value);
-        this.r.applyTrackColors(this.t.trackColors());
+        this.r.applyTrackColors(this.q.trackColors());
         this.r.setLang(this.t.currentLang());
         this.applyStaticLabels(); // ui() answers come from the new pack now
         this.startMotd();
@@ -437,23 +445,23 @@ export class DomController {
             const out = this.imp.import(String(rd.result));
             if (out.kind === 'pack') {
               this.t.selectPack(out.id);
-              this.r.applyTrackColors(this.t.trackColors());
+              this.r.applyTrackColors(this.q.trackColors());
               this.r.setLang(this.t.currentLang());
               this.applyStaticLabels();
               this.startMotd();
-              alert(this.t.ui('importedPack').replace('{name}', this.packName(out.id)));
+              alert(this.q.ui('importedPack').replace('{name}', this.packName(out.id)));
             } else if (out.kind === 'theme') {
               this.t.selectTheme(out.id);
               const href = this.t.activeThemeHref();
               if (href != null) this.r.applyTheme(href, out.id);
-              alert(this.t.ui('importedTheme').replace('{name}', this.themeName(out.id)));
+              alert(this.q.ui('importedTheme').replace('{name}', this.themeName(out.id)));
             } else {
-              alert(this.t.ui('importOk')); // progress (already applied; pack switched if needed)
+              alert(this.q.ui('importOk')); // progress (already applied; pack switched if needed)
             }
             this.renderAll();
           } catch (err) {
             if (err instanceof ImportError || err instanceof ValidationError) {
-              alert(this.t.ui('importFail').replace('{e}', err.message));
+              alert(this.q.ui('importFail').replace('{e}', err.message));
             } else {
               throw err;
             }
@@ -555,7 +563,7 @@ export class DomController {
       clearInterval(this.motdTimer);
       this.motdTimer = null;
     }
-    const mottos = this.t.mottos();
+    const mottos = this.q.mottos();
     if (!mottos.length) return;
     this.r.setText('motd', mottos[0]!);
     if (mottos.length > 1) {

@@ -1,4 +1,5 @@
 import { Tracker } from './domain/tracker.ts';
+import { Projections } from './domain/projections.ts';
 import { Streaks } from './domain/streaks.ts';
 import { ProgressStats } from './domain/progress-stats.ts';
 import { BadgeEngine } from './domain/badge-engine.ts';
@@ -53,23 +54,37 @@ function boot(): void {
   const renderer = new DomRenderer();
   try {
     migrateLegacy();
+    // Shared calculators — the same instances feed the write model (Tracker) and
+    // the read model (Projections).
     const streaks = new Streaks();
     const stats = new ProgressStats();
+    const clock = new SystemClock();
+    const badges = new BadgeEngine(streaks, stats);
     const tracker = new Tracker({
       packs: registry,
       themes: registry,
       progressStore: new LocalStorageProgressStore(),
       sessionStore: new LocalStorageSessionStore(),
-      clock: new SystemClock(),
+      clock,
       random: new MathRandom(),
       streaks,
       stats,
-      badges: new BadgeEngine(streaks, stats),
+      badges,
       defaultUi: DEFAULT_UI,
       genericBadges: GENERIC_BADGES,
       defaultStreakWords: DEFAULT_STREAK_WORDS,
       defaultMottos: DEFAULT_MOTTOS,
       supportedLangs: SUPPORTED_LANGS,
+    });
+    const projections = new Projections(() => tracker.view(), {
+      clock,
+      streaks,
+      stats,
+      badges,
+      packs: registry,
+      themes: registry,
+      defaultUi: DEFAULT_UI,
+      defaultStreakWords: DEFAULT_STREAK_WORDS,
     });
     // Import pipeline: replay user-imported packs/themes from storage AFTER the
     // built-in/script-tag plugins are registered, so a built-in wins any id clash.
@@ -79,7 +94,7 @@ function boot(): void {
     );
     importer.loadStored();
     tracker.init(); // throws if no packs registered (now sees stored plugins too)
-    new DomController(tracker, renderer, importer).start();
+    new DomController(tracker, projections, renderer, importer).start();
   } catch (err) {
     console.error('[sunrise] boot failed:', err);
     renderer.stub(

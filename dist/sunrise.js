@@ -130,18 +130,6 @@
     return v[lang] ?? v[DEFAULT_LANG] ?? Object.values(v)[0] ?? "";
   }
 
-  // src/domain/plural.ts
-  function pluralIndex(lang, n) {
-    if (lang === "ru") {
-      const m10 = n % 10;
-      const m100 = n % 100;
-      if (m10 === 1 && m100 !== 11) return 0;
-      if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return 1;
-      return 2;
-    }
-    return n === 1 ? 0 : 1;
-  }
-
   // src/domain/tracker.ts
   var SURPRISE_CHANCE = 0.12;
   var Tracker = class {
@@ -188,26 +176,10 @@
       this.deps.progressStore.save(this.pack.id, this.progress);
     }
     // ----- helpers -------------------------------------------------------------
-    uiText(k) {
-      const fromPack = this.pack.ui && this.pack.ui[k];
-      if (fromPack != null) return tr(fromPack, this.lang);
-      const def = this.deps.defaultUi[k];
-      return def != null ? tr(def, this.lang) : "";
-    }
-    lbl(k, fallbackKey) {
-      const l = this.pack.settings && this.pack.settings.labels;
-      const v = l && l[k];
-      return v != null ? tr(v, this.lang) : this.uiText(fallbackKey);
-    }
     itemOf(id) {
       const it = this.allItems.find((x) => x.id === id);
       if (!it) throw new Error(`unknown item "${id}"`);
       return it;
-    }
-    // Unlike itemOf this never throws: the implicit "rest" track is undeclared by design.
-    trackMeta(id) {
-      for (const t of this.pack.tracks) if (t.id === id) return t;
-      return { id, label: "", icon: "" };
     }
     // The card to open on load: the first unfinished card at or after the stored
     // cursor (so a partial card resumes; a finished one advances to the next). No
@@ -229,9 +201,6 @@
     }
     itemIndex() {
       return this.allItems.findIndex((it) => it.id === this.currentItemId);
-    }
-    groupOrdinal(id) {
-      return this.pack.groups.indexOf(this.groupOfItem[id]) + 1;
     }
     // Badge awards must stick the moment a trophy shows as earned, so every
     // progress mutation syncs awards — not just item completion (which also toasts).
@@ -314,166 +283,22 @@
     exportProgress() {
       return JSON.stringify({ packId: this.pack.id, ...this.progress.toJSON() }, null, 2);
     }
-    // ----- queries -------------------------------------------------------------
-    selectors() {
-      const packs = this.deps.packs.packs().map((p) => ({
-        id: p.id,
-        label: tr(p.name, this.lang),
-        selected: p.id === this.pack.id
-      }));
-      const themes = this.deps.themes.themes().map((t) => ({
-        id: t.id,
-        label: t.name,
-        selected: t.id === this.themeId
-      }));
-      const items = this.allItems.map((it) => {
-        const g = this.groupOfItem[it.id];
-        const tl = it.rest ? this.uiText("restVert") : tr(this.trackMeta(it.track).label, this.lang);
-        return {
-          id: it.id,
-          label: `${tr(g.title, this.lang)} \xB7 ${tl}`,
-          selected: it.id === this.currentItemId
-        };
-      });
-      return { packs, themes, items };
-    }
-    todayCard() {
-      const it = this.itemOf(this.currentItemId);
-      const m = this.trackMeta(it.track);
-      const g = this.groupOfItem[it.id];
-      const cfg = this.pack.settings ?? {};
-      const i = this.itemIndex();
-      const notLast = i < this.allItems.length - 1;
-      const phaseLabel = this.uiText("phaseLabel").replace("{p}", g.phase == null ? "" : g.phase).replace("{w}", String(this.groupOrdinal(it.id)));
-      if (it.rest) {
-        return {
-          itemId: it.id,
-          rest: true,
-          track: it.track,
-          trackLabel: tr(m.label, this.lang),
-          trackIcon: m.icon ?? "",
-          title: this.uiText("restTitle"),
-          phaseLabel,
-          reflectPrompt: it.reflectPrompt != null ? tr(it.reflectPrompt, this.lang) : void 0,
-          reflection: "",
-          tasks: [],
-          resources: [],
-          complete: false,
-          notLast,
-          show: { warmup: false, reflection: false }
-        };
-      }
-      const complete = this.progress.isItemComplete(it);
-      const tasks = (it.tasks ?? []).map((t) => ({
-        id: t.id,
-        text: tr(t.text, this.lang),
-        ...t.guidance !== void 0 ? { guidance: tr(t.guidance, this.lang) } : {},
-        done: this.progress.taskChecked(it.id, t.id)
-      }));
-      const showWarmup = cfg.warmups !== false && it.warmup != null;
-      const showReflection = cfg.reflections !== false;
+    // Readonly snapshot for the Projections read model (CQS): queries read this,
+    // never the private fields directly.
+    view() {
       return {
-        itemId: it.id,
-        rest: false,
-        track: it.track,
-        trackLabel: tr(m.label, this.lang),
-        trackIcon: m.icon ?? "",
-        title: it.title != null ? tr(it.title, this.lang) : "",
-        phaseLabel,
-        warmup: it.warmup != null ? tr(it.warmup, this.lang) : void 0,
-        reflectPrompt: it.reflectPrompt != null ? tr(it.reflectPrompt, this.lang) : void 0,
-        reflection: this.progress.reflection(it.id),
-        tasks,
-        resources: (it.resources ?? []).map((r) => ({
-          label: tr(r.label, this.lang),
-          note: tr(r.note, this.lang)
-        })),
-        complete,
-        notLast,
-        show: { warmup: showWarmup, reflection: showReflection }
+        pack: this.pack,
+        progress: this.progress,
+        lang: this.lang,
+        themeId: this.themeId,
+        currentItemId: this.currentItemId,
+        rules: this.rules,
+        allItems: this.allItems,
+        groupOfItem: this.groupOfItem,
+        mottosList: this.mottosList
       };
     }
-    dashboard() {
-      const overall = this.deps.stats.overall(this.pack, this.progress);
-      const streak = this.deps.streaks.current(this.progress, this.deps.clock.today());
-      const byPhase = this.deps.stats.byPhase(this.pack, this.progress);
-      const byTrack = this.deps.stats.byTrack(this.pack, this.progress);
-      const words = this.deps.defaultStreakWords[this.lang] ?? this.deps.defaultStreakWords[DEFAULT_LANG] ?? [];
-      const streakWord = words[pluralIndex(this.lang, streak)] ?? words[words.length - 1] ?? "";
-      const phaseList = this.pack.phases ?? [];
-      const phases = phaseList.length ? phaseList.map((ph) => ({
-        id: ph.id,
-        title: tr(ph.title, this.lang) || `${this.lbl("phase", "phaseWord")} ${ph.id}`,
-        stat: byPhase[ph.id] ?? { done: 0, total: 0, pct: 0 }
-      })) : null;
-      const tracks = this.pack.tracks.filter((t) => byTrack[t.id]).map((t) => ({ id: t.id, label: tr(t.label, this.lang), stat: byTrack[t.id] }));
-      return {
-        overall,
-        streak,
-        streakWord,
-        phases,
-        tracks,
-        daysOfLabel: this.uiText("daysOf").replace("{n}", String(overall.total))
-      };
-    }
-    cardMap() {
-      const overall = this.deps.stats.overall(this.pack, this.progress);
-      const groups = this.pack.groups.map((g) => ({
-        id: g.id,
-        title: tr(g.title, this.lang),
-        items: g.items.map((it) => ({
-          id: it.id,
-          title: it.title != null ? tr(it.title, this.lang) : "",
-          done: this.progress.isItemComplete(it),
-          rest: !!it.rest,
-          current: it.id === this.currentItemId
-        }))
-      }));
-      return { done: overall.done, total: overall.total, groups };
-    }
-    trophies() {
-      const all = this.deps.badges.evaluate(this.pack, this.progress, this.rules);
-      return all.map((b) => {
-        const meta = this.rules.find((r) => r.id === b.id);
-        return {
-          id: b.id,
-          title: meta ? tr(meta.title, this.lang) : b.id,
-          desc: tr(meta?.desc, this.lang),
-          icon: meta?.icon ?? "\u2022",
-          unlocked: b.unlocked
-        };
-      });
-    }
-    comeback() {
-      const today = this.deps.clock.today();
-      const b = this.deps.badges.evaluate(this.pack, this.progress, this.rules).find((x) => x.id === "comeback");
-      const streak = this.deps.streaks.current(this.progress, today);
-      const show = !!(b && b.unlocked && streak <= 2);
-      return { show, days: this.progress.completedCount() };
-    }
-    trackColors() {
-      const out = [];
-      for (const t of this.pack.tracks) if (t.color) out.push({ id: t.id, color: t.color });
-      return out;
-    }
-    mottos() {
-      return this.mottosList.map((m) => tr(m, this.lang));
-    }
-    ui(key) {
-      return this.uiText(key);
-    }
-    // Pre-prompt for the "AI copy" button: the task/warmup text wrapped in a
-    // tutor template with the current item's context, ready to paste into a chat.
-    aiPrompt(text, guidance) {
-      const it = this.itemOf(this.currentItemId);
-      const g = guidance ? `
-${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
-` : "";
-      return this.uiText("aiPrompt").replace("{title}", it.title != null ? tr(it.title, this.lang) : "").replace("{track}", tr(this.trackMeta(it.track).label, this.lang)).replace("{text}", text).replace("{guidance}", g);
-    }
-    itemLabel() {
-      return this.lbl("item", "weekAbbr");
-    }
+    // ----- state getters (raw; localized view-models live in Projections) ------
     activeThemeHref() {
       const theme = this.deps.themes.themes().find((t) => t.id === this.themeId);
       return theme?.cssHref ?? null;
@@ -489,6 +314,225 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
     }
     langs() {
       return this.deps.supportedLangs;
+    }
+  };
+
+  // src/domain/plural.ts
+  function pluralIndex(lang, n) {
+    if (lang === "ru") {
+      const m10 = n % 10;
+      const m100 = n % 100;
+      if (m10 === 1 && m100 !== 11) return 0;
+      if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return 1;
+      return 2;
+    }
+    return n === 1 ? 0 : 1;
+  }
+
+  // src/domain/projections.ts
+  var Projections = class {
+    read;
+    deps;
+    constructor(read, deps) {
+      this.read = read;
+      this.deps = deps;
+    }
+    // ----- i18n / lookup helpers (operate on a passed-in snapshot) -------------
+    uiText(v, k) {
+      const fromPack = v.pack.ui && v.pack.ui[k];
+      if (fromPack != null) return tr(fromPack, v.lang);
+      const def = this.deps.defaultUi[k];
+      return def != null ? tr(def, v.lang) : "";
+    }
+    lbl(v, k, fallbackKey) {
+      const l = v.pack.settings && v.pack.settings.labels;
+      const val = l && l[k];
+      return val != null ? tr(val, v.lang) : this.uiText(v, fallbackKey);
+    }
+    itemOf(v, id) {
+      const it = v.allItems.find((x) => x.id === id);
+      if (!it) throw new Error(`unknown item "${id}"`);
+      return it;
+    }
+    // Unlike itemOf this never throws: the implicit "rest" track is undeclared by design.
+    trackMeta(v, id) {
+      for (const t of v.pack.tracks) if (t.id === id) return t;
+      return { id, label: "", icon: "" };
+    }
+    itemIndex(v) {
+      return v.allItems.findIndex((it) => it.id === v.currentItemId);
+    }
+    groupOrdinal(v, id) {
+      return v.pack.groups.indexOf(v.groupOfItem[id]) + 1;
+    }
+    // ----- view-models ---------------------------------------------------------
+    selectors() {
+      const v = this.read();
+      const packs = this.deps.packs.packs().map((p) => ({
+        id: p.id,
+        label: tr(p.name, v.lang),
+        selected: p.id === v.pack.id
+      }));
+      const themes = this.deps.themes.themes().map((t) => ({
+        id: t.id,
+        label: t.name,
+        selected: t.id === v.themeId
+      }));
+      const items = v.allItems.map((it) => {
+        const g = v.groupOfItem[it.id];
+        const tl = it.rest ? this.uiText(v, "restVert") : tr(this.trackMeta(v, it.track).label, v.lang);
+        return {
+          id: it.id,
+          label: `${tr(g.title, v.lang)} \xB7 ${tl}`,
+          selected: it.id === v.currentItemId
+        };
+      });
+      return { packs, themes, items };
+    }
+    todayCard() {
+      const v = this.read();
+      const it = this.itemOf(v, v.currentItemId);
+      const m = this.trackMeta(v, it.track);
+      const g = v.groupOfItem[it.id];
+      const cfg = v.pack.settings ?? {};
+      const i = this.itemIndex(v);
+      const notLast = i < v.allItems.length - 1;
+      const phaseLabel = this.uiText(v, "phaseLabel").replace("{p}", g.phase == null ? "" : g.phase).replace("{w}", String(this.groupOrdinal(v, it.id)));
+      if (it.rest) {
+        return {
+          itemId: it.id,
+          rest: true,
+          track: it.track,
+          trackLabel: tr(m.label, v.lang),
+          trackIcon: m.icon ?? "",
+          title: this.uiText(v, "restTitle"),
+          phaseLabel,
+          reflectPrompt: it.reflectPrompt != null ? tr(it.reflectPrompt, v.lang) : void 0,
+          reflection: "",
+          tasks: [],
+          resources: [],
+          complete: false,
+          notLast,
+          show: { warmup: false, reflection: false }
+        };
+      }
+      const complete = v.progress.isItemComplete(it);
+      const tasks = (it.tasks ?? []).map((t) => ({
+        id: t.id,
+        text: tr(t.text, v.lang),
+        ...t.guidance !== void 0 ? { guidance: tr(t.guidance, v.lang) } : {},
+        done: v.progress.taskChecked(it.id, t.id)
+      }));
+      const showWarmup = cfg.warmups !== false && it.warmup != null;
+      const showReflection = cfg.reflections !== false;
+      return {
+        itemId: it.id,
+        rest: false,
+        track: it.track,
+        trackLabel: tr(m.label, v.lang),
+        trackIcon: m.icon ?? "",
+        title: it.title != null ? tr(it.title, v.lang) : "",
+        phaseLabel,
+        warmup: it.warmup != null ? tr(it.warmup, v.lang) : void 0,
+        reflectPrompt: it.reflectPrompt != null ? tr(it.reflectPrompt, v.lang) : void 0,
+        reflection: v.progress.reflection(it.id),
+        tasks,
+        resources: (it.resources ?? []).map((r) => ({
+          label: tr(r.label, v.lang),
+          note: tr(r.note, v.lang)
+        })),
+        complete,
+        notLast,
+        show: { warmup: showWarmup, reflection: showReflection }
+      };
+    }
+    dashboard() {
+      const v = this.read();
+      const overall = this.deps.stats.overall(v.pack, v.progress);
+      const streak = this.deps.streaks.current(v.progress, this.deps.clock.today());
+      const byPhase = this.deps.stats.byPhase(v.pack, v.progress);
+      const byTrack = this.deps.stats.byTrack(v.pack, v.progress);
+      const words = this.deps.defaultStreakWords[v.lang] ?? this.deps.defaultStreakWords[DEFAULT_LANG] ?? [];
+      const streakWord = words[pluralIndex(v.lang, streak)] ?? words[words.length - 1] ?? "";
+      const phaseList = v.pack.phases ?? [];
+      const phases = phaseList.length ? phaseList.map((ph) => ({
+        id: ph.id,
+        title: tr(ph.title, v.lang) || `${this.lbl(v, "phase", "phaseWord")} ${ph.id}`,
+        stat: byPhase[ph.id] ?? { done: 0, total: 0, pct: 0 }
+      })) : null;
+      const tracks = v.pack.tracks.filter((t) => byTrack[t.id]).map((t) => ({ id: t.id, label: tr(t.label, v.lang), stat: byTrack[t.id] }));
+      return {
+        overall,
+        streak,
+        streakWord,
+        phases,
+        tracks,
+        daysOfLabel: this.uiText(v, "daysOf").replace("{n}", String(overall.total))
+      };
+    }
+    cardMap() {
+      const v = this.read();
+      const overall = this.deps.stats.overall(v.pack, v.progress);
+      const groups = v.pack.groups.map((g) => ({
+        id: g.id,
+        title: tr(g.title, v.lang),
+        items: g.items.map((it) => ({
+          id: it.id,
+          title: it.title != null ? tr(it.title, v.lang) : "",
+          done: v.progress.isItemComplete(it),
+          rest: !!it.rest,
+          current: it.id === v.currentItemId
+        }))
+      }));
+      return { done: overall.done, total: overall.total, groups };
+    }
+    trophies() {
+      const v = this.read();
+      const all = this.deps.badges.evaluate(v.pack, v.progress, v.rules);
+      return all.map((b) => {
+        const meta = v.rules.find((r) => r.id === b.id);
+        return {
+          id: b.id,
+          title: meta ? tr(meta.title, v.lang) : b.id,
+          desc: tr(meta?.desc, v.lang),
+          icon: meta?.icon ?? "\u2022",
+          unlocked: b.unlocked
+        };
+      });
+    }
+    comeback() {
+      const v = this.read();
+      const today = this.deps.clock.today();
+      const b = this.deps.badges.evaluate(v.pack, v.progress, v.rules).find((x) => x.id === "comeback");
+      const streak = this.deps.streaks.current(v.progress, today);
+      const show = !!(b && b.unlocked && streak <= 2);
+      return { show, days: v.progress.completedCount() };
+    }
+    trackColors() {
+      const v = this.read();
+      const out = [];
+      for (const t of v.pack.tracks) if (t.color) out.push({ id: t.id, color: t.color });
+      return out;
+    }
+    mottos() {
+      const v = this.read();
+      return v.mottosList.map((m) => tr(m, v.lang));
+    }
+    ui(key) {
+      return this.uiText(this.read(), key);
+    }
+    // Pre-prompt for the "AI copy" button: the task/warmup text wrapped in a
+    // tutor template with the current item's context, ready to paste into a chat.
+    aiPrompt(text, guidance) {
+      const v = this.read();
+      const it = this.itemOf(v, v.currentItemId);
+      const g = guidance ? `
+${this.uiText(v, "aiPromptGuidance").replace("{guidance}", guidance)}
+` : "";
+      return this.uiText(v, "aiPrompt").replace("{title}", it.title != null ? tr(it.title, v.lang) : "").replace("{track}", tr(this.trackMeta(v, it.track).label, v.lang)).replace("{text}", text).replace("{guidance}", g);
+    }
+    itemLabel() {
+      return this.lbl(this.read(), "item", "weekAbbr");
     }
   };
 
@@ -1873,13 +1917,15 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
   // src/adapters/dom-controller.ts
   var DomController = class {
     t;
+    q;
     r;
     imp;
     activeModal = null;
     activeSheet = null;
     motdTimer = null;
-    constructor(tracker, renderer, importer) {
+    constructor(tracker, projections, renderer, importer) {
       this.t = tracker;
+      this.q = projections;
       this.r = renderer;
       this.imp = importer;
     }
@@ -1887,7 +1933,7 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
       this.applyStaticLabels();
       const href = this.t.activeThemeHref();
       if (href != null) this.r.applyTheme(href, this.t.activeThemeId() ?? "");
-      this.r.applyTrackColors(this.t.trackColors());
+      this.r.applyTrackColors(this.q.trackColors());
       this.r.setLang(this.t.currentLang());
       this.wire();
       this.renderAll();
@@ -1895,7 +1941,7 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
     }
     // ----- labels --------------------------------------------------------------
     labels() {
-      const u = (k) => this.t.ui(k);
+      const u = (k) => this.q.ui(k);
       return {
         todayVert: u("todayVert"),
         restVert: u("restVert"),
@@ -1916,7 +1962,7 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
       };
     }
     applyStaticLabels() {
-      const u = (k) => this.t.ui(k);
+      const u = (k) => this.q.ui(k);
       const iconLabels = [
         ["exportBtn", "export"],
         ["importBtn", "import"],
@@ -1938,7 +1984,7 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
       }
       this.r.setAttr("packSelect", "aria-label", u("pack"));
       this.r.setAttr("themeSelect", "aria-label", u("theme"));
-      this.r.setAttr("daySelect", "aria-label", this.t.itemLabel());
+      this.r.setAttr("daySelect", "aria-label", this.q.itemLabel());
       this.r.setText("summaryTitle", u("summaryTitle"));
       this.r.setText("todayTitle", u("todayTitle"));
       const next = this.t.langs().find((l) => l.id !== this.t.currentLang()) ?? this.t.langs()[0];
@@ -1951,25 +1997,25 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
     // ----- render --------------------------------------------------------------
     renderAll() {
       const lbl = this.labels();
-      const today = this.t.todayCard();
-      this.r.renderSelectors(this.t.selectors());
+      const today = this.q.todayCard();
+      this.r.renderSelectors(this.q.selectors());
       this.r.renderToday(today, lbl);
-      this.r.renderDashboard(this.t.dashboard(), lbl);
+      this.r.renderDashboard(this.q.dashboard(), lbl);
       this.renderComeback();
       this.renderTrophies();
       this.bindTodayHandlers(today);
       this.syncDayNav();
     }
     renderComeback() {
-      const cb = this.t.comeback();
-      const text = this.t.ui("comeback").replace("{n}", String(cb.days));
+      const cb = this.q.comeback();
+      const text = this.q.ui("comeback").replace("{n}", String(cb.days));
       this.r.renderComeback({ show: cb.show, text });
     }
     renderTrophies() {
-      this.r.renderTrophies(this.t.trophies(), this.t.ui("trophies"));
+      this.r.renderTrophies(this.q.trophies(), this.q.ui("trophies"));
     }
     renderCardMap() {
-      this.r.renderCardMap(this.t.cardMap(), this.t.ui("cardMap"));
+      this.r.renderCardMap(this.q.cardMap(), this.q.ui("cardMap"));
     }
     openCardMap() {
       this.renderCardMap();
@@ -1980,7 +2026,7 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
       this.open("trophiesModal");
     }
     renderShortcuts() {
-      const u = (k) => this.t.ui(k);
+      const u = (k) => this.q.ui(k);
       this.r.renderShortcuts(
         [
           { keys: "\u2190 / \u2192", label: u("scDay") },
@@ -2005,12 +2051,12 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
           cb.onchange = (e) => this.setTaskChecked(t.id, e.target.checked);
         }
         this.bindCopy("copy_" + t.id, () => t.text, false);
-        this.bindCopy("copyai_" + t.id, () => this.t.aiPrompt(t.text, t.guidance), true);
+        this.bindCopy("copyai_" + t.id, () => this.q.aiPrompt(t.text, t.guidance), true);
       }
       if (vm.show.warmup && vm.warmup) {
         const warmup = vm.warmup;
         this.bindCopy("copyWarm", () => warmup, false);
-        this.bindCopy("copyaiWarm", () => this.t.aiPrompt(warmup), true);
+        this.bindCopy("copyaiWarm", () => this.q.aiPrompt(warmup), true);
       }
       if (vm.show.reflection) {
         const reflect = this.r.$("reflect");
@@ -2027,7 +2073,7 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
       if (!el) return;
       el.onclick = () => {
         this.copyText(text());
-        this.r.toast("toast", this.r.esc(this.t.ui(ai ? "copiedAi" : "copied")));
+        this.r.toast("toast", this.r.esc(this.q.ui(ai ? "copiedAi" : "copied")));
       };
     }
     // Seam for tests (the fake DOM has no clipboard); the default writes through
@@ -2053,19 +2099,19 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
     }
     // Freshly-imported plugin's display name — selectors already carry resolved labels.
     packName(id) {
-      return this.t.selectors().packs.find((p) => p.id === id)?.label ?? id;
+      return this.q.selectors().packs.find((p) => p.id === id)?.label ?? id;
     }
     themeName(id) {
-      return this.t.selectors().themes.find((t) => t.id === id)?.label ?? id;
+      return this.q.selectors().themes.find((t) => t.id === id)?.label ?? id;
     }
     setTaskChecked(taskId, checked) {
-      const was = this.t.todayCard().complete;
+      const was = this.q.todayCard().complete;
       const res = this.t.setTaskDone(taskId, checked);
-      if (!was && this.t.todayCard().complete) {
+      if (!was && this.q.todayCard().complete) {
         this.r.celebrate();
         if (res.unlockedBadges.length) {
-          const tro = this.t.trophies().find((x) => x.id === res.unlockedBadges[0]);
-          if (tro) this.r.badgeToast(this.t.ui("newTrophy"), tro.title, tro.icon);
+          const tro = this.q.trophies().find((x) => x.id === res.unlockedBadges[0]);
+          if (tro) this.r.badgeToast(this.q.ui("newTrophy"), tro.title, tro.icon);
         }
         if (res.surprise) this.r.toast("toast", this.r.esc(res.surprise));
       }
@@ -2073,7 +2119,7 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
       this.r.focusTask(taskId);
     }
     syncDayNav() {
-      const sel = this.t.selectors();
+      const sel = this.q.selectors();
       const i = sel.items.findIndex((o) => o.selected);
       const prev = this.r.$("prevDay");
       const next = this.r.$("nextDay");
@@ -2140,10 +2186,10 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
       }
     }
     taskDone(taskId) {
-      return this.t.todayCard().tasks.find((t) => t.id === taskId)?.done ?? false;
+      return this.q.todayCard().tasks.find((t) => t.id === taskId)?.done ?? false;
     }
     moveTaskFocus(delta) {
-      const card = this.t.todayCard();
+      const card = this.q.todayCard();
       if (card.rest) return;
       const ids = card.tasks.map((t) => t.id);
       if (!ids.length) return;
@@ -2160,7 +2206,7 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
         pack.onchange = () => {
           this.closeSheets();
           this.t.selectPack(pack.value);
-          this.r.applyTrackColors(this.t.trackColors());
+          this.r.applyTrackColors(this.q.trackColors());
           this.r.setLang(this.t.currentLang());
           this.applyStaticLabels();
           this.startMotd();
@@ -2248,23 +2294,23 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
               const out = this.imp.import(String(rd.result));
               if (out.kind === "pack") {
                 this.t.selectPack(out.id);
-                this.r.applyTrackColors(this.t.trackColors());
+                this.r.applyTrackColors(this.q.trackColors());
                 this.r.setLang(this.t.currentLang());
                 this.applyStaticLabels();
                 this.startMotd();
-                alert(this.t.ui("importedPack").replace("{name}", this.packName(out.id)));
+                alert(this.q.ui("importedPack").replace("{name}", this.packName(out.id)));
               } else if (out.kind === "theme") {
                 this.t.selectTheme(out.id);
                 const href = this.t.activeThemeHref();
                 if (href != null) this.r.applyTheme(href, out.id);
-                alert(this.t.ui("importedTheme").replace("{name}", this.themeName(out.id)));
+                alert(this.q.ui("importedTheme").replace("{name}", this.themeName(out.id)));
               } else {
-                alert(this.t.ui("importOk"));
+                alert(this.q.ui("importOk"));
               }
               this.renderAll();
             } catch (err) {
               if (err instanceof ImportError || err instanceof ValidationError) {
-                alert(this.t.ui("importFail").replace("{e}", err.message));
+                alert(this.q.ui("importFail").replace("{e}", err.message));
               } else {
                 throw err;
               }
@@ -2353,7 +2399,7 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
         clearInterval(this.motdTimer);
         this.motdTimer = null;
       }
-      const mottos = this.t.mottos();
+      const mottos = this.q.mottos();
       if (!mottos.length) return;
       this.r.setText("motd", mottos[0]);
       if (mottos.length > 1) {
@@ -2506,21 +2552,33 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
       migrateLegacy();
       const streaks = new Streaks();
       const stats = new ProgressStats();
+      const clock = new SystemClock();
+      const badges = new BadgeEngine(streaks, stats);
       const tracker = new Tracker({
         packs: registry,
         themes: registry,
         progressStore: new LocalStorageProgressStore(),
         sessionStore: new LocalStorageSessionStore(),
-        clock: new SystemClock(),
+        clock,
         random: new MathRandom(),
         streaks,
         stats,
-        badges: new BadgeEngine(streaks, stats),
+        badges,
         defaultUi: DEFAULT_UI,
         genericBadges: GENERIC_BADGES,
         defaultStreakWords: DEFAULT_STREAK_WORDS,
         defaultMottos: DEFAULT_MOTTOS,
         supportedLangs: SUPPORTED_LANGS
+      });
+      const projections = new Projections(() => tracker.view(), {
+        clock,
+        streaks,
+        stats,
+        badges,
+        packs: registry,
+        themes: registry,
+        defaultUi: DEFAULT_UI,
+        defaultStreakWords: DEFAULT_STREAK_WORDS
       });
       const importer = new Importer(
         [new PackPlugin(registry), new ThemePlugin(registry), new ProgressPlugin(tracker)],
@@ -2528,7 +2586,7 @@ ${this.uiText("aiPromptGuidance").replace("{guidance}", guidance)}
       );
       importer.loadStored();
       tracker.init();
-      new DomController(tracker, renderer, importer).start();
+      new DomController(tracker, projections, renderer, importer).start();
     } catch (err) {
       console.error("[sunrise] boot failed:", err);
       renderer.stub(

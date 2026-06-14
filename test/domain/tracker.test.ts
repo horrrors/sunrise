@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Tracker } from '../../src/domain/tracker.ts';
+import { Projections } from '../../src/domain/projections.ts';
 import { Progress } from '../../src/domain/progress.ts';
 import { Streaks } from '../../src/domain/streaks.ts';
 import { ProgressStats } from '../../src/domain/progress-stats.ts';
@@ -55,16 +56,22 @@ function buildTracker(opts: {
   let session: Session = opts.session ?? {};
   const sessionStore: SessionStore = { load: () => session, save: (s) => void (session = s) };
   let today = '2026-05-30';
+  const packs = { packs: () => opts.packs };
+  const themes = { themes: () => [THEME] };
+  const clock = { today: () => today, hour: () => 14 };
+  const streaks = new Streaks();
+  const stats = new ProgressStats();
+  const badges = new BadgeEngine(streaks, stats);
   const t = new Tracker({
-    packs: { packs: () => opts.packs },
-    themes: { themes: () => [THEME] },
+    packs,
+    themes,
     progressStore,
     sessionStore,
-    clock: { today: () => today, hour: () => 14 },
+    clock,
     random: { next: () => opts.randomValue ?? 0.99 },
-    streaks: new Streaks(),
-    stats: new ProgressStats(),
-    badges: new BadgeEngine(new Streaks(), new ProgressStats()),
+    streaks,
+    stats,
+    badges,
     defaultUi: DEFAULT_UI,
     genericBadges: GENERIC_BADGES,
     defaultStreakWords: DEFAULT_STREAK_WORDS,
@@ -72,7 +79,18 @@ function buildTracker(opts: {
     supportedLangs: SUPPORTED_LANGS,
   });
   t.init();
-  return { t, store, getSession: () => session, setToday: (d: string) => void (today = d) };
+  // Read model over the same write model + shared calculators (CQS).
+  const q = new Projections(() => t.view(), {
+    clock,
+    streaks,
+    stats,
+    badges,
+    packs,
+    themes,
+    defaultUi: DEFAULT_UI,
+    defaultStreakWords: DEFAULT_STREAK_WORDS,
+  });
+  return { t, q, store, getSession: () => session, setToday: (d: string) => void (today = d) };
 }
 
 test('completing the active item unlocks + persists first-light', () => {
@@ -82,24 +100,24 @@ test('completing the active item unlocks + persists first-light', () => {
   assert.ok(store.get('p')!.isBadgeOwned('first-light'));
 });
 test('dashboard + today + trophies shapes', () => {
-  const { t } = buildTracker({ packs: [PACK] });
-  assert.equal(typeof t.dashboard().overall.pct, 'number');
-  assert.equal(t.todayCard().itemId, 'i1');
-  assert.equal(t.trophies().length, GENERIC_BADGES.length);
+  const { q } = buildTracker({ packs: [PACK] });
+  assert.equal(typeof q.dashboard().overall.pct, 'number');
+  assert.equal(q.todayCard().itemId, 'i1');
+  assert.equal(q.trophies().length, GENERIC_BADGES.length);
 });
 
 test('todayCard resolves the active language; setLang flips it', () => {
-  const { t } = buildTracker({ packs: [PACK], session: { lang: 'en' } });
-  assert.equal(t.todayCard().title, 'A');
+  const { t, q } = buildTracker({ packs: [PACK], session: { lang: 'en' } });
+  assert.equal(q.todayCard().title, 'A');
   t.setLang('ru');
-  assert.equal(t.todayCard().title, 'А');
+  assert.equal(q.todayCard().title, 'А');
   assert.equal(t.currentLang(), 'ru');
 });
 
 test('default language is en when the session has none', () => {
-  const { t } = buildTracker({ packs: [PACK] });
+  const { t, q } = buildTracker({ packs: [PACK] });
   assert.equal(t.currentLang(), 'en');
-  assert.equal(t.todayCard().title, 'A');
+  assert.equal(q.todayCard().title, 'A');
 });
 
 test('setLang persists to the session', () => {
@@ -112,36 +130,36 @@ test('switching language preserves progress (same packId)', () => {
   const store = new Map<string, Progress>();
   const a = buildTracker({ packs: [PACK], store });
   a.t.setTaskDone('t1', true); // complete item i1
-  assert.equal(a.t.dashboard().overall.done, 1);
+  assert.equal(a.q.dashboard().overall.done, 1);
   // Re-open the same pack under RU — progress is keyed on packId, not language.
   const b = buildTracker({ packs: [PACK], store, session: { lang: 'ru' } });
-  assert.equal(b.t.dashboard().overall.done, 1);
+  assert.equal(b.q.dashboard().overall.done, 1);
 });
 
 test('chrome strings resolve per language (ui + trophies)', () => {
-  const { t } = buildTracker({ packs: [PACK], session: { lang: 'en' } });
-  assert.equal(t.ui('summaryTitle'), 'Summary');
-  assert.equal(t.trophies().find((b) => b.id === 'halfway')!.title, 'Halfway');
+  const { t, q } = buildTracker({ packs: [PACK], session: { lang: 'en' } });
+  assert.equal(q.ui('summaryTitle'), 'Summary');
+  assert.equal(q.trophies().find((b) => b.id === 'halfway')!.title, 'Halfway');
   t.setLang('ru');
-  assert.equal(t.ui('summaryTitle'), 'Сводка');
-  assert.equal(t.trophies().find((b) => b.id === 'halfway')!.title, 'Экватор');
+  assert.equal(q.ui('summaryTitle'), 'Сводка');
+  assert.equal(q.trophies().find((b) => b.id === 'halfway')!.title, 'Экватор');
 });
 
 test('dashboard streak word uses the per-language plural forms', () => {
-  const { t } = buildTracker({ packs: [PACK], session: { lang: 'en' } });
+  const { t, q } = buildTracker({ packs: [PACK], session: { lang: 'en' } });
   t.setTaskDone('t1', true); // 1-day streak
-  assert.equal(t.dashboard().streak, 1);
-  assert.equal(t.dashboard().streakWord, 'day'); // en, index 0
+  assert.equal(q.dashboard().streak, 1);
+  assert.equal(q.dashboard().streakWord, 'day'); // en, index 0
   t.setLang('ru');
-  assert.equal(t.dashboard().streakWord, 'день'); // ru, index 0
+  assert.equal(q.dashboard().streakWord, 'день'); // ru, index 0
 });
 test('export → import round-trips', () => {
-  const { t } = buildTracker({ packs: [PACK] });
+  const { t, q } = buildTracker({ packs: [PACK] });
   t.setTaskDone('t1', true);
   const parsed = JSON.parse(t.exportProgress());
   t.setTaskDone('t1', false);
   t.importProgress(parsed.packId, parsed);
-  assert.equal(t.todayCard().tasks[0]!.done, true);
+  assert.equal(q.todayCard().tasks[0]!.done, true);
 });
 
 test('importProgress rejects a packId for an unloaded pack; null targets the active pack', () => {
@@ -188,12 +206,12 @@ test('a pack badge reusing a generic id overrides condition AND displayed meta',
       { id: 'first-light', type: 'days-done', gte: 99, title: 'CUSTOM', desc: 'mine', icon: '★' },
     ],
   };
-  const { t } = buildTracker({ packs: [overriding] });
-  assert.equal(t.trophies().length, GENERIC_BADGES.length); // replaced, not appended
-  const tro = t.trophies().find((x) => x.id === 'first-light')!;
+  const { t, q } = buildTracker({ packs: [overriding] });
+  assert.equal(q.trophies().length, GENERIC_BADGES.length); // replaced, not appended
+  const tro = q.trophies().find((x) => x.id === 'first-light')!;
   assert.equal(tro.title, 'CUSTOM');
   t.setTaskDone('t1', true);
-  assert.equal(t.trophies().find((x) => x.id === 'first-light')!.unlocked, false); // gte:99 wins
+  assert.equal(q.trophies().find((x) => x.id === 'first-light')!.unlocked, false); // gte:99 wins
 });
 
 test('badge awards are eager: a reflection-driven trophy persists without item completion', () => {
@@ -201,22 +219,22 @@ test('badge awards are eager: a reflection-driven trophy persists without item c
     ...PACK,
     badges: [{ id: 'noted', type: 'reflections', gte: 1, title: 'Noted' }],
   };
-  const { t, store } = buildTracker({ packs: [pack] });
+  const { t, q, store } = buildTracker({ packs: [pack] });
   t.setReflection('thoughts');
   assert.ok(store.get('p')!.isBadgeOwned('noted')); // persisted, not just displayed
   t.setReflection(''); // condition regresses — award sticks
-  assert.equal(t.trophies().find((x) => x.id === 'noted')!.unlocked, true);
+  assert.equal(q.trophies().find((x) => x.id === 'noted')!.unlocked, true);
 });
 
 test('aiPrompt wraps text in the tutor pre-prompt with item context', () => {
-  const { t } = buildTracker({ packs: [PACK] }); // en is the default language
-  const p = t.aiPrompt('Solve Two Sum', 'name the pattern first');
+  const { q } = buildTracker({ packs: [PACK] }); // en is the default language
+  const p = q.aiPrompt('Solve Two Sum', 'name the pattern first');
   assert.ok(p.includes('Solve Two Sum'), 'task text embedded');
   assert.ok(p.includes('“A”'), 'current item title embedded (en)');
   assert.ok(p.includes('DSA'), 'track label embedded');
   assert.ok(p.includes('name the pattern first'), 'guidance embedded');
   assert.ok(!/[{}]/.test(p), 'all placeholders filled');
-  const bare = t.aiPrompt('Solve Two Sum');
+  const bare = q.aiPrompt('Solve Two Sum');
   assert.ok(bare.includes('Solve Two Sum'));
   // The guidance value (not a substring that collides with the template body).
   assert.ok(!bare.includes('name the pattern first'), 'no guidance line without guidance');
@@ -226,8 +244,8 @@ test('aiPrompt wraps text in the tutor pre-prompt with item context', () => {
 
 test('aiPrompt template is pack-overridable like any ui string', () => {
   const pack: Pack = { ...PACK, ui: { aiPrompt: 'ASK: {text}' } };
-  const { t } = buildTracker({ packs: [pack] });
-  assert.equal(t.aiPrompt('Q'), 'ASK: Q');
+  const { q } = buildTracker({ packs: [pack] });
+  assert.equal(q.aiPrompt('Q'), 'ASK: Q');
 });
 
 test('streak word uses Slavic plural rules under ru (21 → one-form, 22 → few-form)', () => {
@@ -245,7 +263,7 @@ test('streak word uses Slavic plural rules under ru (21 → one-form, 22 → few
     }
     const store = new Map<string, Progress>();
     store.set('p', new Progress({ schema: 'sunrise.progress/v1', items, badges: {} }));
-    return buildTracker({ packs: [PACK], store, session: { lang: 'ru' } }).t;
+    return buildTracker({ packs: [PACK], store, session: { lang: 'ru' } }).q;
   };
   assert.equal(mk(21).dashboard().streakWord, ru[0]); // 21 день
   assert.equal(mk(22).dashboard().streakWord, ru[1]); // 22 дня
@@ -268,20 +286,20 @@ test('selectPack reloads per-pack progress + resets current item', () => {
       },
     ],
   };
-  const { t } = buildTracker({ packs: [PACK, PACK2] });
+  const { t, q } = buildTracker({ packs: [PACK, PACK2] });
 
   // Complete the item in pack 1
   t.setTaskDone('t1', true);
-  assert.ok(t.todayCard().complete);
+  assert.ok(q.todayCard().complete);
 
   // Switch to pack 2 — current item should reset to pack 2's first item
   t.selectPack('p2');
-  assert.equal(t.todayCard().itemId, 'p2i1');
-  assert.ok(!t.todayCard().complete); // pack 2 progress is independent
+  assert.equal(q.todayCard().itemId, 'p2i1');
+  assert.ok(!q.todayCard().complete); // pack 2 progress is independent
 
   // Switch back — pack 1 progress persisted
   t.selectPack('p');
-  assert.ok(t.todayCard().complete);
+  assert.ok(q.todayCard().complete);
 });
 
 test('cardMap: groups, current flag, rest excluded from counts', () => {
@@ -307,9 +325,9 @@ test('cardMap: groups, current flag, rest excluded from counts', () => {
       },
     ],
   };
-  const { t } = buildTracker({ packs: [CARD_PACK] });
+  const { t, q } = buildTracker({ packs: [CARD_PACK] });
 
-  let vm = t.cardMap();
+  let vm = q.cardMap();
   assert.equal(vm.groups.length, 2);
   assert.equal(vm.groups[0]!.title, 'Week 1');
   assert.equal(vm.groups[0]!.items.length, 2);
@@ -320,7 +338,7 @@ test('cardMap: groups, current flag, rest excluded from counts', () => {
   assert.equal(vm.groups[0]!.items[1]!.rest, true, 'rest flagged');
 
   t.setTaskDone('t1', true); // completes a1 (the current item)
-  vm = t.cardMap();
+  vm = q.cardMap();
   assert.equal(vm.done, 1);
   assert.equal(vm.groups[0]!.items[0]!.done, true);
 });
@@ -366,43 +384,43 @@ function makeResumeTracker(opts: { session?: Session; complete?: string[] } = {}
     }
     store.set('resume', new Progress({ schema: 'sunrise.progress/v1', items, badges: {} }));
   }
-  const { t, getSession } = buildTracker({
+  const { t, q, getSession } = buildTracker({
     packs: [RESUME_PACK],
     store,
     session: opts.session ?? {},
   });
-  return { t, getSession };
+  return { t, q, getSession };
 }
 
 test('resume: cursor on a partial card reopens that card, not an earlier skip', () => {
   // c1 left unfinished (an earlier skip); cursor parked on the also-unfinished c2.
-  const { t } = makeResumeTracker({ session: { cursors: { resume: 'c2' } } });
-  assert.equal(t.todayCard().itemId, 'c2');
+  const { q } = makeResumeTracker({ session: { cursors: { resume: 'c2' } } });
+  assert.equal(q.todayCard().itemId, 'c2');
 });
 
 test('resume: cursor on a finished card advances to the next unfinished card', () => {
   // Parked on c2 which is now finished; c1 is an earlier skip → forward to c3.
-  const { t } = makeResumeTracker({ session: { cursors: { resume: 'c2' } }, complete: ['c2'] });
-  assert.equal(t.todayCard().itemId, 'c3');
+  const { q } = makeResumeTracker({ session: { cursors: { resume: 'c2' } }, complete: ['c2'] });
+  assert.equal(q.todayCard().itemId, 'c3');
 });
 
 test('resume: no cursor falls back to the first unfinished card (unchanged)', () => {
-  const { t } = makeResumeTracker();
-  assert.equal(t.todayCard().itemId, 'c1');
+  const { q } = makeResumeTracker();
+  assert.equal(q.todayCard().itemId, 'c1');
 });
 
 test('resume: stale cursor id (not in pack) falls back to first unfinished', () => {
-  const { t } = makeResumeTracker({ session: { cursors: { resume: 'ghost' } } });
-  assert.equal(t.todayCard().itemId, 'c1');
+  const { q } = makeResumeTracker({ session: { cursors: { resume: 'ghost' } } });
+  assert.equal(q.todayCard().itemId, 'c1');
 });
 
 test('resume: everything ahead done → reopen on the last card', () => {
   // Parked on c3; c3 and c4 done; c1 skipped earlier → forward-only → last card c4.
-  const { t } = makeResumeTracker({
+  const { q } = makeResumeTracker({
     session: { cursors: { resume: 'c3' } },
     complete: ['c3', 'c4'],
   });
-  assert.equal(t.todayCard().itemId, 'c4');
+  assert.equal(q.todayCard().itemId, 'c4');
 });
 
 test('selectItem persists the cursor to session', () => {
@@ -412,8 +430,8 @@ test('selectItem persists the cursor to session', () => {
 });
 
 test('goToItem persists the cursor to session', () => {
-  const { t, getSession } = makeResumeTracker(); // resolves to c1
+  const { t, q, getSession } = makeResumeTracker(); // resolves to c1
   t.goToItem(1); // → c2
-  assert.equal(t.todayCard().itemId, 'c2');
+  assert.equal(q.todayCard().itemId, 'c2');
   assert.equal(getSession().cursors?.['resume'], 'c2');
 });

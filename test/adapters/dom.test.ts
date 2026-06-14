@@ -21,6 +21,7 @@ import {
 import { WindowPluginRegistry } from '../../src/adapters/window-registry.ts';
 import { DomRenderer } from '../../src/adapters/dom-renderer.ts';
 import { DomController } from '../../src/adapters/dom-controller.ts';
+import { Projections } from '../../src/domain/projections.ts';
 import { Importer } from '../../src/domain/plugins/importer.ts';
 import { PackPlugin } from '../../src/domain/plugins/pack-plugin.ts';
 import { ThemePlugin } from '../../src/domain/plugins/theme-plugin.ts';
@@ -115,6 +116,7 @@ interface Harness {
   registry: Registry;
   store: Record<string, string>;
   tracker: Tracker;
+  projections: Projections;
   renderer: DomRenderer;
   controller?: DomController;
   registryPlugin: WindowPluginRegistry;
@@ -204,21 +206,33 @@ function harness(seed?: { store?: Record<string, string> }): Harness {
 
   const streaks = new Streaks();
   const stats = new ProgressStats();
+  const clock = new SystemClock();
+  const badges = new BadgeEngine(streaks, stats);
   const tracker = new Tracker({
     packs: registryPlugin,
     themes: registryPlugin,
     progressStore: new LocalStorageProgressStore(),
     sessionStore: new LocalStorageSessionStore(),
-    clock: new SystemClock(),
+    clock,
     random: new MathRandom(),
     streaks,
     stats,
-    badges: new BadgeEngine(streaks, stats),
+    badges,
     defaultUi: DEFAULT_UI,
     genericBadges: GENERIC_BADGES,
     defaultStreakWords: DEFAULT_STREAK_WORDS,
     defaultMottos: DEFAULT_MOTTOS,
     supportedLangs: SUPPORTED_LANGS,
+  });
+  const projections = new Projections(() => tracker.view(), {
+    clock,
+    streaks,
+    stats,
+    badges,
+    packs: registryPlugin,
+    themes: registryPlugin,
+    defaultUi: DEFAULT_UI,
+    defaultStreakWords: DEFAULT_STREAK_WORDS,
   });
 
   const renderer = new DomRenderer();
@@ -226,7 +240,7 @@ function harness(seed?: { store?: Record<string, string> }): Harness {
     [new PackPlugin(registryPlugin), new ThemePlugin(registryPlugin), new ProgressPlugin(tracker)],
     { load: () => [], append: () => {} },
   );
-  return { registry, store, tracker, renderer, registryPlugin, importer };
+  return { registry, store, tracker, projections, renderer, registryPlugin, importer };
 }
 
 // The dev-roadmap pack registers via `root.SUNRISE.registerPack(pack)`, where
@@ -256,7 +270,7 @@ async function boot(seed?: { store?: Record<string, string> }): Promise<Harness>
   const h = harness(seed);
   await registerDevRoadmap(h.registryPlugin);
   h.tracker.init();
-  h.controller = new DomController(h.tracker, h.renderer, h.importer);
+  h.controller = new DomController(h.tracker, h.projections, h.renderer, h.importer);
   h.controller.start();
   return h;
 }
@@ -282,14 +296,14 @@ test('dashboard renders stat-cards', async () => {
 });
 
 test('trophies render one tile per trophy', async () => {
-  const { registry, tracker } = await boot();
+  const { registry, projections } = await boot();
   registry['trophiesBtn']!.onclick!();
   const tiles = (registry['trophiesGrid']!.innerHTML.match(/data-tip/g) || []).length;
-  assert.equal(tiles, tracker.trophies().length, 'trophy tiles: ' + tiles);
+  assert.equal(tiles, projections.trophies().length, 'trophy tiles: ' + tiles);
 });
 
 test('card map: opens, renders cards, click navigates + closes modal', async () => {
-  const { registry, tracker } = await boot();
+  const { registry, projections } = await boot();
   registry['cardMapBtn']!.onclick!();
   assert.equal(
     registry['cardMapModal']!.classList.contains('open'),
@@ -299,13 +313,13 @@ test('card map: opens, renders cards, click navigates + closes modal', async () 
   const grid = registry['cardMapGrid']!;
   assert.ok((grid.innerHTML || '').includes('cm-card'), 'cards rendered');
 
-  const ids = tracker.cardMap().groups.flatMap((g) => g.items.map((i) => i.id));
-  const currentId = tracker.todayCard().itemId;
+  const ids = projections.cardMap().groups.flatMap((g) => g.items.map((i) => i.id));
+  const currentId = projections.todayCard().itemId;
   const targetId = ids.find((id) => id !== currentId)!;
   assert.ok(targetId, 'pack has more than one item');
 
   grid.onclick!({ target: { dataset: { id: targetId } } });
-  assert.equal(tracker.todayCard().itemId, targetId, 'navigated to clicked card');
+  assert.equal(projections.todayCard().itemId, targetId, 'navigated to clicked card');
   assert.equal(
     registry['cardMapModal']!.classList.contains('open'),
     false,
@@ -327,13 +341,13 @@ test('completing the active item persists first-light', async () => {
 });
 
 test('guidance spoiler (task-hint) renders for a guidance task', async () => {
-  const { registry, tracker } = await boot();
-  const sel = tracker.selectors();
+  const { registry, tracker, projections } = await boot();
+  const sel = projections.selectors();
   // find an item whose today-card carries a guidance task; switch to it
   let found = false;
   for (const opt of sel.items) {
     tracker.selectItem(opt.id);
-    if (tracker.todayCard().tasks.some((t) => t.guidance)) {
+    if (projections.todayCard().tasks.some((t) => t.guidance)) {
       registry['daySelect']!.value = opt.id;
       registry['daySelect']!.onchange!();
       found = true;
@@ -367,7 +381,7 @@ test('pack switch re-applies track colors and lang', async () => {
   h.registryPlugin.registerPack(pack2);
 
   h.tracker.init();
-  const ctrl = new DomController(h.tracker, h.renderer, h.importer);
+  const ctrl = new DomController(h.tracker, h.projections, h.renderer, h.importer);
   ctrl.start();
 
   // Install spies after start() so initial apply doesn't inflate counts.
@@ -387,16 +401,16 @@ test('pack switch re-applies track colors and lang', async () => {
 
   assert.ok(colors >= 1, 'applyTrackColors called on pack switch');
   assert.ok(langs >= 1, 'setLang called on pack switch');
-  assert.equal(h.tracker.todayCard().itemId, 'p2i1', 'tracker reflects pack 2 item');
+  assert.equal(h.projections.todayCard().itemId, 'p2i1', 'tracker reflects pack 2 item');
 });
 
 test('rest-day item renders the rest branch', async () => {
-  const { registry, tracker } = await boot();
-  const sel = tracker.selectors();
+  const { registry, tracker, projections } = await boot();
+  const sel = projections.selectors();
   let restId: string | undefined;
   for (const opt of sel.items) {
     tracker.selectItem(opt.id);
-    if (tracker.todayCard().rest) {
+    if (projections.todayCard().rest) {
       restId = opt.id;
       break;
     }
@@ -431,28 +445,28 @@ test('today card renders copy + AI-copy tools on tasks and warmup', async () => 
 
 test('copy buttons copy text / AI prompt via the clipboard seam, never toggle the task', async () => {
   const h = await boot();
-  const { registry, tracker, renderer } = h;
+  const { registry, renderer, projections } = h;
   const copied: string[] = [];
   h.controller!.copyText = (s: string) => void copied.push(s);
   const toasts: string[] = [];
   renderer.toast = (cls: string) => void toasts.push(cls);
-  const vm = tracker.todayCard();
+  const vm = projections.todayCard();
   const t1 = vm.tasks[0]!;
   registry['copy_' + t1.id]!.onclick!();
   assert.deepEqual(copied, [t1.text], 'plain copy = raw task text');
   registry['copyai_' + t1.id]!.onclick!();
-  assert.equal(copied[1], tracker.aiPrompt(t1.text, t1.guidance), 'AI copy = built prompt');
+  assert.equal(copied[1], projections.aiPrompt(t1.text, t1.guidance), 'AI copy = built prompt');
   registry['copyWarm']!.onclick!();
   assert.equal(copied[2], vm.warmup, 'warmup plain copy');
   registry['copyaiWarm']!.onclick!();
-  assert.equal(copied[3], tracker.aiPrompt(vm.warmup!), 'warmup AI copy');
-  assert.equal(tracker.todayCard().tasks[0]!.done, false, 'copying never ticks the task');
+  assert.equal(copied[3], projections.aiPrompt(vm.warmup!), 'warmup AI copy');
+  assert.equal(projections.todayCard().tasks[0]!.done, false, 'copying never ticks the task');
   assert.equal(toasts.length, 4, 'each copy confirms with a toast');
 });
 
 test('renderCardMap renders rows + cells with data-id', async () => {
-  const { registry, tracker, renderer } = await boot();
-  renderer.renderCardMap(tracker.cardMap(), 'Map');
+  const { registry, renderer, projections } = await boot();
+  renderer.renderCardMap(projections.cardMap(), 'Map');
   const html = registry['cardMapGrid']!.innerHTML || '';
   assert.ok(html.includes('cm-card'), 'cells render: ' + html.slice(0, 80));
   assert.ok(html.includes('data-id="'), 'cells carry data-id');
@@ -478,27 +492,27 @@ test('renderer: isTypingTarget true for select, false when nothing focused', asy
 });
 
 test('toggling a tick via onchange restores focus to it', async () => {
-  const { registry, tracker, renderer } = await boot();
-  const id = tracker.todayCard().tasks[0]!.id;
+  const { registry, renderer, projections } = await boot();
+  const id = projections.todayCard().tasks[0]!.id;
   registry['cb_' + id]!.onchange!({ target: { checked: true } });
   assert.equal(renderer.activeTaskId(), id, 'focus restored to toggled tick');
 });
 
 test('ArrowLeft/Right navigate days and clamp at both ends', async () => {
-  const { controller, tracker } = await boot();
-  const items = tracker.selectors().items.map((o) => o.id);
+  const { controller, tracker, projections } = await boot();
+  const items = projections.selectors().items.map((o) => o.id);
   assert.ok(items.length > 1, 'pack has multiple items');
 
   tracker.selectItem(items[0]!);
   controller!.handleKeydown(ev('ArrowLeft'));
-  assert.equal(tracker.todayCard().itemId, items[0], 'clamps at start');
+  assert.equal(projections.todayCard().itemId, items[0], 'clamps at start');
 
   controller!.handleKeydown(ev('ArrowRight'));
-  assert.equal(tracker.todayCard().itemId, items[1], 'right advances');
+  assert.equal(projections.todayCard().itemId, items[1], 'right advances');
 
   tracker.selectItem(items[items.length - 1]!);
   controller!.handleKeydown(ev('ArrowRight'));
-  assert.equal(tracker.todayCard().itemId, items[items.length - 1], 'clamps at end');
+  assert.equal(projections.todayCard().itemId, items[items.length - 1], 'clamps at end');
 });
 
 test('Escape closes the open modal', async () => {
@@ -510,28 +524,28 @@ test('Escape closes the open modal', async () => {
 });
 
 test('typing target and modifier keys suppress navigation', async () => {
-  const { registry, controller, tracker } = await boot();
-  const items = tracker.selectors().items.map((o) => o.id);
+  const { registry, controller, tracker, projections } = await boot();
+  const items = projections.selectors().items.map((o) => o.id);
   tracker.selectItem(items[0]!);
 
   registry['daySelect']!.tagName = 'SELECT';
   registry['daySelect']!.focus();
   controller!.handleKeydown(ev('ArrowRight'));
-  assert.equal(tracker.todayCard().itemId, items[0], 'ignored while typing');
+  assert.equal(projections.todayCard().itemId, items[0], 'ignored while typing');
 
   (globalThis as { document?: { activeElement?: unknown } }).document!.activeElement = null;
   controller!.handleKeydown(ev('ArrowRight', { ctrlKey: true }));
-  assert.equal(tracker.todayCard().itemId, items[0], 'ignored with modifier');
+  assert.equal(projections.todayCard().itemId, items[0], 'ignored with modifier');
 });
 
 test('ArrowDown/Up move tick focus and clamp at the ends', async () => {
-  const { registry, controller, renderer, tracker } = await boot();
+  const { registry, controller, renderer, tracker, projections } = await boot();
 
   // Switch to an item with at least two ticks (rendered via the day-select path).
   let multi: string | undefined;
-  for (const o of tracker.selectors().items) {
+  for (const o of projections.selectors().items) {
     tracker.selectItem(o.id);
-    if (tracker.todayCard().tasks.length >= 2) {
+    if (projections.todayCard().tasks.length >= 2) {
       multi = o.id;
       break;
     }
@@ -540,7 +554,7 @@ test('ArrowDown/Up move tick focus and clamp at the ends', async () => {
   registry['daySelect']!.value = multi!;
   registry['daySelect']!.onchange!();
 
-  const ids = tracker.todayCard().tasks.map((t) => t.id);
+  const ids = projections.todayCard().tasks.map((t) => t.id);
   controller!.handleKeydown(ev('ArrowDown'));
   assert.equal(renderer.activeTaskId(), ids[0], 'down with nothing focused -> first');
   controller!.handleKeydown(ev('ArrowDown'));
@@ -552,18 +566,18 @@ test('ArrowDown/Up move tick focus and clamp at the ends', async () => {
 });
 
 test('Enter toggles the focused tick and keeps focus', async () => {
-  const { controller, renderer, tracker } = await boot();
-  const id = tracker.todayCard().tasks[0]!.id;
+  const { controller, renderer, projections } = await boot();
+  const id = projections.todayCard().tasks[0]!.id;
   renderer.focusTask(id);
   controller!.handleKeydown(ev('Enter'));
-  assert.equal(tracker.todayCard().tasks.find((t) => t.id === id)!.done, true, 'tick marked');
+  assert.equal(projections.todayCard().tasks.find((t) => t.id === id)!.done, true, 'tick marked');
   assert.equal(renderer.activeTaskId(), id, 'focus stays on the tick');
 });
 
 test('Enter through all ticks completes the item and persists', async () => {
-  const { controller, renderer, tracker, store } = await boot();
+  const { controller, renderer, tracker, store, projections } = await boot();
   const packId = tracker.activePackId();
-  for (const t of tracker.todayCard().tasks) {
+  for (const t of projections.todayCard().tasks) {
     renderer.focusTask(t.id);
     controller!.handleKeydown(ev('Enter'));
   }
@@ -588,8 +602,8 @@ test('single-key shortcuts open the right modals', async () => {
 });
 
 test('keyboard day-nav keeps scroll position; buttons still scroll to top', async () => {
-  const { registry, controller, tracker } = await boot();
-  const items = tracker.selectors().items.map((o) => o.id);
+  const { registry, controller, tracker, projections } = await boot();
+  const items = projections.selectors().items.map((o) => o.id);
   tracker.selectItem(items[0]!);
 
   let scrolls = 0;
@@ -623,7 +637,7 @@ test('item title and task text are HTML-escaped in the rendered card', async () 
     ],
   });
   h.tracker.init();
-  new DomController(h.tracker, h.renderer, h.importer).start();
+  new DomController(h.tracker, h.projections, h.renderer, h.importer).start();
 
   const today = h.registry['todayCard']!.innerHTML;
   const tasks = h.registry['taskList']!.innerHTML;
@@ -634,17 +648,17 @@ test('item title and task text are HTML-escaped in the rendered card', async () 
 });
 
 test('card map / trophies modal titles carry the real counters', async () => {
-  const { registry, tracker } = await boot();
+  const { registry, projections } = await boot();
 
   registry['cardMapBtn']!.onclick!();
-  const cm = tracker.cardMap();
+  const cm = projections.cardMap();
   assert.ok(
     registry['cardMapTitle']!.textContent.includes(`${cm.done}/${cm.total}`),
     'card map title: ' + registry['cardMapTitle']!.textContent,
   );
 
   registry['trophiesBtn']!.onclick!();
-  const trophies = tracker.trophies();
+  const trophies = projections.trophies();
   const got = trophies.filter((b) => b.unlocked).length;
   assert.ok(
     registry['trophiesTitle']!.textContent.includes(`${got}/${trophies.length}`),
@@ -653,14 +667,14 @@ test('card map / trophies modal titles carry the real counters', async () => {
 });
 
 test('open modal suppresses day nav; Escape and backdrop click close it', async () => {
-  const { registry, controller, tracker } = await boot();
-  const items = tracker.selectors().items.map((o) => o.id);
+  const { registry, controller, tracker, projections } = await boot();
+  const items = projections.selectors().items.map((o) => o.id);
   tracker.selectItem(items[0]!);
 
   controller!.handleKeydown(ev('m'));
   assert.equal(registry['cardMapModal']!.classList.contains('open'), true, 'modal open');
   controller!.handleKeydown(ev('ArrowRight'));
-  assert.equal(tracker.todayCard().itemId, items[0], 'nav suppressed while modal open');
+  assert.equal(projections.todayCard().itemId, items[0], 'nav suppressed while modal open');
   controller!.handleKeydown(ev('Escape'));
   assert.equal(registry['cardMapModal']!.classList.contains('open'), false, 'Escape closes');
 
@@ -676,13 +690,13 @@ test('M via e.code opens the card map on non-Latin layouts', async () => {
 });
 
 test('ArrowUp with nothing focused enters at the last tick; rest card ignores arrows', async () => {
-  const { registry, controller, renderer, tracker } = await boot();
+  const { registry, controller, renderer, tracker, projections } = await boot();
   const doc = (globalThis as { document?: { activeElement?: unknown } }).document!;
 
   let multi: string | undefined;
-  for (const o of tracker.selectors().items) {
+  for (const o of projections.selectors().items) {
     tracker.selectItem(o.id);
-    if (tracker.todayCard().tasks.length >= 2) {
+    if (projections.todayCard().tasks.length >= 2) {
       multi = o.id;
       break;
     }
@@ -691,14 +705,14 @@ test('ArrowUp with nothing focused enters at the last tick; rest card ignores ar
   registry['daySelect']!.value = multi!;
   registry['daySelect']!.onchange!();
   doc.activeElement = null;
-  const ids = tracker.todayCard().tasks.map((t) => t.id);
+  const ids = projections.todayCard().tasks.map((t) => t.id);
   controller!.handleKeydown(ev('ArrowUp'));
   assert.equal(renderer.activeTaskId(), ids[ids.length - 1], 'up with nothing focused -> last');
 
   let restId: string | undefined;
-  for (const o of tracker.selectors().items) {
+  for (const o of projections.selectors().items) {
     tracker.selectItem(o.id);
-    if (tracker.todayCard().rest) {
+    if (projections.todayCard().rest) {
       restId = o.id;
       break;
     }
@@ -713,14 +727,14 @@ test('ArrowUp with nothing focused enters at the last tick; rest card ignores ar
 });
 
 test('dashboard shows the exact done/total and streak numbers', async () => {
-  const { registry, tracker } = await boot();
+  const { registry, projections } = await boot();
   Object.keys(registry)
     .filter((id) => /^cb_/.test(id))
     .forEach((id) => {
       const el = registry[id]!;
       if (el.onchange) el.onchange({ target: { checked: true } });
     });
-  const vm = tracker.dashboard();
+  const vm = projections.dashboard();
   assert.ok(vm.overall.done >= 1, 'at least one item done');
   const html = registry['dashboard']!.innerHTML;
   assert.ok(html.includes(`<small>${vm.overall.done}/${vm.overall.total}</small>`), 'done/total');
@@ -728,8 +742,8 @@ test('dashboard shows the exact done/total and streak numbers', async () => {
 });
 
 test('icon-only controls carry data-tip tooltips and aria-labels from ui strings', async () => {
-  const { registry, tracker } = await boot();
-  const u = (k: string): string => tracker.ui(k);
+  const { registry, projections } = await boot();
+  const u = (k: string): string => projections.ui(k);
   const expected: [string, string][] = [
     ['cardMapBtn', u('cardMap')],
     ['trophiesBtn', u('trophies')],
@@ -768,7 +782,7 @@ test('pack switch refreshes static labels and the motd', async () => {
     ],
   });
   h.tracker.init();
-  new DomController(h.tracker, h.renderer, h.importer).start();
+  new DomController(h.tracker, h.projections, h.renderer, h.importer).start();
 
   const before = h.registry['summaryTitle']!.textContent;
   assert.notEqual(before, 'B Summary', 'pack A renders its own summary title');
@@ -780,14 +794,14 @@ test('pack switch refreshes static labels and the motd', async () => {
 });
 
 test('dock bars reflect progress and streak after a render', async () => {
-  const { registry, tracker } = await boot();
+  const { registry, projections } = await boot();
   Object.keys(registry)
     .filter((id) => /^cb_/.test(id))
     .forEach((id) => {
       const el = registry[id]!;
       if (el.onchange) el.onchange({ target: { checked: true } });
     });
-  const vm = tracker.dashboard();
+  const vm = projections.dashboard();
   const fillW = (id: string): string =>
     (registry[id]!.style as unknown as { width?: string }).width ?? '';
   assert.equal(registry['dockProgressVal']!.textContent, `${vm.overall.done}/${vm.overall.total}`);
@@ -823,17 +837,17 @@ test('menu and stats sheets toggle and are mutually exclusive; Esc closes', asyn
 });
 
 test('a toolbar action closes the menu sheet', async () => {
-  const { registry, tracker } = await boot();
+  const { registry, projections } = await boot();
   registry['dockMenuBtn']!.onclick!();
-  const items = tracker.selectors().items.map((o) => o.id);
+  const items = projections.selectors().items.map((o) => o.id);
   registry['daySelect']!.value = items[1]!;
   registry['daySelect']!.onchange!();
   assert.equal(registry['toolbar']!.classList.contains('open'), false, 'day pick closes menu');
 });
 
 test('dock controls carry aria-labels from ui strings', async () => {
-  const { registry, tracker } = await boot();
-  const u = (k: string): string => tracker.ui(k);
+  const { registry, projections } = await boot();
+  const u = (k: string): string => projections.ui(k);
   assert.equal(registry['dockMapBtn']!.attrs['aria-label'], u('cardMap'));
   assert.equal(registry['dockTrophiesBtn']!.attrs['aria-label'], u('trophies'));
   assert.equal(registry['dockMenuBtn']!.attrs['aria-label'], u('menu'));
@@ -851,8 +865,8 @@ test('stats sheet stays open across a keyboard-nav re-render', async () => {
 const touch = (x: number, y: number) => ({ changedTouches: [{ clientX: x, clientY: y }] });
 
 test('horizontal swipe on the today card changes day (left=next, right=prev)', async () => {
-  const { registry, tracker } = await boot();
-  const items = tracker.selectors().items.map((o) => o.id);
+  const { registry, tracker, projections } = await boot();
+  const items = projections.selectors().items.map((o) => o.id);
   tracker.selectItem(items[0]!);
   const card = registry['todayCard']! as unknown as {
     ontouchstart?: (e: unknown) => void;
@@ -860,15 +874,15 @@ test('horizontal swipe on the today card changes day (left=next, right=prev)', a
   };
   card.ontouchstart!(touch(300, 100));
   card.ontouchend!(touch(180, 110)); // dx=-120 → next
-  assert.equal(tracker.todayCard().itemId, items[1], 'left swipe advances');
+  assert.equal(projections.todayCard().itemId, items[1], 'left swipe advances');
   card.ontouchstart!(touch(100, 100));
   card.ontouchend!(touch(260, 90)); // dx=+160 → prev
-  assert.equal(tracker.todayCard().itemId, items[0], 'right swipe goes back');
+  assert.equal(projections.todayCard().itemId, items[0], 'right swipe goes back');
 });
 
 test('small, vertical, typing-target and modal-open swipes are ignored', async () => {
-  const { registry, controller, tracker } = await boot();
-  const items = tracker.selectors().items.map((o) => o.id);
+  const { registry, controller, tracker, projections } = await boot();
+  const items = projections.selectors().items.map((o) => o.id);
   tracker.selectItem(items[0]!);
   const card = registry['todayCard']! as unknown as {
     ontouchstart?: (e: unknown) => void;
@@ -876,25 +890,25 @@ test('small, vertical, typing-target and modal-open swipes are ignored', async (
   };
   card.ontouchstart!(touch(300, 100));
   card.ontouchend!(touch(270, 100)); // |dx|=30 < 50
-  assert.equal(tracker.todayCard().itemId, items[0], 'sub-threshold ignored');
+  assert.equal(projections.todayCard().itemId, items[0], 'sub-threshold ignored');
   card.ontouchstart!(touch(300, 100));
   card.ontouchend!(touch(220, 260)); // dy dominates
-  assert.equal(tracker.todayCard().itemId, items[0], 'vertical scroll ignored');
+  assert.equal(projections.todayCard().itemId, items[0], 'vertical scroll ignored');
   registry['daySelect']!.tagName = 'SELECT';
   registry['daySelect']!.focus();
   card.ontouchstart!(touch(300, 100));
   card.ontouchend!(touch(100, 100));
-  assert.equal(tracker.todayCard().itemId, items[0], 'typing target ignored');
+  assert.equal(projections.todayCard().itemId, items[0], 'typing target ignored');
   (globalThis as { document?: { activeElement?: unknown } }).document!.activeElement = null;
   controller!.handleKeydown(ev('m'));
   card.ontouchstart!(touch(300, 100));
   card.ontouchend!(touch(100, 100));
-  assert.equal(tracker.todayCard().itemId, items[0], 'modal-open ignored');
+  assert.equal(projections.todayCard().itemId, items[0], 'modal-open ignored');
 });
 
 test('swipe still navigates while a sheet is open (by design)', async () => {
-  const { registry, tracker } = await boot();
-  const items = tracker.selectors().items.map((o) => o.id);
+  const { registry, tracker, projections } = await boot();
+  const items = projections.selectors().items.map((o) => o.id);
   tracker.selectItem(items[0]!);
   registry['dockBars']!.onclick!();
   assert.equal(registry['dashboard']!.classList.contains('open'), true, 'stats sheet open');
@@ -904,7 +918,7 @@ test('swipe still navigates while a sheet is open (by design)', async () => {
   };
   card.ontouchstart!(touch(300, 100));
   card.ontouchend!(touch(150, 100));
-  assert.equal(tracker.todayCard().itemId, items[1], 'swipe navigates under an open sheet');
+  assert.equal(projections.todayCard().itemId, items[1], 'swipe navigates under an open sheet');
   assert.equal(registry['dashboard']!.classList.contains('open'), true, 'sheet stays open');
 });
 
