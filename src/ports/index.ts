@@ -24,3 +24,19 @@ export interface PackSource {
 export interface ThemeSource {
   themes(): readonly Theme[];
 }
+
+// User-imported plugins persisted as raw, self-describing-by-`schema` JSON objects.
+// A flat list so a new plugin kind needs no storage-format change.
+export interface PluginStore {
+  load(): unknown[];
+  append(raw: unknown): void;
+}
+
+// Write side of the plugin registry, used by the import pipeline (the read side
+// is PackSource/ThemeSource). add* throw on invalid/duplicate so import surfaces errors.
+export interface PluginRegistry {
+  addPack(raw: unknown): void;
+  addTheme(raw: unknown): void;
+  hasPack(id: string): boolean;
+  hasTheme(id: string): boolean;
+}
