@@ -29,6 +29,6 @@ echo "CI green — deploying HEAD" >&2
 
 STAGE="$(mktemp -d /tmp/sunrise-deploy.XXXXXX)"
 trap 'rm -rf "$STAGE"' EXIT
-git archive HEAD index.html manifest.webmanifest sw.js dist data themes icons |
+git archive HEAD index.html manifest.webmanifest fonts.css sw.js dist data themes fonts icons |
   tar -x -C "$STAGE"
 npx wrangler pages deploy "$STAGE" --project-name "$PROJECT"

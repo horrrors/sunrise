@@ -5,7 +5,6 @@
    CSS only, layered over canonical index.html + app.js markup.
    This theme OWNS all layout (reset, grid, flex, modals, responsive).
    ============================================================ */
-@import url('https://fonts.googleapis.com/css2?family=Marcellus&family=Faustina:ital,wght@0,400;0,500;0,600;1,400&family=Spline+Sans+Mono:wght@400;500;600&display=swap');
 
 :root[data-theme="solarpunk"]{
   /* base palette — warm garden */

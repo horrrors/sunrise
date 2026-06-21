@@ -5,7 +5,6 @@
    Type is the design: one grotesque (Archivo) across weights,
    one accent (International red), paper + ink + red only.
    ============================================================ */
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Black&family=Spline+Sans+Mono:wght@400;500;600;700&display=swap');
 
 :root[data-theme="swiss"]{
   /* paper / ink / accent — structural, not ornamental */

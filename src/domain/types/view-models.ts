@@ -73,3 +73,8 @@ export interface TrackColor {
   id: string;
   color: string;
 }
+export interface AppStateVM {
+  progress: number; // overall completion %, 0–100
+  streak: number; // current streak, days
+  hour: number; // local wall-clock hour, 0–23
+}

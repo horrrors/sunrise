@@ -46,7 +46,11 @@ class FakeEl {
   href = '';
   lang = '';
   checked = false;
-  style = { setProperty(): void {}, removeProperty(): void {} };
+  styleProps: Record<string, string> = {};
+  style = {
+    setProperty: (k: string, v: string): void => void (this.styleProps[k] = v),
+    removeProperty: (k: string): void => void delete this.styleProps[k],
+  };
   dataset: Record<string, string> = {};
   classList = (() => {
     const s = new Set<string>();
@@ -61,6 +65,7 @@ class FakeEl {
   onclick: ((e?: unknown) => void) | null = null;
   oninput: ((e?: unknown) => void) | null = null;
   onload: (() => void) | null = null;
+  onerror: (() => void) | null = null;
   #registry: Registry;
 
   constructor(id: string, registry: Registry) {
@@ -1002,4 +1007,47 @@ test('importing an unrecognized JSON leaves state unchanged (no throw)', async (
   importFile.files = [{}];
   assert.doesNotThrow(() => importFile.onchange!({ target: importFile }));
   assert.equal(h.tracker.activeThemeId(), themeBefore, 'theme unchanged on unrecognized import');
+});
+
+test('a failed theme load reverts the selection to the previous theme', async () => {
+  const h = await boot();
+  const doc = (
+    globalThis as unknown as { document: { createElement: () => FakeEl; documentElement: FakeEl } }
+  ).document;
+  const created: FakeEl[] = [];
+  const orig = doc.createElement;
+  doc.createElement = (): FakeEl => {
+    const el = orig();
+    created.push(el);
+    return el;
+  };
+  const startId = h.tracker.activeThemeId();
+  const target = h.registryPlugin
+    .themes()
+    .map((t) => t.id)
+    .find((id) => id !== startId)!;
+  const sel = h.registry['themeSelect']!;
+  sel.value = target;
+  sel.onchange!();
+  created.at(-1)!.onerror!(); // simulate the <link> failing to load
+  assert.equal(h.tracker.activeThemeId(), startId, 'broken theme is not left persisted');
+});
+
+test('applyAppState sets --sunrise-* on documentElement', () => {
+  const h = harness();
+  const html = (globalThis as unknown as { document: { documentElement: FakeEl } }).document
+    .documentElement;
+  h.renderer.applyAppState({ progress: 42, streak: 7, hour: 14 });
+  assert.equal(html.styleProps['--sunrise-progress'], '42');
+  assert.equal(html.styleProps['--sunrise-streak'], '7');
+  assert.equal(html.styleProps['--sunrise-hour'], '14');
+});
+
+test('boot render writes the app-state vars onto documentElement', async () => {
+  await boot();
+  const html = (globalThis as unknown as { document: { documentElement: FakeEl } }).document
+    .documentElement;
+  assert.ok('--sunrise-progress' in html.styleProps, 'progress var set on render');
+  assert.ok('--sunrise-streak' in html.styleProps, 'streak var set on render');
+  assert.ok('--sunrise-hour' in html.styleProps, 'hour var set on render');
 });

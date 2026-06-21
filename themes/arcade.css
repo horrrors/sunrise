@@ -3,7 +3,6 @@
    CSS only, layered over canonical index.html + app.js markup.
    This theme OWNS all layout. border-radius:0 everywhere by design.
    ============================================================ */
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Silkscreen:wght@400;700&display=swap');
 
 :root[data-theme="arcade"]{
   /* CRT base */

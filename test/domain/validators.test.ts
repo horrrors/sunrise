@@ -337,3 +337,28 @@ test('progress: legacy days blob migrates to items', () => {
   });
   assert.ok(!('reviews' in out));
 });
+
+test('theme parse: rejects inline css that references a remote URL', () => {
+  assert.throws(
+    () =>
+      new ThemeValidator().parse({
+        schema: 'sunrise.theme/v1',
+        id: 'x',
+        name: 'X',
+        version: '1.0.0',
+        css: "@import url('https://fonts.googleapis.com/css2?family=Inter');",
+      }),
+    /remote/,
+  );
+});
+
+test('theme parse: allows a data: URI that contains an http xmlns', () => {
+  const t = {
+    schema: 'sunrise.theme/v1',
+    id: 'x',
+    name: 'X',
+    version: '1.0.0',
+    css: ':root[data-theme="x"] body{background:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\'%3E%3C/svg%3E")}',
+  };
+  assert.deepEqual(new ThemeValidator().parse(t), t);
+});

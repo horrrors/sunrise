@@ -60,6 +60,7 @@
    [data-mobile] kill (animation/transform only) leaves it intact. */
 body{transition:opacity .16s ease}
 :root.theme-switching body{opacity:.18}
+:root.theme-switching *,:root.theme-switching *::before,:root.theme-switching *::after{animation:none!important}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
 /* keyboard focus highlight — theme sets the look via --focus-ring */
 #taskList .task:has(input:focus-visible){outline:var(--focus-ring,3px solid var(--accent,#f6c343));outline-offset:3px;border-radius:var(--r,8px)}
@@ -115,6 +116,7 @@ body{transition:opacity .16s ease}
 :root[data-mobile] .modal{z-index:80!important}
 :root[data-mobile] .modal-panel{width:100vw!important;height:100dvh!important;max-width:none!important;max-height:none!important;border-radius:0!important;overflow:auto!important;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))!important}
 :root[data-mobile] .cm-card{width:42px!important;height:42px!important}</style>
+<link rel="stylesheet" href="fonts.css" />
 <link id="themeCss" rel="stylesheet" href="themes/bonus.css" />
 </head>
 <body>

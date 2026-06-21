@@ -20,6 +20,7 @@ export class DomController {
   private activeModal: string | null = null;
   private activeSheet: 'menu' | 'stats' | null = null;
   private motdTimer: ReturnType<typeof setInterval> | null = null;
+  private appliedThemeId: string | null = null;
   constructor(
     tracker: Tracker,
     projections: Projections,
@@ -36,6 +37,7 @@ export class DomController {
     this.applyStaticLabels();
     const href = this.t.activeThemeHref();
     if (href != null) this.r.applyTheme(href, this.t.activeThemeId() ?? '');
+    this.appliedThemeId = this.t.activeThemeId();
     this.r.applyTrackColors(this.q.trackColors());
     this.r.setLang(this.t.currentLang());
     this.wire();
@@ -113,6 +115,7 @@ export class DomController {
     this.r.renderSelectors(this.q.selectors());
     this.r.renderToday(today, lbl);
     this.r.renderDashboard(this.q.dashboard(), lbl);
+    this.r.applyAppState(this.q.appState());
     this.renderComeback();
     this.renderTrophies();
     this.bindTodayHandlers(today);
@@ -340,6 +343,25 @@ export class DomController {
     this.r.focusTask(ids[i]!, true); // reveal: the row may be off-screen
   }
 
+  // Applies a theme and, if its stylesheet fails to load, reverts the Tracker
+  // selection to the last good theme so a broken id is never left persisted.
+  private applyThemeWithFallback(id: string): void {
+    const prev = this.appliedThemeId;
+    this.t.selectTheme(id);
+    const href = this.t.activeThemeHref();
+    this.appliedThemeId = id;
+    if (href != null) this.r.applyTheme(href, id, { onError: () => this.revertTheme(prev) });
+  }
+
+  private revertTheme(prevId: string | null): void {
+    if (prevId == null) return;
+    this.t.selectTheme(prevId);
+    this.appliedThemeId = prevId;
+    const href = this.t.activeThemeHref();
+    if (href != null) this.r.applyTheme(href, prevId);
+    this.r.renderSelectors(this.q.selectors());
+  }
+
   // ----- wiring (port of app.js init()) --------------------------------------
 
   private wire(): void {
@@ -359,9 +381,7 @@ export class DomController {
     if (theme) {
       theme.onchange = () => {
         this.closeSheets();
-        this.t.selectTheme(theme.value);
-        const href = this.t.activeThemeHref();
-        if (href != null) this.r.applyTheme(href, theme.value);
+        this.applyThemeWithFallback(theme.value);
       };
     }
     // Language toggle (header + dock) — flips to the next supported language and
@@ -451,9 +471,7 @@ export class DomController {
               this.startMotd();
               alert(this.q.ui('importedPack').replace('{name}', this.packName(out.id)));
             } else if (out.kind === 'theme') {
-              this.t.selectTheme(out.id);
-              const href = this.t.activeThemeHref();
-              if (href != null) this.r.applyTheme(href, out.id);
+              this.applyThemeWithFallback(out.id);
               alert(this.q.ui('importedTheme').replace('{name}', this.themeName(out.id)));
             } else {
               alert(this.q.ui('importOk')); // progress (already applied; pack switched if needed)

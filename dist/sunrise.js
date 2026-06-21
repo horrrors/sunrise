@@ -470,6 +470,14 @@
         daysOfLabel: this.uiText(v, "daysOf").replace("{n}", String(overall.total))
       };
     }
+    // App-state surface for themes (read by DomRenderer.applyAppState). Reuses the
+    // shared calculators; hour comes through the Clock port to keep the domain pure.
+    appState() {
+      const v = this.read();
+      const overall = this.deps.stats.overall(v.pack, v.progress);
+      const streak = this.deps.streaks.current(v.progress, this.deps.clock.today());
+      return { progress: overall.pct, streak, hour: this.deps.clock.hour() };
+    }
     cardMap() {
       const v = this.read();
       const overall = this.deps.stats.overall(v.pack, v.progress);
@@ -1353,6 +1361,9 @@ ${this.uiText(v, "aiPromptGuidance").replace("{guidance}", guidance)}
       return raw;
     }
   };
+  function hasRemoteUrl(css) {
+    return /url\(\s*['"]?\s*(?:https?:)?\/\//i.test(css) || /@import\s+['"]\s*(?:https?:)?\/\//i.test(css);
+  }
   var ThemeValidator = class {
     parse(raw) {
       const errors = [];
@@ -1367,6 +1378,12 @@ ${this.uiText(v, "aiPromptGuidance").replace("{guidance}", guidance)}
       if (typeof theme["cssHref"] !== "string" && typeof theme["css"] !== "string") {
         throw new ValidationError([
           { path: "css", msg: 'theme needs either "cssHref" or inline "css"' }
+        ]);
+      }
+      const inlineCss = theme["css"];
+      if (typeof inlineCss === "string" && hasRemoteUrl(inlineCss)) {
+        throw new ValidationError([
+          { path: "css", msg: "inline css must not reference remote URLs (offline-only)" }
         ]);
       }
       return raw;
@@ -1784,7 +1801,7 @@ ${this.uiText(v, "aiPromptGuidance").replace("{guidance}", guidance)}
     themeToken = 0;
     themeApplied = false;
     static THEME_FADE_MS = 170;
-    applyTheme(href, id) {
+    applyTheme(href, id, opts) {
       const link = this.$("themeCss");
       if (!link) return;
       const token = ++this.themeToken;
@@ -1813,6 +1830,7 @@ ${this.uiText(v, "aiPromptGuidance").replace("{guidance}", guidance)}
         loader.remove();
         document.documentElement.classList.remove("theme-switching");
         console.error(`[sunrise] theme css failed to load, keeping the current theme: ${href}`);
+        opts?.onError?.();
       };
       if (!this.themeApplied || prefersReducedMotion()) {
         loader.onload = () => {
@@ -1848,6 +1866,15 @@ ${this.uiText(v, "aiPromptGuidance").replace("{guidance}", guidance)}
         document.documentElement.style.setProperty(`--track-${c.id}`, c.color);
       }
       this.appliedTrackColorIds = colors.map((c) => c.id);
+    }
+    // App-state CSS vars themes can react to (intensify with streak, time-of-day
+    // palettes, etc.). Namespaced --sunrise-* so they never collide with the
+    // theme's own tokens. Updated on every render, not continuously.
+    applyAppState(s) {
+      const root = document.documentElement;
+      root.style.setProperty("--sunrise-progress", String(s.progress));
+      root.style.setProperty("--sunrise-streak", String(s.streak));
+      root.style.setProperty("--sunrise-hour", String(s.hour));
     }
     setLang(lang) {
       document.documentElement.lang = lang;
@@ -1923,6 +1950,7 @@ ${this.uiText(v, "aiPromptGuidance").replace("{guidance}", guidance)}
     activeModal = null;
     activeSheet = null;
     motdTimer = null;
+    appliedThemeId = null;
     constructor(tracker, projections, renderer, importer) {
       this.t = tracker;
       this.q = projections;
@@ -1933,6 +1961,7 @@ ${this.uiText(v, "aiPromptGuidance").replace("{guidance}", guidance)}
       this.applyStaticLabels();
       const href = this.t.activeThemeHref();
       if (href != null) this.r.applyTheme(href, this.t.activeThemeId() ?? "");
+      this.appliedThemeId = this.t.activeThemeId();
       this.r.applyTrackColors(this.q.trackColors());
       this.r.setLang(this.t.currentLang());
       this.wire();
@@ -2001,6 +2030,7 @@ ${this.uiText(v, "aiPromptGuidance").replace("{guidance}", guidance)}
       this.r.renderSelectors(this.q.selectors());
       this.r.renderToday(today, lbl);
       this.r.renderDashboard(this.q.dashboard(), lbl);
+      this.r.applyAppState(this.q.appState());
       this.renderComeback();
       this.renderTrophies();
       this.bindTodayHandlers(today);
@@ -2199,6 +2229,23 @@ ${this.uiText(v, "aiPromptGuidance").replace("{guidance}", guidance)}
       else i = Math.min(Math.max(i + delta, 0), ids.length - 1);
       this.r.focusTask(ids[i], true);
     }
+    // Applies a theme and, if its stylesheet fails to load, reverts the Tracker
+    // selection to the last good theme so a broken id is never left persisted.
+    applyThemeWithFallback(id) {
+      const prev = this.appliedThemeId;
+      this.t.selectTheme(id);
+      const href = this.t.activeThemeHref();
+      this.appliedThemeId = id;
+      if (href != null) this.r.applyTheme(href, id, { onError: () => this.revertTheme(prev) });
+    }
+    revertTheme(prevId) {
+      if (prevId == null) return;
+      this.t.selectTheme(prevId);
+      this.appliedThemeId = prevId;
+      const href = this.t.activeThemeHref();
+      if (href != null) this.r.applyTheme(href, prevId);
+      this.r.renderSelectors(this.q.selectors());
+    }
     // ----- wiring (port of app.js init()) --------------------------------------
     wire() {
       const pack = this.r.$("packSelect");
@@ -2217,9 +2264,7 @@ ${this.uiText(v, "aiPromptGuidance").replace("{guidance}", guidance)}
       if (theme) {
         theme.onchange = () => {
           this.closeSheets();
-          this.t.selectTheme(theme.value);
-          const href = this.t.activeThemeHref();
-          if (href != null) this.r.applyTheme(href, theme.value);
+          this.applyThemeWithFallback(theme.value);
         };
       }
       const switchLang = () => {
@@ -2300,9 +2345,7 @@ ${this.uiText(v, "aiPromptGuidance").replace("{guidance}", guidance)}
                 this.startMotd();
                 alert(this.q.ui("importedPack").replace("{name}", this.packName(out.id)));
               } else if (out.kind === "theme") {
-                this.t.selectTheme(out.id);
-                const href = this.t.activeThemeHref();
-                if (href != null) this.r.applyTheme(href, out.id);
+                this.applyThemeWithFallback(out.id);
                 alert(this.q.ui("importedTheme").replace("{name}", this.themeName(out.id)));
               } else {
                 alert(this.q.ui("importOk"));

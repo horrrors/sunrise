@@ -348,6 +348,15 @@ export class PackValidator {
   }
 }
 
+// A theme must stay offline-only. Flags a remote target of url()/@import
+// (http(s):// or protocol-relative //) but NOT an http xmlns inside a data: URI
+// (the data: comes right after url(, so the //-anchor never matches it).
+export function hasRemoteUrl(css: string): boolean {
+  return (
+    /url\(\s*['"]?\s*(?:https?:)?\/\//i.test(css) || /@import\s+['"]\s*(?:https?:)?\/\//i.test(css)
+  );
+}
+
 export class ThemeValidator {
   public parse(raw: unknown): Theme {
     const errors: ValidationIssue[] = [];
@@ -364,6 +373,12 @@ export class ThemeValidator {
     if (typeof theme['cssHref'] !== 'string' && typeof theme['css'] !== 'string') {
       throw new ValidationError([
         { path: 'css', msg: 'theme needs either "cssHref" or inline "css"' },
+      ]);
+    }
+    const inlineCss = theme['css'];
+    if (typeof inlineCss === 'string' && hasRemoteUrl(inlineCss)) {
+      throw new ValidationError([
+        { path: 'css', msg: 'inline css must not reference remote URLs (offline-only)' },
       ]);
     }
     return raw as Theme;

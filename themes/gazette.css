@@ -29,7 +29,6 @@
    card-map grid + tooltip, shortcuts list, motion guard) — none of it here.
    ========================================================================== */
 
-@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=PT+Mono&display=swap");
 
 :root[data-theme="gazette"] {
   --bg: #ece3cd;

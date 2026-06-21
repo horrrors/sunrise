@@ -168,3 +168,11 @@ test('mobile baseline lifts toasts above the dock', () => {
   assert.ok(m, '[data-mobile] .toast/.badge-toast rule present');
   assert.ok(m![1]!.includes('bottom:calc('), 'toasts must sit above the dock height');
 });
+
+test('baseline neutralizes animations during the theme cross-fade', () => {
+  const html = readFileSync(join(root, 'index.html'), 'utf8');
+  assert.ok(
+    /:root\.theme-switching\s*\*[^{]*\{[^}]*animation:\s*none\s*!important/.test(html),
+    'the cross-fade must kill animations so coexisting sheets cannot bleed keyframes',
+  );
+});

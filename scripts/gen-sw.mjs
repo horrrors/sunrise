@@ -20,9 +20,11 @@ const list = (dir, ext) =>
 const ASSETS = [
   './',
   'manifest.webmanifest',
+  'fonts.css',
   'dist/sunrise.js',
   ...list('data/packs', '.js'),
   ...list('themes', '.css'),
+  ...list('fonts', '.woff2'),
   ...list('icons', '.png'),
 ];
 

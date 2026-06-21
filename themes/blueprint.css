@@ -5,7 +5,6 @@
    navy graph-paper sheet: cyan ink, amber annotations, drafting marks.
    This theme OWNS all layout (no base CSS ships with the app).
    ============================================================ */
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Saira+Semi+Condensed:wght@600;700;800&display=swap');
 
 :root[data-theme="blueprint"]{
   /* sheet base */

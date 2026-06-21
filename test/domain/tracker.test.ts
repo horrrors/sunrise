@@ -435,3 +435,12 @@ test('goToItem persists the cursor to session', () => {
   assert.equal(q.todayCard().itemId, 'c2');
   assert.equal(getSession().cursors?.['resume'], 'c2');
 });
+
+test('appState exposes progress, streak, and the wall-clock hour', () => {
+  const { q } = buildTracker({ packs: [PACK] });
+  assert.deepEqual(q.appState(), {
+    progress: q.dashboard().overall.pct,
+    streak: q.dashboard().streak,
+    hour: 14, // the fake clock's hour()
+  });
+});

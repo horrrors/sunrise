@@ -5,7 +5,6 @@
    thick black outlines + hard coloured offset shadows.
    CSS only, layered over canonical index.html + app.js markup.
    ============================================================ */
-@import url('https://fonts.googleapis.com/css2?family=Shrikhand&family=Hanken+Grotesk:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
 
 :root[data-theme="memphis"]{
   /* clashing brights */

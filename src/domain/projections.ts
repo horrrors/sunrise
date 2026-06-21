@@ -11,6 +11,7 @@ import type {
   SelectorsVM,
   TrackColor,
   TaskVM,
+  AppStateVM,
 } from './types/view-models.ts';
 
 // The read model (CQS). Stateless: it reads a live TrackerView snapshot via the
@@ -177,6 +178,15 @@ export class Projections {
       tracks,
       daysOfLabel: this.uiText(v, 'daysOf').replace('{n}', String(overall.total)),
     };
+  }
+
+  // App-state surface for themes (read by DomRenderer.applyAppState). Reuses the
+  // shared calculators; hour comes through the Clock port to keep the domain pure.
+  public appState(): AppStateVM {
+    const v = this.read();
+    const overall = this.deps.stats.overall(v.pack, v.progress);
+    const streak = this.deps.streaks.current(v.progress, this.deps.clock.today());
+    return { progress: overall.pct, streak, hour: this.deps.clock.hour() };
   }
 
   public cardMap(): CardMapVM {

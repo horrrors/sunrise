@@ -314,7 +314,7 @@ export class DomRenderer {
   private themeApplied = false;
   private static readonly THEME_FADE_MS = 170;
 
-  public applyTheme(href: string, id: string): void {
+  public applyTheme(href: string, id: string, opts?: { onError?: () => void }): void {
     const link = this.$('themeCss') as HTMLLinkElement | null;
     if (!link) return;
     const token = ++this.themeToken;
@@ -347,6 +347,7 @@ export class DomRenderer {
       loader.remove();
       document.documentElement.classList.remove('theme-switching');
       console.error(`[sunrise] theme css failed to load, keeping the current theme: ${href}`);
+      opts?.onError?.();
     };
 
     // Cross-fade only on a real switch with motion allowed; boot and
@@ -392,6 +393,16 @@ export class DomRenderer {
       document.documentElement.style.setProperty(`--track-${c.id}`, c.color);
     }
     this.appliedTrackColorIds = colors.map((c) => c.id);
+  }
+
+  // App-state CSS vars themes can react to (intensify with streak, time-of-day
+  // palettes, etc.). Namespaced --sunrise-* so they never collide with the
+  // theme's own tokens. Updated on every render, not continuously.
+  public applyAppState(s: { progress: number; streak: number; hour: number }): void {
+    const root = document.documentElement;
+    root.style.setProperty('--sunrise-progress', String(s.progress));
+    root.style.setProperty('--sunrise-streak', String(s.streak));
+    root.style.setProperty('--sunrise-hour', String(s.hour));
   }
 
   public setLang(lang: string): void {

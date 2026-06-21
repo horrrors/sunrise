@@ -297,6 +297,10 @@ define them, or (cleaner) restyle `.cm-card` directly with your own tokens.
   per-id selectors — CSS can't read `var(--track-{attr})` dynamically.
 - `--p` on `.ring` — overall-progress percent as a **unitless number 0–100**.
   Use it as `calc(var(--p) * 1%)` (writing `--p:42%` would break the `calc`).
+- on `:root` (`<html>`), refreshed every render: `--sunrise-progress` (overall
+  completion %, unitless 0–100), `--sunrise-streak` (current streak, integer days),
+  `--sunrise-hour` (local wall-clock hour 0–23). Use them to make a theme react to
+  state — e.g. intensify at a high streak, or shift a palette by time of day.
 - on each `.confetti-piece`: `--i` (0-based index), `--dx` (−1…1 horizontal
   drift), `--dy` (0…1 fall distance), `--rot` (rotation, e.g. −360…360deg).
 
@@ -637,9 +641,17 @@ fixed px — this is the biggest polish tell and prevents mobile breakage:
 .today-title { font-size: clamp(1.8rem, 4vw, 3rem); line-height: 1; }
 ```
 
-**Fonts.** A 2–3 family system via `@import` (a display face for headings/numbers,
-a body face, optionally mono for `.eyebrow`/`.val` stats), each with a system
-fallback stack so it degrades on `file://`.
+**Fonts.** The app ships a self-hosted font library in `fonts.css` (always loaded),
+so you just pick families by name — `font-family: 'Press Start 2P', monospace` —
+with a system fallback. **Do not `@import` Google Fonts or reference any remote URL;
+it is rejected** (offline-first: `file://` + PWA precache). Available families:
+Anton, Archivo, Archivo Black, Cormorant Garamond, DM Mono, EB Garamond, Faustina,
+Fraunces, Hanken Grotesk, IBM Plex Mono, IBM Plex Sans, Inter, JetBrains Mono, Jost,
+Marcellus, Playfair Display, Plus Jakarta Sans, Press Start 2P, PT Mono, PT Serif,
+Saira Semi Condensed, Shippori Mincho, Shrikhand, Silkscreen, Sora, Space Grotesk,
+Space Mono, Spline Sans Mono, Syne, VT323, Zen Kaku Gothic New. To add a new family,
+extend `scripts/fetch-fonts.mjs` and re-run it. (`os95` uses system fonts only — a
+fine choice too.)
 
 **Per-track color.** The app sets `--track-<id>` for tracks the pack colors.
 The bundled `dev-roadmap` pack declares the track ids `dsa js ts node sysdesign
@@ -722,10 +734,11 @@ Three rules keep it smooth and collision-free:
   a glyph that carries a static `filter:drop-shadow`/`blur` (a common `.flame`/
   `.ring` glow) forces a full re-raster every frame — cheap on desktop, a steady
   jank source on a phone. The baseline strips those filters on mobile for you.
-- **Prefix every keyframe name with your theme id** (`mytheme-…`). `@keyframes`
-  names are global, and during a switch the outgoing and incoming sheets briefly
-  coexist — a generic name (`flicker`, `taskIn`) defined by two themes bleeds
-  (last parsed wins) for that ~200ms window.
+- **Keyframe names: prefixing is optional now.** The app neutralizes all animations
+  during the cross-fade (`:root.theme-switching *{animation:none}`), so two themes
+  defining the same `@keyframes` name can no longer bleed into each other. Prefixing
+  (`mytheme-…`) is still tidy and recommended for readability, but no longer required
+  for correctness.
 - **Mobile keeps the cheap motion and neutralizes the expensive kind — centrally,
   for you.** `[data-mobile]` (§5) does more than zero `animation` on the bare
   `body`/`.app-header` *elements*. Those kills never reached the pseudos and
@@ -842,7 +855,8 @@ when it matters.
 >      with a donut hole, and the confetti vars (`--dx` −1…1, `--dy` 0…1,
 >      `--rot`, `--i`);
 >    - applies house style: a token system with a 3-step shadow ramp, `clamp()`
->      fluid type, a 2–3 font stack, per-track colors with `color-mix()` tints,
+>      fluid type, a 2–3 font stack chosen from the bundled families in §7 (no
+>      `@import`/remote URLs), per-track colors with `color-mix()` tints,
 >      a layered atmospheric background, hover/active micro-interactions, and the
 >      `.task` entrance keyframe keyed off the inline `animation-delay`;
 >    - adds **no** reduced-motion block of its own — the app baseline ships the

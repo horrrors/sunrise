@@ -1,5 +1,4 @@
 /* themes/aurora-noir.css */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&family=Playfair+Display:wght@700;900&display=swap");
 
 :root[data-theme="aurora-noir"] {
   --bg:#090b12; --panel:#111827; --rail:#263142; --line:#334155;
