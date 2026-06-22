@@ -1,0 +1,605 @@
+/* ============================================================================
+   themes/doom-v2.css — «Doom · Rip & Tear» (pixel) — a background firefight
+   ----------------------------------------------------------------------------
+   A 1993-shareware tech-base HUD: gunmetal steel, hazard chevrons, a recessed
+   bevelled status panel, and the marine's mugshot watching from the streak
+   card. The dashboard reads as the iconic STBAR status bar — HEALTH is your
+   progress ring, the FACE is your streak, the bars are your tracks. A steel
+   perspective floor recedes into the dark behind the content.
+
+   Pixel craft: graded steel ramp (no flat greys), hard bevels (no blur), the
+   DOOMGUY face as an inline-SVG sprite. CSS only, scoped under
+   :root[data-theme="doom-v2"]. Motion is transform/opacity + ONE background-position
+   scroll layer (the floor grid); static filters only; @keyframes dm- prefixed;
+   decorative full-viewport layers are position:fixed. No own reduced-motion /
+   mobile guards (the app baseline owns them). Fonts are self-hosted (fonts.css).
+   ========================================================================== */
+
+:root[data-theme="doom-v2"] {
+  /* --- gunmetal ramp --- */
+  --bg:#15161a; --bg2:#0c0d10;
+  --steel:#3b3f46; --steel-lt:#565b64; --steel-dk:#23262c;
+  --brown:#4a3120;
+
+  --ink:#c6cad0; --ink-dim:#8a8f99; --muted:#5b606a;
+  --red:#d11e1e; --red-lt:#ff3a2a; --warn:#e0b400; --green:#36c000; --blue:#2e8bff;
+
+  --panel:#22252b; --panel-2:#1b1e23; --rail:#0d0f13;
+  --line:#070809; --line-lt:#4a4f57;
+  --hud:#2a2e34; --hud-recess:#0a0b0e;
+
+  --accent:var(--red);
+  --glow-red:0 0 10px rgba(209,30,30,.55);
+
+  --hazard:repeating-linear-gradient(45deg,#0a0b0e 0 10px,var(--warn) 10px 20px);
+  --bevel:inset 2px 2px 0 var(--steel-lt), inset -2px -2px 0 var(--line);
+  --bevel-in:inset 2px 2px 0 var(--line), inset -2px -2px 0 var(--steel-lt);
+  --drop:0 5px 0 rgba(0,0,0,.55);
+
+  --r:0px;
+
+  --font-disp:'Press Start 2P', monospace;
+  --font-lab:'Silkscreen', 'Press Start 2P', monospace;
+  --font-body:'VT323', ui-monospace, 'SF Mono', monospace;
+
+  --fast:.1s steps(2,end);
+
+  /* mobile HUD + card-map baseline tokens (theme guide §5) */
+  --paper:#2a2e34; --paper-2:#1b1e23; --cobalt:#2e8bff; --yellow:#e0b400;
+  --focus-ring:2px solid var(--red);
+
+  /* per-track spot colours — a UAC console spectrum */
+  --track-dsa:#d11e1e;       /* health red */
+  --track-js:#e0b400;        /* hazard yellow */
+  --track-ts:#2e8bff;        /* blue keycard */
+  --track-node:#36c000;      /* armour green */
+  --track-sysdesign:#b06be0; /* artifact violet */
+  --track-patterns:#e07a2a;  /* copper */
+  --track-distsys:#2ec6c6;   /* plasma cyan */
+  --track-db:#8a8f99;        /* steel */
+  --track-cs:#ff7a3a;        /* rocket orange */
+  --track-bare:#7d828c;      /* neutral steel */
+
+  color-scheme: dark;
+}
+
+/* ====================== BACKGROUND SCENE ======================
+   Page: dark hangar with a steel glow welling up from the floor.
+   body::before — the receding tech-floor grid (the ONE bg-position scroll layer).
+   body::after  — vignette + scanline grain + a faint riveted ceiling band. */
+:root[data-theme="doom-v2"] body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font: 400 17px/1.5 var(--font-body);
+  background:
+    radial-gradient(120% 70% at 50% 118%, #283042, transparent 60%),
+    radial-gradient(100% 60% at 50% -10%, #1c1f27, transparent 55%),
+    var(--bg);
+  background-attachment: fixed;
+  image-rendering: pixelated;
+  position: relative;
+  overflow-x: clip;
+}
+:root[data-theme="doom-v2"] { overflow-x: clip; }
+
+:root[data-theme="doom-v2"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  pointer-events: none;
+  --cell: 92px;
+  transform: perspective(320px) rotateX(72deg);
+  transform-origin: 50% 30%;
+  background-image:
+    repeating-linear-gradient(90deg, transparent 0 calc(var(--cell) - 2px), rgba(90,108,140,.45) calc(var(--cell) - 2px) var(--cell)),
+    repeating-linear-gradient(0deg,  transparent 0 calc(var(--cell) - 2px), rgba(90,108,140,.45) calc(var(--cell) - 2px) var(--cell));
+  background-size: var(--cell) var(--cell);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0 26%, #000 44% 100%);
+          mask-image: linear-gradient(to bottom, transparent 0 26%, #000 44% 100%);
+  animation: dm-grid 3.4s linear infinite;
+}
+:root[data-theme="doom-v2"] body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  background:
+    radial-gradient(135% 130% at 50% 46%, transparent 58%, rgba(0,0,0,.72) 100%),
+    repeating-linear-gradient(0deg, rgba(0,0,0,.16) 0 2px, transparent 2px 4px);
+  mix-blend-mode: multiply;
+}
+
+:root[data-theme="doom-v2"] ::selection { background: rgba(209,30,30,.36); color: #fff; }
+:root[data-theme="doom-v2"] ::-webkit-scrollbar { width: 13px; height: 13px; }
+:root[data-theme="doom-v2"] ::-webkit-scrollbar-track { background: #0a0b0e; }
+:root[data-theme="doom-v2"] ::-webkit-scrollbar-thumb { background: var(--steel); border: 3px solid #0a0b0e; }
+
+/* ====================== PAGE COLUMNS ====================== */
+:root[data-theme="doom-v2"] .app-header,
+:root[data-theme="doom-v2"] .wrap,
+:root[data-theme="doom-v2"] .foot { width: min(1060px, 100% - 28px); margin-inline: auto; position: relative; z-index: 1; }
+
+/* ====================== HEADER ====================== */
+:root[data-theme="doom-v2"] .app-header {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 14px;
+  margin-top: 16px; padding: 12px 16px;
+  background: var(--hud);
+  border: 3px solid var(--line);
+  box-shadow: var(--bevel), var(--drop);
+  animation: dm-rise .45s steps(5,end) both;
+}
+:root[data-theme="doom-v2"] .brand { display: flex; align-items: center; gap: 13px; flex-wrap: wrap; }
+:root[data-theme="doom-v2"] .brand-mark { font-family: var(--font-disp); font-size: 15px; color: var(--red); text-shadow: 2px 2px 0 #000; }
+:root[data-theme="doom-v2"] .brand-name {
+  font-family: var(--font-disp); font-size: clamp(15px, 2.4vw, 22px); letter-spacing: .02em;
+  color: #fff; text-shadow: 3px 3px 0 #000, var(--glow-red);
+}
+:root[data-theme="doom-v2"] .brand-sub {
+  font-family: var(--font-lab); font-size: 11px; letter-spacing: .05em; text-transform: uppercase;
+  color: #000; background: var(--warn); border: 2px solid #000; padding: 4px 8px; box-shadow: 2px 2px 0 #000;
+}
+:root[data-theme="doom-v2"] .brand-sub:empty { display: none; }
+
+:root[data-theme="doom-v2"] .toolbar { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+:root[data-theme="doom-v2"] .field { display: inline-flex; }
+:root[data-theme="doom-v2"] select {
+  appearance: none; -webkit-appearance: none;
+  font-family: var(--font-lab); font-size: 12px; color: var(--ink);
+  background: var(--steel-dk)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M0 1h8v2H6v2H2V3H0z' fill='%23d11e1e'/%3E%3C/svg%3E")
+    no-repeat right 8px center;
+  border: 2px solid var(--line); box-shadow: var(--bevel);
+  padding: 7px 26px 7px 10px; cursor: pointer; max-width: 62vw;
+}
+:root[data-theme="doom-v2"] select:hover { color: #fff; }
+:root[data-theme="doom-v2"] select:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+:root[data-theme="doom-v2"] select option { background: var(--steel-dk); color: var(--ink); font-family: var(--font-body); font-size: 16px; }
+
+:root[data-theme="doom-v2"] .btn {
+  font-family: var(--font-lab); font-size: 14px; color: var(--ink);
+  background: var(--steel-dk); border: 2px solid var(--line); box-shadow: var(--bevel);
+  padding: 6px 10px; cursor: pointer; transition: color var(--fast);
+}
+:root[data-theme="doom-v2"] .btn:hover { color: var(--red); }
+:root[data-theme="doom-v2"] .btn:active { box-shadow: var(--bevel-in); }
+:root[data-theme="doom-v2"] .btn:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+
+/* ====================== SECTION TITLES / COMEBACK ====================== */
+:root[data-theme="doom-v2"] .wrap { padding: 6px 2px 30px; }
+:root[data-theme="doom-v2"] .section-title {
+  font-family: var(--font-lab); font-size: 12px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink-dim); margin: 24px 2px 11px; display: flex; align-items: center; gap: 9px;
+}
+:root[data-theme="doom-v2"] .section-title::before { content: ""; width: 14px; height: 14px; flex: 0 0 auto; background: var(--hazard); }
+:root[data-theme="doom-v2"] #comeback {
+  font-family: var(--font-body); font-size: 18px; line-height: 1.4; color: var(--ink);
+  background: var(--panel); border: 2px solid var(--line); border-left: 5px solid var(--red);
+  box-shadow: var(--bevel-in); padding: 12px 15px; margin: 0 0 16px;
+}
+
+/* ====================== DASHBOARD = THE STATUS BAR ====================== */
+:root[data-theme="doom-v2"] .dash {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px;
+  padding: 8px; background: var(--hud); border: 3px solid var(--line);
+  box-shadow: var(--bevel), var(--drop);
+  animation: dm-rise .5s steps(5,end) both;
+}
+:root[data-theme="doom-v2"] .stat-card {
+  display: flex; flex-direction: column; gap: 10px; padding: 16px 14px;
+  background: var(--hud-recess); box-shadow: var(--bevel-in);
+  position: relative; overflow: hidden;
+}
+:root[data-theme="doom-v2"] .eyebrow {
+  font-family: var(--font-lab); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--warn);
+}
+:root[data-theme="doom-v2"] .stat-card[data-kind="streak"] .eyebrow { color: var(--green); }
+:root[data-theme="doom-v2"] .stat-card[data-kind="phases"] .eyebrow { color: var(--blue); }
+:root[data-theme="doom-v2"] .stat-card[data-kind="tracks"] .eyebrow { color: var(--ink-dim); }
+
+/* ---- HEALTH gauge (progress ring) ---- */
+:root[data-theme="doom-v2"] .ring {
+  --p: 0; position: relative; width: 124px; aspect-ratio: 1; margin-inline: auto;
+  display: grid; place-items: center; border-radius: 50%;
+  background:
+    radial-gradient(closest-side, var(--hud-recess) 0 69%, transparent 70%),
+    conic-gradient(var(--red) calc(var(--p) * 1%), #1a1d22 0);
+  filter: drop-shadow(0 0 7px rgba(209,30,30,.45));
+}
+:root[data-theme="doom-v2"] .ring::after {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: repeating-conic-gradient(from -90deg, rgba(0,0,0,.5) 0 2deg, transparent 2deg 30deg);
+  -webkit-mask: radial-gradient(closest-side, transparent 0 69%, #000 70%);
+          mask: radial-gradient(closest-side, transparent 0 69%, #000 70%);
+}
+:root[data-theme="doom-v2"] .ring > div {
+  width: 70%; aspect-ratio: 1; display: grid; place-content: center; place-items: center;
+  border-radius: 50%; background: var(--hud-recess); text-align: center;
+}
+:root[data-theme="doom-v2"] .ring b { display: block; font-family: var(--font-disp); font-size: 21px; line-height: 1; color: var(--red); text-shadow: 2px 2px 0 #000; }
+:root[data-theme="doom-v2"] .ring small { display: block; font-family: var(--font-lab); font-size: 9px; color: var(--ink-dim); margin-top: 6px; }
+:root[data-theme="doom-v2"] .stat-sub { font-family: var(--font-body); font-size: 16px; color: var(--ink-dim); }
+
+/* ---- the FACE (streak) — DOOMGUY mugshot watching you ---- */
+:root[data-theme="doom-v2"] .flame {
+  width: calc(60px + min(var(--sunrise-streak, 0), 24) * 0.7px);
+  aspect-ratio: 1; margin: 0 auto;
+  color: transparent; font-size: 0;
+  background: #000 url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%223%22%20y%3D%221%22%20width%3D%2210%22%20height%3D%221%22%20fill%3D%22%235a3415%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%2212%22%20height%3D%222%22%20fill%3D%22%235a3415%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%224%22%20width%3D%221%22%20height%3D%223%22%20fill%3D%22%235a3415%22%2F%3E%3Crect%20x%3D%2213%22%20y%3D%224%22%20width%3D%221%22%20height%3D%223%22%20fill%3D%22%235a3415%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%222%22%20width%3D%228%22%20height%3D%221%22%20fill%3D%22%237a4a22%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%224%22%20width%3D%2210%22%20height%3D%229%22%20fill%3D%22%23c98a5a%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%224%22%20width%3D%221%22%20height%3D%229%22%20fill%3D%22%239a5f33%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%224%22%20width%3D%221%22%20height%3D%229%22%20fill%3D%22%239a5f33%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2212%22%20width%3D%228%22%20height%3D%221%22%20fill%3D%22%239a5f33%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23140b05%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%226%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23140b05%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%227%22%20width%3D%223%22%20height%3D%222%22%20fill%3D%22%23e9e2cf%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%227%22%20width%3D%223%22%20height%3D%222%22%20fill%3D%22%23e9e2cf%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%227%22%20width%3D%221%22%20height%3D%222%22%20fill%3D%22%23140b05%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%227%22%20width%3D%221%22%20height%3D%222%22%20fill%3D%22%23140b05%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%229%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%239a5f33%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%2211%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23140b05%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%2212%22%20width%3D%226%22%20height%3D%221%22%20fill%3D%22%232a0c06%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%2212%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23e9e2cf%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%2212%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23e9e2cf%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2212%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23e9e2cf%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2213%22%20width%3D%228%22%20height%3D%221%22%20fill%3D%22%23c98a5a%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%2214%22%20width%3D%226%22%20height%3D%221%22%20fill%3D%22%239a5f33%22%2F%3E%3C%2Fsvg%3E") center / 86% no-repeat;
+  border: 2px solid var(--line); box-shadow: var(--bevel-in);
+  image-rendering: pixelated;
+  animation: dm-bob 2.6s steps(4, end) infinite;
+}
+:root[data-theme="doom-v2"] .streak-num {
+  font-family: var(--font-disp); font-size: 26px; line-height: 1; text-align: center;
+  color: var(--red); text-shadow: 2px 2px 0 #000, var(--glow-red);
+}
+
+/* ---- ARMS / phase + track rows ---- */
+:root[data-theme="doom-v2"] .prow { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-family: var(--font-body); font-size: 17px; }
+:root[data-theme="doom-v2"] .prow .lbl { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--ink); }
+:root[data-theme="doom-v2"] .prow .lbl > i { width: 11px; height: 11px; flex: 0 0 auto; background: var(--track-bare); box-shadow: 0 0 0 2px rgba(0,0,0,.5); }
+:root[data-theme="doom-v2"] .val { font-family: var(--font-lab); font-size: 11px; color: var(--warn); }
+:root[data-theme="doom-v2"] .bar { height: 12px; background: var(--rail); border: 2px solid var(--line); box-shadow: var(--bevel-in); overflow: hidden; margin-top: 5px; }
+:root[data-theme="doom-v2"] .bar > i { display: block; height: 100%; background: repeating-linear-gradient(90deg, var(--red) 0 5px, #8a1010 5px 7px); }
+:root[data-theme="doom-v2"] .muted { color: var(--muted); font-family: var(--font-body); font-size: 16px; }
+
+/* ---- per-track colour wiring ---- */
+:root[data-theme="doom-v2"] .prow[data-track="dsa"]       .lbl > i { background: var(--track-dsa); }
+:root[data-theme="doom-v2"] .prow[data-track="js"]        .lbl > i { background: var(--track-js); }
+:root[data-theme="doom-v2"] .prow[data-track="ts"]        .lbl > i { background: var(--track-ts); }
+:root[data-theme="doom-v2"] .prow[data-track="node"]      .lbl > i { background: var(--track-node); }
+:root[data-theme="doom-v2"] .prow[data-track="sysdesign"] .lbl > i { background: var(--track-sysdesign); }
+:root[data-theme="doom-v2"] .prow[data-track="patterns"]  .lbl > i { background: var(--track-patterns); }
+:root[data-theme="doom-v2"] .prow[data-track="distsys"]   .lbl > i { background: var(--track-distsys); }
+:root[data-theme="doom-v2"] .prow[data-track="db"]        .lbl > i { background: var(--track-db); }
+:root[data-theme="doom-v2"] .prow[data-track="cs"]        .lbl > i { background: var(--track-cs); }
+:root[data-theme="doom-v2"] .bar[data-track="dsa"]       > i { background: repeating-linear-gradient(90deg, var(--track-dsa) 0 5px, color-mix(in srgb, var(--track-dsa) 55%, #000) 5px 7px); }
+:root[data-theme="doom-v2"] .bar[data-track="js"]        > i { background: repeating-linear-gradient(90deg, var(--track-js) 0 5px, color-mix(in srgb, var(--track-js) 55%, #000) 5px 7px); }
+:root[data-theme="doom-v2"] .bar[data-track="ts"]        > i { background: repeating-linear-gradient(90deg, var(--track-ts) 0 5px, color-mix(in srgb, var(--track-ts) 55%, #000) 5px 7px); }
+:root[data-theme="doom-v2"] .bar[data-track="node"]      > i { background: repeating-linear-gradient(90deg, var(--track-node) 0 5px, color-mix(in srgb, var(--track-node) 55%, #000) 5px 7px); }
+:root[data-theme="doom-v2"] .bar[data-track="sysdesign"] > i { background: repeating-linear-gradient(90deg, var(--track-sysdesign) 0 5px, color-mix(in srgb, var(--track-sysdesign) 55%, #000) 5px 7px); }
+:root[data-theme="doom-v2"] .bar[data-track="patterns"]  > i { background: repeating-linear-gradient(90deg, var(--track-patterns) 0 5px, color-mix(in srgb, var(--track-patterns) 55%, #000) 5px 7px); }
+:root[data-theme="doom-v2"] .bar[data-track="distsys"]   > i { background: repeating-linear-gradient(90deg, var(--track-distsys) 0 5px, color-mix(in srgb, var(--track-distsys) 55%, #000) 5px 7px); }
+:root[data-theme="doom-v2"] .bar[data-track="db"]        > i { background: repeating-linear-gradient(90deg, var(--track-db) 0 5px, color-mix(in srgb, var(--track-db) 55%, #000) 5px 7px); }
+:root[data-theme="doom-v2"] .bar[data-track="cs"]        > i { background: repeating-linear-gradient(90deg, var(--track-cs) 0 5px, color-mix(in srgb, var(--track-cs) 55%, #000) 5px 7px); }
+
+/* ====================== DAY RAIL ====================== */
+:root[data-theme="doom-v2"] .day-rail {
+  display: grid; grid-template-columns: 48px minmax(0, 1fr) 48px; gap: 10px; align-items: stretch;
+  animation: dm-rise .55s steps(5,end) .2s both;
+}
+:root[data-theme="doom-v2"] .today-wrap { min-width: 0; }
+:root[data-theme="doom-v2"] .day-nav {
+  font-family: var(--font-disp); font-size: 14px; display: grid; place-items: center;
+  color: var(--red); background: var(--hud); border: 3px solid var(--line); box-shadow: var(--bevel); cursor: pointer;
+  transition: color var(--fast);
+}
+:root[data-theme="doom-v2"] .day-nav:hover:not(:disabled) { color: #fff; }
+:root[data-theme="doom-v2"] .day-nav:active { box-shadow: var(--bevel-in); }
+:root[data-theme="doom-v2"] .day-nav:disabled { opacity: .3; cursor: not-allowed; }
+:root[data-theme="doom-v2"] .day-nav:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+
+/* ====================== TODAY CARD ====================== */
+:root[data-theme="doom-v2"] .today {
+  position: relative; display: flex; min-height: 430px; overflow: hidden;
+  background: var(--panel); border: 3px solid var(--line); box-shadow: var(--bevel), var(--drop);
+}
+:root[data-theme="doom-v2"] .today-side {
+  flex: 0 0 44px; display: grid; place-items: center;
+  background: var(--hazard); border-right: 3px solid var(--line);
+}
+:root[data-theme="doom-v2"] .vert {
+  writing-mode: vertical-rl; transform: rotate(180deg);
+  font-family: var(--font-lab); font-size: 12px; letter-spacing: .2em; text-transform: uppercase;
+  color: #000; text-shadow: 1px 1px 0 rgba(255,255,255,.25);
+}
+:root[data-theme="doom-v2"] .today-main {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px;
+  padding: clamp(18px, 3.2vw, 28px);
+}
+:root[data-theme="doom-v2"] .trackpill {
+  display: inline-flex; align-items: center; gap: 8px; align-self: flex-start;
+  font-family: var(--font-lab); font-size: 11px; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--ink); background: var(--steel-dk); border: 2px solid var(--line); box-shadow: var(--bevel); padding: 4px 11px 4px 4px;
+}
+:root[data-theme="doom-v2"] .trackpill .k { display: grid; place-items: center; width: 22px; height: 22px; font-family: var(--font-disp); font-size: 8px; color: #000; background: var(--warn); }
+:root[data-theme="doom-v2"] .today[data-track] .today-side { background: var(--hazard); }
+:root[data-theme="doom-v2"] .today-title { margin: 0; font-family: var(--font-disp); font-size: clamp(1.05rem, 2.7vw, 1.7rem); line-height: 1.35; color: #fff; text-shadow: 3px 3px 0 #000; }
+
+/* warmup / rest-prompt */
+:root[data-theme="doom-v2"] .warm {
+  font-family: var(--font-body); font-size: 18px; line-height: 1.4; color: var(--ink-dim);
+  background: var(--panel-2); border: 2px solid var(--line); border-left: 5px solid var(--warn); box-shadow: var(--bevel-in); padding: 11px 14px; margin: 0;
+}
+:root[data-theme="doom-v2"] p.warm { margin: 0; }
+:root[data-theme="doom-v2"] .warm-head { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
+:root[data-theme="doom-v2"] .warm-text { display: block; }
+:root[data-theme="doom-v2"] .warm-i { color: var(--warn); flex: 0 0 auto; }
+:root[data-theme="doom-v2"] .warm .muted { color: var(--warn); text-transform: uppercase; letter-spacing: .08em; font-size: 10px; font-family: var(--font-lab); }
+
+/* ====================== TASKS ====================== */
+:root[data-theme="doom-v2"] .tasks,
+:root[data-theme="doom-v2"] #taskList { display: flex; flex-direction: column; gap: 9px; }
+:root[data-theme="doom-v2"] .task-wrap { display: flex; flex-direction: column; gap: 8px; position: relative; }
+:root[data-theme="doom-v2"] .task {
+  display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 12px; align-items: start;
+  padding: 11px 13px; background: var(--panel-2); border: 2px solid var(--line); box-shadow: var(--bevel-in);
+  cursor: pointer; user-select: text;
+  transition: transform var(--fast), border-color var(--fast);
+  animation: dm-task .3s steps(4, end) both;
+}
+:root[data-theme="doom-v2"] .task:hover { transform: translateX(3px); border-color: var(--line-lt); }
+:root[data-theme="doom-v2"] .task .box {
+  width: 24px; height: 24px; margin-top: 1px; background: var(--steel-dk); border: 2px solid var(--line); box-shadow: var(--bevel);
+  display: grid; place-items: center;
+}
+:root[data-theme="doom-v2"] .task.done .box { background: var(--red); border-color: #000; }
+:root[data-theme="doom-v2"] .task.done .box::after {
+  content: ""; display: block; width: 6px; height: 11px; rotate: 45deg;
+  border: 3px solid #fff; border-top: 0; border-left: 0; margin-bottom: 3px;
+  animation: dm-check .2s steps(3,end) both;
+}
+:root[data-theme="doom-v2"] .task-text { font-family: var(--font-body); font-size: 19px; line-height: 1.3; color: var(--ink); }
+:root[data-theme="doom-v2"] .task.done .task-text { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--red); }
+
+/* per-task guidance spoiler */
+:root[data-theme="doom-v2"] .task-hint { font-size: 16px; margin-left: 6px; }
+:root[data-theme="doom-v2"] .task-hint > summary { color: var(--red); cursor: pointer; }
+:root[data-theme="doom-v2"] .task-hint-body { font-family: var(--font-body); font-size: 17px; line-height: 1.4; color: var(--ink-dim); border-left: 2px solid var(--warn); padding-left: 11px; margin-left: 3px; }
+
+/* copy / AI tools */
+:root[data-theme="doom-v2"] .copy-btn { border: 2px solid var(--line); box-shadow: var(--bevel); background: var(--steel-dk); color: var(--ink-dim); }
+:root[data-theme="doom-v2"] .copy-btn:hover { background: var(--steel); color: #fff; }
+
+/* ====================== REFLECTION ====================== */
+:root[data-theme="doom-v2"] .reflect-block { display: flex; flex-direction: column; gap: 8px; }
+:root[data-theme="doom-v2"] .reflect-label { display: flex; align-items: center; gap: 8px; font-family: var(--font-lab); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim); }
+:root[data-theme="doom-v2"] .reflect-label .kanji,
+:root[data-theme="doom-v2"] .kanji { font-family: var(--font-disp); font-size: 11px; color: var(--red); }
+:root[data-theme="doom-v2"] textarea {
+  width: 100%; min-height: 80px; resize: vertical; font-family: var(--font-body); font-size: 18px; color: var(--ink);
+  background: var(--rail); border: 2px solid var(--line); box-shadow: var(--bevel-in); padding: 10px 13px;
+}
+:root[data-theme="doom-v2"] textarea::placeholder { color: var(--muted); }
+:root[data-theme="doom-v2"] textarea:focus-visible { outline: none; border-color: var(--red); }
+
+/* resources / chips */
+:root[data-theme="doom-v2"] .res-row { display: flex; flex-wrap: wrap; gap: 7px; }
+:root[data-theme="doom-v2"] .chip { font-family: var(--font-lab); font-size: 10px; color: var(--ink-dim); background: var(--steel-dk); border: 2px solid var(--line); box-shadow: var(--bevel); padding: 6px 11px; }
+:root[data-theme="doom-v2"] .chip:hover { color: var(--warn); }
+:root[data-theme="doom-v2"] .chip b { color: var(--warn); font-family: var(--font-body); font-size: 14px; }
+
+/* next-day CTA — the exit switch */
+:root[data-theme="doom-v2"] .next-day-cta {
+  align-self: flex-start; margin-top: 4px;
+  font-family: var(--font-disp); font-size: 11px; letter-spacing: .02em; color: #fff;
+  background: var(--red); border: 2px solid #000; box-shadow: var(--bevel), 0 4px 0 #000;
+  padding: 13px 20px; cursor: pointer; transition: transform var(--fast), box-shadow var(--fast);
+}
+:root[data-theme="doom-v2"] .next-day-cta:hover { transform: translateY(-2px); box-shadow: var(--bevel), 0 6px 0 #000, var(--glow-red); }
+:root[data-theme="doom-v2"] .next-day-cta:active { transform: translateY(2px); box-shadow: var(--bevel-in); }
+:root[data-theme="doom-v2"] .next-day-cta:focus-visible { outline: var(--focus-ring); outline-offset: 3px; }
+
+/* ====================== MODALS ====================== */
+:root[data-theme="doom-v2"] .modal {
+  display: none; position: fixed; inset: 0; z-index: 200; overflow-y: auto;
+  align-items: flex-start; justify-content: center; padding: 32px 16px; background: rgba(0,0,0,.7);
+}
+:root[data-theme="doom-v2"] .modal.open { display: flex; }
+:root[data-theme="doom-v2"] .modal-panel {
+  width: min(560px, 92vw); margin: auto; overflow: visible;
+  background: var(--hud); border: 3px solid var(--line); box-shadow: var(--bevel), 0 8px 0 rgba(0,0,0,.6); padding: 20px;
+  animation: dm-pop .25s steps(5,end);
+}
+:root[data-theme="doom-v2"] .tr-head { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+:root[data-theme="doom-v2"] #cardMapTitle,
+:root[data-theme="doom-v2"] #trophiesTitle,
+:root[data-theme="doom-v2"] #shortcutsTitle { flex: 1; font-family: var(--font-disp); font-size: 13px; line-height: 1.4; color: #fff; }
+:root[data-theme="doom-v2"] .tr-head button {
+  font-family: var(--font-disp); font-size: 11px; width: 36px; height: 36px; display: grid; place-items: center;
+  color: var(--red); background: var(--steel-dk); border: 2px solid var(--line); box-shadow: var(--bevel); cursor: pointer;
+}
+:root[data-theme="doom-v2"] .tr-head button:hover { color: #fff; }
+:root[data-theme="doom-v2"] .tr-head button:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+
+/* trophies grid */
+:root[data-theme="doom-v2"] .tr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+:root[data-theme="doom-v2"] .badge {
+  position: relative; display: grid; place-content: center; place-items: center; gap: 8px; text-align: center; padding: 14px;
+  background: var(--hud-recess); border: 2px solid var(--line); box-shadow: var(--bevel-in); cursor: default;
+  transition: transform var(--fast);
+}
+:root[data-theme="doom-v2"] .badge:hover { transform: translateY(-2px); z-index: 5; }
+:root[data-theme="doom-v2"] .badge.on { border-color: var(--warn); }
+:root[data-theme="doom-v2"] .badge.off { opacity: .42; filter: grayscale(.7); }
+:root[data-theme="doom-v2"] .badge .bi { font-size: 28px; line-height: 1; }
+:root[data-theme="doom-v2"] .badge.on .bi { filter: drop-shadow(0 0 6px rgba(224,180,0,.6)); }
+:root[data-theme="doom-v2"] .badge .bt { font-family: var(--font-lab); font-size: 10px; line-height: 1.3; color: var(--ink-dim); }
+:root[data-theme="doom-v2"] .badge.on .bt { color: var(--ink); }
+:root[data-theme="doom-v2"] .badge[data-tip]:hover::after {
+  content: attr(data-tip); position: absolute; bottom: calc(100% + 9px); left: 50%; transform: translateX(-50%); z-index: 20;
+  width: max-content; max-width: 220px; font-family: var(--font-body); font-size: 15px; line-height: 1.4; text-align: left; white-space: normal;
+  color: #fff; background: #000; border: 2px solid var(--red); padding: 8px 11px; pointer-events: none;
+}
+
+/* card-map cells */
+:root[data-theme="doom-v2"] .cm-card { border: 2px solid var(--line); box-shadow: var(--bevel-in); background: var(--rail); }
+:root[data-theme="doom-v2"] .cm-card.done { background: var(--red); border-color: #000; }
+:root[data-theme="doom-v2"] .cm-card.rest { border-style: dashed; background: transparent; }
+:root[data-theme="doom-v2"] .cm-card.current { outline: 3px solid var(--warn); outline-offset: 2px; }
+
+/* ====================== EFFECTS (#fx) ====================== */
+:root[data-theme="doom-v2"] #fx { position: fixed; inset: 0; z-index: 300; pointer-events: none; overflow: hidden; }
+:root[data-theme="doom-v2"] .fx-flash {
+  position: fixed; inset: 0;
+  background: radial-gradient(circle at 50% 55%, rgba(255,90,40,.5), rgba(209,30,30,.16) 42%, transparent 72%);
+  animation: dm-flash .6s steps(8, end) forwards;
+}
+:root[data-theme="doom-v2"] .confetti-piece {
+  --i: 0; --dx: 0; --dy: 1; --rot: 180deg;
+  position: fixed; top: 16%; width: 8px; height: 8px; background: var(--red); opacity: 0; image-rendering: pixelated;
+  animation: dm-confetti 1.7s steps(14, end) forwards; animation-delay: calc(var(--i) * 34ms);
+}
+:root[data-theme="doom-v2"] .confetti-piece:nth-child(3n) { background: var(--warn); }
+:root[data-theme="doom-v2"] .confetti-piece:nth-child(3n+1) { background: var(--steel-lt); }
+:root[data-theme="doom-v2"] .confetti-piece:nth-child(4n) { width: 6px; height: 6px; }
+:root[data-theme="doom-v2"] .toast,
+:root[data-theme="doom-v2"] .badge-toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(16px);
+  display: flex; align-items: center; gap: 11px; max-width: min(340px, 86vw);
+  font-family: var(--font-body); font-size: 18px; color: var(--ink);
+  background: var(--hud); border: 2px solid var(--line); box-shadow: var(--bevel), 0 5px 0 #000; padding: 13px 16px;
+  opacity: 0; transition: opacity .3s, transform .3s; pointer-events: auto;
+}
+:root[data-theme="doom-v2"] .toast { border-color: var(--red); }
+:root[data-theme="doom-v2"] .badge-toast { border-color: var(--warn); }
+:root[data-theme="doom-v2"] .toast.show,
+:root[data-theme="doom-v2"] .badge-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+:root[data-theme="doom-v2"] .badge-toast b { color: var(--warn); }
+:root[data-theme="doom-v2"] .bt-i { font-size: 24px; line-height: 1; }
+
+/* ====================== FOOTER ====================== */
+:root[data-theme="doom-v2"] .foot { text-align: center; padding: 24px 14px 40px; }
+:root[data-theme="doom-v2"] #motd { font-family: var(--font-body); font-size: 18px; color: var(--ink-dim); transition: opacity .4s steps(5,end), transform .4s steps(5,end); }
+:root[data-theme="doom-v2"] #motd.motd-out { opacity: 0; transform: translateY(-4px); }
+
+/* ====================== ANIMATIONS (dm- prefixed) ====================== */
+@keyframes dm-grid { to { background-position-y: calc(var(--cell) * -1); } }
+@keyframes dm-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes dm-task { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+@keyframes dm-check { from { opacity: 0; transform: rotate(45deg) scale(.4); } to { opacity: 1; transform: rotate(45deg) scale(1); } }
+@keyframes dm-pop { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+@keyframes dm-flash { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes dm-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes dm-confetti {
+  0%   { opacity: 0; transform: translate(0, 0) rotate(0deg); }
+  12%  { opacity: 1; transform: translate(calc(var(--dx) * 18px), -80px) rotate(calc(var(--rot) * .15)); }
+  100% { opacity: 0; transform: translate(calc(var(--dx) * 210px), calc(40px + var(--dy) * 90vh)) rotate(var(--rot)); }
+}
+
+@media (min-width: 1400px) {
+  :root[data-theme="doom-v2"] .today { min-height: 460px; }
+}
+
+/* ============================================================================
+   v2 — BACKGROUND FIREFIGHT
+   ----------------------------------------------------------------------------
+   A looping skirmish in the dark behind the content column: a cacodemon (left
+   gutter) and an imp (right gutter) take plasma fire — a one-frame white
+   hit-flash, then they gib (collapse + spin + fade) and respawn — while a plasma
+   stream rakes a lower lane and a horde of imps shuffles along the floor. A lone
+   cacodemon drifts the skyline up top.
+
+   Pure CSS: sprites are inline SVG (crispEdges), every layer is position:fixed
+   behind content (negative z), and ALL of it is transform/opacity — the horde +
+   bolt stream translate (no second background-position scroll; the floor grid is
+   still the only one). Hit-flash is a discrete background-image swap inside the
+   keyframe. @keyframes dv- prefixed. Hidden under [data-mobile] (the phone HUD
+   stays calm). The app baseline still owns reduced-motion + the mobile freezes. */
+
+/* a hotter floor glow — this base is under fire */
+:root[data-theme="doom-v2"] body {
+  background:
+    radial-gradient(120% 72% at 50% 122%, #4a1a10, transparent 58%),
+    radial-gradient(100% 60% at 50% -10%, #1c1f27, transparent 55%),
+    var(--bg);
+}
+
+/* don't let the content columns trap the fixed combat pseudos in a stacking
+   context (position:relative stays; dropping z-index frees the negative-z layers
+   into the root context, behind content like the floor grid). */
+:root[data-theme="doom-v2"] .app-header,
+:root[data-theme="doom-v2"] .wrap,
+:root[data-theme="doom-v2"] .foot { z-index: auto; }
+
+/* shared sprite-layer base */
+:root[data-theme="doom-v2"] .wrap::before,
+:root[data-theme="doom-v2"] .wrap::after,
+:root[data-theme="doom-v2"] .foot::before,
+:root[data-theme="doom-v2"] .foot::after,
+:root[data-theme="doom-v2"] .app-header::after {
+  content: "";
+  position: fixed;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  image-rendering: pixelated;
+}
+
+/* ── cacodemon, left gutter — takes fire, gibs, respawns ── */
+:root[data-theme="doom-v2"] .wrap::before {
+  left: clamp(6px, 3vw, 74px); top: 32vh;
+  width: 120px; height: 120px; z-index: -2; opacity: .92;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%224%22%20y%3D%221%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23cfd4e6%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%221%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23cfd4e6%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%222%22%20width%3D%228%22%20height%3D%221%22%20fill%3D%22%236a6f8a%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%2210%22%20height%3D%221%22%20fill%3D%22%236a6f8a%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%224%22%20width%3D%2212%22%20height%3D%227%22%20fill%3D%22%236a6f8a%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2211%22%20width%3D%2210%22%20height%3D%221%22%20fill%3D%22%236a6f8a%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2212%22%20width%3D%228%22%20height%3D%221%22%20fill%3D%22%233a4060%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%227%22%20width%3D%221%22%20height%3D%224%22%20fill%3D%22%233a4060%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%227%22%20width%3D%221%22%20height%3D%224%22%20fill%3D%22%233a4060%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%225%22%20width%3D%226%22%20height%3D%224%22%20fill%3D%22%23e9e2cf%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%226%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23d11e1e%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23120608%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%2210%22%20width%3D%226%22%20height%3D%221%22%20fill%3D%22%23120608%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%222%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%222%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%222%22%20fill%3D%22%23ffffff%22%2F%3E%3C%2Fsvg%3E");
+  filter: drop-shadow(0 0 6px rgba(46,198,255,.3));
+  animation: dv-caco 7s linear infinite;
+}
+/* ── imp, right gutter — same fate, offset in time ── */
+:root[data-theme="doom-v2"] .wrap::after {
+  right: clamp(6px, 3vw, 74px); top: 41vh;
+  width: 118px; height: 118px; z-index: -2; opacity: .92;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%223%22%20y%3D%220%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%220%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%221%22%20width%3D%228%22%20height%3D%225%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%222%22%20width%3D%228%22%20height%3D%221%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%223%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23ffcf3a%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%223%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23ffcf3a%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%225%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23160a04%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%228%22%20height%3D%225%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%221%22%20height%3D%225%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%226%22%20width%3D%221%22%20height%3D%225%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%227%22%20width%3D%224%22%20height%3D%223%22%20fill%3D%22%23c89050%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%226%22%20width%3D%223%22%20height%3D%222%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%226%22%20width%3D%223%22%20height%3D%222%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%227%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23c89050%22%2F%3E%3Crect%20x%3D%2214%22%20y%3D%227%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23c89050%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2211%22%20width%3D%223%22%20height%3D%224%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%2211%22%20width%3D%223%22%20height%3D%224%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2214%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2214%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%233a1c0a%22%2F%3E%3C%2Fsvg%3E");
+  filter: drop-shadow(0 0 6px rgba(255,120,40,.3));
+  animation: dv-imp 6.2s linear 1.8s infinite;
+}
+/* ── plasma stream, a lower lane ── */
+:root[data-theme="doom-v2"] .foot::after {
+  left: 0; right: 0; bottom: 21vh; height: 14px; z-index: -1; opacity: .9;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%208%204%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%220%22%20y%3D%222%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%231a8acc%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%221%22%20width%3D%226%22%20height%3D%222%22%20fill%3D%22%232ec6ff%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%221%22%20width%3D%224%22%20height%3D%222%22%20fill%3D%22%23d6ffff%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: repeat-x; background-position: 0 0; background-size: 76px 12px;
+  animation: dv-bolts .9s linear infinite;
+}
+/* ── the horde, shuffling the floor ── */
+:root[data-theme="doom-v2"] .foot::before {
+  left: 0; right: 0; bottom: 0; height: 54px; z-index: -2; opacity: .4;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%223%22%20y%3D%220%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%220%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%221%22%20width%3D%228%22%20height%3D%225%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%222%22%20width%3D%228%22%20height%3D%221%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%223%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23ffcf3a%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%223%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23ffcf3a%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%225%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23160a04%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%228%22%20height%3D%225%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%221%22%20height%3D%225%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%226%22%20width%3D%221%22%20height%3D%225%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%227%22%20width%3D%224%22%20height%3D%223%22%20fill%3D%22%23c89050%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%226%22%20width%3D%223%22%20height%3D%222%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%226%22%20width%3D%223%22%20height%3D%222%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%227%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23c89050%22%2F%3E%3Crect%20x%3D%2214%22%20y%3D%227%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23c89050%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2211%22%20width%3D%223%22%20height%3D%224%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%2211%22%20width%3D%223%22%20height%3D%224%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2214%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2214%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%233a1c0a%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: repeat-x; background-position: 0 bottom; background-size: 44px 44px;
+  animation: dv-march 10s linear infinite;
+}
+/* ── a lone cacodemon drifting the skyline ── */
+:root[data-theme="doom-v2"] .app-header::after {
+  left: 0; top: 7vh; width: 54px; height: 54px; z-index: -2; opacity: .42;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%224%22%20y%3D%221%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23cfd4e6%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%221%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23cfd4e6%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%222%22%20width%3D%228%22%20height%3D%221%22%20fill%3D%22%236a6f8a%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%2210%22%20height%3D%221%22%20fill%3D%22%236a6f8a%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%224%22%20width%3D%2212%22%20height%3D%227%22%20fill%3D%22%236a6f8a%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2211%22%20width%3D%2210%22%20height%3D%221%22%20fill%3D%22%236a6f8a%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2212%22%20width%3D%228%22%20height%3D%221%22%20fill%3D%22%233a4060%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%227%22%20width%3D%221%22%20height%3D%224%22%20fill%3D%22%233a4060%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%227%22%20width%3D%221%22%20height%3D%224%22%20fill%3D%22%233a4060%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%225%22%20width%3D%226%22%20height%3D%224%22%20fill%3D%22%23e9e2cf%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%226%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23d11e1e%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23120608%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%2210%22%20width%3D%226%22%20height%3D%221%22%20fill%3D%22%23120608%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%222%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%222%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%222%22%20fill%3D%22%23ffffff%22%2F%3E%3C%2Fsvg%3E");
+  animation: dv-drift 32s linear infinite;
+}
+
+/* keep the phone HUD calm — no skirmish on mobile */
+:root[data-mobile][data-theme="doom-v2"] .wrap::before,
+:root[data-mobile][data-theme="doom-v2"] .wrap::after,
+:root[data-mobile][data-theme="doom-v2"] .foot::before,
+:root[data-mobile][data-theme="doom-v2"] .foot::after,
+:root[data-mobile][data-theme="doom-v2"] .app-header::after { display: none; }
+
+@keyframes dv-caco {
+  0%   { transform: translateY(0) scale(1);                       opacity: 1; background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%224%22%20y%3D%221%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23cfd4e6%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%221%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23cfd4e6%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%222%22%20width%3D%228%22%20height%3D%221%22%20fill%3D%22%236a6f8a%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%2210%22%20height%3D%221%22%20fill%3D%22%236a6f8a%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%224%22%20width%3D%2212%22%20height%3D%227%22%20fill%3D%22%236a6f8a%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2211%22%20width%3D%2210%22%20height%3D%221%22%20fill%3D%22%236a6f8a%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2212%22%20width%3D%228%22%20height%3D%221%22%20fill%3D%22%233a4060%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%227%22%20width%3D%221%22%20height%3D%224%22%20fill%3D%22%233a4060%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%227%22%20width%3D%221%22%20height%3D%224%22%20fill%3D%22%233a4060%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%225%22%20width%3D%226%22%20height%3D%224%22%20fill%3D%22%23e9e2cf%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%226%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23d11e1e%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23120608%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%2210%22%20width%3D%226%22%20height%3D%221%22%20fill%3D%22%23120608%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%222%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%222%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%222%22%20fill%3D%22%23ffffff%22%2F%3E%3C%2Fsvg%3E"); }
+  18%  { transform: translateY(-7px) scale(1);                    opacity: 1; }
+  40%  { transform: translateY(0) scale(1);                       opacity: 1; }
+  54%  { transform: translateY(-4px) scale(1);                    opacity: 1; background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%224%22%20y%3D%221%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23cfd4e6%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%221%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23cfd4e6%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%222%22%20width%3D%228%22%20height%3D%221%22%20fill%3D%22%236a6f8a%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%2210%22%20height%3D%221%22%20fill%3D%22%236a6f8a%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%224%22%20width%3D%2212%22%20height%3D%227%22%20fill%3D%22%236a6f8a%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2211%22%20width%3D%2210%22%20height%3D%221%22%20fill%3D%22%236a6f8a%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2212%22%20width%3D%228%22%20height%3D%221%22%20fill%3D%22%233a4060%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%227%22%20width%3D%221%22%20height%3D%224%22%20fill%3D%22%233a4060%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%227%22%20width%3D%221%22%20height%3D%224%22%20fill%3D%22%233a4060%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%225%22%20width%3D%226%22%20height%3D%224%22%20fill%3D%22%23e9e2cf%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%226%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23d11e1e%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23120608%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%2210%22%20width%3D%226%22%20height%3D%221%22%20fill%3D%22%23120608%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%222%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%222%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%222%22%20fill%3D%22%23ffffff%22%2F%3E%3C%2Fsvg%3E"); }
+  58%  { transform: translateX(8px) translateY(-2px) scale(1.12); opacity: 1; background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%224%22%20y%3D%221%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%221%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%222%22%20width%3D%228%22%20height%3D%221%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%2210%22%20height%3D%221%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%224%22%20width%3D%2212%22%20height%3D%227%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2211%22%20width%3D%2210%22%20height%3D%221%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2212%22%20width%3D%228%22%20height%3D%221%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%227%22%20width%3D%221%22%20height%3D%224%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%227%22%20width%3D%221%22%20height%3D%224%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%225%22%20width%3D%226%22%20height%3D%224%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%226%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%2210%22%20width%3D%226%22%20height%3D%221%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%222%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%222%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%222%22%20fill%3D%22%23eef6ff%22%2F%3E%3C%2Fsvg%3E"); }
+  62%  { background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%224%22%20y%3D%221%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23cfd4e6%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%221%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23cfd4e6%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%222%22%20width%3D%228%22%20height%3D%221%22%20fill%3D%22%236a6f8a%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%2210%22%20height%3D%221%22%20fill%3D%22%236a6f8a%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%224%22%20width%3D%2212%22%20height%3D%227%22%20fill%3D%22%236a6f8a%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2211%22%20width%3D%2210%22%20height%3D%221%22%20fill%3D%22%236a6f8a%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2212%22%20width%3D%228%22%20height%3D%221%22%20fill%3D%22%233a4060%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%227%22%20width%3D%221%22%20height%3D%224%22%20fill%3D%22%233a4060%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%227%22%20width%3D%221%22%20height%3D%224%22%20fill%3D%22%233a4060%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%225%22%20width%3D%226%22%20height%3D%224%22%20fill%3D%22%23e9e2cf%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%226%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23d11e1e%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23120608%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%2210%22%20width%3D%226%22%20height%3D%221%22%20fill%3D%22%23120608%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%222%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%222%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%222%22%20fill%3D%22%23ffffff%22%2F%3E%3C%2Fsvg%3E"); }
+  78%  { transform: translateY(22px) scale(.16) rotate(12deg);    opacity: 0; }
+  90%  { transform: translateY(22px) scale(.16) rotate(12deg);    opacity: 0; }
+  100% { transform: translateY(0) scale(1);                       opacity: 1; background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%224%22%20y%3D%221%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23cfd4e6%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%221%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23cfd4e6%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%222%22%20width%3D%228%22%20height%3D%221%22%20fill%3D%22%236a6f8a%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%2210%22%20height%3D%221%22%20fill%3D%22%236a6f8a%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%224%22%20width%3D%2212%22%20height%3D%227%22%20fill%3D%22%236a6f8a%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2211%22%20width%3D%2210%22%20height%3D%221%22%20fill%3D%22%236a6f8a%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2212%22%20width%3D%228%22%20height%3D%221%22%20fill%3D%22%233a4060%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%227%22%20width%3D%221%22%20height%3D%224%22%20fill%3D%22%233a4060%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%227%22%20width%3D%221%22%20height%3D%224%22%20fill%3D%22%233a4060%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%225%22%20width%3D%226%22%20height%3D%224%22%20fill%3D%22%23e9e2cf%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%226%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23d11e1e%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23120608%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%2210%22%20width%3D%226%22%20height%3D%221%22%20fill%3D%22%23120608%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%222%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%222%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%222%22%20fill%3D%22%23ffffff%22%2F%3E%3C%2Fsvg%3E"); }
+}
+@keyframes dv-imp {
+  0%   { transform: translateY(0) scale(1);                    opacity: 1; background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%223%22%20y%3D%220%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%220%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%221%22%20width%3D%228%22%20height%3D%225%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%222%22%20width%3D%228%22%20height%3D%221%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%223%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23ffcf3a%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%223%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23ffcf3a%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%225%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23160a04%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%228%22%20height%3D%225%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%221%22%20height%3D%225%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%226%22%20width%3D%221%22%20height%3D%225%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%227%22%20width%3D%224%22%20height%3D%223%22%20fill%3D%22%23c89050%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%226%22%20width%3D%223%22%20height%3D%222%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%226%22%20width%3D%223%22%20height%3D%222%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%227%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23c89050%22%2F%3E%3Crect%20x%3D%2214%22%20y%3D%227%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23c89050%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2211%22%20width%3D%223%22%20height%3D%224%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%2211%22%20width%3D%223%22%20height%3D%224%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2214%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2214%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%233a1c0a%22%2F%3E%3C%2Fsvg%3E"); }
+  22%  { transform: translateY(-5px) scale(1);                 opacity: 1; }
+  50%  { transform: translateY(0) scale(1);                    opacity: 1; background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%223%22%20y%3D%220%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%220%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%221%22%20width%3D%228%22%20height%3D%225%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%222%22%20width%3D%228%22%20height%3D%221%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%223%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23ffcf3a%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%223%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23ffcf3a%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%225%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23160a04%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%228%22%20height%3D%225%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%221%22%20height%3D%225%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%226%22%20width%3D%221%22%20height%3D%225%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%227%22%20width%3D%224%22%20height%3D%223%22%20fill%3D%22%23c89050%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%226%22%20width%3D%223%22%20height%3D%222%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%226%22%20width%3D%223%22%20height%3D%222%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%227%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23c89050%22%2F%3E%3Crect%20x%3D%2214%22%20y%3D%227%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23c89050%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2211%22%20width%3D%223%22%20height%3D%224%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%2211%22%20width%3D%223%22%20height%3D%224%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2214%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2214%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%233a1c0a%22%2F%3E%3C%2Fsvg%3E"); }
+  60%  { transform: translateX(-9px) scale(1.12);              opacity: 1; background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%223%22%20y%3D%220%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%220%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%221%22%20width%3D%228%22%20height%3D%225%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%222%22%20width%3D%228%22%20height%3D%221%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%223%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%223%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%225%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%228%22%20height%3D%225%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%221%22%20height%3D%225%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%226%22%20width%3D%221%22%20height%3D%225%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%227%22%20width%3D%224%22%20height%3D%223%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%226%22%20width%3D%223%22%20height%3D%222%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%226%22%20width%3D%223%22%20height%3D%222%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%227%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%2214%22%20y%3D%227%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2211%22%20width%3D%223%22%20height%3D%224%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%2211%22%20width%3D%223%22%20height%3D%224%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2214%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23eef6ff%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2214%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23eef6ff%22%2F%3E%3C%2Fsvg%3E"); }
+  64%  { background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%223%22%20y%3D%220%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%220%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%221%22%20width%3D%228%22%20height%3D%225%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%222%22%20width%3D%228%22%20height%3D%221%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%223%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23ffcf3a%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%223%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23ffcf3a%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%225%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23160a04%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%228%22%20height%3D%225%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%221%22%20height%3D%225%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%226%22%20width%3D%221%22%20height%3D%225%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%227%22%20width%3D%224%22%20height%3D%223%22%20fill%3D%22%23c89050%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%226%22%20width%3D%223%22%20height%3D%222%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%226%22%20width%3D%223%22%20height%3D%222%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%227%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23c89050%22%2F%3E%3Crect%20x%3D%2214%22%20y%3D%227%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23c89050%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2211%22%20width%3D%223%22%20height%3D%224%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%2211%22%20width%3D%223%22%20height%3D%224%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2214%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2214%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%233a1c0a%22%2F%3E%3C%2Fsvg%3E"); }
+  80%  { transform: translateY(24px) scale(.16) rotate(-10deg); opacity: 0; }
+  92%  { transform: translateY(24px) scale(.16) rotate(-10deg); opacity: 0; }
+  100% { transform: translateY(0) scale(1);                    opacity: 1; background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%223%22%20y%3D%220%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%220%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%221%22%20width%3D%228%22%20height%3D%225%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%222%22%20width%3D%228%22%20height%3D%221%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%223%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23ffcf3a%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%223%22%20width%3D%222%22%20height%3D%222%22%20fill%3D%22%23ffcf3a%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%225%22%20width%3D%224%22%20height%3D%221%22%20fill%3D%22%23160a04%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%228%22%20height%3D%225%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%221%22%20height%3D%225%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%226%22%20width%3D%221%22%20height%3D%225%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%227%22%20width%3D%224%22%20height%3D%223%22%20fill%3D%22%23c89050%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%226%22%20width%3D%223%22%20height%3D%222%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%226%22%20width%3D%223%22%20height%3D%222%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%227%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23c89050%22%2F%3E%3Crect%20x%3D%2214%22%20y%3D%227%22%20width%3D%222%22%20height%3D%221%22%20fill%3D%22%23c89050%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2211%22%20width%3D%223%22%20height%3D%224%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%2211%22%20width%3D%223%22%20height%3D%224%22%20fill%3D%22%238a5024%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2214%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%233a1c0a%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2214%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%233a1c0a%22%2F%3E%3C%2Fsvg%3E"); }
+}
+@keyframes dv-bolts { from { transform: translateX(0); } to { transform: translateX(76px); } }
+@keyframes dv-march { from { transform: translateX(0); } to { transform: translateX(-88px); } }
+@keyframes dv-drift {
+  0%   { transform: translateX(-14vw) translateY(0); }
+  50%  { transform: translateX(50vw) translateY(-8px); }
+  100% { transform: translateX(114vw) translateY(0); }
+}
