@@ -381,11 +381,24 @@
 }
 
 /* ====================== DASHBOARD ====================== */
+/* deterministic grid so the 4 stat cards always form a tidy block (never a lone
+   orphaned Tracks card under the row). Min-width only — the mobile baseline +
+   the 1-col default own the phone range; no phone-range (max-width) query. */
 :root[data-theme="hogwarts-express"] .dash {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: 1fr;
   gap: 16px;
   margin-bottom: 8px;
+}
+@media (min-width: 640px) {
+  :root[data-theme="hogwarts-express"] .dash {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (min-width: 1000px) {
+  :root[data-theme="hogwarts-express"] .dash {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 :root[data-theme="hogwarts-express"] .stat-card {
   position: relative;
