@@ -1,0 +1,1101 @@
+/* ============================================================
+   SUNRISE · "synthwave-phases" — variant of "Synthwave Sun"
+   (arcade-animated). Same 8-bit CRT arcade world, but the static
+   centered sun is gone: now a big banded synthwave SUN rises at
+   the left of the horizon, rides across low on the horizon line, and
+   sets at the right (day); then a separate, matching MOON takes
+   the same horizon lap, cycling phases crescent→gibbous→full→waning
+   as it travels (night); repeat. Only one body is ever visible — they
+   never overlap and ride BEHIND the cards (they live on the ROOT
+   pseudos, z-index:0, not the z-50 header). A neon perspective grid
+   floor fills the screen below the horizon. Each body SHINES: a broad
+   radial light pool (sun: yellow, moon: white-gray) rides with the disc
+   on .wrap::before / ::after and washes the sky + floor around it.
+   CSS only, OWNS all layout. border-radius:0 everywhere by design.
+
+   Motion budget (theme.md §7): the SUN lap, the MOON lap, the matching
+   light-pool laps and the day/night opacity envelope are all transform/
+   opacity (compositor). One background-position scroll layer exists —
+   the perspective floor grid (body::before), frozen on mobile by the
+   baseline. The moon PHASE terminator is a single per-layer
+   background-position sweep on the moon pseudo itself (self-contained,
+   local to the disc). Each disc is clipped to a circle by clip-path (not
+   a mask) so its drop-shadow rim glow can bloom outside the rim; that
+   rim glow is the only filter and is STATIC — no filter/backdrop-filter/
+   box-shadow is ever animated. On mobile the baseline strips the disc
+   rim filter (motion survives, per the glyph rule); the light pools have
+   no filter and stay compositor-cheap.
+   ============================================================ */
+
+:root[data-theme="synthwave-phases"]{
+  /* CRT base */
+  --bg:        #0d0221;   /* deep CRT violet-indigo */
+  --bg-deep:   #07011a;
+  --panel:     #160a33;   /* dark cabinet panel */
+  --panel-2:   #1d0f44;
+  --panel-3:   #110735;
+
+  --line:      #3a1f80;
+  --line-soft: rgba(46,232,232,.16);
+
+  --ink:       #eafff2;   /* near-white phosphor */
+  --ink-dim:   #9ec7d6;
+  --muted:     #6a6aa8;   /* dim cyan-grey */
+
+  /* arcade neon accents */
+  --green:  #2ee86b;
+  --pink:   #ff2e88;
+  --cyan:   #2ee8e8;
+  --yellow: #ffe600;
+  --purple: #b06bff;
+  --orange: #ff7a1a;
+
+  /* neon glows */
+  --glow-green: 0 0 4px rgba(46,232,107,.9), 0 0 14px rgba(46,232,107,.5);
+  --glow-cyan:  0 0 4px rgba(46,232,232,.9), 0 0 14px rgba(46,232,232,.5);
+  --glow-pink:  0 0 4px rgba(255,46,136,.9), 0 0 16px rgba(255,46,136,.5);
+  --glow-yellow:0 0 4px rgba(255,230,0,.9),  0 0 16px rgba(255,230,0,.5);
+
+  /* hard pixel shadow offsets */
+  --pix:        4px 4px 0 #000;
+  --pix-cyan:   4px 4px 0 #0a4a4a;
+  --pix-pink:   4px 4px 0 #5a0e34;
+
+  --fast: .12s steps(3,end);
+  --snap: .16s cubic-bezier(.6,.01,.25,1);
+  --slow: .35s steps(8,end);
+
+  --font-display: 'Press Start 2P', 'Courier New', monospace;
+  --font-ui:      'VT323', 'Courier New', monospace;
+  --font-mono:    'Silkscreen', 'Press Start 2P', monospace;
+
+  /* the central horizon line — the sun/moon disc is centered on it as it
+     rides across (matches the neon horizon band in the body gradient). */
+  --horizon: 53.5%;
+
+  /* 9 distinct bright arcade track hues + neutral */
+  --track-dsa:       #2ee86b;
+  --track-js:        #ffe600;
+  --track-ts:        #2ec4ff;
+  --track-node:      #6bff2e;
+  --track-sysdesign: #ff2e88;
+  --track-patterns:  #b06bff;
+  --track-distsys:   #ff7a1a;
+  --track-db:        #2ee8e8;
+  --track-cs:        #ff6bd6;
+  --track-neutral:   #6a6aa8;
+
+  /* mobile HUD + card-map baseline tokens (theme guide §5) */
+  --paper:   var(--panel);
+  --paper-2: var(--panel-2);
+  --accent:  var(--green);
+  --cobalt:  var(--cyan);
+  --r: 0px;
+}
+
+/* ====================== BASE / RESET ====================== */
+:root[data-theme="synthwave-phases"] *,
+:root[data-theme="synthwave-phases"] *::before,
+:root[data-theme="synthwave-phases"] *::after{ border-radius:0; }
+
+:root[data-theme="synthwave-phases"] body{
+  margin:0;
+  min-height:100vh;
+  font-family:var(--font-ui);
+  font-size:19px;
+  color:var(--ink);
+  /* ===== 8-BIT GAME WORLD (far): deep-space sky + starfield + horizon line =====
+     The sun is NO LONGER baked here — it drifts on .app-header::before. We keep
+     the starfield, the bright neon horizon band, and the dusk sky gradient. */
+  background:
+    radial-gradient(1.5px 1.5px at 8% 12%,  #ffffff 50%, transparent 52%),
+    radial-gradient(1.5px 1.5px at 24% 7%,  #c9fbff 50%, transparent 52%),
+    radial-gradient(2px 2px     at 39% 17%, #ffffff 50%, transparent 52%),
+    radial-gradient(1.5px 1.5px at 53% 6%,  #ffd6f4 50%, transparent 52%),
+    radial-gradient(1.5px 1.5px at 67% 19%, #ffffff 50%, transparent 52%),
+    radial-gradient(2px 2px     at 81% 10%, #aef6ff 50%, transparent 52%),
+    radial-gradient(1.5px 1.5px at 90% 24%, #ffffff 50%, transparent 52%),
+    radial-gradient(1.5px 1.5px at 31% 31%, #ffffff 50%, transparent 52%),
+    linear-gradient(180deg, transparent 52.5%, rgba(255,46,136,.35) 53.6%, rgba(46,232,232,.55) 54%, transparent 55.4%),
+    linear-gradient(180deg, #170138 0%, #270a52 26%, #4a0f68 43%, #8c1a72 50%, #c81e6e 53%, #390a40 56%, #0c0220 72%, #060010 100%);
+  background-repeat:no-repeat;
+  background-size:
+    100% 100%,100% 100%,100% 100%,100% 100%,100% 100%,100% 100%,100% 100%,100% 100%,
+    100% 100%, 100% 100%;
+  background-position:
+    0 0,0 0,0 0,0 0,0 0,0 0,0 0,0 0,
+    0 0, 0 0;
+  background-attachment:fixed;
+  -webkit-font-smoothing:none;
+  image-rendering:pixelated;
+  position:relative;
+  letter-spacing:.4px;
+}
+
+/* ===== receding neon perspective floor, PINNED to the horizon. The plane
+   covers only the region BELOW the horizon line (top:var(--horizon) → past the
+   bottom) and pivots about its TOP edge (transform-origin:50% 0). A point on the
+   pivot is fixed under rotateX, so that top edge — the floor's far/vanishing
+   edge — stays locked exactly on the horizon line the sun/moon ride, at ANY
+   window size. rotateX lays the plane down so it recedes from the near bottom up
+   to that pinned far edge; the box runs past the viewport bottom (bottom:-34vh)
+   so the large near cells always fill the screen. A short top fade melts the
+   densest converging lines into the neon horizon band. (Replaces the old
+   full-viewport + hard-mask-cut trick, whose projected cut drifted off the
+   horizon as the viewport changed — the bug this rewrite fixes.) ===== */
+:root[data-theme="synthwave-phases"] body::before{
+  content:"";
+  position:fixed;
+  left:0; right:0;
+  top:var(--horizon);          /* far edge of the floor == the horizon line */
+  bottom:-34vh;                /* run past the screen bottom so the near floor always fills */
+  --cell:44px;
+  transform:perspective(40vh) rotateX(76deg);
+  transform-origin:50% 0;      /* pivot ON the horizon -> the far edge can't drift off it */
+  z-index:0;
+  pointer-events:none;
+  background-image:
+    repeating-linear-gradient(90deg, transparent 0 calc(var(--cell) - 2px), rgba(46,232,232,.8) calc(var(--cell) - 2px) var(--cell)),
+    repeating-linear-gradient(0deg,  transparent 0 calc(var(--cell) - 2px), rgba(255,46,136,.8) calc(var(--cell) - 2px) var(--cell));
+  background-size:var(--cell) var(--cell);
+  background-position:0 0;
+  /* melt the far (top) cells into the horizon band; floor stays solid below */
+  -webkit-mask-image:linear-gradient(to bottom, transparent 0, #000 10%);
+          mask-image:linear-gradient(to bottom, transparent 0, #000 10%);
+  animation:synp-grid-run 2.4s linear infinite;
+}
+/* cells travel away from the viewer, bottom -> horizon (one cell per loop = seamless) */
+@keyframes synp-grid-run{ to{ background-position-y:calc(var(--cell) * -1); } }
+
+/* CRT scanlines + vignette overlay on top */
+:root[data-theme="synthwave-phases"] body::after{
+  content:"";
+  position:fixed; inset:0; z-index:9999;
+  pointer-events:none;
+  background:
+    repeating-linear-gradient(0deg, rgba(0,0,0,.34) 0 1px, transparent 1px 3px),
+    radial-gradient(130% 120% at 50% 50%, transparent 55%, rgba(0,0,0,.62) 100%);
+  mix-blend-mode:multiply;
+  opacity:.7;
+}
+
+/* ===================================================================
+   DAY / NIGHT PROCESSION — sun lap then moon lap, along the horizon.
+   Each is a big celestial disc that rides the horizon line: it rises
+   at the left edge, drifts across with a gentle arc, sets at the right,
+   then stays hidden while the other takes its lap. The SUN owns the day
+   half of the loop (0→50%), the MOON the night half (50→100%), so only
+   one is ever prominent — they never overlap. Both ride low on the
+   horizon and BEHIND the cards. Each disc is clipped to a crisp circle
+   by clip-path (so the glow can bloom past it); the lap is pure
+   transform/opacity (compositor-cheap, survives [data-mobile]). The
+   moon's phase terminator is the one allowed background-position
+   exception: a single sweep of a shadow disc, kept local to the moon
+   pseudo (no full-screen wash). Each disc also casts a wide STATIC
+   drop-shadow glow. =================================================== */
+
+/* shared geometry — a big disc sitting ON the horizon line, behind
+   content. clip-path clips every background layer to a clean circle. */
+:root[data-theme="synthwave-phases"]::before,
+:root[data-theme="synthwave-phases"]::after{
+  content:"";
+  position:fixed;
+  left:0;
+  top:calc(var(--horizon) - 10vmin);   /* 2x disc, still centered on the horizon line */
+  width:20vmin; height:20vmin;
+  max-width:208px; max-height:208px;
+  min-width:124px; min-height:124px;
+  z-index:0;                            /* root pseudo: BEHIND content (z1) & floor, above the sky.
+                                           (was on .app-header::*, but the header is a z-50 sticky
+                                           stacking context, so the discs washed OVER the cards.) */
+  pointer-events:none;
+  opacity:0;
+  will-change:transform, opacity;
+  /* crisp disc via clip-path (not mask): a mask clips the element's own
+     drop-shadow away, so the GLOW below must bloom outside a clip, not a mask. */
+  clip-path:circle(50%);
+}
+
+/* ---- THE SUN: a banded synthwave disc — clean vertical color bands
+        carved by crisp horizontal slits across the lower disc. The disc
+        edge is the clip-path circle above; a wide yellow glow blooms past it. ---- */
+:root[data-theme="synthwave-phases"]::before{
+  background:
+    /* crisp horizontal slits — the venetian "banded sun" cut, denser low */
+    repeating-linear-gradient(180deg,
+      transparent 0 50%,
+      rgba(13,2,33,0) 50% 56%,
+      rgba(13,2,33,.92) 56% 60%,
+      rgba(13,2,33,0)  60% 68%,
+      rgba(13,2,33,.92) 68% 73%,
+      rgba(13,2,33,0)  73% 80%,
+      rgba(13,2,33,.92) 80% 86%,
+      rgba(13,2,33,0)  86% 92%,
+      rgba(13,2,33,.92) 92% 100%),
+    /* the colored sun bands, hot core fading to neon-pink rim */
+    linear-gradient(180deg,
+      #fff6b0 0 12%, #ffe600 12% 30%, #ffb000 30% 48%,
+      #ff7a1a 48% 66%, #ff3d8f 66% 84%, #c81e6e 84% 100%);
+  /* tight bright rim glow on the disc itself (static filter, never animated);
+     the broad area illumination is the .wrap::before sun light pool. */
+  filter:
+    drop-shadow(0 0 14px rgba(255,246,180,1))
+    drop-shadow(0 0 38px rgba(255,212,90,.9));
+  animation:synp-sun-lap 44s linear infinite;
+}
+
+/* ---- THE MOON: a lit silver disc with limb-darkening, a faint mare and
+        four craters, carved by a single dark shadow disc that sweeps
+        across to cycle the phases. The shadow layer is 200%-wide and the
+        only moving layer; the clip-path circle keeps the terminator crisp
+        and the phase sweep local to the disc, while a wide white-gray
+        drop-shadow glow blooms past the rim. ---- */
+:root[data-theme="synthwave-phases"]::after{
+  background:
+    /* phase shadow disc — slides left→right over a lap: waxing crescent →
+       first quarter → gibbous → full → waning gibbous → waning crescent */
+    radial-gradient(closest-side circle at 50% 50%, #100726 0 50%, transparent 51%),
+    /* craters — small, clearly darker pocks (static surface detail; 2x disc) */
+    radial-gradient(3.6vmin 3.6vmin at 36% 39%, rgba(120,112,168,.55) 0 38%, rgba(150,143,196,.35) 38% 52%, transparent 62%),
+    radial-gradient(2.6vmin 2.6vmin at 64% 58%, rgba(120,112,168,.5) 0 40%, transparent 60%),
+    radial-gradient(1.8vmin 1.8vmin at 55% 27%, rgba(120,112,168,.45) 0 42%, transparent 62%),
+    radial-gradient(1.4vmin 1.4vmin at 44% 64%, rgba(120,112,168,.4) 0 42%, transparent 62%),
+    /* one faint darker mare so the disc isn't a flat circle (kept subtle) */
+    radial-gradient(70% 60% at 62% 66%, rgba(150,143,196,.28), transparent 60%),
+    /* the lit silver body — bright crown, soft limb-darkening to the rim */
+    radial-gradient(closest-side circle at 44% 40%, #f3f1ff 0 40%, #d7d3f2 68%, #aba6dc 90%, #8d88cf 100%);
+  /* only the leading shadow layer scrolls; the other 6 are pinned */
+  background-repeat:no-repeat;
+  background-size:200% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  background-position:-100% 50%, 50% 50%, 50% 50%, 50% 50%, 50% 50%, 50% 50%, 50% 50%;
+  /* tight white rim glow on the disc itself (static filter, never animated);
+     the broad area illumination is the .wrap::after moon light pool. */
+  filter:
+    drop-shadow(0 0 14px rgba(255,255,255,1))
+    drop-shadow(0 0 38px rgba(226,230,240,.85));
+  animation:
+    synp-moon-lap 44s linear infinite,
+    synp-moon-phase 44s linear infinite;
+}
+
+/* SUN lap: visible only in the day half (0→50%). Gentle arc that stays
+   low on the horizon — small vmin lift so it never climbs over the cards. */
+@keyframes synp-sun-lap{
+  0%   { transform:translateX(-12vmin) translateY(1.5vmin) scale(.92); opacity:0; }
+  5%   { opacity:1; }
+  14%  { transform:translateX(16vw)  translateY(-1vmin)  scale(1); }
+  25%  { transform:translateX(40vw)  translateY(-1.8vmin) scale(1.02); }
+  38%  { transform:translateX(64vw)  translateY(-1vmin)  scale(1); }
+  45%  { transform:translateX(86vw)  translateY(1.5vmin) scale(.92); opacity:1; }
+  50%  { transform:translateX(106vw) translateY(2vmin)   scale(.88); opacity:0; }
+  100% { transform:translateX(106vw) translateY(2vmin)   scale(.88); opacity:0; }
+}
+
+/* MOON lap: identical low arc, but it only fades in for the night half
+   (50→100%) — i.e. while the sun is offscreen. First half held hidden. */
+@keyframes synp-moon-lap{
+  0%   { transform:translateX(-12vmin) translateY(1.5vmin) scale(.94); opacity:0; }
+  50%  { transform:translateX(-12vmin) translateY(1.5vmin) scale(.94); opacity:0; }
+  55%  { opacity:1; }
+  64%  { transform:translateX(16vw)  translateY(-1vmin)  scale(1); }
+  75%  { transform:translateX(40vw)  translateY(-1.8vmin) scale(1.01); }
+  88%  { transform:translateX(64vw)  translateY(-1vmin)  scale(1); }
+  96%  { transform:translateX(86vw)  translateY(1.5vmin) scale(.94); opacity:1; }
+  100% { transform:translateX(106vw) translateY(2vmin)   scale(.9);  opacity:0; }
+}
+
+/* MOON phase: the shadow disc (a 200%-wide layer) scrolls across the lit
+   disc once per lap. -100% = shadow fully left (waxing crescent) → 0%
+   covers the left half → +100% shadow fully right (waning crescent).
+   background-position is the one allowed scroll exception; only the
+   shadow (first) layer moves, the rest stay pinned. */
+@keyframes synp-moon-phase{
+  0%   { background-position:-100% 50%, 50% 50%, 50% 50%, 50% 50%, 50% 50%, 50% 50%, 50% 50%; }
+  100% { background-position: 100% 50%, 50% 50%, 50% 50%, 50% 50%, 50% 50%, 50% 50%, 50% 50%; }
+}
+
+/* CELESTIAL LIGHT POOLS — the sun/moon actually SHINE: a broad radial glow
+   rides WITH each disc (reusing its lap + opacity envelope, so it rises, crosses
+   and sets in lockstep) and washes the sky and the grid floor around the disc.
+   z-index:-1 inside .wrap keeps the pool BEHIND the cards (so text stays clean)
+   but above the sky/grid; the transparent center is the disc's hole, so the
+   banded sun / cratered moon read crisply inside their own glow. These two
+   pseudos replace the old CRT flicker/power-on layers. */
+:root[data-theme="synthwave-phases"] .wrap::before,
+:root[data-theme="synthwave-phases"] .wrap::after{
+  content:""; position:fixed; z-index:-1; pointer-events:none;
+  /* CONCENTRIC with the disc: the disc box is left:0/width:20vmin so its center
+     sits at 10vmin; this pool is width:76vmin so its center is at left+38vmin.
+     left:-28vmin therefore puts the pool's center at 10vmin too — and since the
+     pool reuses the disc's exact lap keyframes (same translate/scale), the two
+     stay perfectly concentric all the way across, so the glow is a halo AROUND
+     the sun/moon, not an orb beside it. top matches the same way (center on the
+     horizon). */
+  left:-28vmin; top:calc(var(--horizon) - 38vmin);
+  width:76vmin; height:76vmin; border-radius:50%;
+  opacity:0; will-change:transform, opacity;
+}
+/* SUN pool — warm yellow shine, on the sun's day lap */
+:root[data-theme="synthwave-phases"] .wrap::before{
+  background:radial-gradient(circle at 50% 50%,
+    transparent 0 25%,
+    rgba(255,214,96,.55) 33%,
+    rgba(255,176,52,.3) 49%,
+    rgba(255,156,40,.12) 64%,
+    transparent 77%);
+  animation:synp-sun-lap 44s linear infinite;
+}
+/* MOON pool — cool white-gray shine, on the moon's night lap */
+:root[data-theme="synthwave-phases"] .wrap::after{
+  background:radial-gradient(circle at 50% 50%,
+    transparent 0 25%,
+    rgba(228,232,244,.5) 33%,
+    rgba(202,208,226,.27) 49%,
+    rgba(186,192,210,.1) 64%,
+    transparent 77%);
+  animation:synp-moon-lap 44s linear infinite;
+}
+
+:root[data-theme="synthwave-phases"] .wrap,
+:root[data-theme="synthwave-phases"] .app-header,
+:root[data-theme="synthwave-phases"] .foot{ position:relative; z-index:1; }
+
+:root[data-theme="synthwave-phases"] ::selection{ background:var(--pink); color:#0d0221; }
+:root[data-theme="synthwave-phases"] ::-webkit-scrollbar{ width:12px; height:12px; }
+:root[data-theme="synthwave-phases"] ::-webkit-scrollbar-track{ background:#07011a; }
+:root[data-theme="synthwave-phases"] ::-webkit-scrollbar-thumb{
+  background:var(--cyan); border:3px solid #07011a;
+}
+
+/* ====================== HEADER ====================== */
+:root[data-theme="synthwave-phases"] .app-header{
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:14px;
+  padding:16px clamp(14px,4vw,36px);
+  background:linear-gradient(180deg, #1a0c40, #0d0221);
+  border-bottom:4px solid var(--cyan);
+  box-shadow:0 4px 0 #07011a, 0 5px 0 var(--pink);
+  position:sticky; top:0; z-index:50;
+}
+
+:root[data-theme="synthwave-phases"] .brand{
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+}
+:root[data-theme="synthwave-phases"] .brand-mark{
+  font-family:var(--font-display);
+  font-size:18px; line-height:1;
+  color:var(--pink);
+  text-shadow:var(--glow-pink);
+  animation:synp-blink 1.2s steps(2,end) infinite;
+}
+:root[data-theme="synthwave-phases"] .brand-name{
+  font-family:var(--font-display);
+  font-size:20px; line-height:1;
+  letter-spacing:1px;
+  color:var(--green);
+  text-shadow:3px 3px 0 #07011a, var(--glow-green);
+}
+:root[data-theme="synthwave-phases"] .brand-sub{
+  font-family:var(--font-mono); font-weight:700;
+  font-size:11px; letter-spacing:1px; text-transform:uppercase;
+  color:#0d0221;
+  background:var(--yellow);
+  padding:5px 9px;
+  border:2px solid #0d0221;
+  box-shadow:3px 3px 0 #000;
+}
+:root[data-theme="synthwave-phases"] .brand-sub:empty{ display:none; }
+
+:root[data-theme="synthwave-phases"] .toolbar{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+}
+:root[data-theme="synthwave-phases"] .field{ display:inline-flex; }
+:root[data-theme="synthwave-phases"] select{
+  appearance:none; -webkit-appearance:none;
+  font-family:var(--font-mono); font-size:12px;
+  color:var(--ink);
+  background:var(--panel-2)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath d='M0 1h8v2H6v2H2V3H0z' fill='%232ee8e8'/%3E%3C/svg%3E")
+    no-repeat right 10px center;
+  border:2px solid var(--cyan);
+  padding:8px 28px 8px 11px;
+  cursor:pointer;
+  box-shadow:3px 3px 0 #000;
+  transition:box-shadow var(--fast), transform var(--fast);
+  max-width:60vw;
+}
+:root[data-theme="synthwave-phases"] select:hover{
+  box-shadow:1px 1px 0 #000; transform:translate(2px,2px);
+}
+:root[data-theme="synthwave-phases"] select:focus{ outline:none; border-color:var(--green); }
+:root[data-theme="synthwave-phases"] select option{ background:#160a33; color:var(--ink); font-size:15px; }
+
+/* arcade key buttons */
+:root[data-theme="synthwave-phases"] .btn{
+  font-family:var(--font-mono); font-weight:700; font-size:13px;
+  letter-spacing:.5px;
+  color:var(--ink);
+  background:var(--panel-2);
+  border:2px solid var(--cyan);
+  padding:9px 13px;
+  cursor:pointer;
+  box-shadow:4px 4px 0 #000;
+  transition:transform var(--fast), box-shadow var(--fast), color var(--fast);
+}
+:root[data-theme="synthwave-phases"] .btn:hover{
+  color:var(--cyan);
+  transform:translate(2px,2px);
+  box-shadow:2px 2px 0 #000;
+}
+/* insert-coin press: drop down, collapse the hard shadow */
+:root[data-theme="synthwave-phases"] .btn:active{
+  transform:translate(4px,4px);
+  box-shadow:0 0 0 #000;
+}
+:root[data-theme="synthwave-phases"] .btn.ghost{ background:var(--panel); }
+
+/* ====================== LAYOUT ====================== */
+:root[data-theme="synthwave-phases"] .wrap{
+  max-width:1080px; margin:0 auto;
+  padding:clamp(18px,4vw,36px) clamp(14px,4vw,38px) 24px;
+}
+
+:root[data-theme="synthwave-phases"] .section-title{
+  font-family:var(--font-display); font-size:11px;
+  letter-spacing:2px; text-transform:uppercase;
+  color:var(--cyan); opacity:1;
+  text-shadow:2px 2px 0 #07011a, var(--glow-cyan);
+  margin:26px 2px 14px;
+}
+:root[data-theme="synthwave-phases"] .section-title:empty{ display:none; }
+
+:root[data-theme="synthwave-phases"] .dash{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:16px;
+  margin-bottom:28px;
+}
+
+/* ====================== STAT CARDS ====================== */
+:root[data-theme="synthwave-phases"] .stat-card{
+  position:relative;
+  background:var(--panel);
+  border:3px solid var(--purple);
+  padding:18px 16px 20px;
+  box-shadow:6px 6px 0 #000;
+  /* stepped pixel corners */
+  clip-path:polygon(0 6px, 6px 6px, 6px 0, calc(100% - 6px) 0, calc(100% - 6px) 6px, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 6px calc(100% - 6px), 0 calc(100% - 6px));
+  transition:transform var(--fast), box-shadow var(--fast);
+  animation:synp-reveal-in .4s steps(6,end) both;
+}
+:root[data-theme="synthwave-phases"] .stat-card:hover{ transform:translate(-2px,-2px); }
+:root[data-theme="synthwave-phases"] .stat-card[data-kind="progress"]{ border-color:var(--green);  animation-delay:.04s; }
+:root[data-theme="synthwave-phases"] .stat-card[data-kind="streak"]{   border-color:var(--pink);   animation-delay:.10s; }
+:root[data-theme="synthwave-phases"] .stat-card[data-kind="phases"]{   border-color:var(--cyan);   animation-delay:.16s; }
+:root[data-theme="synthwave-phases"] .stat-card[data-kind="tracks"]{   border-color:var(--purple); animation-delay:.22s; }
+
+:root[data-theme="synthwave-phases"] .eyebrow{
+  font-family:var(--font-display); font-size:9px; letter-spacing:1px;
+  text-transform:uppercase; color:var(--muted);
+  margin-bottom:14px;
+}
+:root[data-theme="synthwave-phases"] .stat-card[data-kind="progress"] .eyebrow{ color:var(--green); text-shadow:var(--glow-green); }
+:root[data-theme="synthwave-phases"] .stat-card[data-kind="streak"] .eyebrow{   color:var(--pink);  text-shadow:var(--glow-pink); }
+:root[data-theme="synthwave-phases"] .stat-card[data-kind="phases"] .eyebrow{   color:var(--cyan);  text-shadow:var(--glow-cyan); }
+:root[data-theme="synthwave-phases"] .stat-card[data-kind="tracks"] .eyebrow{   color:var(--purple); }
+
+/* progress ring = segmented coin meter via conic-gradient(--p) */
+:root[data-theme="synthwave-phases"] .ring{
+  --p:0;
+  width:148px; height:148px; margin:8px auto 14px;
+  display:grid; place-items:center;
+  background:
+    /* hard segment notches over the meter */
+    repeating-conic-gradient(from 0deg, transparent 0deg 14deg, rgba(13,2,33,.9) 14deg 18deg),
+    radial-gradient(closest-side, var(--panel) 0 64%, transparent 65% 100%),
+    conic-gradient(var(--green) calc(var(--p)*1%), #1a0c40 0);
+  border:3px solid var(--green);
+  box-shadow:var(--glow-green), inset 0 0 12px rgba(46,232,107,.18);
+}
+:root[data-theme="synthwave-phases"] .ring > div{ text-align:center; }
+:root[data-theme="synthwave-phases"] .ring b{
+  display:block; font-family:var(--font-display); font-size:24px; line-height:1;
+  color:var(--green); text-shadow:2px 2px 0 #07011a, var(--glow-green);
+}
+:root[data-theme="synthwave-phases"] .ring small{
+  display:block; font-family:var(--font-mono); font-size:12px; color:var(--ink-dim); margin-top:8px;
+}
+
+/* streak = COMBO counter */
+:root[data-theme="synthwave-phases"] .flame{
+  font-size:42px; text-align:center; line-height:1; margin:2px 0;
+  filter:drop-shadow(0 0 8px rgba(255,46,136,.7));
+  animation:synp-combo-pulse 1s steps(2,end) infinite;
+}
+:root[data-theme="synthwave-phases"] .streak-num{
+  font-family:var(--font-display); font-size:40px; line-height:1; text-align:center;
+  color:var(--pink); text-shadow:3px 3px 0 #07011a, var(--glow-pink);
+}
+:root[data-theme="synthwave-phases"] .stat-card[data-kind="streak"] .streak-num::after{
+  content:" COMBO"; font-size:11px; color:var(--yellow); text-shadow:var(--glow-yellow);
+}
+:root[data-theme="synthwave-phases"] .stat-sub{
+  font-family:var(--font-mono); font-size:11px; color:var(--ink-dim);
+  margin-top:10px; text-align:center;
+}
+
+/* phase / track rows */
+:root[data-theme="synthwave-phases"] .prow{
+  display:flex; align-items:center; justify-content:space-between;
+  font-family:var(--font-mono); font-size:12px; margin:14px 0 6px;
+}
+:root[data-theme="synthwave-phases"] .lbl{ display:inline-flex; align-items:center; gap:9px; color:var(--ink-dim); }
+:root[data-theme="synthwave-phases"] .lbl > i{
+  width:10px; height:10px; flex:0 0 auto;
+  background:var(--cyan); box-shadow:0 0 6px var(--cyan);
+}
+:root[data-theme="synthwave-phases"] .val{
+  font-family:var(--font-mono); font-size:12px; color:var(--ink);
+}
+
+:root[data-theme="synthwave-phases"] .bar{
+  height:12px;
+  background:#1a0c40;
+  border:2px solid var(--line);
+  overflow:hidden;
+  padding:1px;
+}
+:root[data-theme="synthwave-phases"] .bar > i{
+  display:block; height:100%;
+  /* chunky pixel-block fill */
+  background:
+    repeating-linear-gradient(90deg, var(--cyan) 0 7px, rgba(13,2,33,.55) 7px 9px);
+  box-shadow:0 0 8px var(--cyan);
+  transition:width var(--slow);
+}
+
+:root[data-theme="synthwave-phases"] .muted{
+  color:var(--muted); font-family:var(--font-mono); font-size:12px;
+}
+
+/* ====================== TRACK COLORS ====================== */
+/* paint via var(--track-<id>) with theme fallback so inline <html> vars win */
+:root[data-theme="synthwave-phases"] .prow[data-track] .lbl>i,
+:root[data-theme="synthwave-phases"] .bar[data-track]>i{ background:var(--track-neutral); box-shadow:0 0 6px var(--track-neutral); }
+
+:root[data-theme="synthwave-phases"] .bar[data-track]>i{
+  background:
+    repeating-linear-gradient(90deg, var(--track-neutral) 0 7px, rgba(13,2,33,.55) 7px 9px);
+}
+
+:root[data-theme="synthwave-phases"] .prow[data-track="dsa"] .lbl>i{ background:var(--track-dsa,#2ee86b); box-shadow:0 0 6px var(--track-dsa,#2ee86b); }
+:root[data-theme="synthwave-phases"] .bar[data-track="dsa"]>i{ background:repeating-linear-gradient(90deg, var(--track-dsa,#2ee86b) 0 7px, rgba(13,2,33,.55) 7px 9px); box-shadow:0 0 8px var(--track-dsa,#2ee86b); }
+:root[data-theme="synthwave-phases"] .prow[data-track="js"] .lbl>i{ background:var(--track-js,#ffe600); box-shadow:0 0 6px var(--track-js,#ffe600); }
+:root[data-theme="synthwave-phases"] .bar[data-track="js"]>i{ background:repeating-linear-gradient(90deg, var(--track-js,#ffe600) 0 7px, rgba(13,2,33,.55) 7px 9px); box-shadow:0 0 8px var(--track-js,#ffe600); }
+:root[data-theme="synthwave-phases"] .prow[data-track="ts"] .lbl>i{ background:var(--track-ts,#2ec4ff); box-shadow:0 0 6px var(--track-ts,#2ec4ff); }
+:root[data-theme="synthwave-phases"] .bar[data-track="ts"]>i{ background:repeating-linear-gradient(90deg, var(--track-ts,#2ec4ff) 0 7px, rgba(13,2,33,.55) 7px 9px); box-shadow:0 0 8px var(--track-ts,#2ec4ff); }
+:root[data-theme="synthwave-phases"] .prow[data-track="node"] .lbl>i{ background:var(--track-node,#6bff2e); box-shadow:0 0 6px var(--track-node,#6bff2e); }
+:root[data-theme="synthwave-phases"] .bar[data-track="node"]>i{ background:repeating-linear-gradient(90deg, var(--track-node,#6bff2e) 0 7px, rgba(13,2,33,.55) 7px 9px); box-shadow:0 0 8px var(--track-node,#6bff2e); }
+:root[data-theme="synthwave-phases"] .prow[data-track="sysdesign"] .lbl>i{ background:var(--track-sysdesign,#ff2e88); box-shadow:0 0 6px var(--track-sysdesign,#ff2e88); }
+:root[data-theme="synthwave-phases"] .bar[data-track="sysdesign"]>i{ background:repeating-linear-gradient(90deg, var(--track-sysdesign,#ff2e88) 0 7px, rgba(13,2,33,.55) 7px 9px); box-shadow:0 0 8px var(--track-sysdesign,#ff2e88); }
+:root[data-theme="synthwave-phases"] .prow[data-track="patterns"] .lbl>i{ background:var(--track-patterns,#b06bff); box-shadow:0 0 6px var(--track-patterns,#b06bff); }
+:root[data-theme="synthwave-phases"] .bar[data-track="patterns"]>i{ background:repeating-linear-gradient(90deg, var(--track-patterns,#b06bff) 0 7px, rgba(13,2,33,.55) 7px 9px); box-shadow:0 0 8px var(--track-patterns,#b06bff); }
+:root[data-theme="synthwave-phases"] .prow[data-track="distsys"] .lbl>i{ background:var(--track-distsys,#ff7a1a); box-shadow:0 0 6px var(--track-distsys,#ff7a1a); }
+:root[data-theme="synthwave-phases"] .bar[data-track="distsys"]>i{ background:repeating-linear-gradient(90deg, var(--track-distsys,#ff7a1a) 0 7px, rgba(13,2,33,.55) 7px 9px); box-shadow:0 0 8px var(--track-distsys,#ff7a1a); }
+:root[data-theme="synthwave-phases"] .prow[data-track="db"] .lbl>i{ background:var(--track-db,#2ee8e8); box-shadow:0 0 6px var(--track-db,#2ee8e8); }
+:root[data-theme="synthwave-phases"] .bar[data-track="db"]>i{ background:repeating-linear-gradient(90deg, var(--track-db,#2ee8e8) 0 7px, rgba(13,2,33,.55) 7px 9px); box-shadow:0 0 8px var(--track-db,#2ee8e8); }
+:root[data-theme="synthwave-phases"] .prow[data-track="cs"] .lbl>i{ background:var(--track-cs,#ff6bd6); box-shadow:0 0 6px var(--track-cs,#ff6bd6); }
+:root[data-theme="synthwave-phases"] .bar[data-track="cs"]>i{ background:repeating-linear-gradient(90deg, var(--track-cs,#ff6bd6) 0 7px, rgba(13,2,33,.55) 7px 9px); box-shadow:0 0 8px var(--track-cs,#ff6bd6); }
+
+/* ====================== DAY RAIL ====================== */
+:root[data-theme="synthwave-phases"] .day-rail{
+  display:flex; align-items:center;
+  gap:14px;
+}
+:root[data-theme="synthwave-phases"] .day-nav{
+  font-family:var(--font-display); font-size:18px; line-height:1;
+  flex:0 0 auto;
+  width:52px; height:52px;
+  display:grid; place-items:center;
+  color:#0d0221;
+  background:var(--cyan);
+  border:3px solid #0d0221;
+  cursor:pointer;
+  box-shadow:4px 4px 0 #000;
+  transition:transform var(--fast), box-shadow var(--fast), background var(--fast);
+}
+:root[data-theme="synthwave-phases"] .day-nav:hover:not(:disabled){
+  background:var(--green);
+  transform:translate(2px,2px);
+  box-shadow:2px 2px 0 #000;
+}
+:root[data-theme="synthwave-phases"] .day-nav:active:not(:disabled){
+  transform:translate(4px,4px); box-shadow:0 0 0 #000;
+}
+:root[data-theme="synthwave-phases"] .day-nav:disabled{ opacity:.25; cursor:not-allowed; }
+
+/* ====================== DAY CARD ====================== */
+:root[data-theme="synthwave-phases"] .today-wrap{ flex:1 1 auto; min-width:0; }
+:root[data-theme="synthwave-phases"] .today{
+  position:relative;
+  display:flex;
+  background:var(--panel);
+  border:4px solid var(--track-neutral);
+  box-shadow:8px 8px 0 #000, inset 0 0 0 2px rgba(13,2,33,.6);
+}
+/* day card accent driven by track */
+:root[data-theme="synthwave-phases"] .today[data-track="dsa"]{       border-color:var(--track-dsa,#2ee86b); }
+:root[data-theme="synthwave-phases"] .today[data-track="js"]{        border-color:var(--track-js,#ffe600); }
+:root[data-theme="synthwave-phases"] .today[data-track="ts"]{        border-color:var(--track-ts,#2ec4ff); }
+:root[data-theme="synthwave-phases"] .today[data-track="node"]{      border-color:var(--track-node,#6bff2e); }
+:root[data-theme="synthwave-phases"] .today[data-track="sysdesign"]{ border-color:var(--track-sysdesign,#ff2e88); }
+:root[data-theme="synthwave-phases"] .today[data-track="patterns"]{  border-color:var(--track-patterns,#b06bff); }
+:root[data-theme="synthwave-phases"] .today[data-track="distsys"]{   border-color:var(--track-distsys,#ff7a1a); }
+:root[data-theme="synthwave-phases"] .today[data-track="db"]{        border-color:var(--track-db,#2ee8e8); }
+:root[data-theme="synthwave-phases"] .today[data-track="cs"]{        border-color:var(--track-cs,#ff6bd6); }
+
+:root[data-theme="synthwave-phases"] .today-side{
+  flex:0 0 50px;
+  display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(180deg, #1a0c40, #110735);
+  border-right:3px solid rgba(13,2,33,.7);
+}
+:root[data-theme="synthwave-phases"] .vert{
+  writing-mode:vertical-rl; text-orientation:upright;
+  font-family:var(--font-mono); font-size:12px; letter-spacing:3px;
+  text-transform:uppercase; color:var(--cyan);
+  text-shadow:var(--glow-cyan);
+}
+:root[data-theme="synthwave-phases"] .today-main{
+  flex:1; min-width:0;
+  padding:clamp(18px,3vw,28px);
+}
+
+/* track pill = arcade label plate */
+:root[data-theme="synthwave-phases"] .trackpill{
+  display:inline-flex; align-items:center; gap:9px;
+  font-family:var(--font-mono); font-size:12px; letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--ink);
+  background:var(--panel-2);
+  border:2px solid var(--track-neutral);
+  padding:5px 12px 5px 5px;
+  box-shadow:3px 3px 0 #000;
+}
+:root[data-theme="synthwave-phases"] .trackpill .k{
+  display:grid; place-items:center;
+  width:26px; height:26px;
+  font-family:var(--font-display); font-size:11px;
+  background:#0d0221; color:var(--cyan);
+  border:2px solid currentColor;
+}
+:root[data-theme="synthwave-phases"] .today[data-track="dsa"] .trackpill{       border-color:var(--track-dsa,#2ee86b); }
+:root[data-theme="synthwave-phases"] .today[data-track="dsa"] .trackpill .k{    color:var(--track-dsa,#2ee86b); }
+:root[data-theme="synthwave-phases"] .today[data-track="js"] .trackpill{        border-color:var(--track-js,#ffe600); }
+:root[data-theme="synthwave-phases"] .today[data-track="js"] .trackpill .k{     color:var(--track-js,#ffe600); }
+:root[data-theme="synthwave-phases"] .today[data-track="ts"] .trackpill{        border-color:var(--track-ts,#2ec4ff); }
+:root[data-theme="synthwave-phases"] .today[data-track="ts"] .trackpill .k{     color:var(--track-ts,#2ec4ff); }
+:root[data-theme="synthwave-phases"] .today[data-track="node"] .trackpill{      border-color:var(--track-node,#6bff2e); }
+:root[data-theme="synthwave-phases"] .today[data-track="node"] .trackpill .k{   color:var(--track-node,#6bff2e); }
+:root[data-theme="synthwave-phases"] .today[data-track="sysdesign"] .trackpill{ border-color:var(--track-sysdesign,#ff2e88); }
+:root[data-theme="synthwave-phases"] .today[data-track="sysdesign"] .trackpill .k{ color:var(--track-sysdesign,#ff2e88); }
+:root[data-theme="synthwave-phases"] .today[data-track="patterns"] .trackpill{  border-color:var(--track-patterns,#b06bff); }
+:root[data-theme="synthwave-phases"] .today[data-track="patterns"] .trackpill .k{ color:var(--track-patterns,#b06bff); }
+:root[data-theme="synthwave-phases"] .today[data-track="distsys"] .trackpill{   border-color:var(--track-distsys,#ff7a1a); }
+:root[data-theme="synthwave-phases"] .today[data-track="distsys"] .trackpill .k{ color:var(--track-distsys,#ff7a1a); }
+:root[data-theme="synthwave-phases"] .today[data-track="db"] .trackpill{        border-color:var(--track-db,#2ee8e8); }
+:root[data-theme="synthwave-phases"] .today[data-track="db"] .trackpill .k{     color:var(--track-db,#2ee8e8); }
+:root[data-theme="synthwave-phases"] .today[data-track="cs"] .trackpill{        border-color:var(--track-cs,#ff6bd6); }
+:root[data-theme="synthwave-phases"] .today[data-track="cs"] .trackpill .k{     color:var(--track-cs,#ff6bd6); }
+
+:root[data-theme="synthwave-phases"] .today-title{
+  font-family:var(--font-display); font-weight:400;
+  font-size:clamp(15px,2.6vw,20px); line-height:1.4;
+  margin:16px 0 12px;
+  color:#fff;
+  text-shadow:3px 3px 0 #07011a, 0 0 12px rgba(46,232,232,.4);
+}
+
+/* warmup */
+:root[data-theme="synthwave-phases"] .warm{
+  font-size:16px; line-height:1.5; color:var(--ink-dim);
+  background:#110735;
+  border-left:4px solid var(--cyan);
+  padding:12px 14px; margin:8px 0 18px;
+}
+:root[data-theme="synthwave-phases"] .warm-i{ color:var(--yellow); text-shadow:var(--glow-yellow); flex:0 0 auto; }
+:root[data-theme="synthwave-phases"] .warm .muted{
+  color:var(--cyan); text-transform:uppercase; letter-spacing:1px;
+  font-family:var(--font-mono); font-size:11px;
+}
+
+/* ====================== TASKS ====================== */
+:root[data-theme="synthwave-phases"] .tasks{ display:flex; flex-direction:column; gap:9px; margin:8px 0 18px; }
+:root[data-theme="synthwave-phases"] .task{
+  display:flex; align-items:flex-start; gap:12px;
+  padding:12px 14px;
+  background:var(--panel-2);
+  border:2px solid var(--line);
+  cursor:pointer;
+  user-select:text;
+  box-shadow:3px 3px 0 #000;
+  transition:transform var(--fast), box-shadow var(--fast), border-color var(--fast);
+  animation:synp-reveal-in .3s steps(5,end) both;
+}
+:root[data-theme="synthwave-phases"] .task:hover{
+  border-color:var(--green);
+  transform:translate(2px,0);
+  box-shadow:1px 3px 0 #000;
+}
+/* custom pixel checkbox */
+:root[data-theme="synthwave-phases"] .box{
+  flex:0 0 auto;
+  width:22px; height:22px; margin-top:1px;
+  background:#0d0221;
+  border:2px solid var(--muted);
+  display:grid; place-items:center;
+  position:relative;
+  transition:all var(--fast);
+}
+:root[data-theme="synthwave-phases"] .box::after{
+  content:"";
+  width:10px; height:10px;
+  background:var(--green);
+  box-shadow:var(--glow-green);
+  opacity:0; transform:scale(0);
+  transition:opacity var(--fast), transform var(--fast);
+}
+:root[data-theme="synthwave-phases"] .task:hover .box{ border-color:var(--green); }
+:root[data-theme="synthwave-phases"] .task.done .box{ border-color:var(--green); }
+:root[data-theme="synthwave-phases"] .task.done .box::after{ opacity:1; transform:scale(1); }
+
+:root[data-theme="synthwave-phases"] .task-text{
+  font-size:17px; line-height:1.4; color:var(--ink);
+  transition:color var(--fast);
+}
+:root[data-theme="synthwave-phases"] .task.done .task-text{
+  color:var(--muted); text-decoration:line-through; text-decoration-color:var(--green);
+}
+
+/* task guidance spoiler */
+:root[data-theme="synthwave-phases"] .task-wrap{ display:flex; flex-direction:column; gap:8px; }
+:root[data-theme="synthwave-phases"] .task-hint{ font-family:var(--font-ui); font-size:16px; margin-left:6px; }
+:root[data-theme="synthwave-phases"] .task-hint>summary{
+  cursor:pointer; list-style:none;
+  color:var(--cyan); opacity:1; font-weight:400; letter-spacing:1px;
+  display:inline-flex; align-items:center; gap:6px; width:fit-content;
+  font-family:var(--font-mono); font-size:11px; text-transform:uppercase;
+}
+:root[data-theme="synthwave-phases"] .task-hint>summary::-webkit-details-marker{ display:none; }
+:root[data-theme="synthwave-phases"] .task-hint>summary::before{ content:"\25B8"; font-size:10px; }
+:root[data-theme="synthwave-phases"] .task-hint[open]>summary::before{ content:"\25BE"; }
+:root[data-theme="synthwave-phases"] .task-hint[open]>summary{ margin-bottom:6px; }
+:root[data-theme="synthwave-phases"] .task-hint-body{
+  font-size:16px; line-height:1.5; color:var(--ink-dim);
+  border-left:3px solid var(--cyan); padding-left:12px; margin-left:3px;
+}
+
+/* ====================== REFLECTION ====================== */
+:root[data-theme="synthwave-phases"] .reflect-block{ margin:10px 0 18px; }
+:root[data-theme="synthwave-phases"] .reflect-label{
+  display:flex; align-items:center; gap:8px;
+  font-family:var(--font-mono); font-size:12px; color:var(--ink-dim);
+  text-transform:uppercase; letter-spacing:1px;
+  margin-bottom:10px;
+}
+:root[data-theme="synthwave-phases"] .reflect-label .kanji,
+:root[data-theme="synthwave-phases"] .kanji{
+  font-family:var(--font-ui); font-size:20px; font-weight:700;
+  color:var(--pink); text-shadow:var(--glow-pink);
+}
+:root[data-theme="synthwave-phases"] textarea{
+  width:100%; min-height:88px; resize:vertical;
+  font-family:var(--font-ui); font-size:17px; line-height:1.5;
+  color:var(--ink);
+  background:#0a0118;
+  border:2px solid var(--line);
+  padding:12px 14px;
+  box-shadow:inset 3px 3px 0 rgba(0,0,0,.5);
+  transition:border-color var(--fast);
+}
+:root[data-theme="synthwave-phases"] textarea::placeholder{ color:var(--muted); }
+:root[data-theme="synthwave-phases"] textarea:focus{ outline:none; border-color:var(--pink); }
+
+/* resources / chips */
+:root[data-theme="synthwave-phases"] .res-row{ display:flex; flex-wrap:wrap; gap:9px; margin:6px 0 14px; }
+:root[data-theme="synthwave-phases"] .chip{
+  font-family:var(--font-mono); font-size:11px;
+  color:var(--ink-dim);
+  background:var(--panel-2);
+  border:2px solid var(--purple);
+  padding:7px 12px;
+  box-shadow:3px 3px 0 #000;
+  transition:transform var(--fast), box-shadow var(--fast), color var(--fast);
+}
+:root[data-theme="synthwave-phases"] .chip:hover{
+  color:#fff; transform:translate(2px,2px); box-shadow:1px 1px 0 #000;
+}
+:root[data-theme="synthwave-phases"] .chip b{ color:var(--purple); }
+
+/* next-day CTA */
+:root[data-theme="synthwave-phases"] .next-day-cta{
+  display:inline-block; margin-top:10px;
+  font-family:var(--font-display); font-size:11px; letter-spacing:1px;
+  color:#0d0221;
+  background:var(--green);
+  border:2px solid #0d0221; cursor:pointer;
+  padding:14px 22px;
+  box-shadow:5px 5px 0 #064d22, 0 0 14px rgba(46,232,107,.4);
+  transition:transform var(--fast), box-shadow var(--fast);
+}
+:root[data-theme="synthwave-phases"] .next-day-cta:hover{
+  transform:translate(2px,2px);
+  box-shadow:3px 3px 0 #064d22, 0 0 18px rgba(46,232,107,.6);
+}
+:root[data-theme="synthwave-phases"] .next-day-cta:active{
+  transform:translate(5px,5px); box-shadow:0 0 0 #064d22, 0 0 18px rgba(46,232,107,.6);
+}
+
+/* comeback banner */
+:root[data-theme="synthwave-phases"] #comeback{
+  font-family:var(--font-mono); font-size:13px; color:var(--yellow);
+  background:#1a0c40;
+  border:2px solid var(--yellow);
+  padding:13px 16px; margin-bottom:18px;
+  text-shadow:var(--glow-yellow);
+  box-shadow:4px 4px 0 #000;
+}
+
+/* ====================== MODALS ====================== */
+:root[data-theme="synthwave-phases"] .modal{
+  display:none;
+  position:fixed; inset:0; z-index:200;
+  overflow-y:auto;
+  align-items:flex-start; justify-content:center;
+  padding:36px 16px;
+  background:rgba(7,1,26,.85);
+}
+:root[data-theme="synthwave-phases"] .modal::before{
+  content:""; position:fixed; inset:0; pointer-events:none;
+  background:repeating-linear-gradient(0deg, rgba(0,0,0,.3) 0 1px, transparent 1px 3px);
+}
+:root[data-theme="synthwave-phases"] .modal.open{ display:flex; }
+:root[data-theme="synthwave-phases"] .modal-panel{
+  position:relative;
+  max-width:min(560px,92vw);
+  margin:auto;
+  width:100%;
+  background:var(--panel);
+  border:4px solid var(--cyan);
+  padding:22px;
+  box-shadow:10px 10px 0 #000, 0 0 30px rgba(46,232,232,.25);
+  animation:synp-reveal-in .2s steps(4,end);
+}
+
+/* modal heads */
+:root[data-theme="synthwave-phases"] .cal-head,
+:root[data-theme="synthwave-phases"] .tr-head{
+  display:flex; align-items:center; gap:10px;
+  margin-bottom:18px;
+}
+:root[data-theme="synthwave-phases"] .cal-head > div,
+:root[data-theme="synthwave-phases"] .tr-head > div{
+  flex:1;
+  font-family:var(--font-display); font-size:13px; letter-spacing:1px;
+  color:var(--cyan); text-align:center;
+  text-shadow:var(--glow-cyan);
+}
+:root[data-theme="synthwave-phases"] .tr-head > div{ text-align:left; }
+:root[data-theme="synthwave-phases"] .cal-head button,
+:root[data-theme="synthwave-phases"] .tr-head button{
+  font-family:var(--font-display); font-size:11px;
+  width:38px; height:38px; display:grid; place-items:center;
+  color:#0d0221;
+  background:var(--cyan);
+  border:2px solid #0d0221; cursor:pointer;
+  box-shadow:3px 3px 0 #000;
+  transition:transform var(--fast), box-shadow var(--fast), background var(--fast);
+}
+:root[data-theme="synthwave-phases"] .cal-head button:hover,
+:root[data-theme="synthwave-phases"] .tr-head button:hover{
+  background:var(--pink); transform:translate(2px,2px); box-shadow:1px 1px 0 #000;
+}
+
+/* card map (baseline-functional; retheme the cells to the arcade look) */
+:root[data-theme="synthwave-phases"] .cm-rlabel{
+  font-family:var(--font-mono); letter-spacing:1px;
+  text-transform:uppercase; color:var(--muted); opacity:1;
+}
+:root[data-theme="synthwave-phases"] .cm-card{
+  width:26px; height:26px;
+  border:2px solid var(--line);
+  background:var(--panel-2);
+}
+:root[data-theme="synthwave-phases"] .cm-card.done{
+  background:var(--green); border-color:var(--green);
+  box-shadow:0 0 8px rgba(46,232,107,.55);
+}
+:root[data-theme="synthwave-phases"] .cm-card.rest{
+  border-style:dashed; background:transparent; opacity:.5;
+}
+:root[data-theme="synthwave-phases"] .cm-card.current{
+  outline:3px solid var(--pink); outline-offset:2px;
+}
+:root[data-theme="synthwave-phases"] .cm-card:hover{ transform:translate(-2px,-2px); }
+
+/* trophies = arcade achievement plates */
+:root[data-theme="synthwave-phases"] .tr-grid{
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:12px;
+}
+:root[data-theme="synthwave-phases"] .badge{
+  position:relative;
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  text-align:center;
+  padding:14px 8px;
+  background:#0d0221;
+  border:2px solid var(--line);
+  cursor:default;
+  box-shadow:4px 4px 0 #000;
+  transition:transform var(--fast);
+}
+:root[data-theme="synthwave-phases"] .badge:hover{ transform:translate(-2px,-2px); z-index:5; }
+:root[data-theme="synthwave-phases"] .badge.on{
+  border-color:var(--yellow);
+  background:#1a0c40;
+  box-shadow:4px 4px 0 #000, 0 0 14px rgba(255,230,0,.45);
+}
+:root[data-theme="synthwave-phases"] .badge.off{ opacity:.4; filter:grayscale(.8); }
+:root[data-theme="synthwave-phases"] .badge .bi{ font-size:30px; line-height:1; }
+:root[data-theme="synthwave-phases"] .badge.on .bi{
+  filter:drop-shadow(0 0 8px rgba(255,230,0,.7));
+  animation:synp-combo-pulse 1.4s steps(2,end) infinite;
+}
+:root[data-theme="synthwave-phases"] .badge .bt{
+  font-family:var(--font-mono); font-size:10px; line-height:1.3;
+  color:var(--ink-dim); text-transform:uppercase; letter-spacing:.5px;
+}
+:root[data-theme="synthwave-phases"] .badge.on .bt{ color:var(--yellow); text-shadow:var(--glow-yellow); }
+
+/* badge tooltip */
+:root[data-theme="synthwave-phases"] .badge[data-tip]:hover::after{
+  content:attr(data-tip);
+  position:absolute; bottom:calc(100% + 9px); left:50%; transform:translateX(-50%);
+  z-index:20;
+  width:max-content; max-width:220px;
+  font-family:var(--font-ui); font-size:14px; line-height:1.35;
+  text-align:left; white-space:normal;
+  color:var(--ink);
+  background:#0d0221;
+  border:2px solid var(--cyan);
+  padding:9px 11px;
+  box-shadow:4px 4px 0 #000, var(--glow-cyan);
+  pointer-events:none;
+}
+:root[data-theme="synthwave-phases"] .badge[data-tip]:hover::before{
+  content:""; position:absolute; bottom:calc(100% + 3px); left:50%; transform:translateX(-50%);
+  z-index:20;
+  border:6px solid transparent; border-top-color:var(--cyan);
+  pointer-events:none;
+}
+
+/* ====================== EFFECTS (#fx) ====================== */
+:root[data-theme="synthwave-phases"] #fx{
+  position:fixed; inset:0; z-index:300; pointer-events:none;
+}
+
+/* screen flash */
+:root[data-theme="synthwave-phases"] .fx-flash{
+  position:fixed; inset:0;
+  background:radial-gradient(circle at 50% 50%, rgba(255,230,0,.4), transparent 60%);
+  animation:synp-fx-flash .3s steps(4,end) forwards;
+}
+
+/* confetti = square PIXEL BLOCKS, no radius */
+:root[data-theme="synthwave-phases"] .confetti-piece{
+  --i:0; --dx:0; --dy:1; --rot:360deg;
+  position:absolute; top:-16px; left:50%;
+  width:12px; height:12px;
+  background:var(--green);
+  box-shadow:0 0 6px currentColor;
+  opacity:1;
+  animation:synp-pixel-fall 1.7s steps(20,end) forwards;
+  animation-delay:calc(var(--i) * 28ms);
+}
+:root[data-theme="synthwave-phases"] .confetti-piece:nth-child(5n){ background:var(--pink); }
+:root[data-theme="synthwave-phases"] .confetti-piece:nth-child(5n+1){ background:var(--cyan); }
+:root[data-theme="synthwave-phases"] .confetti-piece:nth-child(5n+2){ background:var(--yellow); }
+:root[data-theme="synthwave-phases"] .confetti-piece:nth-child(5n+3){ background:var(--purple); }
+:root[data-theme="synthwave-phases"] .confetti-piece:nth-child(3n){ width:8px; height:8px; }
+
+/* toasts */
+:root[data-theme="synthwave-phases"] .toast,
+:root[data-theme="synthwave-phases"] .badge-toast{
+  position:fixed; right:20px; bottom:24px;
+  display:flex; align-items:center; gap:12px;
+  max-width:min(340px,86vw);
+  font-family:var(--font-ui); font-size:17px;
+  color:var(--ink);
+  background:var(--panel);
+  border:3px solid var(--cyan);
+  padding:14px 16px;
+  box-shadow:6px 6px 0 #000, 0 0 20px rgba(46,232,232,.25);
+  opacity:0; transform:translateY(16px);
+  transition:opacity var(--snap), transform var(--snap);
+  pointer-events:auto;
+}
+:root[data-theme="synthwave-phases"] .badge-toast{
+  border-color:var(--yellow);
+  box-shadow:6px 6px 0 #000, 0 0 20px rgba(255,230,0,.3);
+}
+:root[data-theme="synthwave-phases"] .toast.show,
+:root[data-theme="synthwave-phases"] .badge-toast.show{ opacity:1; transform:translateY(0); }
+:root[data-theme="synthwave-phases"] .badge-toast b{ color:var(--yellow); text-shadow:var(--glow-yellow); }
+:root[data-theme="synthwave-phases"] .bt-i{ font-size:26px; line-height:1; filter:drop-shadow(0 0 6px rgba(255,230,0,.7)); }
+
+/* ====================== FOOTER ====================== */
+/* Plain footer (no Cyber-Grid) — the only neon perspective floor is the
+   shared arcade grid on body::before. z-index keeps it above that floor. */
+:root[data-theme="synthwave-phases"] .foot{
+  position:relative; z-index:1;
+  text-align:center;
+  padding:26px 16px 42px;
+  border-top:3px solid var(--line);
+  margin-top:32px;
+}
+
+:root[data-theme="synthwave-phases"] #motd{
+  position:relative; z-index:1;
+  font-family:var(--font-mono); font-size:12px; letter-spacing:1px;
+  color:var(--cyan); text-shadow:var(--glow-cyan);
+  text-transform:uppercase;
+  opacity:1; transition:opacity .55s steps(8,end);
+}
+:root[data-theme="synthwave-phases"] #motd.motd-out{ opacity:0; }
+
+/* ====================== ANIMATIONS ====================== */
+@keyframes synp-reveal-in{
+  from{ opacity:0; transform:translateY(10px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+@keyframes synp-blink{
+  0%,49%{ opacity:1; }
+  50%,100%{ opacity:.25; }
+}
+@keyframes synp-combo-pulse{
+  0%,100%{ transform:scale(1); }
+  50%{ transform:scale(1.12); }
+}
+@keyframes synp-fx-flash{
+  0%{ opacity:1; }
+  100%{ opacity:0; }
+}
+@keyframes synp-pixel-fall{
+  0%{
+    transform:translate(0,0) rotate(0deg);
+    opacity:1;
+  }
+  100%{
+    transform:translate(calc(var(--dx) * 55vw), calc(20px + var(--dy) * 95vh)) rotate(var(--rot));
+    opacity:0;
+  }
+}

@@ -1,0 +1,1046 @@
+/* ============================================================================
+   themes/hogwarts-express.css — «Hogwarts Express · Glenfinnan» (pixel)
+   ----------------------------------------------------------------------------
+   A serious, cinematic 8-bit diorama of the Glenfinnan Viaduct in the warm,
+   golden light of the early films: bright blue dithered sky with a soft
+   sun-bloom, lush layered Highland greens, a sandy sunlit stone arcade, and
+   the deep-maroon Jacobite crossing the deck forever, trailing steam. Hidden
+   in the sky: the flying Ford Anglia and Hedwig; the streak is a Golden Snitch.
+
+   Pixel craft, not toy: graded palette (no candy primaries), shading ramps with
+   one light direction, dither, atmospheric depth. Display type is Press Start 2P
+   / VT323 / Silkscreen — all self-hosted (fonts.css), no remote URLs.
+
+   Scene maps onto the app's fixed pseudo layers (a content app occludes the
+   centre, so the diorama frames the column through the gutters/top/bottom):
+     body            — sky (gradient + sun-bloom + dither)
+     body::before    — drifting clouds   (the single background-position loop)
+     body::after     — mountains + hills + foreground treeline
+     .wrap::before   — the arched stone viaduct (deck + tiled arcade)
+     .wrap::after    — the train (translateX traverse, re-enters from the left)
+     .app-header::after — steam plume (locked to the train + opacity billow)
+     .foot::before   — flying Ford Anglia      .foot::after — Hedwig
+     .flame          — the streak Golden Snitch (grows with --sunrise-streak)
+
+   CSS only, scoped under :root[data-theme="hogwarts-express"]. No own
+   reduced-motion / mobile guards (the app baseline owns them); motion is
+   transform/opacity only (one bg-position scroll layer = the clouds); static
+   filters only; @keyframes hx- prefixed. Decorative full-viewport layers are
+   position:fixed.
+   ========================================================================== */
+
+:root[data-theme="hogwarts-express"] {
+  /* --- warm Highland sky (early-films light) --- */
+  --sky-1: #2f5d90;
+  --sky-2: #3d6c9d;
+  --sky-3: #5183b0;
+  --sky-4: #6c9cc1;
+  --sky-5: #8fb6cc;
+  --sky-6: #b6d2d0;
+  --sky-7: #d6dcc0;
+  --sky-8: #ece0b4;
+  --sky-9: #f7edbe;
+
+  /* --- lush, warm, layered greens --- */
+  --hill-far:  #8aa39f;
+  --hill-mid:  #5d8048;
+  --hill-near: #3d6234;
+  --hill-deep: #315429;
+  --leaf:      #264420;
+
+  /* --- sandy, sunlit Glenfinnan stone --- */
+  --stone-lit:  #cdbd92;
+  --stone:      #968869;
+  --stone-dim:  #6f614a;
+  --stone-deep: #4c4334;
+
+  /* --- surfaces: warm parchment that floats over the bright scene --- */
+  --bg:       #cfe0d6;
+  --panel:    #f4ead2;
+  --panel-2:  #e9dab8;
+  --rail:     #d6c49b;
+  --line:     #3a2a1c;
+  --line-soft:#b69a6e;
+
+  /* --- ink + accents: Gryffindor scarlet, brass/gold, maroon coach --- */
+  --ink:      #2a2018;
+  --ink-dim:  #6b5a44;
+  --muted:    #9a866a;
+  --scarlet:  #9e2b29;
+  --scarlet-lt:#c23a33;
+  --brass:    #b8862b;
+  --gold:     #e0b14e;
+  --maroon:   #7e2230;
+  --pine:     #3d6234;
+  --snitch:   #e0b14e;
+
+  /* --- hard pixel bevels (no blur) --- */
+  --bevel:    3px 3px 0 rgba(44,32,18,.42);
+  --bevel-sm: 2px 2px 0 rgba(44,32,18,.4);
+  --bevel-lg: 5px 6px 0 rgba(44,32,18,.36);
+
+  --accent: var(--scarlet);
+
+  --r: 0px; --r-md: 0px; --r-sm: 0px;
+
+  /* mobile HUD + card-map baseline tokens (theme guide §5) */
+  --paper: var(--panel);
+  --paper-2: var(--panel-2);
+  --cobalt: var(--pine);
+  --yellow: var(--gold);
+  --focus-ring: 3px solid var(--scarlet);
+
+  --fast: .16s steps(3, end);
+  --slow: .5s steps(8, end);
+  --spring: cubic-bezier(.2, 1.5, .4, 1);
+
+  --font-display: 'Press Start 2P', 'VT323', monospace;
+  --font-body:    'VT323', ui-monospace, 'SF Mono', monospace;
+  --font-label:   'Silkscreen', 'Press Start 2P', monospace;
+
+  /* track spot colours: a Hogwarts-house-tinged Highland spectrum */
+  --track-dsa:      #9e2b29; /* Gryffindor scarlet */
+  --track-js:       #e0b14e; /* Hufflepuff gold */
+  --track-ts:       #2a4a7a; /* Ravenclaw blue */
+  --track-node:     #3d6234; /* Slytherin green */
+  --track-sysdesign:#6f5a82; /* heather */
+  --track-patterns: #b8862b; /* brass */
+  --track-distsys:  #a85a32; /* copper bracken */
+  --track-db:       #3f6b78; /* loch teal */
+  --track-cs:       #8a5230; /* terracotta */
+  --track-bare:     #7e8a6f; /* neutral moss */
+
+  color-scheme: light;
+}
+
+/* ====================== SKY (page background) ======================
+   Bright warm blue dithering down to a golden horizon, a soft sun-bloom
+   upper-left (matching the scene's light direction), and a faint dither grain
+   for that grown-up pixel texture. */
+:root[data-theme="hogwarts-express"] body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font: 400 19px/1.5 var(--font-body);
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(46% 52% at 18% 2%, rgba(255,245,208,.6), rgba(255,236,176,.14) 54%, transparent 78%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='2' height='2' fill='%23000'/%3E%3Crect x='2' y='2' width='2' height='2' fill='%23000'/%3E%3C/svg%3E"),
+    linear-gradient(180deg,
+      var(--sky-1) 0 13%, var(--sky-2) 13% 26%, var(--sky-3) 26% 39%,
+      var(--sky-4) 39% 52%, var(--sky-5) 52% 64%, var(--sky-6) 64% 75%,
+      var(--sky-7) 75% 85%, var(--sky-8) 85% 93%, var(--sky-9) 93% 100%);
+  background-size: 100% 100%, 4px 4px, 100% 100%;
+  background-repeat: no-repeat, repeat, no-repeat;
+  background-attachment: fixed;
+  /* the 2nd (dither) layer is faint */
+  background-blend-mode: normal, soft-light, normal;
+  image-rendering: pixelated;
+  position: relative;
+}
+
+/* --- drifting clouds: the ONE background-position scroll layer (mobile freezes
+       it). Fixed, high in the sky. --- */
+:root[data-theme="hogwarts-express"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -7;
+  pointer-events: none;
+  background-repeat: repeat-x;
+  background-position: 0 14vh;
+  background-size: 512px auto;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='80'%3E%3Cg fill='%23e8eada' opacity='.62'%3E%3Crect x='40' y='30' width='70' height='9'/%3E%3Crect x='52' y='24' width='44' height='6'/%3E%3Crect x='250' y='40' width='60' height='8'/%3E%3Crect x='262' y='34' width='34' height='6'/%3E%3Crect x='420' y='28' width='66' height='8'/%3E%3C/g%3E%3C/svg%3E");
+  animation: hx-clouds 120s linear infinite;
+}
+
+/* --- mountains + lush hills + foreground treeline: one fixed layer at the
+       bottom band, behind the viaduct. Static. --- */
+:root[data-theme="hogwarts-express"] body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -5;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-position: bottom;
+  background-size: 100% 50vh;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='440' height='200' preserveAspectRatio='none'%3E%3Cpolygon points='0,200 0,86 26,80 40,82 58,70 76,74 92,66 116,72 132,64 150,68 172,58 196,66 214,62 240,72 262,64 286,74 308,68 332,76 356,66 386,74 410,68 440,74 440,200' fill='%238aa39f'/%3E%3Cpolygon points='0,200 0,120 30,114 52,118 74,107 96,114 120,103 146,112 170,101 198,110 222,101 250,110 278,103 308,112 336,103 366,110 398,105 430,112 440,108 440,200' fill='%235d8048'/%3E%3Cpolyline points='0,120 30,114 52,118 74,107 96,114 120,103 146,112 170,101 198,110 222,101 250,110 278,103 308,112 336,103 366,110 398,105 430,112 440,108' fill='none' stroke='%2390b35a' stroke-width='2'/%3E%3Cpolygon points='0,200 0,150 28,148 30,140 60,140 62,150 120,150 122,143 160,143 162,151 240,151 242,144 300,144 302,151 360,151 362,146 440,146 440,200' fill='%233d6234'/%3E%3Cpolyline points='0,150 28,148 30,140 60,140 62,150 120,150 122,143 160,143 162,151 240,151 242,144 300,144 302,151 360,151 362,146 440,146' fill='none' stroke='%23629043' stroke-width='2'/%3E%3Cpolygon points='0,200 0,176 38,171 92,177 150,171 220,177 300,171 380,177 440,172 440,200' fill='%23315429'/%3E%3Cpolyline points='0,176 38,171 92,177 150,171 220,177 300,171 380,177 440,172' fill='none' stroke='%234c7a2a' stroke-width='2'/%3E%3Cg fill='%23264420'%3E%3Cpolygon points='10,180 18,160 26,180'/%3E%3Cpolygon points='150,180 158,162 166,180'/%3E%3Cpolygon points='414,180 422,160 430,180'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+:root[data-theme="hogwarts-express"] ::selection { background: rgba(158,43,41,.3); color: var(--ink); }
+:root[data-theme="hogwarts-express"] ::-webkit-scrollbar { width: 12px; height: 12px; }
+:root[data-theme="hogwarts-express"] ::-webkit-scrollbar-track { background: rgba(58,42,28,.12); }
+:root[data-theme="hogwarts-express"] ::-webkit-scrollbar-thumb {
+  background: var(--pine);
+  border: 3px solid var(--bg);
+}
+
+/* --- THE VIADUCT: a sandy stone deck the train rides, on a tiled arcade of
+       arches you see the green valley through. Fixed; top of band at 60vh. --- */
+:root[data-theme="hogwarts-express"] .wrap::before {
+  content: "";
+  position: fixed;
+  left: -2vw; right: -2vw;
+  top: 60vh; bottom: 0;
+  z-index: -3;
+  pointer-events: none;
+  background-image:
+    /* deck (lit cap → body → shadow line), top of band */
+    linear-gradient(180deg,
+      #ebe0bf 0 2px, #d2c39d 2px 6px, #b1a07c 6px 16px, #71634f 16px 19px, transparent 19px),
+    /* arcade: one bay (slender shaded pier + faceted arch + voussoir + keystone) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='46' height='480' shape-rendering='crispEdges'%3E%3Crect x='0' y='0' width='11' height='480' fill='%23968869'/%3E%3Crect x='0' y='0' width='2' height='480' fill='%23cdbd92'/%3E%3Crect x='9' y='0' width='2' height='480' fill='%236f614a'/%3E%3Cpolygon points='11,0 46,0 46,34 44.7,27.3 40.9,21.6 35.2,17.8 28.5,16.5 21.8,17.8 16.1,21.6 12.3,27.3 11,34' fill='%23968869'/%3E%3Cpolyline points='11,34 12.3,27.3 16.1,21.6 21.8,17.8 28.5,16.5 35.2,17.8 40.9,21.6 44.7,27.3 46,34' fill='none' stroke='%23b8a87f' stroke-width='2'/%3E%3Crect x='27' y='16' width='3' height='5' fill='%23d3c498'/%3E%3Cpolyline points='11.7,33 13,27 16.6,21.9 22,18.4 28.5,17.2 35,18.4 40.4,21.9 44,27 45.3,33' fill='none' stroke='%234c4334' stroke-width='1'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, repeat-x;
+  background-position: 0 0, 0 0;
+  background-size: 100% 19px, 46px 480px;
+}
+
+/* ====================== THE TRAIN + STEAM ======================
+   Both fixed full-viewport layers running the SAME traverse keyframe so they
+   stay locked as the train crosses left → right and re-enters from the left.
+   Train rides on .wrap::after, steam on .app-header::after. Deck at 60vh. */
+
+/* --- the deep-maroon Jacobite (loco + tender + coaches), riding the deck --- */
+:root[data-theme="hogwarts-express"] .wrap::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-position: 0 calc(60vh - 66px);
+  background-size: 300px 75px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='24' shape-rendering='crispEdges'%3E%3Crect x='2' y='3' width='25' height='2' fill='%23251016'/%3E%3Crect x='2' y='5' width='25' height='2' fill='%237c3038'/%3E%3Crect x='2' y='7' width='25' height='7' fill='%235d222b'/%3E%3Crect x='2' y='14' width='25' height='2' fill='%2339141a'/%3E%3Crect x='6' y='8' width='6' height='4' fill='%23d8c597'/%3E%3Crect x='6' y='11' width='6' height='1' fill='%23b6985f'/%3E%3Crect x='16' y='8' width='6' height='4' fill='%23d8c597'/%3E%3Crect x='16' y='11' width='6' height='1' fill='%23b6985f'/%3E%3Crect x='29' y='3' width='25' height='2' fill='%23251016'/%3E%3Crect x='29' y='5' width='25' height='2' fill='%237c3038'/%3E%3Crect x='29' y='7' width='25' height='7' fill='%235d222b'/%3E%3Crect x='29' y='14' width='25' height='2' fill='%2339141a'/%3E%3Crect x='33' y='8' width='6' height='4' fill='%23d8c597'/%3E%3Crect x='33' y='11' width='6' height='1' fill='%23b6985f'/%3E%3Crect x='43' y='8' width='6' height='4' fill='%23d8c597'/%3E%3Crect x='43' y='11' width='6' height='1' fill='%23b6985f'/%3E%3Crect x='56' y='8' width='12' height='2' fill='%232b323c'/%3E%3Crect x='56' y='10' width='12' height='6' fill='%2315171c'/%3E%3Crect x='58' y='6' width='3' height='2' fill='%232b323c'/%3E%3Crect x='63' y='6' width='3' height='2' fill='%232b323c'/%3E%3Crect x='68' y='4' width='13' height='2' fill='%232b323c'/%3E%3Crect x='69' y='6' width='11' height='10' fill='%2315171c'/%3E%3Crect x='69' y='6' width='1' height='10' fill='%232b323c'/%3E%3Crect x='72' y='8' width='5' height='4' fill='%23cfe0e6'/%3E%3Crect x='72' y='11' width='5' height='1' fill='%2393b2bb'/%3E%3Crect x='80' y='9' width='10' height='1' fill='%232b323c'/%3E%3Crect x='80' y='10' width='10' height='6' fill='%2315171c'/%3E%3Crect x='83' y='10' width='1' height='6' fill='%232b323c'/%3E%3Crect x='87' y='10' width='1' height='6' fill='%232b323c'/%3E%3Crect x='90' y='10' width='3' height='6' fill='%2323262c'/%3E%3Crect x='91' y='11' width='2' height='3' fill='%232b323c'/%3E%3Crect x='79' y='3' width='6' height='2' fill='%2315171c'/%3E%3Crect x='80' y='5' width='4' height='5' fill='%2315171c'/%3E%3Crect x='80' y='5' width='1' height='5' fill='%232b323c'/%3E%3Crect x='85' y='7' width='3' height='3' fill='%23b58a3c'/%3E%3Crect x='85' y='7' width='3' height='1' fill='%23d8b061'/%3E%3Crect x='92' y='12' width='2' height='2' fill='%23ffe6a8'/%3E%3Cg fill='%230d0e11'%3E%3Crect x='5' y='16' width='5' height='5'/%3E%3Crect x='18' y='16' width='5' height='5'/%3E%3Crect x='32' y='16' width='5' height='5'/%3E%3Crect x='45' y='16' width='5' height='5'/%3E%3Crect x='58' y='16' width='4' height='5'/%3E%3Crect x='63' y='16' width='4' height='5'/%3E%3C/g%3E%3Cg fill='%230b0c0f'%3E%3Crect x='79' y='16' width='7' height='6'/%3E%3Crect x='87' y='17' width='5' height='5'/%3E%3C/g%3E%3Cg fill='%2339414b'%3E%3Crect x='81' y='18' width='3' height='2'/%3E%3Crect x='88' y='18' width='2' height='2'/%3E%3C/g%3E%3C/svg%3E");
+  animation:
+    hx-train-in 1.4s steps(10, end) both,
+    hx-traverse 30s linear 1.4s infinite;
+}
+
+/* --- steam: a soft pixel plume rising up-and-back from the funnel, locked to
+       the train by the same traverse; billows via opacity. --- */
+:root[data-theme="hogwarts-express"] .app-header::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-position: 144px calc(60vh - 110px);
+  background-size: 132px 96px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='132' height='96' shape-rendering='crispEdges'%3E%3Cg fill='%23eef1ec'%3E%3Crect x='104' y='66' width='16' height='14'/%3E%3Crect x='96' y='50' width='20' height='18'/%3E%3Crect x='80' y='36' width='22' height='20'/%3E%3Crect x='58' y='26' width='24' height='20'/%3E%3Crect x='34' y='20' width='24' height='20'/%3E%3Crect x='14' y='22' width='22' height='18'/%3E%3C/g%3E%3Cg fill='%23f7faf6'%3E%3Crect x='100' y='52' width='8' height='6'/%3E%3Crect x='84' y='38' width='8' height='6'/%3E%3Crect x='40' y='22' width='8' height='6'/%3E%3C/g%3E%3Cg fill='%23c7cfc6'%3E%3Crect x='104' y='74' width='14' height='6'/%3E%3Crect x='84' y='50' width='16' height='6'/%3E%3Crect x='58' y='40' width='18' height='6'/%3E%3Crect x='16' y='34' width='18' height='6'/%3E%3C/g%3E%3C/svg%3E");
+  opacity: .85;
+  animation:
+    hx-train-in 1.4s steps(10, end) both,
+    hx-traverse 30s linear 1.4s infinite,
+    hx-steam 3s steps(8, end) 1.4s infinite;
+}
+
+/* --- flying Ford Anglia + Hedwig: small in-world sprites crossing the sky on
+       the footer's pseudos (fixed full-viewport, transform-only). --- */
+:root[data-theme="hogwarts-express"] .foot::before,
+:root[data-theme="hogwarts-express"] .foot::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -6;
+  pointer-events: none;
+  background-repeat: no-repeat;
+}
+:root[data-theme="hogwarts-express"] .foot::before {
+  background-position: 0 13vh;
+  background-size: 50px 25px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='16' shape-rendering='crispEdges'%3E%3Crect x='3' y='7' width='25' height='5' fill='%239fcdd2'/%3E%3Crect x='21' y='8' width='8' height='4' fill='%239fcdd2'/%3E%3Crect x='3' y='7' width='25' height='1' fill='%23c6e2e5'/%3E%3Crect x='3' y='11' width='25' height='1' fill='%236f9ea4'/%3E%3Crect x='8' y='3' width='12' height='4' fill='%238fc0c6'/%3E%3Crect x='8' y='3' width='12' height='1' fill='%23bfe0e3'/%3E%3Crect x='10' y='4' width='6' height='3' fill='%2334474c'/%3E%3Crect x='17' y='4' width='3' height='3' fill='%233d525a'/%3E%3Crect x='11' y='4' width='2' height='1' fill='%23cfe6e8'/%3E%3Crect x='28' y='9' width='2' height='3' fill='%23cdd6d8'/%3E%3Crect x='28' y='8' width='1' height='1' fill='%23ffe9a8'/%3E%3Crect x='6' y='11' width='4' height='4' fill='%2315171a'/%3E%3Crect x='21' y='11' width='4' height='4' fill='%2315171a'/%3E%3Crect x='7' y='12' width='2' height='2' fill='%234a4f55'/%3E%3Crect x='22' y='12' width='2' height='2' fill='%234a4f55'/%3E%3C/svg%3E");
+  animation: hx-fly-r 40s linear infinite;
+}
+:root[data-theme="hogwarts-express"] .foot::after {
+  background-position: 0 30vh;
+  background-size: 24px 20px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='16' shape-rendering='crispEdges'%3E%3Crect x='1' y='6' width='5' height='2' fill='%23e6eae6'/%3E%3Crect x='0' y='7' width='2' height='1' fill='%23e6eae6'/%3E%3Crect x='12' y='6' width='5' height='2' fill='%23e6eae6'/%3E%3Crect x='16' y='7' width='2' height='1' fill='%23e6eae6'/%3E%3Crect x='6' y='6' width='6' height='7' fill='%23f2f4f2'/%3E%3Crect x='6' y='3' width='6' height='4' fill='%23f2f4f2'/%3E%3Crect x='6' y='2' width='1' height='1' fill='%23e2e6e2'/%3E%3Crect x='11' y='2' width='1' height='1' fill='%23e2e6e2'/%3E%3Crect x='7' y='4' width='1' height='2' fill='%232a2a2a'/%3E%3Crect x='10' y='4' width='1' height='2' fill='%232a2a2a'/%3E%3Crect x='8' y='6' width='2' height='1' fill='%23d8a24a'/%3E%3Crect x='7' y='12' width='4' height='2' fill='%23e6eae6'/%3E%3C/svg%3E");
+  animation: hx-fly-l 33s linear infinite 9s;
+}
+
+/* ====================== PAGE COLUMNS ======================
+   Header wide; content column a touch narrower so the Highland scene reads in
+   the gutters around the parchment cards. */
+:root[data-theme="hogwarts-express"] .app-header {
+  width: min(1180px, 100% - 36px);
+  margin-inline: auto;
+}
+:root[data-theme="hogwarts-express"] .wrap,
+:root[data-theme="hogwarts-express"] .foot {
+  width: min(940px, 100% - 40px);
+  margin-inline: auto;
+}
+:root[data-theme="hogwarts-express"] .wrap { position: relative; }
+
+/* ====================== HEADER ====================== */
+:root[data-theme="hogwarts-express"] .app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px clamp(14px, 3vw, 26px);
+  margin-top: 16px;
+  background: var(--panel);
+  border: 2px solid var(--line);
+  box-shadow: var(--bevel-lg);
+  position: relative;
+  animation: hx-rise .6s steps(6, end) both;
+}
+
+:root[data-theme="hogwarts-express"] .brand { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+:root[data-theme="hogwarts-express"] .brand-mark {
+  font-family: var(--font-display);
+  font-size: 16px;
+  line-height: 1;
+  color: var(--scarlet);
+}
+:root[data-theme="hogwarts-express"] .brand-name {
+  font-family: var(--font-display);
+  font-size: clamp(13px, 2.4vw, 19px);
+  line-height: 1.1;
+  letter-spacing: .02em;
+  color: var(--ink);
+}
+:root[data-theme="hogwarts-express"] .brand-sub {
+  font-family: var(--font-label);
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--scarlet);
+  background: rgba(158,43,41,.1);
+  border: 2px solid rgba(158,43,41,.34);
+  padding: 4px 9px;
+}
+
+:root[data-theme="hogwarts-express"] .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+:root[data-theme="hogwarts-express"] .field { display: inline-flex; }
+:root[data-theme="hogwarts-express"] select {
+  appearance: none; -webkit-appearance: none;
+  font-family: var(--font-label);
+  font-size: 11px;
+  color: var(--ink);
+  background: var(--panel)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M0 1h8v2H6v2H2V3H0z' fill='%239e2b29'/%3E%3C/svg%3E")
+    no-repeat right 10px center;
+  border: 2px solid var(--line);
+  padding: 9px 28px 9px 11px;
+  cursor: pointer;
+  box-shadow: var(--bevel-sm);
+  max-width: 62vw;
+}
+:root[data-theme="hogwarts-express"] select:hover { border-color: var(--scarlet); }
+:root[data-theme="hogwarts-express"] select:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+:root[data-theme="hogwarts-express"] select option { background: var(--panel); color: var(--ink); font-family: var(--font-body); font-size: 16px; }
+
+:root[data-theme="hogwarts-express"] .btn {
+  font-family: var(--font-label);
+  font-size: 11px;
+  color: var(--ink);
+  background: var(--panel);
+  border: 2px solid var(--line);
+  padding: 9px 12px;
+  cursor: pointer;
+  box-shadow: var(--bevel-sm);
+  transition: transform var(--fast), box-shadow var(--fast), color var(--fast), background var(--fast);
+}
+:root[data-theme="hogwarts-express"] .btn:hover {
+  transform: translate(-1px, -1px);
+  color: var(--scarlet);
+  box-shadow: 3px 3px 0 rgba(158,43,41,.4);
+}
+:root[data-theme="hogwarts-express"] .btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 rgba(44,32,18,.4); }
+:root[data-theme="hogwarts-express"] .btn:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+:root[data-theme="hogwarts-express"] .btn.ghost { background: var(--panel-2); }
+
+/* ====================== SECTION TITLES / COMEBACK ====================== */
+:root[data-theme="hogwarts-express"] .wrap {
+  padding: clamp(16px, 3vw, 28px) clamp(10px, 2vw, 20px) 26px;
+}
+:root[data-theme="hogwarts-express"] .section-title {
+  font-family: var(--font-label);
+  font-size: 11px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin: 26px 2px 12px;
+}
+:root[data-theme="hogwarts-express"] #comeback {
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 1.4;
+  color: var(--scarlet);
+  background: var(--panel);
+  border: 2px solid rgba(158,43,41,.4);
+  border-left: 6px solid var(--scarlet);
+  padding: 13px 15px;
+  margin: 0 0 18px;
+  box-shadow: var(--bevel-sm);
+}
+
+/* ====================== DASHBOARD ====================== */
+:root[data-theme="hogwarts-express"] .dash {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 8px;
+}
+:root[data-theme="hogwarts-express"] .stat-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  background: var(--panel);
+  border: 2px solid var(--line);
+  box-shadow: var(--bevel);
+  overflow: hidden;
+  transition: transform var(--fast), box-shadow var(--fast);
+  animation: hx-rise .5s steps(6, end) both;
+}
+:root[data-theme="hogwarts-express"] .dash .stat-card:nth-child(2) { animation-delay: .08s; }
+:root[data-theme="hogwarts-express"] .dash .stat-card:nth-child(3) { animation-delay: .16s; }
+:root[data-theme="hogwarts-express"] .dash .stat-card:nth-child(4) { animation-delay: .24s; }
+:root[data-theme="hogwarts-express"] .stat-card:hover {
+  transform: translate(-1px, -2px);
+  box-shadow: var(--bevel-lg);
+}
+
+:root[data-theme="hogwarts-express"] .eyebrow {
+  font-family: var(--font-label);
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+:root[data-theme="hogwarts-express"] .stat-card[data-kind="progress"] .eyebrow { color: var(--brass); }
+:root[data-theme="hogwarts-express"] .stat-card[data-kind="streak"]   .eyebrow { color: var(--scarlet); }
+:root[data-theme="hogwarts-express"] .stat-card[data-kind="phases"]   .eyebrow { color: var(--track-ts); }
+:root[data-theme="hogwarts-express"] .stat-card[data-kind="tracks"]   .eyebrow { color: var(--track-sysdesign); }
+
+/* ---- progress ring ---- */
+:root[data-theme="hogwarts-express"] .ring {
+  --p: 0;
+  position: relative;
+  width: 132px; aspect-ratio: 1;
+  margin-inline: auto;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background:
+    repeating-conic-gradient(from -90deg, rgba(44,32,18,.16) 0deg 11deg, transparent 11deg 15deg),
+    radial-gradient(closest-side, var(--panel) 0 70%, transparent 71%),
+    conic-gradient(from -90deg, var(--gold) calc(var(--p) * 1%), var(--rail) 0);
+}
+:root[data-theme="hogwarts-express"] .ring > div {
+  width: 72%; aspect-ratio: 1;
+  display: grid; place-content: center; place-items: center;
+  border-radius: 50%;
+  background: var(--panel);
+}
+:root[data-theme="hogwarts-express"] .ring b {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1;
+  color: var(--ink);
+}
+:root[data-theme="hogwarts-express"] .ring small {
+  display: block;
+  font-family: var(--font-label);
+  font-size: 9px;
+  color: var(--ink-dim);
+  margin-top: 6px;
+}
+:root[data-theme="hogwarts-express"] .stat-sub {
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--ink-dim);
+  margin-top: 4px;
+}
+
+/* ---- streak = the Golden Snitch (grows + flutters with --sunrise-streak) ---- */
+:root[data-theme="hogwarts-express"] .flame {
+  width: calc(42px + min(var(--sunrise-streak, 0), 28) * 0.7px);
+  height: calc(42px + min(var(--sunrise-streak, 0), 28) * 0.7px);
+  margin: 2px auto;
+  color: transparent;
+  font-size: 0;
+  background:
+    radial-gradient(closest-side, rgba(224,177,78,.45), transparent 72%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='10' shape-rendering='crispEdges'%3E%3Crect x='1' y='3' width='5' height='2' fill='%23f4f6f1' opacity='.92'/%3E%3Crect x='0' y='2' width='2' height='1' fill='%23f4f6f1' opacity='.7'/%3E%3Crect x='10' y='3' width='5' height='2' fill='%23f4f6f1' opacity='.92'/%3E%3Crect x='14' y='2' width='2' height='1' fill='%23f4f6f1' opacity='.7'/%3E%3Crect x='6' y='3' width='4' height='4' fill='%23e6bf57'/%3E%3Crect x='6' y='3' width='2' height='1' fill='%23f6da86'/%3E%3Crect x='6' y='6' width='4' height='1' fill='%23b8932f'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 150% 150%, 86% auto;
+  image-rendering: pixelated;
+  animation: hx-snitch 3s steps(8, end) infinite;
+}
+:root[data-theme="hogwarts-express"] .streak-num {
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 1;
+  text-align: center;
+  color: var(--scarlet);
+}
+
+/* ---- phase / track rows ---- */
+:root[data-theme="hogwarts-express"] .prow {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 8px;
+  font-size: 17px;
+}
+:root[data-theme="hogwarts-express"] .prow .lbl {
+  display: flex; align-items: center; gap: 8px; min-width: 0;
+  color: var(--ink-dim);
+}
+:root[data-theme="hogwarts-express"] .prow .lbl > i {
+  width: 11px; height: 11px; flex: 0 0 auto;
+  background: var(--brass);
+  box-shadow: 0 0 0 2px rgba(184,134,43,.28);
+}
+:root[data-theme="hogwarts-express"] .val {
+  font-family: var(--font-label);
+  font-size: 11px;
+  color: var(--ink);
+}
+:root[data-theme="hogwarts-express"] .bar {
+  height: 11px;
+  background: var(--rail);
+  border: 2px solid var(--line);
+  overflow: hidden;
+}
+:root[data-theme="hogwarts-express"] .bar > i {
+  display: block; height: 100%;
+  background: repeating-linear-gradient(90deg, var(--gold) 0 6px, var(--brass) 6px 8px);
+  transition: width var(--slow);
+}
+:root[data-theme="hogwarts-express"] .muted {
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+/* ====================== TRACK COLOURS ====================== */
+:root[data-theme="hogwarts-express"] .prow[data-track] .lbl > i {
+  background: var(--track-bare);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--track-bare) 28%, transparent);
+}
+:root[data-theme="hogwarts-express"] .bar[data-track] > i {
+  background: repeating-linear-gradient(90deg, var(--track-bare) 0 6px, color-mix(in srgb, var(--track-bare) 64%, #000) 6px 8px);
+}
+:root[data-theme="hogwarts-express"] .prow[data-track="dsa"]       .lbl>i { background: var(--track-dsa); box-shadow: 0 0 0 2px color-mix(in srgb, var(--track-dsa) 30%, transparent); }
+:root[data-theme="hogwarts-express"] .prow[data-track="js"]        .lbl>i { background: var(--track-js); box-shadow: 0 0 0 2px color-mix(in srgb, var(--track-js) 30%, transparent); }
+:root[data-theme="hogwarts-express"] .prow[data-track="ts"]        .lbl>i { background: var(--track-ts); box-shadow: 0 0 0 2px color-mix(in srgb, var(--track-ts) 30%, transparent); }
+:root[data-theme="hogwarts-express"] .prow[data-track="node"]      .lbl>i { background: var(--track-node); box-shadow: 0 0 0 2px color-mix(in srgb, var(--track-node) 30%, transparent); }
+:root[data-theme="hogwarts-express"] .prow[data-track="sysdesign"] .lbl>i { background: var(--track-sysdesign); box-shadow: 0 0 0 2px color-mix(in srgb, var(--track-sysdesign) 30%, transparent); }
+:root[data-theme="hogwarts-express"] .prow[data-track="patterns"]  .lbl>i { background: var(--track-patterns); box-shadow: 0 0 0 2px color-mix(in srgb, var(--track-patterns) 30%, transparent); }
+:root[data-theme="hogwarts-express"] .prow[data-track="distsys"]   .lbl>i { background: var(--track-distsys); box-shadow: 0 0 0 2px color-mix(in srgb, var(--track-distsys) 30%, transparent); }
+:root[data-theme="hogwarts-express"] .prow[data-track="db"]        .lbl>i { background: var(--track-db); box-shadow: 0 0 0 2px color-mix(in srgb, var(--track-db) 30%, transparent); }
+:root[data-theme="hogwarts-express"] .prow[data-track="cs"]        .lbl>i { background: var(--track-cs); box-shadow: 0 0 0 2px color-mix(in srgb, var(--track-cs) 30%, transparent); }
+:root[data-theme="hogwarts-express"] .bar[data-track="dsa"]>i       { background: repeating-linear-gradient(90deg, var(--track-dsa) 0 6px, #5a0f0f 6px 8px); }
+:root[data-theme="hogwarts-express"] .bar[data-track="js"]>i        { background: repeating-linear-gradient(90deg, var(--track-js) 0 6px, #9a7320 6px 8px); }
+:root[data-theme="hogwarts-express"] .bar[data-track="ts"]>i        { background: repeating-linear-gradient(90deg, var(--track-ts) 0 6px, #1d3354 6px 8px); }
+:root[data-theme="hogwarts-express"] .bar[data-track="node"]>i      { background: repeating-linear-gradient(90deg, var(--track-node) 0 6px, #21381f 6px 8px); }
+:root[data-theme="hogwarts-express"] .bar[data-track="sysdesign"]>i { background: repeating-linear-gradient(90deg, var(--track-sysdesign) 0 6px, #3f3150 6px 8px); }
+:root[data-theme="hogwarts-express"] .bar[data-track="patterns"]>i  { background: repeating-linear-gradient(90deg, var(--track-patterns) 0 6px, #7d5a17 6px 8px); }
+:root[data-theme="hogwarts-express"] .bar[data-track="distsys"]>i   { background: repeating-linear-gradient(90deg, var(--track-distsys) 0 6px, #6c3618 6px 8px); }
+:root[data-theme="hogwarts-express"] .bar[data-track="db"]>i        { background: repeating-linear-gradient(90deg, var(--track-db) 0 6px, #284750 6px 8px); }
+:root[data-theme="hogwarts-express"] .bar[data-track="cs"]>i        { background: repeating-linear-gradient(90deg, var(--track-cs) 0 6px, #5a3620 6px 8px); }
+
+/* ====================== DAY RAIL ====================== */
+:root[data-theme="hogwarts-express"] .day-rail {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 56px;
+  gap: 14px;
+  align-items: stretch;
+  animation: hx-rise .6s steps(6, end) .25s both;
+}
+:root[data-theme="hogwarts-express"] .today-wrap { min-width: 0; }
+:root[data-theme="hogwarts-express"] .day-nav {
+  font-family: var(--font-display);
+  font-size: 14px;
+  display: grid; place-items: center;
+  color: var(--scarlet);
+  background: var(--panel);
+  border: 2px solid var(--line);
+  box-shadow: var(--bevel-sm);
+  cursor: pointer;
+  transition: transform var(--fast), box-shadow var(--fast), color var(--fast);
+}
+:root[data-theme="hogwarts-express"] .day-nav:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  color: var(--scarlet-lt);
+  box-shadow: 3px 3px 0 rgba(158,43,41,.4);
+}
+:root[data-theme="hogwarts-express"] .day-nav:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+:root[data-theme="hogwarts-express"] .day-nav:disabled { opacity: .3; cursor: not-allowed; }
+
+/* ====================== TODAY CARD ====================== */
+:root[data-theme="hogwarts-express"] .today {
+  position: relative;
+  display: flex;
+  min-height: 420px;
+  overflow: hidden;
+  background: var(--panel);
+  border: 2px solid var(--line);
+  box-shadow: var(--bevel-lg);
+}
+:root[data-theme="hogwarts-express"] .today::after {
+  content: "";
+  position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: repeating-linear-gradient(90deg, var(--scarlet) 0 8px, var(--brass) 8px 16px);
+}
+:root[data-theme="hogwarts-express"] .today-side {
+  flex: 0 0 60px;
+  display: grid; place-items: center;
+  background: var(--scarlet);
+  border-right: 2px solid var(--line);
+}
+:root[data-theme="hogwarts-express"] .vert {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-family: var(--font-label);
+  font-size: 11px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #ffe7b0;
+}
+:root[data-theme="hogwarts-express"] .today-main {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; gap: 14px;
+  padding: clamp(20px, 4vw, 32px);
+}
+:root[data-theme="hogwarts-express"] .today-title {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: clamp(2rem, 4.5vw, 3rem);
+  line-height: 1.05;
+  color: var(--ink);
+}
+
+/* track pill */
+:root[data-theme="hogwarts-express"] .trackpill {
+  display: inline-flex; align-items: center; gap: 8px;
+  align-self: flex-start;
+  font-family: var(--font-label);
+  font-size: 10px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--panel-2);
+  border: 2px solid var(--line);
+  padding: 5px 12px 5px 5px;
+}
+:root[data-theme="hogwarts-express"] .trackpill .k {
+  display: grid; place-items: center;
+  width: 22px; height: 22px;
+  font-family: var(--font-display);
+  font-size: 9px;
+  background: rgba(184,134,43,.24);
+  color: var(--brass);
+}
+:root[data-theme="hogwarts-express"] .today[data-track] .trackpill { border-color: var(--track-bare); }
+:root[data-theme="hogwarts-express"] .today[data-track] .trackpill .k { background: color-mix(in srgb, var(--track-bare) 24%, transparent); color: var(--track-bare); }
+:root[data-theme="hogwarts-express"] .today[data-track] .today-side { background: var(--track-bare); }
+:root[data-theme="hogwarts-express"] .today[data-track="dsa"]       .today-side { background: var(--track-dsa); }
+:root[data-theme="hogwarts-express"] .today[data-track="dsa"]       .trackpill { border-color: var(--track-dsa); }
+:root[data-theme="hogwarts-express"] .today[data-track="dsa"]       .trackpill .k { background: color-mix(in srgb, var(--track-dsa) 24%, transparent); color: var(--track-dsa); }
+:root[data-theme="hogwarts-express"] .today[data-track="js"]        .today-side { background: var(--track-js); }
+:root[data-theme="hogwarts-express"] .today[data-track="js"]        .trackpill { border-color: var(--track-js); }
+:root[data-theme="hogwarts-express"] .today[data-track="js"]        .trackpill .k { background: color-mix(in srgb, var(--track-js) 28%, transparent); color: #8a6410; }
+:root[data-theme="hogwarts-express"] .today[data-track="ts"]        .today-side { background: var(--track-ts); }
+:root[data-theme="hogwarts-express"] .today[data-track="ts"]        .trackpill { border-color: var(--track-ts); }
+:root[data-theme="hogwarts-express"] .today[data-track="ts"]        .trackpill .k { background: color-mix(in srgb, var(--track-ts) 24%, transparent); color: var(--track-ts); }
+:root[data-theme="hogwarts-express"] .today[data-track="node"]      .today-side { background: var(--track-node); }
+:root[data-theme="hogwarts-express"] .today[data-track="node"]      .trackpill { border-color: var(--track-node); }
+:root[data-theme="hogwarts-express"] .today[data-track="node"]      .trackpill .k { background: color-mix(in srgb, var(--track-node) 24%, transparent); color: var(--track-node); }
+:root[data-theme="hogwarts-express"] .today[data-track="sysdesign"] .today-side { background: var(--track-sysdesign); }
+:root[data-theme="hogwarts-express"] .today[data-track="sysdesign"] .trackpill { border-color: var(--track-sysdesign); }
+:root[data-theme="hogwarts-express"] .today[data-track="sysdesign"] .trackpill .k { background: color-mix(in srgb, var(--track-sysdesign) 24%, transparent); color: var(--track-sysdesign); }
+:root[data-theme="hogwarts-express"] .today[data-track="patterns"]  .today-side { background: var(--track-patterns); }
+:root[data-theme="hogwarts-express"] .today[data-track="patterns"]  .trackpill { border-color: var(--track-patterns); }
+:root[data-theme="hogwarts-express"] .today[data-track="patterns"]  .trackpill .k { background: color-mix(in srgb, var(--track-patterns) 24%, transparent); color: var(--track-patterns); }
+:root[data-theme="hogwarts-express"] .today[data-track="distsys"]   .today-side { background: var(--track-distsys); }
+:root[data-theme="hogwarts-express"] .today[data-track="distsys"]   .trackpill { border-color: var(--track-distsys); }
+:root[data-theme="hogwarts-express"] .today[data-track="distsys"]   .trackpill .k { background: color-mix(in srgb, var(--track-distsys) 24%, transparent); color: var(--track-distsys); }
+:root[data-theme="hogwarts-express"] .today[data-track="db"]        .today-side { background: var(--track-db); }
+:root[data-theme="hogwarts-express"] .today[data-track="db"]        .trackpill { border-color: var(--track-db); }
+:root[data-theme="hogwarts-express"] .today[data-track="db"]        .trackpill .k { background: color-mix(in srgb, var(--track-db) 24%, transparent); color: var(--track-db); }
+:root[data-theme="hogwarts-express"] .today[data-track="cs"]        .today-side { background: var(--track-cs); }
+:root[data-theme="hogwarts-express"] .today[data-track="cs"]        .trackpill { border-color: var(--track-cs); }
+:root[data-theme="hogwarts-express"] .today[data-track="cs"]        .trackpill .k { background: color-mix(in srgb, var(--track-cs) 24%, transparent); color: var(--track-cs); }
+
+/* warmup / rest-prompt */
+:root[data-theme="hogwarts-express"] .warm {
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--ink-dim);
+  background: rgba(184,134,43,.14);
+  border-left: 4px solid var(--brass);
+  padding: 12px 14px;
+  margin: 0;
+}
+:root[data-theme="hogwarts-express"] p.warm { margin: 0; }
+:root[data-theme="hogwarts-express"] .warm-head { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
+:root[data-theme="hogwarts-express"] .warm-text { display: block; }
+:root[data-theme="hogwarts-express"] .warm-i { color: var(--scarlet); flex: 0 0 auto; font-size: 16px; }
+:root[data-theme="hogwarts-express"] .warm .muted {
+  color: var(--brass);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  font-size: 10px;
+  font-family: var(--font-label);
+}
+
+/* ====================== TASKS ====================== */
+:root[data-theme="hogwarts-express"] .tasks,
+:root[data-theme="hogwarts-express"] #taskList {
+  display: flex; flex-direction: column; gap: 10px;
+}
+:root[data-theme="hogwarts-express"] .task-wrap { display: flex; flex-direction: column; gap: 8px; position: relative; }
+:root[data-theme="hogwarts-express"] .task {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 13px 14px;
+  background: var(--panel-2);
+  border: 2px solid var(--line-soft);
+  cursor: pointer;
+  user-select: text;
+  animation: hx-task-in .35s steps(5, end) both;
+  transition: border-color var(--fast), background var(--fast), transform var(--fast);
+}
+:root[data-theme="hogwarts-express"] .task:hover {
+  border-color: var(--brass);
+  background: var(--panel);
+  transform: translateX(2px);
+}
+:root[data-theme="hogwarts-express"] .task .box {
+  width: 22px; height: 22px;
+  margin-top: 1px;
+  border: 2px solid var(--muted);
+  display: grid; place-items: center;
+  background: #fffdf6;
+  transition: background var(--fast), border-color var(--fast);
+}
+:root[data-theme="hogwarts-express"] .task:hover .box { border-color: var(--brass); }
+:root[data-theme="hogwarts-express"] .task.done .box {
+  background: var(--gold);
+  border-color: var(--brass);
+}
+:root[data-theme="hogwarts-express"] .task.done .box::after {
+  content: "";
+  display: block;
+  width: 5px; height: 9px;
+  margin: 2px auto;
+  rotate: 45deg;
+  border: 2px solid var(--line);
+  border-top: 0; border-left: 0;
+  animation: hx-check .3s var(--spring) both;
+}
+:root[data-theme="hogwarts-express"] .task-text {
+  font-size: 18px;
+  line-height: 1.4;
+  color: var(--ink);
+  transition: color var(--fast);
+}
+:root[data-theme="hogwarts-express"] .task.done .task-text {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-color: rgba(184,134,43,.8);
+}
+
+/* per-task guidance spoiler */
+:root[data-theme="hogwarts-express"] .task-hint { font-size: 16px; margin-left: 6px; }
+:root[data-theme="hogwarts-express"] .task-hint > summary { color: var(--scarlet); cursor: pointer; }
+:root[data-theme="hogwarts-express"] .task-hint-body {
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--ink-dim);
+  border-left: 2px solid var(--brass);
+  padding-left: 11px;
+  margin-left: 3px;
+}
+
+/* copy / AI tools */
+:root[data-theme="hogwarts-express"] .copy-btn {
+  border: 2px solid var(--line-soft);
+  background: var(--panel);
+  color: var(--ink-dim);
+}
+:root[data-theme="hogwarts-express"] .copy-btn:hover { background: var(--panel-2); color: var(--scarlet); border-color: var(--scarlet); }
+
+/* ====================== REFLECTION ====================== */
+:root[data-theme="hogwarts-express"] .reflect-block { display: flex; flex-direction: column; gap: 8px; }
+:root[data-theme="hogwarts-express"] .reflect-label {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--font-label);
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+:root[data-theme="hogwarts-express"] .reflect-label .kanji,
+:root[data-theme="hogwarts-express"] .kanji {
+  font-family: var(--font-display);
+  font-size: 12px;
+  color: var(--scarlet);
+}
+:root[data-theme="hogwarts-express"] textarea {
+  width: 100%; min-height: 88px; resize: vertical;
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #fffdf6;
+  border: 2px solid var(--line);
+  padding: 12px 14px;
+  box-shadow: inset 2px 2px 0 rgba(58,42,28,.12);
+  transition: border-color var(--fast);
+}
+:root[data-theme="hogwarts-express"] textarea::placeholder { color: var(--muted); }
+:root[data-theme="hogwarts-express"] textarea:focus-visible { outline: none; border-color: var(--scarlet); box-shadow: inset 2px 2px 0 rgba(158,43,41,.18); }
+
+/* resources / chips */
+:root[data-theme="hogwarts-express"] .res-row { display: flex; flex-wrap: wrap; gap: 8px; }
+:root[data-theme="hogwarts-express"] .chip {
+  font-family: var(--font-label);
+  font-size: 10px;
+  color: var(--ink-dim);
+  background: var(--panel-2);
+  border: 2px solid var(--line-soft);
+  padding: 7px 12px;
+  transition: border-color var(--fast), color var(--fast);
+}
+:root[data-theme="hogwarts-express"] .chip:hover { border-color: var(--track-ts); color: var(--track-ts); }
+:root[data-theme="hogwarts-express"] .chip b { color: var(--track-ts); font-family: var(--font-body); font-size: 14px; }
+
+/* next-day CTA — the departure ticket */
+:root[data-theme="hogwarts-express"] .next-day-cta {
+  align-self: flex-start;
+  margin-top: 6px;
+  font-family: var(--font-label);
+  font-size: 12px;
+  letter-spacing: .04em;
+  color: #fff5e0;
+  background: var(--scarlet);
+  border: 2px solid var(--line);
+  padding: 13px 22px;
+  cursor: pointer;
+  box-shadow: var(--bevel);
+  transition: transform var(--fast), box-shadow var(--fast);
+}
+:root[data-theme="hogwarts-express"] .next-day-cta:hover {
+  transform: translate(-1px, -2px);
+  box-shadow: var(--bevel-lg);
+}
+:root[data-theme="hogwarts-express"] .next-day-cta:active { transform: translate(1px, 1px); box-shadow: var(--bevel-sm); }
+:root[data-theme="hogwarts-express"] .next-day-cta:focus-visible { outline: var(--focus-ring); outline-offset: 3px; }
+
+/* ====================== MODALS ====================== */
+:root[data-theme="hogwarts-express"] .modal {
+  display: none;
+  position: fixed; inset: 0; z-index: 200;
+  overflow-y: auto;
+  align-items: flex-start; justify-content: center;
+  padding: 32px 16px;
+  background: rgba(28,20,12,.6);
+  -webkit-backdrop-filter: blur(4px);
+          backdrop-filter: blur(4px);
+}
+:root[data-theme="hogwarts-express"] .modal.open { display: flex; }
+:root[data-theme="hogwarts-express"] .modal-panel {
+  width: min(560px, 92vw);
+  margin: auto;
+  overflow: visible;
+  background: var(--panel);
+  border: 2px solid var(--line);
+  padding: 22px;
+  box-shadow: var(--bevel-lg);
+  animation: hx-pop .3s steps(6, end);
+}
+:root[data-theme="hogwarts-express"] .tr-head {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 18px;
+}
+:root[data-theme="hogwarts-express"] #cardMapTitle,
+:root[data-theme="hogwarts-express"] #trophiesTitle,
+:root[data-theme="hogwarts-express"] #shortcutsTitle {
+  flex: 1;
+  font-family: var(--font-display);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink);
+}
+:root[data-theme="hogwarts-express"] .tr-head button {
+  font-family: var(--font-display);
+  font-size: 11px;
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  color: var(--scarlet);
+  background: var(--panel);
+  border: 2px solid var(--line);
+  cursor: pointer;
+  box-shadow: var(--bevel-sm);
+  transition: color var(--fast), transform var(--fast);
+}
+:root[data-theme="hogwarts-express"] .tr-head button:hover { color: var(--scarlet-lt); transform: translate(-1px,-1px); }
+:root[data-theme="hogwarts-express"] .tr-head button:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+
+/* trophies grid */
+:root[data-theme="hogwarts-express"] .tr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+:root[data-theme="hogwarts-express"] .badge {
+  position: relative;
+  display: grid; place-content: center; place-items: center;
+  gap: 8px;
+  text-align: center;
+  padding: 14px;
+  background: var(--panel-2);
+  border: 2px solid var(--line-soft);
+  cursor: default;
+  transition: transform var(--fast), border-color var(--fast);
+}
+:root[data-theme="hogwarts-express"] .badge:hover { transform: translateY(-2px); z-index: 5; }
+:root[data-theme="hogwarts-express"] .badge.on {
+  border-color: var(--brass);
+  background: #f6ead0;
+  box-shadow: var(--bevel-sm);
+}
+:root[data-theme="hogwarts-express"] .badge.off { opacity: .45; filter: grayscale(.6); }
+:root[data-theme="hogwarts-express"] .badge .bi { font-size: 28px; line-height: 1; }
+:root[data-theme="hogwarts-express"] .badge.on .bi { filter: drop-shadow(0 2px 5px rgba(184,134,43,.55)); }
+:root[data-theme="hogwarts-express"] .badge .bt {
+  font-family: var(--font-label);
+  font-size: 10px;
+  line-height: 1.3;
+  color: var(--ink-dim);
+}
+:root[data-theme="hogwarts-express"] .badge.on .bt { color: var(--ink); }
+
+/* badge tooltip (panel is overflow:visible) */
+:root[data-theme="hogwarts-express"] .badge[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 9px); left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  width: max-content; max-width: 220px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: left;
+  white-space: normal;
+  color: #f7ead2;
+  background: #2a1f17;
+  border: 2px solid var(--brass);
+  padding: 8px 11px;
+  pointer-events: none;
+}
+
+/* card-map cells */
+:root[data-theme="hogwarts-express"] .cm-card { border: 2px solid var(--line-soft); background: var(--rail); }
+:root[data-theme="hogwarts-express"] .cm-card.done { background: var(--gold); border-color: var(--brass); }
+:root[data-theme="hogwarts-express"] .cm-card.rest { border-style: dashed; background: transparent; }
+:root[data-theme="hogwarts-express"] .cm-card.current { outline: 3px solid var(--scarlet); outline-offset: 2px; }
+
+/* ====================== EFFECTS (#fx) ====================== */
+:root[data-theme="hogwarts-express"] #fx { position: fixed; inset: 0; z-index: 300; pointer-events: none; overflow: hidden; }
+:root[data-theme="hogwarts-express"] .fx-flash {
+  position: fixed; inset: 0;
+  background: radial-gradient(circle at 50% 55%, rgba(255,250,224,.55), rgba(224,177,78,.16) 42%, transparent 72%);
+  animation: hx-flash .7s steps(8, end) forwards;
+}
+/* confetti = golden sparks + scarlet, rising then falling */
+:root[data-theme="hogwarts-express"] .confetti-piece {
+  --i: 0; --dx: 0; --dy: 1; --rot: 180deg;
+  position: fixed; top: 18%;
+  width: 8px; height: 8px;
+  background: var(--gold);
+  opacity: 0;
+  image-rendering: pixelated;
+  animation: hx-confetti 1.8s steps(14, end) forwards;
+  animation-delay: calc(var(--i) * 35ms);
+}
+:root[data-theme="hogwarts-express"] .confetti-piece:nth-child(3n)   { background: var(--scarlet); }
+:root[data-theme="hogwarts-express"] .confetti-piece:nth-child(3n+1) { background: var(--brass); }
+:root[data-theme="hogwarts-express"] .confetti-piece:nth-child(4n)   { width: 6px; height: 6px; }
+
+/* toasts */
+:root[data-theme="hogwarts-express"] .toast,
+:root[data-theme="hogwarts-express"] .badge-toast {
+  position: fixed; left: 50%; bottom: 24px;
+  transform: translateX(-50%) translateY(16px);
+  display: flex; align-items: center; gap: 11px;
+  max-width: min(340px, 86vw);
+  font-family: var(--font-body);
+  font-size: 17px;
+  color: var(--ink);
+  background: var(--panel);
+  border: 2px solid var(--line);
+  padding: 13px 16px;
+  box-shadow: var(--bevel-lg);
+  opacity: 0;
+  transition: opacity var(--slow), transform var(--slow);
+  pointer-events: auto;
+}
+:root[data-theme="hogwarts-express"] .toast { border-color: var(--scarlet); }
+:root[data-theme="hogwarts-express"] .badge-toast { border-color: var(--brass); }
+:root[data-theme="hogwarts-express"] .toast.show,
+:root[data-theme="hogwarts-express"] .badge-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+:root[data-theme="hogwarts-express"] .badge-toast b { color: var(--scarlet); }
+:root[data-theme="hogwarts-express"] .bt-i { font-size: 24px; line-height: 1; }
+
+/* ====================== FOOTER ====================== */
+:root[data-theme="hogwarts-express"] .foot {
+  text-align: center;
+  padding: 26px 16px 40px;
+  margin-top: 28px;
+}
+:root[data-theme="hogwarts-express"] #motd {
+  font-family: var(--font-label);
+  font-size: 10px;
+  letter-spacing: .06em;
+  color: var(--ink-dim);
+  opacity: 1;
+  transition: opacity .55s steps(6, end), transform .55s steps(6, end);
+}
+:root[data-theme="hogwarts-express"] #motd.motd-out { opacity: 0; transform: translateY(-4px); }
+
+/* ====================== ANIMATIONS (hx- prefixed) ====================== */
+@keyframes hx-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes hx-train-in {
+  from { opacity: 0; transform: translateX(-46vw); }
+  to   { opacity: 1; transform: translateX(-30vw); }
+}
+@keyframes hx-traverse {
+  from { transform: translateX(-30vw); }
+  to   { transform: translateX(130vw); }
+}
+@keyframes hx-steam { 0%, 100% { opacity: .78; } 50% { opacity: 1; } }
+@keyframes hx-clouds { from { background-position: 0 14vh; } to { background-position: 512px 14vh; } }
+@keyframes hx-fly-r { from { transform: translateX(-24%); } to { transform: translateX(124%); } }
+@keyframes hx-fly-l { from { transform: translateX(124%); } to { transform: translateX(-24%); } }
+@keyframes hx-snitch { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(-3px, -4px); } 60% { transform: translate(2px, 2px); } }
+@keyframes hx-task-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes hx-check { from { opacity: 0; transform: rotate(45deg) scale(.3); } to { opacity: 1; transform: rotate(45deg) scale(1); } }
+@keyframes hx-pop { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: none; } }
+@keyframes hx-flash { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes hx-confetti {
+  0%   { opacity: 0; transform: translate(0, 0) rotate(0deg); }
+  12%  { opacity: 1; transform: translate(calc(var(--dx) * 20px), -90px) rotate(calc(var(--rot) * .15)); }
+  100% { opacity: 0; transform: translate(calc(var(--dx) * 220px), calc(40px + var(--dy) * 90vh)) rotate(var(--rot)); }
+}
+
+@media (min-width: 1400px) {
+  :root[data-theme="hogwarts-express"] .today { min-height: 460px; }
+}
