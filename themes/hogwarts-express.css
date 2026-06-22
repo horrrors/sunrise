@@ -137,6 +137,14 @@
   background-blend-mode: normal, soft-light, normal;
   image-rendering: pixelated;
   position: relative;
+  /* the scene's traversing fixed pseudo-layers (train / steam / Anglia / Hedwig)
+     translate off-screen (translateX up to 130vw); clip the viewport on x so
+     their off-screen travel never grows scrollWidth into a horizontal scrollbar.
+     clip (not hidden) keeps vertical scroll natural and adds no scroll container. */
+  overflow-x: clip;
+}
+:root[data-theme="hogwarts-express"] {
+  overflow-x: clip;
 }
 
 /* --- drifting clouds: the ONE background-position scroll layer (mobile freezes
