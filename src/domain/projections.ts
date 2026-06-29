@@ -186,7 +186,10 @@ export class Projections {
     const v = this.read();
     const overall = this.deps.stats.overall(v.pack, v.progress);
     const streak = this.deps.streaks.current(v.progress, this.deps.clock.today());
-    return { progress: overall.pct, streak, hour: this.deps.clock.hour() };
+    // month parsed from the local "YYYY-MM-DD" day string — keeps the domain
+    // pure (no Date) while giving season-reactive themes a --sunrise-month.
+    const month = Number(this.deps.clock.today().slice(5, 7));
+    return { progress: overall.pct, streak, hour: this.deps.clock.hour(), month };
   }
 
   public cardMap(): CardMapVM {

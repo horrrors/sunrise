@@ -476,7 +476,8 @@
       const v = this.read();
       const overall = this.deps.stats.overall(v.pack, v.progress);
       const streak = this.deps.streaks.current(v.progress, this.deps.clock.today());
-      return { progress: overall.pct, streak, hour: this.deps.clock.hour() };
+      const month = Number(this.deps.clock.today().slice(5, 7));
+      return { progress: overall.pct, streak, hour: this.deps.clock.hour(), month };
     }
     cardMap() {
       const v = this.read();
@@ -1875,6 +1876,7 @@ ${this.uiText(v, "aiPromptGuidance").replace("{guidance}", guidance)}
       root.style.setProperty("--sunrise-progress", String(s.progress));
       root.style.setProperty("--sunrise-streak", String(s.streak));
       root.style.setProperty("--sunrise-hour", String(s.hour));
+      root.style.setProperty("--sunrise-month", String(s.month));
     }
     setLang(lang) {
       document.documentElement.lang = lang;

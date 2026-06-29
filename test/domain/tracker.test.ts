@@ -442,5 +442,6 @@ test('appState exposes progress, streak, and the wall-clock hour', () => {
     progress: q.dashboard().overall.pct,
     streak: q.dashboard().streak,
     hour: 14, // the fake clock's hour()
+    month: 5, // parsed from the fake clock's today() '2026-05-30'
   });
 });

@@ -1037,10 +1037,11 @@ test('applyAppState sets --sunrise-* on documentElement', () => {
   const h = harness();
   const html = (globalThis as unknown as { document: { documentElement: FakeEl } }).document
     .documentElement;
-  h.renderer.applyAppState({ progress: 42, streak: 7, hour: 14 });
+  h.renderer.applyAppState({ progress: 42, streak: 7, hour: 14, month: 11 });
   assert.equal(html.styleProps['--sunrise-progress'], '42');
   assert.equal(html.styleProps['--sunrise-streak'], '7');
   assert.equal(html.styleProps['--sunrise-hour'], '14');
+  assert.equal(html.styleProps['--sunrise-month'], '11');
 });
 
 test('boot render writes the app-state vars onto documentElement', async () => {

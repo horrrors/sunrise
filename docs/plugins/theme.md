@@ -299,8 +299,11 @@ define them, or (cleaner) restyle `.cm-card` directly with your own tokens.
   Use it as `calc(var(--p) * 1%)` (writing `--p:42%` would break the `calc`).
 - on `:root` (`<html>`), refreshed every render: `--sunrise-progress` (overall
   completion %, unitless 0–100), `--sunrise-streak` (current streak, integer days),
-  `--sunrise-hour` (local wall-clock hour 0–23). Use them to make a theme react to
-  state — e.g. intensify at a high streak, or shift a palette by time of day.
+  `--sunrise-hour` (local wall-clock hour 0–23), and `--sunrise-month` (local
+  calendar month, 1–12). Use them to make a theme react to state — e.g. intensify
+  at a high streak, shift a palette by time of day, or change a scene by season.
+  (The `soviet-homes` theme drives a day cycle off `--sunrise-hour` and four
+  seasons off `--sunrise-month` purely with `calc()`/`clamp()` layer opacities.)
 - on each `.confetti-piece`: `--i` (0-based index), `--dx` (−1…1 horizontal
   drift), `--dy` (0…1 fall distance), `--rot` (rotation, e.g. −360…360deg).
 

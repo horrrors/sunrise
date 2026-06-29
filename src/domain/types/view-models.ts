@@ -77,4 +77,5 @@ export interface AppStateVM {
   progress: number; // overall completion %, 0–100
   streak: number; // current streak, days
   hour: number; // local wall-clock hour, 0–23
+  month: number; // local calendar month, 1–12 (for season-reactive themes)
 }

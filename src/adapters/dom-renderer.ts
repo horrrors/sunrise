@@ -398,11 +398,12 @@ export class DomRenderer {
   // App-state CSS vars themes can react to (intensify with streak, time-of-day
   // palettes, etc.). Namespaced --sunrise-* so they never collide with the
   // theme's own tokens. Updated on every render, not continuously.
-  public applyAppState(s: { progress: number; streak: number; hour: number }): void {
+  public applyAppState(s: { progress: number; streak: number; hour: number; month: number }): void {
     const root = document.documentElement;
     root.style.setProperty('--sunrise-progress', String(s.progress));
     root.style.setProperty('--sunrise-streak', String(s.streak));
     root.style.setProperty('--sunrise-hour', String(s.hour));
+    root.style.setProperty('--sunrise-month', String(s.month));
   }
 
   public setLang(lang: string): void {
