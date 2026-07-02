@@ -1,0 +1,834 @@
+/* =============================================================================
+   themes/comic.css — «Comic · Issue #184»
+   -----------------------------------------------------------------------------
+   A silver-age comic page. Ben-Day dot newsprint, panels with thick ink
+   borders and HARD offset shadows (never blurred, never animated), everything
+   pasted up at a slight tilt. Shrikhand masthead with a yellow+ink double
+   shadow, caption-box section titles, speech-bubble toasts, a POW! starburst
+   stamped on every done task, and trophies framed like back-issue covers.
+
+   Motion: one-shot "stamp" entrances (scale settle on a spring curve — panels
+   stagger via nth-child, tasks via the app's inline animation-delay), a slow
+   sunburst rotating behind the streak number, a wiggling flame, and starburst
+   confetti driven by the app's --dx/--dy/--rot vars. All motion is transform/
+   opacity only; the hard shadows stay static. Pure CSS, no DOM, no remote
+   URLs. Light theme — no dark color-scheme.
+   ========================================================================== */
+
+:root[data-theme="comic"] {
+  /* palette — four-color press */
+  --bg: #f6eed9;
+  --panel: #fffdf5;
+  --rail: #efe6cd;
+  --line: #1a1423;
+  --ink: #1a1423;
+  --ink-soft: #6d6455;
+  --red: #e0362c;
+  --yellow: #f7d117;
+  --cyan: #29a8d8;
+  --accent: #f7d117;
+
+  /* hard-shadow ramp — printed offsets, not blurs */
+  --sh-sm: 3px 3px 0 var(--ink);
+  --sh: 6px 6px 0 var(--ink);
+  --sh-lg: 10px 10px 0 var(--ink);
+  --r: 0px;
+
+  /* mobile HUD + card-map baseline tokens */
+  --paper: #fffdf5;
+  --paper-2: #f6eed9;
+  --cobalt: #29a8d8;
+  --focus-ring: 3px solid #29a8d8;
+
+  --font-display: 'Shrikhand', 'Archivo Black', serif;
+  --font-body: 'Archivo', system-ui, sans-serif;
+
+  /* per-track flats — dev-roadmap ids (pack colors override via inline vars) */
+  --track-dsa: #e0362c; --track-js: #e8b400; --track-ts: #29a8d8;
+  --track-node: #3fa64b; --track-sysdesign: #7b4ea3; --track-patterns: #f07f2e;
+  --track-distsys: #d9418c; --track-db: #1f8a8a; --track-cs: #5d5566;
+}
+
+/* ============================ PAGE / NEWSPRINT ============================ */
+:root[data-theme="comic"] body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font: 400 15.5px/1.6 var(--font-body);
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(circle at 25% 30%, rgba(224, 54, 44, 0.13) 1.3px, transparent 1.4px),
+    radial-gradient(circle at 75% 70%, rgba(41, 168, 216, 0.11) 1.3px, transparent 1.4px);
+  background-size: 11px 11px, 13px 13px;
+}
+
+:root[data-theme="comic"] .app-header,
+:root[data-theme="comic"] .wrap,
+:root[data-theme="comic"] .foot {
+  width: min(1100px, 100% - 36px);
+  margin-inline: auto;
+}
+
+/* ================================ HEADER ================================= */
+:root[data-theme="comic"] .app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 26px 0 10px;
+}
+:root[data-theme="comic"] .brand { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+:root[data-theme="comic"] .brand-mark {
+  font: 700 11px/1 var(--font-body);
+  letter-spacing: 0.1em;
+  background: var(--panel);
+  border: 2.5px solid var(--ink);
+  box-shadow: var(--sh-sm);
+  padding: 7px 8px;
+  transform: rotate(-2deg);
+}
+:root[data-theme="comic"] .brand-name {
+  font: 400 clamp(1.9rem, 4vw, 2.9rem)/0.9 var(--font-display);
+  color: var(--yellow);
+  -webkit-text-stroke: 2px var(--ink);
+  text-shadow: 4px 4px 0 var(--ink);
+  letter-spacing: 0.02em;
+  animation: comic-stamp 0.5s cubic-bezier(0.3, 1.6, 0.4, 1) both;
+}
+:root[data-theme="comic"] .brand-sub {
+  font: 700 10.5px/1.4 var(--font-body);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: var(--panel);
+  border: 2.5px solid var(--ink);
+  box-shadow: var(--sh-sm);
+  padding: 6px 9px;
+  transform: rotate(1.6deg);
+}
+:root[data-theme="comic"] .brand-sub:empty { display: none; }
+
+:root[data-theme="comic"] .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+:root[data-theme="comic"] .field { display: flex; align-items: center; }
+:root[data-theme="comic"] select {
+  font: 700 12px/1 var(--font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+  background: var(--panel);
+  border: 3px solid var(--ink);
+  box-shadow: var(--sh-sm);
+  padding: 9px 10px;
+  max-width: 170px;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+:root[data-theme="comic"] .btn {
+  font: 700 15px/1 var(--font-body);
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  color: var(--ink);
+  background: var(--panel);
+  border: 3px solid var(--ink);
+  box-shadow: var(--sh-sm);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+:root[data-theme="comic"] select:hover,
+:root[data-theme="comic"] .btn:hover { transform: translate(-2px, -2px); }
+:root[data-theme="comic"] select:active,
+:root[data-theme="comic"] .btn:active { transform: translate(2px, 2px); }
+:root[data-theme="comic"] select:focus-visible,
+:root[data-theme="comic"] .btn:focus-visible,
+:root[data-theme="comic"] .next-day-cta:focus-visible,
+:root[data-theme="comic"] #reflect:focus-visible {
+  outline: 3px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+/* ============================ SECTION TITLES ============================= */
+:root[data-theme="comic"] .section-title {
+  display: inline-block;
+  width: fit-content;
+  font: 700 11px/1 var(--font-body);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  opacity: 1;
+  color: var(--ink);
+  background: var(--yellow);
+  border: 3px solid var(--ink);
+  box-shadow: var(--sh-sm);
+  padding: 8px 11px;
+  margin: 26px 2px 14px;
+  transform: rotate(-1deg);
+}
+
+/* ============================== COMEBACK ================================= */
+:root[data-theme="comic"] #comeback {
+  font: 700 13.5px/1.5 var(--font-body);
+  color: #fff;
+  background: repeating-linear-gradient(45deg, var(--red) 0 14px, #c22a21 14px 28px);
+  border: 3px solid var(--ink);
+  box-shadow: var(--sh);
+  padding: 13px 16px;
+  margin: 16px 2px 4px;
+  transform: rotate(-0.4deg);
+}
+
+/* ============================== DASHBOARD ================================ */
+:root[data-theme="comic"] .dash {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+:root[data-theme="comic"] .stat-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  background: var(--panel);
+  border: 3px solid var(--ink);
+  box-shadow: var(--sh);
+  animation: comic-stamp 0.5s cubic-bezier(0.3, 1.6, 0.4, 1) both;
+}
+:root[data-theme="comic"] .stat-card:nth-child(1) { transform: rotate(-0.8deg); animation-delay: 0.05s; }
+:root[data-theme="comic"] .stat-card:nth-child(2) { transform: rotate(0.6deg); animation-delay: 0.12s; }
+:root[data-theme="comic"] .stat-card:nth-child(3) { transform: rotate(-0.4deg); animation-delay: 0.19s; }
+:root[data-theme="comic"] .stat-card:nth-child(4) { transform: rotate(0.5deg); animation-delay: 0.26s; }
+:root[data-theme="comic"] .eyebrow {
+  font: 700 10px/1 var(--font-body);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+:root[data-theme="comic"] .muted { color: var(--ink-soft); }
+:root[data-theme="comic"] .stat-sub {
+  font: 700 10.5px/1.4 var(--font-body);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* progress ring — red conic, white hole, ink rim */
+:root[data-theme="comic"] .ring {
+  width: 132px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  margin-inline: auto;
+  border: 3px solid var(--ink);
+  background:
+    radial-gradient(closest-side, var(--panel) 0 70%, transparent 71%),
+    conic-gradient(var(--red) calc(var(--p) * 1%), var(--rail) 0);
+}
+:root[data-theme="comic"] .ring > div {
+  width: 74%;
+  aspect-ratio: 1;
+  display: grid;
+  place-content: center;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--panel);
+  text-align: center;
+}
+:root[data-theme="comic"] .ring b {
+  font: 400 24px/1.1 var(--font-display);
+  color: var(--ink);
+}
+:root[data-theme="comic"] .ring small {
+  font: 700 10px/1.6 var(--font-body);
+  letter-spacing: 0.12em;
+  color: var(--ink-soft);
+}
+
+/* streak — sunburst spinning behind the number */
+:root[data-theme="comic"] .stat-card[data-kind="streak"]::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  width: 150px;
+  height: 150px;
+  margin: -75px 0 0 -75px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(var(--yellow) 0 11deg, transparent 11deg 26deg);
+  opacity: 0.55;
+  animation: comic-sunray 14s linear infinite;
+}
+:root[data-theme="comic"] .streak-num {
+  position: relative;
+  font: 400 clamp(2.4rem, 5vw, 3.2rem)/1 var(--font-display);
+  color: var(--red);
+  -webkit-text-stroke: 1.5px var(--ink);
+  text-shadow: 3px 3px 0 var(--ink);
+  text-align: center;
+}
+:root[data-theme="comic"] .flame {
+  position: relative;
+  font-size: 26px;
+  text-align: center;
+  animation: comic-flame 2.4s ease-in-out infinite;
+}
+
+/* tracks card — striped bars, flat dots */
+:root[data-theme="comic"] .prow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font: 700 12.5px/1.7 var(--font-body);
+}
+:root[data-theme="comic"] .prow .lbl { display: flex; align-items: center; gap: 8px; min-width: 0; }
+:root[data-theme="comic"] .prow .lbl > i {
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--ink);
+  background: var(--ink);
+}
+:root[data-theme="comic"] .prow .val { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+:root[data-theme="comic"] .bar {
+  height: 13px;
+  border: 2.5px solid var(--ink);
+  background: #fff;
+  overflow: hidden;
+}
+:root[data-theme="comic"] .bar > i {
+  display: block;
+  height: 100%;
+  background: repeating-linear-gradient(-45deg, var(--ink) 0 7px, #5d5566 7px 14px);
+}
+
+/* ============================== DAY RAIL ================================= */
+:root[data-theme="comic"] .day-rail {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 56px;
+  gap: 16px;
+  align-items: stretch;
+}
+:root[data-theme="comic"] .today-wrap { min-width: 0; }
+:root[data-theme="comic"] .day-nav {
+  display: grid;
+  place-items: center;
+  font: 400 24px/1 var(--font-display);
+  color: #fff;
+  text-shadow: 2px 2px 0 var(--ink);
+  background: var(--cyan);
+  border: 3px solid var(--ink);
+  box-shadow: var(--sh-sm);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+:root[data-theme="comic"] .day-nav:hover { transform: translate(-2px, -2px); }
+:root[data-theme="comic"] .day-nav:active { transform: translate(2px, 2px); }
+:root[data-theme="comic"] .day-nav:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+
+/* ============================== TODAY CARD =============================== */
+:root[data-theme="comic"] .today {
+  display: flex;
+  overflow: visible;
+  position: relative;
+  min-height: 420px;
+  background: var(--panel);
+  border: 3px solid var(--ink);
+  box-shadow: var(--sh-lg);
+  transform: rotate(-0.5deg);
+  animation: comic-stamp 0.55s cubic-bezier(0.3, 1.6, 0.4, 1) 0.22s both;
+}
+:root[data-theme="comic"] .today-side {
+  flex: 0 0 66px;
+  display: grid;
+  place-items: center;
+  border-right: 3px solid var(--ink);
+  background: repeating-linear-gradient(45deg, var(--red) 0 12px, color-mix(in srgb, var(--red) 78%, var(--ink)) 12px 24px);
+}
+:root[data-theme="comic"] .vert {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font: 400 17px/1 var(--font-display);
+  letter-spacing: 0.22em;
+  color: #fff;
+  text-shadow: 2px 2px 0 var(--ink);
+}
+:root[data-theme="comic"] .today-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: clamp(20px, 4vw, 32px);
+}
+:root[data-theme="comic"] .trackpill {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: 700 10.5px/1 var(--font-body);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  background: var(--yellow);
+  border: 2.5px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+  padding: 7px 10px;
+}
+:root[data-theme="comic"] .trackpill .k {
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: var(--ink);
+}
+:root[data-theme="comic"] .today-title {
+  margin: 0;
+  font: 400 clamp(1.7rem, 3.6vw, 2.5rem)/1.08 var(--font-display);
+  color: var(--red);
+  -webkit-text-stroke: 1.5px var(--ink);
+  text-shadow: 3px 3px 0 var(--yellow), 5px 5px 0 var(--ink);
+}
+
+/* warm-up — a cyan-tinted caption panel; rest variant is a plain <p> */
+:root[data-theme="comic"] .warm {
+  background: color-mix(in srgb, var(--cyan) 12%, var(--panel));
+  border: 2.5px solid var(--ink);
+  box-shadow: var(--sh-sm);
+  padding: 12px 14px;
+  font-size: 13.5px;
+}
+:root[data-theme="comic"] .warm-head .muted {
+  font: 700 10px/1 var(--font-body);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+:root[data-theme="comic"] .warm-i { color: var(--cyan); }
+:root[data-theme="comic"] p.warm {
+  margin: 0;
+  font-style: italic;
+  background: color-mix(in srgb, var(--yellow) 16%, var(--panel));
+}
+
+/* tasks — pasted panels that stamp in on the app's inline delay */
+:root[data-theme="comic"] .tasks,
+:root[data-theme="comic"] #taskList { display: flex; flex-direction: column; gap: 11px; }
+:root[data-theme="comic"] .task {
+  position: relative;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  font: 700 13.5px/1.45 var(--font-body);
+  background: #fff;
+  border: 2.5px solid var(--ink);
+  box-shadow: var(--sh-sm);
+  padding: 11px 13px;
+  cursor: pointer;
+  animation: comic-stamp 0.4s cubic-bezier(0.3, 1.6, 0.4, 1) both;
+  transition: transform 0.12s ease;
+}
+:root[data-theme="comic"] .task:hover { transform: translate(-2px, -2px); }
+:root[data-theme="comic"] .task .box {
+  width: 22px;
+  height: 22px;
+  border: 2.5px solid var(--ink);
+  background: #fff;
+  display: grid;
+  place-items: center;
+  transition: transform 0.12s cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+:root[data-theme="comic"] .task:hover .box { transform: scale(1.12) rotate(-4deg); }
+:root[data-theme="comic"] .task.done .box { background: var(--red); }
+:root[data-theme="comic"] .task.done .box::after { content: "✔"; color: #fff; font-size: 13px; }
+:root[data-theme="comic"] .task.done .task-text { text-decoration: line-through 2.5px var(--red); color: var(--ink-soft); }
+:root[data-theme="comic"] .task.done::after {
+  content: "POW!";
+  position: absolute;
+  right: 82px; /* inboard of the baseline .task-tools copy buttons at the row corner */
+  top: -14px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 46px;
+  background: var(--yellow);
+  border: 2.5px solid var(--ink);
+  clip-path: polygon(50% 0%, 63% 12%, 82% 4%, 82% 22%, 100% 28%, 88% 45%, 100% 62%, 80% 64%, 76% 86%, 58% 76%, 44% 96%, 36% 74%, 14% 82%, 20% 60%, 0% 52%, 16% 38%, 4% 18%, 26% 20%, 32% 2%);
+  font: 400 12px/1 var(--font-display);
+  color: var(--red);
+  animation: comic-pow 3.2s ease-in-out infinite;
+}
+
+/* hint disclosure — baseline is functional; ink accents only */
+:root[data-theme="comic"] .task-hint > summary { color: var(--cyan); opacity: 1; }
+:root[data-theme="comic"] .task-hint-body {
+  border-left: 3px solid var(--ink);
+  background: color-mix(in srgb, var(--yellow) 10%, var(--panel));
+  padding: 8px 10px;
+  opacity: 1;
+  color: var(--ink-soft);
+}
+
+/* reflection — the diary caption */
+:root[data-theme="comic"] .reflect-block { display: flex; flex-direction: column; gap: 8px; }
+:root[data-theme="comic"] .reflect-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: 700 11px/1 var(--font-body);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+:root[data-theme="comic"] .kanji {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  font: 700 12px/1 var(--font-body);
+  color: #fff;
+  background: var(--red);
+  border: 2px solid var(--ink);
+}
+:root[data-theme="comic"] #reflect {
+  width: 100%;
+  min-height: 96px;
+  resize: vertical;
+  font: 500 14px/1.6 var(--font-body);
+  color: var(--ink);
+  background: #fff;
+  border: 3px solid var(--ink);
+  box-shadow: var(--sh-sm);
+  padding: 12px;
+}
+
+/* resources + next-day CTA */
+:root[data-theme="comic"] .res-row { display: flex; flex-wrap: wrap; gap: 9px; }
+:root[data-theme="comic"] .chip {
+  font: 500 12.5px/1.4 var(--font-body);
+  background: var(--panel);
+  border: 2px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+  padding: 6px 10px;
+}
+:root[data-theme="comic"] .chip b { color: var(--red); }
+:root[data-theme="comic"] .next-day-cta {
+  align-self: flex-start;
+  font: 700 13px/1 var(--font-body);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--yellow);
+  border: 3px solid var(--ink);
+  box-shadow: var(--sh-sm);
+  padding: 13px 18px;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+:root[data-theme="comic"] .next-day-cta:hover { transform: translate(-2px, -2px); }
+:root[data-theme="comic"] .next-day-cta:active { transform: translate(2px, 2px); }
+
+/* ================================ FOOTER ================================= */
+:root[data-theme="comic"] .foot {
+  padding: 30px 0 34px;
+  text-align: center;
+}
+:root[data-theme="comic"] #motd {
+  display: inline-block;
+  font: 700 11px/1.6 var(--font-body);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+:root[data-theme="comic"] #motd.motd-out { opacity: 0; transform: translateY(6px); }
+
+/* ================================ MODALS ================================= */
+:root[data-theme="comic"] .modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: none;
+  overflow-y: auto;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 36px 16px;
+  background: rgba(26, 20, 35, 0.55);
+}
+:root[data-theme="comic"] .modal.open { display: flex; }
+:root[data-theme="comic"] .modal-panel {
+  width: min(600px, 92vw);
+  margin: auto;
+  overflow: visible;
+  background: var(--panel);
+  border: 3px solid var(--ink);
+  box-shadow: var(--sh-lg);
+  padding: 20px;
+}
+:root[data-theme="comic"] .modal.open .modal-panel {
+  animation: comic-stamp 0.35s cubic-bezier(0.3, 1.6, 0.4, 1) both;
+}
+:root[data-theme="comic"] .tr-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+:root[data-theme="comic"] #cardMapTitle,
+:root[data-theme="comic"] #trophiesTitle,
+:root[data-theme="comic"] #shortcutsTitle {
+  flex: 1;
+  font: 400 20px/1.1 var(--font-display);
+  color: var(--red);
+  -webkit-text-stroke: 1px var(--ink);
+  text-shadow: 2px 2px 0 var(--yellow);
+}
+:root[data-theme="comic"] #cardMapClose,
+:root[data-theme="comic"] #trophiesClose,
+:root[data-theme="comic"] #shortcutsClose {
+  font: 700 14px/1 var(--font-body);
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  background: var(--panel);
+  border: 3px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+:root[data-theme="comic"] #cardMapClose:hover,
+:root[data-theme="comic"] #trophiesClose:hover,
+:root[data-theme="comic"] #shortcutsClose:hover { transform: translate(-2px, -2px); }
+:root[data-theme="comic"] #cardMapClose:focus-visible,
+:root[data-theme="comic"] #trophiesClose:focus-visible,
+:root[data-theme="comic"] #shortcutsClose:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+
+/* trophies — back-issue covers */
+:root[data-theme="comic"] .tr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 16px;
+}
+:root[data-theme="comic"] .badge {
+  position: relative;
+  display: grid;
+  place-content: center;
+  place-items: center;
+  gap: 8px;
+  text-align: center;
+  padding: 16px 12px;
+  border: 3px solid var(--ink);
+  box-shadow: var(--sh-sm);
+  cursor: default;
+  transition: transform 0.12s ease;
+}
+:root[data-theme="comic"] .badge:hover { transform: translate(-2px, -2px); }
+:root[data-theme="comic"] .badge .bi { font-size: 26px; }
+:root[data-theme="comic"] .badge .bt { font: 700 11px/1.4 var(--font-body); letter-spacing: 0.04em; }
+:root[data-theme="comic"] .badge.on {
+  background:
+    radial-gradient(circle at 30% 30%, rgba(224, 54, 44, 0.16) 1.2px, transparent 1.3px),
+    var(--yellow);
+  background-size: 9px 9px, auto;
+}
+:root[data-theme="comic"] .badge.off {
+  background: #ddd6c4;
+  border-style: dashed;
+  color: var(--ink-soft);
+}
+:root[data-theme="comic"] .badge.off .bi { opacity: 0.45; }
+:root[data-theme="comic"] .badge[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) rotate(-1deg);
+  width: max-content;
+  max-width: 210px;
+  font: 700 11.5px/1.4 var(--font-body);
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink);
+  background: #fff;
+  border: 2.5px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  border-radius: 12px;
+  padding: 8px 11px;
+  z-index: 5;
+  pointer-events: none;
+  white-space: normal;
+}
+:root[data-theme="comic"] .badge[data-tip]:hover::before {
+  content: "";
+  position: absolute;
+  bottom: calc(100% + 3px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-top: 9px solid var(--ink);
+  z-index: 5;
+}
+
+/* card map — the panel grid of the whole issue */
+:root[data-theme="comic"] .cm-rlabel { color: var(--red); opacity: 1; }
+:root[data-theme="comic"] .cm-card {
+  width: 26px;
+  height: 26px;
+  border: 2.5px solid var(--ink);
+  border-radius: 0;
+  background: #fff;
+}
+:root[data-theme="comic"] .cm-card:hover { transform: translate(-2px, -2px); }
+:root[data-theme="comic"] .cm-card.done { background: var(--red); }
+:root[data-theme="comic"] .cm-card.rest { border-style: dashed; background: transparent; opacity: 0.5; }
+:root[data-theme="comic"] .cm-card.current { outline: 3px solid var(--yellow); outline-offset: 2px; }
+
+/* ============================ EFFECTS LAYER ============================== */
+:root[data-theme="comic"] #fx {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+  overflow: hidden;
+}
+:root[data-theme="comic"] .fx-flash {
+  position: fixed;
+  inset: 0;
+  background: rgba(247, 209, 23, 0.32);
+  animation: comic-flash 0.5s steps(2, jump-none) both;
+}
+:root[data-theme="comic"] .toast,
+:root[data-theme="comic"] .badge-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 26px;
+  transform: translateX(-50%) translateY(10px) rotate(1deg);
+  opacity: 0;
+  font: 700 13px/1.4 var(--font-body);
+  color: var(--ink);
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: var(--sh-sm);
+  padding: 11px 16px;
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.3, 1.6, 0.4, 1);
+}
+:root[data-theme="comic"] .toast.show,
+:root[data-theme="comic"] .badge-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0) rotate(1deg);
+}
+:root[data-theme="comic"] .toast::before,
+:root[data-theme="comic"] .badge-toast::before {
+  content: "";
+  position: absolute;
+  left: 26px;
+  bottom: -13px;
+  border: 7px solid transparent;
+  border-top: 10px solid var(--ink);
+}
+:root[data-theme="comic"] .toast::after,
+:root[data-theme="comic"] .badge-toast::after {
+  content: "";
+  position: absolute;
+  left: 29px;
+  bottom: -6px;
+  border: 5px solid transparent;
+  border-top: 8px solid #fff;
+}
+:root[data-theme="comic"] .badge-toast .bt-i { font-size: 17px; margin-right: 6px; }
+
+/* confetti — starbursts and halftone dots off the press */
+:root[data-theme="comic"] .confetti-piece {
+  position: fixed;
+  top: 18%;
+  width: 12px;
+  height: 12px;
+  background: var(--red);
+  clip-path: polygon(50% 0%, 63% 12%, 82% 4%, 82% 22%, 100% 28%, 88% 45%, 100% 62%, 80% 64%, 76% 86%, 58% 76%, 44% 96%, 36% 74%, 14% 82%, 20% 60%, 0% 52%, 16% 38%, 4% 18%, 26% 20%, 32% 2%);
+  animation: comic-confetti 2.6s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+:root[data-theme="comic"] .confetti-piece:nth-child(3n) { background: var(--yellow); width: 15px; height: 15px; }
+:root[data-theme="comic"] .confetti-piece:nth-child(3n + 1) { background: var(--cyan); clip-path: none; border-radius: 50%; width: 9px; height: 9px; }
+:root[data-theme="comic"] .confetti-piece:nth-child(5n) { background: var(--ink); clip-path: none; width: 8px; height: 11px; }
+
+/* ============================== KEYFRAMES ================================ */
+/* from-only stamp: settles onto each element's own resting tilt */
+@keyframes comic-stamp {
+  from { transform: scale(1.15); opacity: 0; }
+}
+@keyframes comic-sunray {
+  to { transform: rotate(360deg); }
+}
+@keyframes comic-pow {
+  0%, 88%, 100% { transform: scale(1) rotate(7deg); }
+  93% { transform: scale(1.18) rotate(-3deg); }
+}
+@keyframes comic-flame {
+  0%, 100% { transform: rotate(-5deg) scale(1); }
+  50% { transform: rotate(6deg) scale(1.08); }
+}
+@keyframes comic-flash {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes comic-confetti {
+  from { transform: translate(0, -10px) rotate(0deg); opacity: 1; }
+  to {
+    transform: translate(calc(var(--dx) * 38vw), calc(14vh + var(--dy) * 74vh)) rotate(var(--rot));
+    opacity: 0;
+  }
+}
+
+/* ========================= PER-TRACK FOUR-COLOR ========================== */
+/* neutral default so unknown packs still read intentional */
+:root[data-theme="comic"] .today[data-track] .today-side {
+  background: repeating-linear-gradient(45deg, var(--red) 0 12px, color-mix(in srgb, var(--red) 78%, var(--ink)) 12px 24px);
+}
+:root[data-theme="comic"] .bar[data-track="dsa"] > i { background: repeating-linear-gradient(-45deg, var(--track-dsa) 0 7px, color-mix(in srgb, var(--track-dsa) 65%, #fff) 7px 14px); }
+:root[data-theme="comic"] .bar[data-track="js"] > i { background: repeating-linear-gradient(-45deg, var(--track-js) 0 7px, color-mix(in srgb, var(--track-js) 65%, #fff) 7px 14px); }
+:root[data-theme="comic"] .bar[data-track="ts"] > i { background: repeating-linear-gradient(-45deg, var(--track-ts) 0 7px, color-mix(in srgb, var(--track-ts) 65%, #fff) 7px 14px); }
+:root[data-theme="comic"] .bar[data-track="node"] > i { background: repeating-linear-gradient(-45deg, var(--track-node) 0 7px, color-mix(in srgb, var(--track-node) 65%, #fff) 7px 14px); }
+:root[data-theme="comic"] .bar[data-track="sysdesign"] > i { background: repeating-linear-gradient(-45deg, var(--track-sysdesign) 0 7px, color-mix(in srgb, var(--track-sysdesign) 65%, #fff) 7px 14px); }
+:root[data-theme="comic"] .bar[data-track="patterns"] > i { background: repeating-linear-gradient(-45deg, var(--track-patterns) 0 7px, color-mix(in srgb, var(--track-patterns) 65%, #fff) 7px 14px); }
+:root[data-theme="comic"] .bar[data-track="distsys"] > i { background: repeating-linear-gradient(-45deg, var(--track-distsys) 0 7px, color-mix(in srgb, var(--track-distsys) 65%, #fff) 7px 14px); }
+:root[data-theme="comic"] .bar[data-track="db"] > i { background: repeating-linear-gradient(-45deg, var(--track-db) 0 7px, color-mix(in srgb, var(--track-db) 65%, #fff) 7px 14px); }
+:root[data-theme="comic"] .bar[data-track="cs"] > i { background: repeating-linear-gradient(-45deg, var(--track-cs) 0 7px, color-mix(in srgb, var(--track-cs) 65%, #fff) 7px 14px); }
+
+:root[data-theme="comic"] .prow[data-track="dsa"] .lbl > i { background: var(--track-dsa); }
+:root[data-theme="comic"] .prow[data-track="js"] .lbl > i { background: var(--track-js); }
+:root[data-theme="comic"] .prow[data-track="ts"] .lbl > i { background: var(--track-ts); }
+:root[data-theme="comic"] .prow[data-track="node"] .lbl > i { background: var(--track-node); }
+:root[data-theme="comic"] .prow[data-track="sysdesign"] .lbl > i { background: var(--track-sysdesign); }
+:root[data-theme="comic"] .prow[data-track="patterns"] .lbl > i { background: var(--track-patterns); }
+:root[data-theme="comic"] .prow[data-track="distsys"] .lbl > i { background: var(--track-distsys); }
+:root[data-theme="comic"] .prow[data-track="db"] .lbl > i { background: var(--track-db); }
+:root[data-theme="comic"] .prow[data-track="cs"] .lbl > i { background: var(--track-cs); }
+
+:root[data-theme="comic"] .today[data-track="dsa"] .today-side { background: repeating-linear-gradient(45deg, var(--track-dsa) 0 12px, color-mix(in srgb, var(--track-dsa) 78%, var(--ink)) 12px 24px); }
+:root[data-theme="comic"] .today[data-track="js"] .today-side { background: repeating-linear-gradient(45deg, var(--track-js) 0 12px, color-mix(in srgb, var(--track-js) 78%, var(--ink)) 12px 24px); }
+:root[data-theme="comic"] .today[data-track="ts"] .today-side { background: repeating-linear-gradient(45deg, var(--track-ts) 0 12px, color-mix(in srgb, var(--track-ts) 78%, var(--ink)) 12px 24px); }
+:root[data-theme="comic"] .today[data-track="node"] .today-side { background: repeating-linear-gradient(45deg, var(--track-node) 0 12px, color-mix(in srgb, var(--track-node) 78%, var(--ink)) 12px 24px); }
+:root[data-theme="comic"] .today[data-track="sysdesign"] .today-side { background: repeating-linear-gradient(45deg, var(--track-sysdesign) 0 12px, color-mix(in srgb, var(--track-sysdesign) 78%, var(--ink)) 12px 24px); }
+:root[data-theme="comic"] .today[data-track="patterns"] .today-side { background: repeating-linear-gradient(45deg, var(--track-patterns) 0 12px, color-mix(in srgb, var(--track-patterns) 78%, var(--ink)) 12px 24px); }
+:root[data-theme="comic"] .today[data-track="distsys"] .today-side { background: repeating-linear-gradient(45deg, var(--track-distsys) 0 12px, color-mix(in srgb, var(--track-distsys) 78%, var(--ink)) 12px 24px); }
+:root[data-theme="comic"] .today[data-track="db"] .today-side { background: repeating-linear-gradient(45deg, var(--track-db) 0 12px, color-mix(in srgb, var(--track-db) 78%, var(--ink)) 12px 24px); }
+:root[data-theme="comic"] .today[data-track="cs"] .today-side { background: repeating-linear-gradient(45deg, var(--track-cs) 0 12px, color-mix(in srgb, var(--track-cs) 78%, var(--ink)) 12px 24px); }
+
+:root[data-theme="comic"] .today[data-track="dsa"] .trackpill .k { background: var(--track-dsa); }
+:root[data-theme="comic"] .today[data-track="js"] .trackpill .k { background: var(--track-js); }
+:root[data-theme="comic"] .today[data-track="ts"] .trackpill .k { background: var(--track-ts); }
+:root[data-theme="comic"] .today[data-track="node"] .trackpill .k { background: var(--track-node); }
+:root[data-theme="comic"] .today[data-track="sysdesign"] .trackpill .k { background: var(--track-sysdesign); }
+:root[data-theme="comic"] .today[data-track="patterns"] .trackpill .k { background: var(--track-patterns); }
+:root[data-theme="comic"] .today[data-track="distsys"] .trackpill .k { background: var(--track-distsys); }
+:root[data-theme="comic"] .today[data-track="db"] .trackpill .k { background: var(--track-db); }
+:root[data-theme="comic"] .today[data-track="cs"] .trackpill .k { background: var(--track-cs); }

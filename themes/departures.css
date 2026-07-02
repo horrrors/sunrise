@@ -1,0 +1,907 @@
+/* =============================================================================
+   themes/departures.css — «Departures · Split-Flap»
+   -----------------------------------------------------------------------------
+   The app as an airport departure hall. A Schiphol-yellow wayfinding header
+   over a charcoal Solari board: the brand and the today-title render as
+   split-flap letter plates (pure CSS — a seam gradient + per-cell separators
+   on a dark plate, no extra DOM), tasks are flight rows with ON TIME /
+   DEPARTED status chips stamped by ::after, the gate block anchors the today
+   card, and the footer is a dim amber ticker strip (static — the app swaps
+   its text; no marquee).
+
+   Motion: one-shot flap-cascade entrance on the task rows (rotateX keyed off
+   the app's inline animation-delay) and a plate flip on the brand; idle is a
+   lone re-flip of the brand plate every ~9s, a green status lamp breathing on
+   the streak card and phase label, and a BOARDING pulse on hovered task
+   chips. All loops are transform/opacity only; no filter or backdrop-filter
+   is ever animated; no scrolling background layers. Full-viewport ambience
+   (hall glow) is position:fixed on a body pseudo. Colors: board charcoal
+   #15171c, monitor panels #0d0f12, signal amber #ffb000, wayfinding yellow
+   #f5c400, departed green #37d067.
+   ========================================================================== */
+
+:root[data-theme="departures"] {
+  /* palette */
+  --bg: #15171c;
+  --panel: #0d0f12;
+  --panel-2: #101216;
+  --plate: #16181d;
+  --rail: #1b1e23;
+  --line: #23262b;
+  --line-soft: #2c3037;
+  --ink: #e8eaee;
+  --ink-dim: #9aa1ab;
+  --muted-c: #6e747f;
+  --amber: #ffb000;
+  --amber-dim: #8a6414;
+  --yellow-way: #f5c400;
+  --green: #37d067;
+  --green-dim: #1d5c33;
+  --black: #111317;
+
+  /* shadow ramp */
+  --sh-sm: 0 2px 6px rgba(0, 0, 0, 0.45);
+  --sh: 0 12px 28px -12px rgba(0, 0, 0, 0.7);
+  --sh-lg: 0 26px 54px -22px rgba(0, 0, 0, 0.85);
+  --r: 8px;
+  --r-sm: 5px;
+
+  /* mobile HUD + card-map baseline tokens */
+  --paper: #14161a;
+  --paper-2: #0d0f12;
+  --cobalt: #ffb000;
+  --yellow: #f5c400;
+  --accent: #ffb000;
+  --focus-ring: 3px solid #ffb000;
+
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+  --font-way: 'Archivo', system-ui, sans-serif;
+
+  /* per-track signal palette (dev-roadmap ids; neutral default below) */
+  --track-dsa: #ffb000;
+  --track-js: #f5c400;
+  --track-ts: #4da3ff;
+  --track-node: #37d067;
+  --track-sysdesign: #b48cff;
+  --track-patterns: #ff8f3d;
+  --track-distsys: #ff5d5d;
+  --track-db: #2fd4c2;
+  --track-cs: #d0d6de;
+  --track-bare: #8a929e;
+
+  color-scheme: dark;
+}
+
+/* ====================== page / hall ====================== */
+:root[data-theme="departures"] body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 118px, rgba(255, 255, 255, 0.018) 118px 120px),
+    var(--bg);
+  color: var(--ink);
+  font: 500 15px/1.6 var(--font-mono);
+}
+:root[data-theme="departures"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(245, 196, 0, 0.06), transparent 62%),
+    radial-gradient(90% 60% at 50% 110%, rgba(0, 0, 0, 0.55), transparent 60%);
+}
+
+:root[data-theme="departures"] .app-header,
+:root[data-theme="departures"] .wrap,
+:root[data-theme="departures"] .foot {
+  width: min(1100px, 100% - 32px);
+  margin-inline: auto;
+}
+:root[data-theme="departures"] .wrap {
+  animation: dep-rise 0.5s ease both;
+}
+@keyframes dep-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ====================== header — wayfinding sign ====================== */
+:root[data-theme="departures"] .app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  padding: 13px 18px;
+  background: var(--yellow-way);
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  border-bottom: 4px solid var(--black);
+  border-radius: var(--r);
+  box-shadow: var(--sh);
+}
+:root[data-theme="departures"] .brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+:root[data-theme="departures"] .brand-mark {
+  font: 700 11px/1 var(--font-mono);
+  letter-spacing: 0.1em;
+  color: var(--amber);
+  background: var(--black);
+  padding: 7px 8px;
+  border-radius: 4px;
+}
+:root[data-theme="departures"] .brand-name {
+  font: 700 clamp(18px, 2.4vw, 26px)/1 var(--font-mono);
+  letter-spacing: 0.34em;
+  color: #f2f4f6;
+  padding: 9px 4px 9px 14px;
+  border-radius: 6px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0 46%, rgba(0, 0, 0, 0.65) 46% 53%, rgba(0, 0, 0, 0.16) 53% 100%),
+    repeating-linear-gradient(90deg, transparent 0 calc(1ch + 0.24em), rgba(0, 0, 0, 0.55) calc(1ch + 0.24em) calc(1ch + 0.34em)),
+    var(--plate);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 2px 5px rgba(0, 0, 0, 0.45);
+  animation: dep-flip-in 0.55s cubic-bezier(0.3, 1.4, 0.5, 1) both, dep-plate-tick 9s linear 4s infinite;
+  will-change: transform;
+}
+@keyframes dep-flip-in {
+  from { transform: rotateX(-88deg); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes dep-plate-tick {
+  0%, 93% { transform: none; }
+  95% { transform: rotateX(-16deg); }
+  97%, 100% { transform: none; }
+}
+:root[data-theme="departures"] .brand-sub {
+  font: 700 10.5px/1.3 var(--font-way);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--black);
+  min-width: 0;
+}
+:root[data-theme="departures"] .brand-sub:not(:empty)::before {
+  content: "● ";
+  color: var(--green-dim);
+  animation: dep-lamp 2.4s ease-in-out infinite;
+}
+@keyframes dep-lamp {
+  50% { opacity: 0.35; }
+}
+
+:root[data-theme="departures"] .toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+:root[data-theme="departures"] .field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+:root[data-theme="departures"] .field select,
+:root[data-theme="departures"] .btn {
+  font: 700 11px/1 var(--font-mono);
+  letter-spacing: 0.06em;
+  color: var(--amber);
+  background: var(--black);
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  border-radius: var(--r-sm);
+  padding: 9px 10px;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+:root[data-theme="departures"] .field select:hover,
+:root[data-theme="departures"] .btn:hover {
+  background: #1a1d22;
+  transform: translateY(-1px);
+}
+:root[data-theme="departures"] .btn:active {
+  transform: translateY(0);
+}
+:root[data-theme="departures"] .btn:focus-visible,
+:root[data-theme="departures"] .field select:focus-visible,
+:root[data-theme="departures"] .day-nav:focus-visible,
+:root[data-theme="departures"] .next-day-cta:focus-visible {
+  outline: 3px solid var(--black);
+  outline-offset: 2px;
+}
+:root[data-theme="departures"] .day-nav:focus-visible,
+:root[data-theme="departures"] .next-day-cta:focus-visible {
+  outline-color: var(--amber);
+}
+
+/* ====================== column / titles ====================== */
+:root[data-theme="departures"] .section-title {
+  font: 700 11px/1 var(--font-mono);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--muted-c);
+  opacity: 1;
+  margin: 26px 2px 12px;
+}
+:root[data-theme="departures"] #comeback {
+  margin: 0 0 18px;
+  padding: 12px 16px;
+  font: 500 13px/1.5 var(--font-mono);
+  color: var(--amber);
+  background: var(--panel);
+  border: 1px dashed var(--amber-dim);
+  border-radius: var(--r);
+}
+
+/* ====================== dashboard — monitors ====================== */
+:root[data-theme="departures"] .dash {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+:root[data-theme="departures"] .stat-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), var(--sh-sm);
+}
+:root[data-theme="departures"] .eyebrow {
+  font: 700 10px/1 var(--font-mono);
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+:root[data-theme="departures"] .ring {
+  width: 128px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  margin-inline: auto;
+  background:
+    radial-gradient(closest-side, var(--panel) 0 70%, transparent 71%),
+    conic-gradient(var(--amber) calc(var(--p) * 1%), var(--rail) 0);
+}
+:root[data-theme="departures"] .ring > div {
+  width: 74%;
+  aspect-ratio: 1;
+  display: grid;
+  place-content: center;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--panel);
+}
+:root[data-theme="departures"] .ring b {
+  font: 700 24px/1.1 var(--font-mono);
+  color: var(--ink);
+}
+:root[data-theme="departures"] .ring small {
+  font: 500 10px/1.6 var(--font-mono);
+  color: var(--muted-c);
+}
+:root[data-theme="departures"] .stat-sub {
+  font: 500 10px/1.4 var(--font-mono);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted-c);
+}
+:root[data-theme="departures"] .muted {
+  color: var(--muted-c);
+}
+:root[data-theme="departures"] .flame {
+  font-size: 26px;
+  line-height: 1;
+  filter: saturate(0.85);
+  animation: dep-flame 3.4s ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes dep-flame {
+  0%, 100% { transform: none; }
+  50% { transform: translateY(-3px); }
+}
+:root[data-theme="departures"] .streak-num {
+  font: 700 clamp(34px, 4vw, 46px)/1 var(--font-mono);
+  color: var(--ink);
+}
+:root[data-theme="departures"] .stat-card[data-kind="streak"]::after {
+  content: "";
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px rgba(55, 208, 103, 0.55);
+  animation: dep-lamp 2.4s ease-in-out infinite;
+}
+:root[data-theme="departures"] .prow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font: 500 12.5px/1.6 var(--font-mono);
+}
+:root[data-theme="departures"] .prow .lbl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+:root[data-theme="departures"] .prow .lbl > i {
+  flex: 0 0 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--track-bare);
+}
+:root[data-theme="departures"] .prow .val {
+  color: var(--ink-dim);
+}
+:root[data-theme="departures"] .bar {
+  height: 7px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--rail);
+}
+:root[data-theme="departures"] .bar > i {
+  display: block;
+  height: 100%;
+  background: repeating-linear-gradient(90deg, var(--amber) 0 6px, color-mix(in srgb, var(--amber) 62%, #000) 6px 8px);
+}
+
+/* per-track wiring */
+:root[data-theme="departures"] .prow .lbl > i[data-track="dsa"], :root[data-theme="departures"] .bar[data-track="dsa"] > i { background: repeating-linear-gradient(90deg, var(--track-dsa) 0 6px, color-mix(in srgb, var(--track-dsa) 62%, #000) 6px 8px); }
+:root[data-theme="departures"] .prow .lbl > i[data-track="js"], :root[data-theme="departures"] .bar[data-track="js"] > i { background: repeating-linear-gradient(90deg, var(--track-js) 0 6px, color-mix(in srgb, var(--track-js) 62%, #000) 6px 8px); }
+:root[data-theme="departures"] .prow .lbl > i[data-track="ts"], :root[data-theme="departures"] .bar[data-track="ts"] > i { background: repeating-linear-gradient(90deg, var(--track-ts) 0 6px, color-mix(in srgb, var(--track-ts) 62%, #000) 6px 8px); }
+:root[data-theme="departures"] .prow .lbl > i[data-track="node"], :root[data-theme="departures"] .bar[data-track="node"] > i { background: repeating-linear-gradient(90deg, var(--track-node) 0 6px, color-mix(in srgb, var(--track-node) 62%, #000) 6px 8px); }
+:root[data-theme="departures"] .prow .lbl > i[data-track="sysdesign"], :root[data-theme="departures"] .bar[data-track="sysdesign"] > i { background: repeating-linear-gradient(90deg, var(--track-sysdesign) 0 6px, color-mix(in srgb, var(--track-sysdesign) 62%, #000) 6px 8px); }
+:root[data-theme="departures"] .prow .lbl > i[data-track="patterns"], :root[data-theme="departures"] .bar[data-track="patterns"] > i { background: repeating-linear-gradient(90deg, var(--track-patterns) 0 6px, color-mix(in srgb, var(--track-patterns) 62%, #000) 6px 8px); }
+:root[data-theme="departures"] .prow .lbl > i[data-track="distsys"], :root[data-theme="departures"] .bar[data-track="distsys"] > i { background: repeating-linear-gradient(90deg, var(--track-distsys) 0 6px, color-mix(in srgb, var(--track-distsys) 62%, #000) 6px 8px); }
+:root[data-theme="departures"] .prow .lbl > i[data-track="db"], :root[data-theme="departures"] .bar[data-track="db"] > i { background: repeating-linear-gradient(90deg, var(--track-db) 0 6px, color-mix(in srgb, var(--track-db) 62%, #000) 6px 8px); }
+:root[data-theme="departures"] .prow .lbl > i[data-track="cs"], :root[data-theme="departures"] .bar[data-track="cs"] > i { background: repeating-linear-gradient(90deg, var(--track-cs) 0 6px, color-mix(in srgb, var(--track-cs) 62%, #000) 6px 8px); }
+
+/* ====================== day rail ====================== */
+:root[data-theme="departures"] .day-rail {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 52px;
+  gap: 12px;
+  align-items: stretch;
+  margin-bottom: 26px;
+}
+:root[data-theme="departures"] .today-wrap {
+  min-width: 0;
+}
+:root[data-theme="departures"] .day-nav {
+  display: grid;
+  place-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  color: var(--amber);
+  font: 700 22px/1 var(--font-mono);
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+:root[data-theme="departures"] .day-nav:hover {
+  background: var(--panel-2);
+  transform: translateY(-2px);
+}
+:root[data-theme="departures"] .day-nav:active {
+  transform: none;
+}
+
+/* ====================== today — the board ====================== */
+:root[data-theme="departures"] .today {
+  display: flex;
+  overflow: hidden;
+  min-height: 420px;
+  background: #0a0c0e;
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--track-bare);
+  border-radius: var(--r);
+  box-shadow: var(--sh-lg);
+}
+:root[data-theme="departures"] .today[data-track="dsa"] { border-top-color: var(--track-dsa); }
+:root[data-theme="departures"] .today[data-track="js"] { border-top-color: var(--track-js); }
+:root[data-theme="departures"] .today[data-track="ts"] { border-top-color: var(--track-ts); }
+:root[data-theme="departures"] .today[data-track="node"] { border-top-color: var(--track-node); }
+:root[data-theme="departures"] .today[data-track="sysdesign"] { border-top-color: var(--track-sysdesign); }
+:root[data-theme="departures"] .today[data-track="patterns"] { border-top-color: var(--track-patterns); }
+:root[data-theme="departures"] .today[data-track="distsys"] { border-top-color: var(--track-distsys); }
+:root[data-theme="departures"] .today[data-track="db"] { border-top-color: var(--track-db); }
+:root[data-theme="departures"] .today[data-track="cs"] { border-top-color: var(--track-cs); }
+:root[data-theme="departures"] .today-side {
+  flex: 0 0 66px;
+  display: grid;
+  place-items: center;
+  background: var(--yellow-way);
+}
+:root[data-theme="departures"] .vert {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font: 700 13px/1 var(--font-mono);
+  letter-spacing: 0.34em;
+  color: var(--black);
+}
+:root[data-theme="departures"] .today-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: clamp(20px, 4vw, 30px);
+}
+:root[data-theme="departures"] .trackpill {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font: 700 10.5px/1 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--black);
+  background: var(--amber);
+  padding: 7px 10px;
+  border-radius: 4px;
+}
+:root[data-theme="departures"] .trackpill .k {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.4);
+}
+:root[data-theme="departures"] .today-title {
+  margin: 0;
+  font: 700 clamp(20px, 3.2vw, 30px)/1.35 var(--font-mono);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #f2f4f6;
+  padding: 10px 6px 10px 14px;
+  border-radius: 6px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0 46%, rgba(0, 0, 0, 0.6) 46% 53%, rgba(0, 0, 0, 0.14) 53% 100%),
+    repeating-linear-gradient(90deg, transparent 0 calc(1ch + 0.12em), rgba(0, 0, 0, 0.5) calc(1ch + 0.12em) calc(1ch + 0.22em)),
+    var(--plate);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* warm-up — pre-departure briefing (both variants) */
+:root[data-theme="departures"] div.warm {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--amber);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+  font-size: 13.5px;
+}
+:root[data-theme="departures"] .warm-head .muted {
+  font: 700 10px/1 var(--font-mono);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+:root[data-theme="departures"] .warm-i {
+  color: var(--amber);
+}
+:root[data-theme="departures"] p.warm {
+  margin: 0;
+  padding: 12px 14px;
+  background: var(--panel);
+  border: 1px dashed var(--line-soft);
+  border-radius: var(--r-sm);
+  color: var(--ink-dim);
+  font-size: 13.5px;
+}
+
+/* tasks — flight rows */
+:root[data-theme="departures"] .tasks,
+:root[data-theme="departures"] #taskList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+:root[data-theme="departures"] .task {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 11px 4px;
+  border-bottom: 1px dashed var(--line);
+  font: 500 13.5px/1.5 var(--font-mono);
+  color: var(--ink);
+  cursor: pointer;
+  animation: dep-flap 0.4s cubic-bezier(0.3, 1.3, 0.5, 1) both;
+}
+@keyframes dep-flap {
+  from { opacity: 0; transform: rotateX(-88deg); }
+  to { opacity: 1; transform: none; }
+}
+:root[data-theme="departures"] .task .box {
+  width: 26px;
+  height: 21px;
+  border-radius: 3px;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  color: var(--muted-c);
+  background: linear-gradient(#23262c 47%, #101216 47% 53%, #1b1e24 53%);
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  transition: transform 0.18s cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+:root[data-theme="departures"] .task .box::after {
+  content: "–";
+}
+:root[data-theme="departures"] .task.done .box {
+  background: linear-gradient(#1d5c33 47%, #0e2f1a 47% 53%, #174726 53%);
+  color: #5ff08d;
+  transform: rotateX(360deg);
+}
+:root[data-theme="departures"] .task.done .box::after {
+  content: "✓";
+}
+:root[data-theme="departures"] .task::after {
+  content: "ON TIME";
+  font: 700 9.5px/1 var(--font-mono);
+  letter-spacing: 0.16em;
+  color: var(--amber);
+  border: 1px solid var(--amber-dim);
+  border-radius: 3px;
+  padding: 5px 7px;
+  white-space: nowrap;
+  margin-right: 72px; /* clear the baseline .task-tools copy buttons pinned to the row corner */
+}
+:root[data-theme="departures"] .task:not(.done):hover::after {
+  content: "BOARDING";
+  color: var(--black);
+  background: var(--amber);
+  border-color: var(--amber);
+  animation: dep-board 1.2s steps(1) infinite;
+}
+@keyframes dep-board {
+  50% { opacity: 0.55; }
+}
+:root[data-theme="departures"] .task.done {
+  color: var(--ink-dim);
+}
+:root[data-theme="departures"] .task.done::after {
+  content: "DEPARTED";
+  color: #5ff08d;
+  border-color: var(--green-dim);
+}
+:root[data-theme="departures"] .task-hint > summary {
+  color: var(--ink-dim);
+}
+:root[data-theme="departures"] .task-hint-body {
+  color: var(--ink-dim);
+  border-left-color: var(--amber-dim);
+}
+
+/* reflection / resources / CTA */
+:root[data-theme="departures"] .reflect-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+:root[data-theme="departures"] .reflect-label {
+  font: 700 10.5px/1 var(--font-mono);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted-c);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+:root[data-theme="departures"] .kanji {
+  color: var(--amber);
+  font-size: 14px;
+}
+:root[data-theme="departures"] #reflect {
+  background: #0a0c0e;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  color: var(--ink);
+  font: 500 13.5px/1.6 var(--font-mono);
+  padding: 12px;
+  min-height: 88px;
+  resize: vertical;
+  transition: border-color 0.15s ease;
+}
+:root[data-theme="departures"] #reflect:focus {
+  outline: none;
+  border-color: var(--amber);
+}
+:root[data-theme="departures"] .res-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+:root[data-theme="departures"] .chip {
+  font: 500 12px/1.5 var(--font-mono);
+  color: var(--ink-dim);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 6px 10px;
+}
+:root[data-theme="departures"] .chip b {
+  color: var(--amber);
+  font-weight: 700;
+}
+:root[data-theme="departures"] .next-day-cta {
+  align-self: flex-start;
+  font: 700 12px/1 var(--font-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--black);
+  background: var(--amber);
+  border: 0;
+  border-radius: var(--r-sm);
+  padding: 13px 18px;
+  cursor: pointer;
+  box-shadow: var(--sh-sm);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+:root[data-theme="departures"] .next-day-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sh);
+}
+:root[data-theme="departures"] .next-day-cta:active {
+  transform: none;
+}
+
+/* ====================== footer — ticker strip ====================== */
+:root[data-theme="departures"] .foot {
+  margin-top: 8px;
+  margin-bottom: 20px;
+  padding: 11px 16px;
+  background: #0a0b0d;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  text-align: center;
+}
+:root[data-theme="departures"] #motd {
+  font: 700 11px/1.6 var(--font-mono);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--amber-dim);
+  transition: opacity 0.5s ease;
+}
+:root[data-theme="departures"] #motd.motd-out {
+  opacity: 0;
+}
+
+/* ====================== modals — hall monitors ====================== */
+:root[data-theme="departures"] .modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: none;
+  overflow-y: auto;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 16px;
+  background: rgba(4, 5, 7, 0.72);
+}
+:root[data-theme="departures"] .modal.open {
+  display: flex;
+}
+:root[data-theme="departures"] .modal-panel {
+  width: min(560px, 92vw);
+  margin: auto;
+  overflow: visible;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--amber);
+  border-radius: var(--r);
+  box-shadow: var(--sh-lg);
+  padding: 18px;
+}
+:root[data-theme="departures"] .cardmap-panel {
+  width: min(680px, 94vw);
+}
+:root[data-theme="departures"] .tr-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+:root[data-theme="departures"] #cardMapTitle,
+:root[data-theme="departures"] #trophiesTitle,
+:root[data-theme="departures"] #shortcutsTitle {
+  flex: 1;
+  font: 700 13px/1.3 var(--font-mono);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+:root[data-theme="departures"] .tr-head button {
+  font: 700 13px/1 var(--font-mono);
+  color: var(--ink-dim);
+  background: var(--rail);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 7px 9px;
+  cursor: pointer;
+  transition: color 0.12s ease, transform 0.12s ease;
+}
+:root[data-theme="departures"] .tr-head button:hover {
+  color: var(--amber);
+  transform: translateY(-1px);
+}
+:root[data-theme="departures"] .tr-head button:focus-visible {
+  outline: 3px solid var(--amber);
+  outline-offset: 2px;
+}
+
+/* trophies — collected stamps */
+:root[data-theme="departures"] .tr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+:root[data-theme="departures"] .badge {
+  position: relative;
+  display: grid;
+  place-content: center;
+  place-items: center;
+  gap: 8px;
+  text-align: center;
+  padding: 14px 10px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  font: 500 11px/1.4 var(--font-mono);
+  color: var(--ink-dim);
+}
+:root[data-theme="departures"] .badge .bi {
+  font-size: 28px;
+  line-height: 1;
+}
+:root[data-theme="departures"] .badge.on {
+  border-color: var(--amber-dim);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px rgba(255, 176, 0, 0.25), 0 0 18px -6px rgba(255, 176, 0, 0.35);
+}
+:root[data-theme="departures"] .badge.off {
+  opacity: 0.45;
+}
+:root[data-theme="departures"] .badge.off .bi {
+  filter: grayscale(1);
+}
+:root[data-theme="departures"] .badge[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 9px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 210px;
+  font: 500 11.5px/1.45 var(--font-mono);
+  color: var(--ink);
+  background: var(--black);
+  border: 1px solid var(--amber-dim);
+  border-radius: 5px;
+  padding: 8px 10px;
+  z-index: 5;
+  pointer-events: none;
+  white-space: normal;
+}
+:root[data-theme="departures"] .badge[data-tip]:hover::before {
+  content: "";
+  position: absolute;
+  bottom: calc(100% + 3px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--amber-dim);
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* card map — gate grid retheme */
+:root[data-theme="departures"] .cm-rlabel {
+  color: var(--amber);
+  opacity: 1;
+}
+:root[data-theme="departures"] .cm-card {
+  border-color: var(--line);
+  background: var(--rail);
+  border-radius: 3px;
+}
+:root[data-theme="departures"] .cm-card.done {
+  background: var(--amber);
+  border-color: var(--amber);
+}
+:root[data-theme="departures"] .cm-card.rest {
+  border-style: dashed;
+  background: transparent;
+}
+:root[data-theme="departures"] .cm-card.current {
+  outline: 3px solid var(--green);
+  outline-offset: 2px;
+}
+
+/* ====================== effects ====================== */
+:root[data-theme="departures"] #fx {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+  overflow: hidden;
+}
+:root[data-theme="departures"] .fx-flash {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at 50% 40%, rgba(255, 176, 0, 0.25), transparent 62%);
+  animation: dep-flash 0.6s ease-out both;
+}
+@keyframes dep-flash {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+:root[data-theme="departures"] .toast,
+:root[data-theme="departures"] .badge-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%) translateY(12px);
+  opacity: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font: 700 12px/1.4 var(--font-mono);
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  background: var(--black);
+  border: 1px solid var(--amber-dim);
+  border-left: 4px solid var(--amber);
+  border-radius: var(--r-sm);
+  padding: 12px 16px;
+  box-shadow: var(--sh);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+:root[data-theme="departures"] .toast.show,
+:root[data-theme="departures"] .badge-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+:root[data-theme="departures"] .badge-toast .bt-i {
+  font-size: 18px;
+}
+:root[data-theme="departures"] .confetti-piece {
+  position: fixed;
+  top: 18%;
+  width: 9px;
+  height: 15px;
+  border-radius: 2px;
+  background: var(--amber);
+  opacity: 0;
+  animation: dep-confetti 2.6s ease-in both;
+}
+:root[data-theme="departures"] .confetti-piece:nth-child(3n) {
+  background: #f2f4f6;
+  height: 11px;
+}
+:root[data-theme="departures"] .confetti-piece:nth-child(4n) {
+  background: var(--green);
+}
+:root[data-theme="departures"] .confetti-piece:nth-child(5n) {
+  background: var(--yellow-way);
+  width: 12px;
+  height: 8px;
+}
+@keyframes dep-confetti {
+  0% { opacity: 1; transform: translate(0, 0) rotate(0deg); }
+  85% { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(var(--dx) * 240px), calc(var(--dy) * 80vh)) rotate(var(--rot)); }
+}

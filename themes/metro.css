@@ -1,0 +1,806 @@
+/* =============================================================================
+   themes/metro.css — «Metro · Mind the Gap»
+   -----------------------------------------------------------------------------
+   Your goal tracks are metro lines. A light transit-signage theme: warm paper
+   with a faint plan grid, navy wayfinding bars, and a red roundel brand mark.
+   The dashboard is a line legend, the progress ring is a roundel (conic ring +
+   navy crossbar readout), and the today card is a platform sign — its tasks are
+   the stations this service calls at, drawn on a line-coloured route spine and
+   ticked off as the train reaches them. The card map restyles into the network
+   diagram (round station dots; interchange ring = current).
+
+   Motion: a tiny train rides a line strip along the header's bottom edge,
+   pausing at the stations (transform-only piecewise keyframe, ~16s loop; parks
+   off-screen on mobile where the baseline freezes header-pseudo animation).
+   Entrance: the today card slides in like an arriving train; task rows follow
+   with the app's staggered delay. Confetti is a flurry of paper tickets.
+   Per-track colours = line colours, wired through one --tc custom property.
+   No remote URLs; transform/opacity animation only.
+   ========================================================================== */
+
+:root[data-theme="metro"] {
+  /* palette — transit signage on warm paper */
+  --bg: #f4f2ec;
+  --panel: #ffffff;
+  --rail: #e8e4d8;
+  --line: #e4e0d4;
+  --line-soft: #eeeadf;
+  --ink: #1c2340;
+  --ink-dim: #56597a;
+  --muted: #7a7f96;
+  --navy: #1c2340;
+  --navy-2: #2c3560;
+  --red: #e03a2f;
+  --amber: #f0a02a;
+  --green: #1e9e58;
+  --paper-warm: #fbfaf6;
+
+  --sh-sm: 0 2px 6px -2px rgba(28, 35, 64, 0.18);
+  --sh: 0 12px 26px -16px rgba(28, 35, 64, 0.4);
+  --sh-lg: 0 26px 54px -24px rgba(28, 35, 64, 0.5);
+  --r: 12px;
+  --r-sm: 8px;
+
+  /* header line-strip geometry: column width and one station-tile width */
+  --mt-w: min(1100px, 100vw - 32px);
+  --mt-t: calc((var(--mt-w) - 28px) / 4);
+
+  /* mobile HUD + card-map baseline tokens */
+  --paper: #eceadf;
+  --paper-2: #fbfaf6;
+  --accent: #e03a2f;
+  --cobalt: #2456a6;
+  --yellow: #f0a02a;
+  --focus-ring: 3px solid #e03a2f;
+
+  --font-sign: 'Jost', 'Hanken Grotesk', system-ui, sans-serif;
+  --font-body: 'Hanken Grotesk', 'Inter', system-ui, sans-serif;
+
+  /* line colours (fallbacks — a pack's own track colors override via inline --track-*) */
+  --track-dsa: #e03a2f;
+  --track-js: #f0a02a;
+  --track-ts: #2456a6;
+  --track-node: #1e9e58;
+  --track-sysdesign: #7156a8;
+  --track-patterns: #d16ba5;
+  --track-distsys: #8a5a3b;
+  --track-db: #0098a9;
+  --track-cs: #5f6a72;
+}
+
+/* one custom property carries the line colour everywhere */
+:root[data-theme="metro"] [data-track] { --tc: var(--navy-2); }
+:root[data-theme="metro"] [data-track="dsa"] { --tc: var(--track-dsa); }
+:root[data-theme="metro"] [data-track="js"] { --tc: var(--track-js); }
+:root[data-theme="metro"] [data-track="ts"] { --tc: var(--track-ts); }
+:root[data-theme="metro"] [data-track="node"] { --tc: var(--track-node); }
+:root[data-theme="metro"] [data-track="sysdesign"] { --tc: var(--track-sysdesign); }
+:root[data-theme="metro"] [data-track="patterns"] { --tc: var(--track-patterns); }
+:root[data-theme="metro"] [data-track="distsys"] { --tc: var(--track-distsys); }
+:root[data-theme="metro"] [data-track="db"] { --tc: var(--track-db); }
+:root[data-theme="metro"] [data-track="cs"] { --tc: var(--track-cs); }
+
+/* ====================== page ====================== */
+:root[data-theme="metro"] body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font: 400 16px/1.6 var(--font-body);
+  background-color: var(--bg);
+  background-image:
+    repeating-linear-gradient(0deg, transparent 0 23px, rgba(28, 35, 64, 0.045) 23px 24px),
+    repeating-linear-gradient(90deg, transparent 0 23px, rgba(28, 35, 64, 0.045) 23px 24px);
+}
+:root[data-theme="metro"] ::selection { background: var(--red); color: #fff; }
+
+:root[data-theme="metro"] .app-header,
+:root[data-theme="metro"] .wrap,
+:root[data-theme="metro"] .foot {
+  width: min(1100px, 100% - 32px);
+  margin-inline: auto;
+}
+
+/* ====================== header — signage bar + the little train ============ */
+:root[data-theme="metro"] .app-header {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: var(--navy);
+  border-radius: 0 0 var(--r) var(--r);
+  padding: 16px 22px 34px;
+  margin-bottom: 6px;
+  box-shadow: var(--sh);
+}
+/* the line strip: rail + 4 station dots, tile width derived from the header
+   column width (--mt-w) so the train's stops land exactly on the dots and the
+   run never leaves the header band (it fades in/out at the terminal dots) */
+:root[data-theme="metro"] .app-header::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 6px;
+  height: 16px;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 50% 50%, #f4f2ec 0 2.5px, #46507c 2.6px 5px, transparent 5.5px),
+    linear-gradient(transparent 6px, #46507c 6px 10px, transparent 10px);
+  background-size: var(--mt-t) 16px, 100% 16px;
+  background-repeat: repeat-x, no-repeat;
+}
+/* the train — piecewise translateX, pauses centered on the dots */
+:root[data-theme="metro"] .app-header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 7px;
+  width: 40px;
+  height: 14px;
+  border: 3px solid var(--red);
+  border-radius: 7px;
+  background: repeating-linear-gradient(90deg, #ffd9d5 0 4px, var(--red) 4px 9px);
+  pointer-events: none;
+  transform: translateX(-46px);
+  opacity: 0;
+  animation: metro-train 16s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  will-change: transform;
+}
+@keyframes metro-train {
+  0% { transform: translateX(-46px); opacity: 0; }
+  5% { opacity: 1; }
+  20%, 27% { transform: translateX(calc(14px + var(--mt-t) * 0.5 - 20px)); }
+  46%, 53% { transform: translateX(calc(14px + var(--mt-t) * 1.5 - 20px)); }
+  72%, 79% { transform: translateX(calc(14px + var(--mt-t) * 2.5 - 20px)); }
+  94% { opacity: 1; }
+  100% { transform: translateX(calc(14px + var(--mt-t) * 3.5 - 20px)); opacity: 0; }
+}
+
+:root[data-theme="metro"] .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+/* roundel: red ring, white crossbar carrying the mark (bar paints over the ring) */
+:root[data-theme="metro"] .brand-mark {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  flex: 0 0 50px;
+  font-size: 0;
+}
+:root[data-theme="metro"] .brand-mark::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 6px solid var(--red);
+  border-radius: 50%;
+}
+:root[data-theme="metro"] .brand-mark::after {
+  content: "日の出";
+  position: absolute;
+  left: -3px;
+  right: -3px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #fff;
+  border-radius: 3px;
+  padding: 3px 0;
+  font: 700 10px/1.2 var(--font-sign);
+  letter-spacing: 0.06em;
+  text-align: center;
+  color: var(--navy);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+}
+:root[data-theme="metro"] .brand-name {
+  font: 800 clamp(1.25rem, 2.6vw, 1.65rem)/1 var(--font-sign);
+  letter-spacing: 0.16em;
+  color: #fff;
+}
+:root[data-theme="metro"] .brand-sub {
+  font: 600 11px/1.3 var(--font-sign);
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: #8fa0d4;
+  min-width: 0;
+}
+
+:root[data-theme="metro"] .toolbar { display: flex; flex-wrap: wrap; gap: 9px; align-items: center; }
+:root[data-theme="metro"] .field { display: flex; }
+:root[data-theme="metro"] select,
+:root[data-theme="metro"] .btn {
+  font: 600 12.5px/1 var(--font-sign);
+  letter-spacing: 0.05em;
+  color: var(--navy);
+  background: #fff;
+  border: 0;
+  border-radius: 99px;
+  padding: 10px 14px;
+  cursor: pointer;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.28);
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+}
+:root[data-theme="metro"] select:hover,
+:root[data-theme="metro"] .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 0 rgba(0, 0, 0, 0.28); }
+:root[data-theme="metro"] .btn:active,
+:root[data-theme="metro"] select:active { transform: translateY(0); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.28); }
+:root[data-theme="metro"] .btn:focus-visible,
+:root[data-theme="metro"] select:focus-visible,
+:root[data-theme="metro"] textarea:focus-visible,
+:root[data-theme="metro"] .day-nav:focus-visible,
+:root[data-theme="metro"] .next-day-cta:focus-visible {
+  outline: 3px solid var(--red);
+  outline-offset: 2px;
+}
+
+/* ====================== column / section titles ====================== */
+:root[data-theme="metro"] .section-title {
+  font: 600 11px/1 var(--font-sign);
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: 1;
+  margin: 26px 2px 12px;
+}
+:root[data-theme="metro"] #comeback {
+  background: #fdf3e1;
+  border: 1px solid var(--amber);
+  border-left: 6px solid var(--amber);
+  border-radius: var(--r);
+  padding: 14px 18px;
+  margin: 0 0 16px;
+  font: 600 14px/1.5 var(--font-body);
+  color: var(--navy);
+}
+
+/* ====================== dashboard — network status ====================== */
+:root[data-theme="metro"] .dash {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+:root[data-theme="metro"] .stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--sh-sm);
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+:root[data-theme="metro"] .stat-card:hover { transform: translateY(-2px); box-shadow: var(--sh); }
+:root[data-theme="metro"] .eyebrow {
+  font: 600 10px/1 var(--font-sign);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+:root[data-theme="metro"] .muted { color: var(--muted); }
+
+/* progress roundel: conic ring + navy crossbar readout */
+:root[data-theme="metro"] .ring {
+  position: relative;
+  width: 132px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  margin-inline: auto;
+  background:
+    radial-gradient(closest-side, var(--panel) 0 64%, transparent 65%),
+    conic-gradient(var(--red) calc(var(--p) * 1%), var(--rail) 0);
+}
+:root[data-theme="metro"] .ring > div {
+  width: 116%;
+  display: grid;
+  place-content: center;
+  place-items: center;
+  background: var(--navy);
+  border-radius: 6px;
+  padding: 6px 0 7px;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+}
+:root[data-theme="metro"] .ring b {
+  font: 800 18px/1 var(--font-sign);
+  letter-spacing: 0.1em;
+  color: #fff;
+}
+:root[data-theme="metro"] .ring small {
+  font: 600 8.5px/1.8 var(--font-sign);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #8fa0d4;
+}
+:root[data-theme="metro"] .stat-sub {
+  font: 600 11px/1.4 var(--font-sign);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* streak card — zone counter */
+:root[data-theme="metro"] .flame {
+  font-size: 22px;
+  text-align: center;
+}
+:root[data-theme="metro"] .streak-num {
+  font: 800 clamp(2.4rem, 5vw, 3rem)/1 var(--font-sign);
+  color: var(--navy);
+  text-align: center;
+}
+
+/* tracks card — the line legend */
+:root[data-theme="metro"] .prow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font: 600 13.5px/1.5 var(--font-body);
+}
+:root[data-theme="metro"] .prow .lbl { display: flex; align-items: center; gap: 9px; min-width: 0; }
+:root[data-theme="metro"] .prow .lbl > i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex: 0 0 12px;
+  background: #fff;
+  border: 3.5px solid var(--tc, var(--navy-2));
+}
+:root[data-theme="metro"] .prow .val { color: var(--muted); font-variant-numeric: tabular-nums; }
+:root[data-theme="metro"] .bar {
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--rail);
+  margin: 2px 0 8px;
+}
+:root[data-theme="metro"] .bar > i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--tc, var(--navy-2));
+}
+
+/* ====================== day rail ====================== */
+:root[data-theme="metro"] .day-rail {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 52px;
+  gap: 14px;
+  align-items: stretch;
+}
+:root[data-theme="metro"] .today-wrap { min-width: 0; }
+:root[data-theme="metro"] .day-nav {
+  display: grid;
+  place-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  color: var(--navy);
+  font: 800 22px/1 var(--font-sign);
+  cursor: pointer;
+  box-shadow: var(--sh-sm);
+  transition: transform 0.14s ease, color 0.14s ease, box-shadow 0.14s ease;
+}
+:root[data-theme="metro"] .day-nav:hover { transform: translateY(-2px); color: var(--red); box-shadow: var(--sh); }
+:root[data-theme="metro"] .day-nav:active { transform: translateY(0); }
+
+/* ====================== today card — the platform sign ====================== */
+:root[data-theme="metro"] .today {
+  display: flex;
+  overflow: hidden;
+  min-height: 420px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--sh-lg);
+  animation: metro-arrive 0.6s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+@keyframes metro-arrive {
+  from { transform: translateX(56px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+:root[data-theme="metro"] .today-side {
+  flex: 0 0 72px;
+  display: grid;
+  place-items: center;
+  background: var(--tc, var(--navy));
+}
+:root[data-theme="metro"] .vert {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font: 800 14px/1 var(--font-sign);
+  letter-spacing: 0.42em;
+  color: #fff;
+}
+:root[data-theme="metro"] .today-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: clamp(20px, 4vw, 32px);
+}
+:root[data-theme="metro"] .trackpill {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: 700 11px/1 var(--font-sign);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--tc, var(--navy));
+  border-radius: 99px;
+  padding: 8px 13px;
+}
+:root[data-theme="metro"] .trackpill .k {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2.5px solid rgba(0, 0, 0, 0.3);
+}
+:root[data-theme="metro"] .today-title {
+  margin: 0;
+  font: 800 clamp(1.7rem, 3.6vw, 2.6rem)/1.08 var(--font-sign);
+  letter-spacing: 0.01em;
+  color: var(--navy);
+}
+
+/* warm-up — service information board */
+:root[data-theme="metro"] .warm {
+  background: #eef0f6;
+  border-left: 5px solid var(--amber);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+  font: 400 14.5px/1.55 var(--font-body);
+  color: var(--ink-dim);
+}
+:root[data-theme="metro"] .warm .warm-i { color: var(--amber); }
+:root[data-theme="metro"] .warm .muted {
+  font: 700 10.5px/1 var(--font-sign);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+/* rest-day variant (a <p> with only the icon) — the depot notice */
+:root[data-theme="metro"] p.warm {
+  margin: 0;
+  border-left: 0;
+  border: 1.5px dashed #c9c4b4;
+  text-align: center;
+  font-style: italic;
+  color: var(--muted);
+}
+
+/* tasks — this service calls at: */
+:root[data-theme="metro"] .tasks,
+:root[data-theme="metro"] #taskList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  padding-left: 2px;
+}
+/* the route spine behind the station dots */
+:root[data-theme="metro"] #taskList::before {
+  content: "";
+  position: absolute;
+  left: 11px;
+  top: 22px;
+  bottom: 22px;
+  width: 5px;
+  border-radius: 3px;
+  background: var(--tc, var(--navy));
+  opacity: 0.85;
+}
+:root[data-theme="metro"] .task {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 13px;
+  align-items: center;
+  cursor: pointer;
+  padding: 8px 0;
+  font: 600 15px/1.45 var(--font-body);
+  color: var(--ink);
+  animation: metro-task 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+@keyframes metro-task {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: none; }
+}
+:root[data-theme="metro"] .task .box {
+  position: relative;
+  z-index: 1;
+  width: 19px;
+  height: 19px;
+  margin-left: 2px;
+  border-radius: 50%;
+  background: #fff;
+  border: 4px solid var(--tc, var(--navy));
+  transition: transform 0.16s cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+:root[data-theme="metro"] .task:hover .box { transform: scale(1.16); }
+:root[data-theme="metro"] .task.done .box {
+  background: var(--tc, var(--navy));
+  box-shadow: 0 0 0 2.5px #fff inset;
+}
+:root[data-theme="metro"] .task.done { color: #9a9884; }
+:root[data-theme="metro"] .task-hint > summary { color: var(--muted); }
+:root[data-theme="metro"] .task-hint-body { color: var(--ink-dim); border-left-color: var(--amber); }
+
+/* reflection — the journey log */
+:root[data-theme="metro"] .reflect-block { display: flex; flex-direction: column; gap: 8px; }
+:root[data-theme="metro"] .reflect-label {
+  font: 700 11px/1 var(--font-sign);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+:root[data-theme="metro"] .reflect-label .kanji {
+  font-size: 15px;
+  color: #fff;
+  background: var(--red);
+  border-radius: 6px;
+  padding: 3px 6px;
+}
+:root[data-theme="metro"] textarea {
+  min-height: 92px;
+  resize: vertical;
+  background: var(--paper-warm);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+  font: 400 15px/1.55 var(--font-body);
+  color: var(--ink);
+  transition: border-color 0.15s ease;
+}
+:root[data-theme="metro"] textarea:focus { border-color: var(--navy); outline: none; }
+
+/* resources — connections */
+:root[data-theme="metro"] .res-row { display: flex; flex-wrap: wrap; gap: 8px; }
+:root[data-theme="metro"] .chip {
+  font: 500 12.5px/1.4 var(--font-body);
+  color: var(--ink-dim);
+  background: var(--paper-warm);
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  padding: 6px 12px;
+}
+:root[data-theme="metro"] .chip b { color: var(--navy); font-weight: 700; }
+
+/* next-day CTA */
+:root[data-theme="metro"] .next-day-cta {
+  align-self: flex-start;
+  font: 700 12.5px/1 var(--font-sign);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--navy);
+  background: var(--amber);
+  border: 0;
+  border-radius: 99px;
+  padding: 13px 18px;
+  cursor: pointer;
+  box-shadow: 0 3px 0 rgba(28, 35, 64, 0.35);
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+}
+:root[data-theme="metro"] .next-day-cta:hover { transform: translateY(-2px); box-shadow: 0 5px 0 rgba(28, 35, 64, 0.35); }
+:root[data-theme="metro"] .next-day-cta:active { transform: translateY(1px); box-shadow: 0 1px 0 rgba(28, 35, 64, 0.35); }
+
+/* ====================== footer ====================== */
+:root[data-theme="metro"] .foot {
+  padding: 30px 0 38px;
+  text-align: center;
+}
+:root[data-theme="metro"] #motd {
+  display: inline-block;
+  font: 600 12px/1.6 var(--font-sign);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+:root[data-theme="metro"] #motd.motd-out { opacity: 0; transform: translateY(5px); }
+
+/* ====================== modals ====================== */
+:root[data-theme="metro"] .modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: none;
+  overflow-y: auto;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 16px;
+  background: rgba(20, 26, 48, 0.46);
+}
+:root[data-theme="metro"] .modal.open { display: flex; }
+:root[data-theme="metro"] .modal-panel {
+  width: min(560px, 92vw);
+  margin: auto;
+  overflow: visible;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--sh-lg);
+  padding: 18px 20px 22px;
+}
+:root[data-theme="metro"] .cardmap-panel { width: min(760px, 94vw); }
+:root[data-theme="metro"] .tr-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  border-bottom: 3px solid var(--navy);
+}
+:root[data-theme="metro"] #cardMapTitle,
+:root[data-theme="metro"] #trophiesTitle,
+:root[data-theme="metro"] #shortcutsTitle {
+  flex: 1;
+  font: 800 clamp(1.05rem, 2vw, 1.3rem)/1.2 var(--font-sign);
+  letter-spacing: 0.06em;
+  color: var(--navy);
+}
+:root[data-theme="metro"] .tr-head button {
+  font: 700 13px/1 var(--font-sign);
+  color: var(--navy);
+  background: var(--paper-warm);
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  transition: transform 0.14s ease, color 0.14s ease;
+}
+:root[data-theme="metro"] .tr-head button:hover { transform: scale(1.08); color: var(--red); }
+:root[data-theme="metro"] .tr-head button:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+
+/* trophies — station plaques */
+:root[data-theme="metro"] .tr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+:root[data-theme="metro"] .badge {
+  position: relative;
+  display: grid;
+  place-content: center;
+  place-items: center;
+  gap: 8px;
+  text-align: center;
+  padding: 14px 10px;
+  background: var(--paper-warm);
+  border: 1px solid var(--line);
+  border-bottom: 4px solid var(--navy);
+  border-radius: var(--r-sm);
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+}
+:root[data-theme="metro"] .badge:hover { transform: translateY(-2px); box-shadow: var(--sh); }
+:root[data-theme="metro"] .badge .bi { font-size: 28px; }
+:root[data-theme="metro"] .badge .bt {
+  font: 700 11px/1.35 var(--font-sign);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+:root[data-theme="metro"] .badge.on { border-bottom-color: var(--red); }
+:root[data-theme="metro"] .badge.off { opacity: 0.45; }
+:root[data-theme="metro"] .badge.off .bi { filter: grayscale(1); }
+:root[data-theme="metro"] .badge[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 9px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 210px;
+  font: 600 12px/1.4 var(--font-body);
+  color: #fff;
+  background: var(--navy);
+  border-radius: 7px;
+  padding: 8px 11px;
+  z-index: 5;
+  pointer-events: none;
+  white-space: normal;
+}
+:root[data-theme="metro"] .badge[data-tip]:hover::before {
+  content: "";
+  position: absolute;
+  bottom: calc(100% + 3px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--navy);
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* card map — the network diagram */
+:root[data-theme="metro"] .cm-rlabel {
+  font-family: var(--font-sign);
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  opacity: 1;
+}
+:root[data-theme="metro"] .cm-card {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 3px solid #9aa2bd;
+  background: #fff;
+  cursor: pointer;
+}
+:root[data-theme="metro"] .cm-card:hover { transform: translateY(-2px); }
+:root[data-theme="metro"] .cm-card.done { background: var(--red); border-color: var(--red); box-shadow: 0 0 0 2px #fff inset; }
+:root[data-theme="metro"] .cm-card.rest { border-style: dashed; background: transparent; opacity: 0.5; }
+:root[data-theme="metro"] .cm-card.current { outline: 3px solid var(--amber); outline-offset: 2px; }
+
+/* ====================== effects ====================== */
+:root[data-theme="metro"] #fx {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+  overflow: hidden;
+}
+:root[data-theme="metro"] .fx-flash {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at 50% 42%, rgba(240, 160, 42, 0.32), transparent 68%);
+  animation: metro-flash 0.8s ease-out both;
+}
+@keyframes metro-flash {
+  0% { opacity: 0; }
+  22% { opacity: 1; }
+  100% { opacity: 0; }
+}
+:root[data-theme="metro"] .toast,
+:root[data-theme="metro"] .badge-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translate(-50%, 12px);
+  opacity: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font: 600 14px/1.3 var(--font-sign);
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: var(--navy);
+  border-radius: 10px;
+  border-bottom: 4px solid var(--red);
+  padding: 13px 18px;
+  box-shadow: var(--sh-lg);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+:root[data-theme="metro"] .toast.show,
+:root[data-theme="metro"] .badge-toast.show { opacity: 1; transform: translate(-50%, 0); }
+:root[data-theme="metro"] .badge-toast .bt-i { font-size: 19px; }
+
+/* confetti — paper tickets */
+:root[data-theme="metro"] .confetti-piece {
+  position: fixed;
+  top: 18%;
+  width: 15px;
+  height: 10px;
+  border-radius: 2px;
+  background: #fff;
+  border: 2px solid var(--navy);
+  animation: metro-confetti 2.9s cubic-bezier(0.25, 0.6, 0.4, 1) both;
+}
+:root[data-theme="metro"] .confetti-piece:nth-child(3n) { background: var(--amber); border-color: color-mix(in srgb, var(--amber) 55%, var(--navy)); }
+:root[data-theme="metro"] .confetti-piece:nth-child(3n + 1) { background: var(--red); border-color: color-mix(in srgb, var(--red) 55%, var(--navy)); }
+:root[data-theme="metro"] .confetti-piece:nth-child(4n) { width: 10px; height: 10px; border-radius: 50%; }
+@keyframes metro-confetti {
+  0% { transform: translate3d(0, -8vh, 0) rotate(0deg); opacity: 1; }
+  85% { opacity: 1; }
+  100% {
+    transform: translate3d(calc(var(--dx) * 42vw), calc(var(--dy) * 88vh), 0) rotate(var(--rot));
+    opacity: 0;
+  }
+}
